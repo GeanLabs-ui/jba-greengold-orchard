@@ -1,15 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Scissors } from 'lucide-react';
+import { Plus, Scissors, Calendar, List } from 'lucide-react';
 import PageHeader from '@/components/shared/PageHeader';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { formatNumber, formatDate } from '@/components/shared/format';
 import { Button } from '@/components/ui/button';
 import DataTable from '@/components/shared/DataTable';
+import HarvestCalendar from '@/components/harvest/HarvestCalendar';
 import { base44 } from '@/api/base44Client';
 
 export default function Harvests() {
   const [harvests, setHarvests] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [view, setView] = useState('calendar');
 
   useEffect(() => {
     base44.entities.Harvest.list('-harvest_date')
@@ -22,7 +24,17 @@ export default function Harvests() {
   return (
     <div>
       <PageHeader title="Harvest Tracking" description="Record and monitor harvest batches from farm to warehouse.">
-        <Button className="gradient-mango text-white"><Plus className="mr-2 h-4 w-4" /> Record Harvest</Button>
+        <div className="flex items-center gap-2">
+          <div className="flex rounded-lg border border-border bg-card p-0.5">
+            <Button variant={view === 'calendar' ? 'default' : 'ghost'} size="sm" onClick={() => setView('calendar')} className={view === 'calendar' ? 'gradient-mango text-white' : ''}>
+              <Calendar className="mr-1.5 h-4 w-4" /> Calendar
+            </Button>
+            <Button variant={view === 'table' ? 'default' : 'ghost'} size="sm" onClick={() => setView('table')} className={view === 'table' ? 'gradient-mango text-white' : ''}>
+              <List className="mr-1.5 h-4 w-4" /> Table
+            </Button>
+          </div>
+          <Button className="gradient-mango text-white"><Plus className="mr-2 h-4 w-4" /> Record Harvest</Button>
+        </div>
       </PageHeader>
 
       <div className="mb-6 grid gap-4 sm:grid-cols-3">
@@ -45,6 +57,8 @@ export default function Harvests() {
 
       {loading ? (
         <div className="h-64 animate-pulse rounded-xl bg-muted" />
+      ) : view === 'calendar' ? (
+        <HarvestCalendar harvests={harvests} />
       ) : (
         <DataTable
           items={harvests}
