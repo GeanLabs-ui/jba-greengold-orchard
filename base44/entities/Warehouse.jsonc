@@ -1,0 +1,48 @@
+{
+  "name": "Warehouse",
+  "type": "object",
+  "properties": {
+    "warehouse_code": {
+      "type": "string",
+      "title": "Warehouse Code"
+    },
+    "name": {
+      "type": "string",
+      "title": "Warehouse Name"
+    },
+    "location": {
+      "type": "string",
+      "title": "Location"
+    },
+    "region": {
+      "type": "string",
+      "title": "Region"
+    },
+    "capacity_kg": {
+      "type": "number",
+      "title": "Capacity (kg)"
+    },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "enum": [
+        "active",
+        "maintenance",
+        "closed"
+      ],
+      "default": "active"
+    },
+    "manager_name": {
+      "type": "string",
+      "title": "Manager Name"
+    },
+    "contact_phone": {
+      "type": "string",
+      "title": "Contact Phone"
+    }
+  },
+  "required": [
+    "warehouse_code",
+    "name"
+  ]
+}

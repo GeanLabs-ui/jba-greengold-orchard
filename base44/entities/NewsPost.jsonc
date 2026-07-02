@@ -1,0 +1,76 @@
+{
+  "name": "NewsPost",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "title": "Title"
+    },
+    "slug": {
+      "type": "string",
+      "title": "Slug"
+    },
+    "excerpt": {
+      "type": "string",
+      "title": "Excerpt"
+    },
+    "body": {
+      "type": "string",
+      "title": "Body"
+    },
+    "category": {
+      "type": "string",
+      "title": "Category",
+      "enum": [
+        "harvest_update",
+        "company_news",
+        "blog",
+        "event",
+        "press_release"
+      ],
+      "default": "company_news"
+    },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "enum": [
+        "draft",
+        "published",
+        "archived"
+      ],
+      "default": "published"
+    },
+    "featured_image": {
+      "type": "string",
+      "title": "Featured Image URL",
+      "format": "uri"
+    },
+    "gallery_images": {
+      "type": "array",
+      "title": "Gallery Images",
+      "items": {
+        "type": "string"
+      }
+    },
+    "author_name": {
+      "type": "string",
+      "title": "Author Name"
+    },
+    "published_at": {
+      "type": "string",
+      "title": "Published At",
+      "format": "date-time"
+    },
+    "tags": {
+      "type": "array",
+      "title": "Tags",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "title",
+    "slug"
+  ]
+}

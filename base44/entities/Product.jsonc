@@ -1,0 +1,106 @@
+{
+  "name": "Product",
+  "type": "object",
+  "properties": {
+    "sku": {
+      "type": "string",
+      "title": "SKU"
+    },
+    "name": {
+      "type": "string",
+      "title": "Name"
+    },
+    "slug": {
+      "type": "string",
+      "title": "Slug"
+    },
+    "description": {
+      "type": "string",
+      "title": "Description"
+    },
+    "product_type": {
+      "type": "string",
+      "title": "Product Type",
+      "enum": [
+        "fresh_fruit",
+        "dried",
+        "juice",
+        "pulp",
+        "concentrate",
+        "by_product"
+      ],
+      "default": "fresh_fruit"
+    },
+    "variety": {
+      "type": "string",
+      "title": "Mango Variety"
+    },
+    "unit_of_measure": {
+      "type": "string",
+      "title": "Unit of Measure",
+      "default": "kg"
+    },
+    "pack_size": {
+      "type": "string",
+      "title": "Pack Size"
+    },
+    "price": {
+      "type": "number",
+      "title": "Price",
+      "default": 0
+    },
+    "currency": {
+      "type": "string",
+      "title": "Currency",
+      "default": "UGX"
+    },
+    "vat_rate": {
+      "type": "number",
+      "title": "VAT Rate %",
+      "default": 18
+    },
+    "is_active": {
+      "type": "boolean",
+      "title": "Active",
+      "default": true
+    },
+    "featured": {
+      "type": "boolean",
+      "title": "Featured",
+      "default": false
+    },
+    "image_url": {
+      "type": "string",
+      "title": "Image URL",
+      "format": "uri"
+    },
+    "gallery_images": {
+      "type": "array",
+      "title": "Gallery Images",
+      "items": {
+        "type": "string"
+      }
+    },
+    "specifications": {
+      "type": "string",
+      "title": "Specifications"
+    },
+    "origin_farm": {
+      "type": "string",
+      "title": "Origin Farm"
+    },
+    "shelf_life": {
+      "type": "string",
+      "title": "Shelf Life"
+    },
+    "storage_conditions": {
+      "type": "string",
+      "title": "Storage Conditions"
+    }
+  },
+  "required": [
+    "name",
+    "sku",
+    "price"
+  ]
+}

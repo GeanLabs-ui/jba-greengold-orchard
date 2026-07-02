@@ -1,0 +1,77 @@
+{
+  "name": "Notification",
+  "type": "object",
+  "properties": {
+    "notification_type": {
+      "type": "string",
+      "title": "Type",
+      "enum": [
+        "order_update",
+        "payment_confirmation",
+        "delivery_update",
+        "approval_request",
+        "staff_alert",
+        "low_stock",
+        "system"
+      ],
+      "default": "system"
+    },
+    "title": {
+      "type": "string",
+      "title": "Title"
+    },
+    "message": {
+      "type": "string",
+      "title": "Message"
+    },
+    "channel": {
+      "type": "string",
+      "title": "Channel",
+      "enum": [
+        "email",
+        "sms",
+        "whatsapp",
+        "in_app"
+      ],
+      "default": "in_app"
+    },
+    "target_user_id": {
+      "type": "string",
+      "title": "Target User ID"
+    },
+    "target_customer_id": {
+      "type": "string",
+      "title": "Target Customer ID"
+    },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "enum": [
+        "queued",
+        "sent",
+        "failed",
+        "read"
+      ],
+      "default": "queued"
+    },
+    "scheduled_at": {
+      "type": "string",
+      "title": "Scheduled At",
+      "format": "date-time"
+    },
+    "sent_at": {
+      "type": "string",
+      "title": "Sent At",
+      "format": "date-time"
+    },
+    "read_at": {
+      "type": "string",
+      "title": "Read At",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "title",
+    "message"
+  ]
+}

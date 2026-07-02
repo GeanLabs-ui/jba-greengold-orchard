@@ -1,0 +1,58 @@
+{
+  "name": "StockItem",
+  "type": "object",
+  "properties": {
+    "warehouse_id": {
+      "type": "string",
+      "title": "Warehouse ID"
+    },
+    "warehouse_name": {
+      "type": "string",
+      "title": "Warehouse Name"
+    },
+    "product_id": {
+      "type": "string",
+      "title": "Product ID"
+    },
+    "product_name": {
+      "type": "string",
+      "title": "Product Name"
+    },
+    "sku": {
+      "type": "string",
+      "title": "SKU"
+    },
+    "batch_reference": {
+      "type": "string",
+      "title": "Batch Reference"
+    },
+    "quantity_on_hand": {
+      "type": "number",
+      "title": "Quantity On Hand",
+      "default": 0
+    },
+    "quantity_reserved": {
+      "type": "number",
+      "title": "Quantity Reserved",
+      "default": 0
+    },
+    "reorder_level": {
+      "type": "number",
+      "title": "Reorder Level",
+      "default": 0
+    },
+    "bin_location": {
+      "type": "string",
+      "title": "Bin Location"
+    },
+    "unit_cost": {
+      "type": "number",
+      "title": "Unit Cost",
+      "default": 0
+    }
+  },
+  "required": [
+    "warehouse_id",
+    "product_id"
+  ]
+}

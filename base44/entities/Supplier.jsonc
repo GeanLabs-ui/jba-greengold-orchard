@@ -1,0 +1,70 @@
+{
+  "name": "Supplier",
+  "type": "object",
+  "properties": {
+    "supplier_code": {
+      "type": "string",
+      "title": "Supplier Code"
+    },
+    "name": {
+      "type": "string",
+      "title": "Supplier Name"
+    },
+    "email": {
+      "type": "string",
+      "title": "Email",
+      "format": "email"
+    },
+    "phone": {
+      "type": "string",
+      "title": "Phone"
+    },
+    "country": {
+      "type": "string",
+      "title": "Country",
+      "default": "Uganda"
+    },
+    "address": {
+      "type": "string",
+      "title": "Address"
+    },
+    "tax_id": {
+      "type": "string",
+      "title": "Tax ID"
+    },
+    "products_supplied": {
+      "type": "array",
+      "title": "Products Supplied",
+      "items": {
+        "type": "string"
+      }
+    },
+    "payment_terms": {
+      "type": "string",
+      "title": "Payment Terms"
+    },
+    "performance_rating": {
+      "type": "number",
+      "title": "Performance Rating (1-5)",
+      "default": 3
+    },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "enum": [
+        "active",
+        "inactive",
+        "blacklisted"
+      ],
+      "default": "active"
+    },
+    "notes": {
+      "type": "string",
+      "title": "Notes"
+    }
+  },
+  "required": [
+    "supplier_code",
+    "name"
+  ]
+}

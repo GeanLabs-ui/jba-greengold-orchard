@@ -1,0 +1,78 @@
+{
+  "name": "Expense",
+  "type": "object",
+  "properties": {
+    "expense_number": {
+      "type": "string",
+      "title": "Expense Number"
+    },
+    "expense_date": {
+      "type": "string",
+      "title": "Expense Date",
+      "format": "date"
+    },
+    "category": {
+      "type": "string",
+      "title": "Category",
+      "enum": [
+        "fuel",
+        "maintenance",
+        "salaries",
+        "supplies",
+        "utilities",
+        "logistics",
+        "farm_operations",
+        "marketing",
+        "office",
+        "other"
+      ],
+      "default": "other"
+    },
+    "amount": {
+      "type": "number",
+      "title": "Amount",
+      "default": 0
+    },
+    "currency": {
+      "type": "string",
+      "title": "Currency",
+      "default": "UGX"
+    },
+    "vendor_name": {
+      "type": "string",
+      "title": "Vendor Name"
+    },
+    "payment_method": {
+      "type": "string",
+      "title": "Payment Method",
+      "enum": [
+        "mobile_money",
+        "bank_transfer",
+        "cash",
+        "cheque"
+      ],
+      "default": "cash"
+    },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "enum": [
+        "pending",
+        "approved",
+        "rejected",
+        "paid"
+      ],
+      "default": "pending"
+    },
+    "notes": {
+      "type": "string",
+      "title": "Notes"
+    }
+  },
+  "required": [
+    "expense_number",
+    "expense_date",
+    "category",
+    "amount"
+  ]
+}

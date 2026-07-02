@@ -1,0 +1,64 @@
+{
+  "name": "Inquiry",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "title": "Full Name"
+    },
+    "email": {
+      "type": "string",
+      "title": "Email",
+      "format": "email"
+    },
+    "phone": {
+      "type": "string",
+      "title": "Phone"
+    },
+    "company": {
+      "type": "string",
+      "title": "Company"
+    },
+    "subject": {
+      "type": "string",
+      "title": "Subject"
+    },
+    "message": {
+      "type": "string",
+      "title": "Message"
+    },
+    "inquiry_type": {
+      "type": "string",
+      "title": "Inquiry Type",
+      "enum": [
+        "general",
+        "sales",
+        "export",
+        "partnership",
+        "careers",
+        "support"
+      ],
+      "default": "general"
+    },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "enum": [
+        "new",
+        "in_progress",
+        "resolved",
+        "closed"
+      ],
+      "default": "new"
+    },
+    "source_page": {
+      "type": "string",
+      "title": "Source Page"
+    }
+  },
+  "required": [
+    "name",
+    "email",
+    "message"
+  ]
+}

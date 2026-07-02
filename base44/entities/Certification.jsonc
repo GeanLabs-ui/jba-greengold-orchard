@@ -1,0 +1,66 @@
+{
+  "name": "Certification",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "title": "Certification Name"
+    },
+    "issuer": {
+      "type": "string",
+      "title": "Issuer"
+    },
+    "certificate_number": {
+      "type": "string",
+      "title": "Certificate Number"
+    },
+    "cert_type": {
+      "type": "string",
+      "title": "Type",
+      "enum": [
+        "quality",
+        "food_safety",
+        "organic",
+        "fair_trade",
+        "export",
+        "environmental",
+        "halal",
+        "global_gap"
+      ],
+      "default": "quality"
+    },
+    "valid_from": {
+      "type": "string",
+      "title": "Valid From",
+      "format": "date"
+    },
+    "valid_to": {
+      "type": "string",
+      "title": "Valid To",
+      "format": "date"
+    },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "enum": [
+        "active",
+        "expired",
+        "pending",
+        "revoked"
+      ],
+      "default": "active"
+    },
+    "document_url": {
+      "type": "string",
+      "title": "Document URL",
+      "format": "uri"
+    },
+    "description": {
+      "type": "string",
+      "title": "Description"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

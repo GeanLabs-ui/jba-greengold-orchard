@@ -1,0 +1,77 @@
+{
+  "name": "Payment",
+  "type": "object",
+  "properties": {
+    "payment_reference": {
+      "type": "string",
+      "title": "Payment Reference"
+    },
+    "customer_id": {
+      "type": "string",
+      "title": "Customer ID"
+    },
+    "customer_name": {
+      "type": "string",
+      "title": "Customer Name"
+    },
+    "invoice_id": {
+      "type": "string",
+      "title": "Invoice ID"
+    },
+    "invoice_number": {
+      "type": "string",
+      "title": "Invoice Number"
+    },
+    "payment_date": {
+      "type": "string",
+      "title": "Payment Date",
+      "format": "date-time"
+    },
+    "payment_method": {
+      "type": "string",
+      "title": "Payment Method",
+      "enum": [
+        "mobile_money",
+        "visa_mastercard",
+        "bank_transfer",
+        "cash",
+        "cheque"
+      ],
+      "default": "cash"
+    },
+    "amount": {
+      "type": "number",
+      "title": "Amount",
+      "default": 0
+    },
+    "currency": {
+      "type": "string",
+      "title": "Currency",
+      "default": "UGX"
+    },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "enum": [
+        "pending",
+        "completed",
+        "failed",
+        "reversed"
+      ],
+      "default": "completed"
+    },
+    "gateway_reference": {
+      "type": "string",
+      "title": "Gateway Reference"
+    },
+    "notes": {
+      "type": "string",
+      "title": "Notes"
+    }
+  },
+  "required": [
+    "payment_reference",
+    "customer_id",
+    "amount"
+  ]
+}

@@ -6,7 +6,47 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ScrollToTop from './components/ScrollToTop';
-// Add page imports here
+// Public layout
+import PublicLayout from '@/components/public/PublicLayout';
+// Admin layout
+import AdminLayout from '@/components/admin/AdminLayout';
+// Portal layout
+import PortalLayout from '@/components/portal/PortalLayout';
+// Public pages
+import Home from '@/pages/public/Home';
+import About from '@/pages/public/About';
+import Products from '@/pages/public/Products';
+import Farms from '@/pages/public/Farms';
+import Sustainability from '@/pages/public/Sustainability';
+import ExportPage from '@/pages/public/Export';
+import LocalSupply from '@/pages/public/LocalSupply';
+import Media from '@/pages/public/Media';
+import News from '@/pages/public/News';
+import NewsDetail from '@/pages/public/NewsDetail';
+import Careers from '@/pages/public/Careers';
+import Contact from '@/pages/public/Contact';
+// Admin pages
+import AdminDashboard from '@/pages/admin/AdminDashboard';
+import CRM from '@/pages/admin/CRM';
+import Sales from '@/pages/admin/Sales';
+import Orders from '@/pages/admin/Orders';
+import Inventory from '@/pages/admin/Inventory';
+import FarmsAdmin from '@/pages/admin/FarmsAdmin';
+import Harvests from '@/pages/admin/Harvests';
+import Logistics from '@/pages/admin/Logistics';
+import Procurement from '@/pages/admin/Procurement';
+import Finance from '@/pages/admin/Finance';
+import ExportOps from '@/pages/admin/ExportOps';
+import HR from '@/pages/admin/HR';
+import Content from '@/pages/admin/Content';
+import Documents from '@/pages/admin/Documents';
+import Reports from '@/pages/admin/Reports';
+import SettingsPage from '@/pages/admin/SettingsPage';
+// Portal pages
+import PortalDashboard from '@/pages/portal/PortalDashboard';
+import PortalOrders from '@/pages/portal/PortalOrders';
+import PortalPayments from '@/pages/portal/PortalPayments';
+import PortalDocuments from '@/pages/portal/PortalDocuments';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -34,7 +74,50 @@ const AuthenticatedApp = () => {
   // Render the main app
   return (
     <Routes>
-      {/* Add your page Route elements here */}
+      {/* Public website */}
+      <Route element={<PublicLayout />}>
+        <Route path="/" element={<Home />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/products" element={<Products />} />
+        <Route path="/farms" element={<Farms />} />
+        <Route path="/sustainability" element={<Sustainability />} />
+        <Route path="/export" element={<ExportPage />} />
+        <Route path="/local-supply" element={<LocalSupply />} />
+        <Route path="/media" element={<Media />} />
+        <Route path="/news" element={<News />} />
+        <Route path="/news/:slug" element={<NewsDetail />} />
+        <Route path="/careers" element={<Careers />} />
+        <Route path="/contact" element={<Contact />} />
+      </Route>
+
+      {/* Admin dashboard */}
+      <Route path="/admin" element={<AdminLayout />}>
+        <Route index element={<AdminDashboard />} />
+        <Route path="crm" element={<CRM />} />
+        <Route path="sales" element={<Sales />} />
+        <Route path="orders" element={<Orders />} />
+        <Route path="inventory" element={<Inventory />} />
+        <Route path="farms" element={<FarmsAdmin />} />
+        <Route path="harvests" element={<Harvests />} />
+        <Route path="logistics" element={<Logistics />} />
+        <Route path="procurement" element={<Procurement />} />
+        <Route path="finance" element={<Finance />} />
+        <Route path="export-ops" element={<ExportOps />} />
+        <Route path="hr" element={<HR />} />
+        <Route path="content" element={<Content />} />
+        <Route path="documents" element={<Documents />} />
+        <Route path="reports" element={<Reports />} />
+        <Route path="settings" element={<SettingsPage />} />
+      </Route>
+
+      {/* Customer portal */}
+      <Route path="/portal" element={<PortalLayout />}>
+        <Route index element={<PortalDashboard />} />
+        <Route path="orders" element={<PortalOrders />} />
+        <Route path="payments" element={<PortalPayments />} />
+        <Route path="documents" element={<PortalDocuments />} />
+      </Route>
+
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );

@@ -1,0 +1,102 @@
+{
+  "name": "Employee",
+  "type": "object",
+  "properties": {
+    "employee_code": {
+      "type": "string",
+      "title": "Employee Code"
+    },
+    "first_name": {
+      "type": "string",
+      "title": "First Name"
+    },
+    "last_name": {
+      "type": "string",
+      "title": "Last Name"
+    },
+    "email": {
+      "type": "string",
+      "title": "Email",
+      "format": "email"
+    },
+    "phone": {
+      "type": "string",
+      "title": "Phone"
+    },
+    "department": {
+      "type": "string",
+      "title": "Department",
+      "enum": [
+        "sales",
+        "operations",
+        "finance",
+        "hr",
+        "logistics",
+        "farm",
+        "warehouse",
+        "procurement",
+        "export",
+        "management"
+      ],
+      "default": "operations"
+    },
+    "job_title": {
+      "type": "string",
+      "title": "Job Title"
+    },
+    "employment_type": {
+      "type": "string",
+      "title": "Employment Type",
+      "enum": [
+        "permanent",
+        "contract",
+        "casual",
+        "intern"
+      ],
+      "default": "permanent"
+    },
+    "hire_date": {
+      "type": "string",
+      "title": "Hire Date",
+      "format": "date"
+    },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "enum": [
+        "active",
+        "on_leave",
+        "terminated",
+        "suspended"
+      ],
+      "default": "active"
+    },
+    "salary": {
+      "type": "number",
+      "title": "Salary",
+      "default": 0
+    },
+    "avatar_url": {
+      "type": "string",
+      "title": "Avatar URL",
+      "format": "uri"
+    },
+    "address": {
+      "type": "string",
+      "title": "Address"
+    },
+    "next_of_kin": {
+      "type": "string",
+      "title": "Next of Kin"
+    },
+    "next_of_kin_phone": {
+      "type": "string",
+      "title": "Next of Kin Phone"
+    }
+  },
+  "required": [
+    "employee_code",
+    "first_name",
+    "last_name"
+  ]
+}

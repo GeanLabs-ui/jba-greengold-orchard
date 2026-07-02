@@ -1,0 +1,113 @@
+{
+  "name": "Invoice",
+  "type": "object",
+  "properties": {
+    "invoice_number": {
+      "type": "string",
+      "title": "Invoice Number"
+    },
+    "customer_id": {
+      "type": "string",
+      "title": "Customer ID"
+    },
+    "customer_name": {
+      "type": "string",
+      "title": "Customer Name"
+    },
+    "order_id": {
+      "type": "string",
+      "title": "Order ID"
+    },
+    "invoice_date": {
+      "type": "string",
+      "title": "Invoice Date",
+      "format": "date"
+    },
+    "due_date": {
+      "type": "string",
+      "title": "Due Date",
+      "format": "date"
+    },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "enum": [
+        "unpaid",
+        "partially_paid",
+        "paid",
+        "overdue",
+        "cancelled"
+      ],
+      "default": "unpaid"
+    },
+    "line_items": {
+      "type": "array",
+      "title": "Line Items",
+      "items": {
+        "type": "object",
+        "properties": {
+          "product_id": {
+            "type": "string"
+          },
+          "product_name": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "unit_price": {
+            "type": "number"
+          },
+          "discount_amount": {
+            "type": "number"
+          },
+          "vat_amount": {
+            "type": "number"
+          },
+          "line_total": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "subtotal": {
+      "type": "number",
+      "title": "Subtotal",
+      "default": 0
+    },
+    "discount_amount": {
+      "type": "number",
+      "title": "Discount",
+      "default": 0
+    },
+    "vat_amount": {
+      "type": "number",
+      "title": "VAT",
+      "default": 0
+    },
+    "total_amount": {
+      "type": "number",
+      "title": "Total",
+      "default": 0
+    },
+    "amount_paid": {
+      "type": "number",
+      "title": "Amount Paid",
+      "default": 0
+    },
+    "balance_due": {
+      "type": "number",
+      "title": "Balance Due",
+      "default": 0
+    },
+    "notes": {
+      "type": "string",
+      "title": "Notes"
+    }
+  },
+  "required": [
+    "invoice_number",
+    "customer_id",
+    "invoice_date"
+  ]
+}

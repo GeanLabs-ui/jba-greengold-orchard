@@ -1,0 +1,64 @@
+{
+  "name": "CustomerContract",
+  "type": "object",
+  "properties": {
+    "contract_number": {
+      "type": "string",
+      "title": "Contract Number"
+    },
+    "customer_id": {
+      "type": "string",
+      "title": "Customer ID"
+    },
+    "customer_name": {
+      "type": "string",
+      "title": "Customer Name"
+    },
+    "start_date": {
+      "type": "string",
+      "title": "Start Date",
+      "format": "date"
+    },
+    "end_date": {
+      "type": "string",
+      "title": "End Date",
+      "format": "date"
+    },
+    "value_amount": {
+      "type": "number",
+      "title": "Contract Value",
+      "default": 0
+    },
+    "currency": {
+      "type": "string",
+      "title": "Currency",
+      "default": "UGX"
+    },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "enum": [
+        "draft",
+        "active",
+        "expired",
+        "terminated",
+        "pending_sign"
+      ],
+      "default": "draft"
+    },
+    "terms": {
+      "type": "string",
+      "title": "Terms & Conditions"
+    },
+    "document_url": {
+      "type": "string",
+      "title": "Document URL",
+      "format": "uri"
+    }
+  },
+  "required": [
+    "contract_number",
+    "customer_id",
+    "start_date"
+  ]
+}

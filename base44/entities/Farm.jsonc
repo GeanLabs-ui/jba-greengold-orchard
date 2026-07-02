@@ -1,0 +1,102 @@
+{
+  "name": "Farm",
+  "type": "object",
+  "properties": {
+    "farm_code": {
+      "type": "string",
+      "title": "Farm Code"
+    },
+    "name": {
+      "type": "string",
+      "title": "Farm Name"
+    },
+    "location": {
+      "type": "string",
+      "title": "Location"
+    },
+    "region": {
+      "type": "string",
+      "title": "Region"
+    },
+    "country": {
+      "type": "string",
+      "title": "Country",
+      "default": "Uganda"
+    },
+    "latitude": {
+      "type": "number",
+      "title": "Latitude"
+    },
+    "longitude": {
+      "type": "number",
+      "title": "Longitude"
+    },
+    "size_acres": {
+      "type": "number",
+      "title": "Size (Acres)"
+    },
+    "owner_name": {
+      "type": "string",
+      "title": "Owner Name"
+    },
+    "mango_varieties": {
+      "type": "array",
+      "title": "Mango Varieties",
+      "items": {
+        "type": "string"
+      }
+    },
+    "tree_count": {
+      "type": "number",
+      "title": "Tree Count",
+      "default": 0
+    },
+    "production_capacity_kg": {
+      "type": "number",
+      "title": "Production Capacity (kg)",
+      "default": 0
+    },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "enum": [
+        "active",
+        "fallow",
+        "preparation",
+        "harvesting"
+      ],
+      "default": "active"
+    },
+    "certifications": {
+      "type": "array",
+      "title": "Certifications",
+      "items": {
+        "type": "string"
+      }
+    },
+    "image_url": {
+      "type": "string",
+      "title": "Image URL",
+      "format": "uri"
+    },
+    "gallery_images": {
+      "type": "array",
+      "title": "Gallery Images",
+      "items": {
+        "type": "string"
+      }
+    },
+    "description": {
+      "type": "string",
+      "title": "Description"
+    },
+    "notes": {
+      "type": "string",
+      "title": "Notes"
+    }
+  },
+  "required": [
+    "farm_code",
+    "name"
+  ]
+}

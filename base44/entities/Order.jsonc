@@ -1,0 +1,120 @@
+{
+  "name": "Order",
+  "type": "object",
+  "properties": {
+    "order_number": {
+      "type": "string",
+      "title": "Order Number"
+    },
+    "customer_id": {
+      "type": "string",
+      "title": "Customer ID"
+    },
+    "customer_name": {
+      "type": "string",
+      "title": "Customer Name"
+    },
+    "order_date": {
+      "type": "string",
+      "title": "Order Date",
+      "format": "date-time"
+    },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "enum": [
+        "draft",
+        "confirmed",
+        "packed",
+        "dispatched",
+        "delivered",
+        "closed",
+        "cancelled"
+      ],
+      "default": "draft"
+    },
+    "source": {
+      "type": "string",
+      "title": "Source",
+      "enum": [
+        "website",
+        "portal",
+        "sales",
+        "walk_in"
+      ],
+      "default": "sales"
+    },
+    "line_items": {
+      "type": "array",
+      "title": "Line Items",
+      "items": {
+        "type": "object",
+        "properties": {
+          "product_id": {
+            "type": "string"
+          },
+          "product_name": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "unit_price": {
+            "type": "number"
+          },
+          "discount_amount": {
+            "type": "number"
+          },
+          "vat_amount": {
+            "type": "number"
+          },
+          "line_total": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "subtotal": {
+      "type": "number",
+      "title": "Subtotal",
+      "default": 0
+    },
+    "discount_amount": {
+      "type": "number",
+      "title": "Discount",
+      "default": 0
+    },
+    "vat_amount": {
+      "type": "number",
+      "title": "VAT",
+      "default": 0
+    },
+    "shipping_amount": {
+      "type": "number",
+      "title": "Shipping",
+      "default": 0
+    },
+    "total_amount": {
+      "type": "number",
+      "title": "Total",
+      "default": 0
+    },
+    "delivery_address": {
+      "type": "string",
+      "title": "Delivery Address"
+    },
+    "requested_delivery_date": {
+      "type": "string",
+      "title": "Requested Delivery Date",
+      "format": "date"
+    },
+    "notes": {
+      "type": "string",
+      "title": "Notes"
+    }
+  },
+  "required": [
+    "order_number",
+    "customer_id"
+  ]
+}

@@ -1,0 +1,107 @@
+{
+  "name": "Harvest",
+  "type": "object",
+  "properties": {
+    "harvest_code": {
+      "type": "string",
+      "title": "Harvest Code"
+    },
+    "farm_id": {
+      "type": "string",
+      "title": "Farm ID"
+    },
+    "farm_name": {
+      "type": "string",
+      "title": "Farm Name"
+    },
+    "harvest_date": {
+      "type": "string",
+      "title": "Harvest Date",
+      "format": "date"
+    },
+    "harvest_season": {
+      "type": "string",
+      "title": "Harvest Season",
+      "enum": [
+        "early",
+        "main",
+        "late"
+      ],
+      "default": "main"
+    },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "enum": [
+        "planned",
+        "in_progress",
+        "completed",
+        "cancelled"
+      ],
+      "default": "planned"
+    },
+    "total_quantity": {
+      "type": "number",
+      "title": "Total Quantity (kg)",
+      "default": 0
+    },
+    "quality_grade": {
+      "type": "string",
+      "title": "Quality Grade",
+      "enum": [
+        "premium",
+        "grade_a",
+        "grade_b",
+        "grade_c",
+        "reject"
+      ],
+      "default": "grade_a"
+    },
+    "batches": {
+      "type": "array",
+      "title": "Batches",
+      "items": {
+        "type": "object",
+        "properties": {
+          "batch_code": {
+            "type": "string"
+          },
+          "grade": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "destination_type": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "team_lead": {
+      "type": "string",
+      "title": "Team Lead"
+    },
+    "transport_details": {
+      "type": "string",
+      "title": "Transport Details"
+    },
+    "losses_kg": {
+      "type": "number",
+      "title": "Losses (kg)",
+      "default": 0
+    },
+    "notes": {
+      "type": "string",
+      "title": "Notes"
+    }
+  },
+  "required": [
+    "harvest_code",
+    "farm_id",
+    "harvest_date"
+  ]
+}

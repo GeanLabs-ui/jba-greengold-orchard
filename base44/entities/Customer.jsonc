@@ -1,0 +1,111 @@
+{
+  "name": "Customer",
+  "type": "object",
+  "properties": {
+    "customer_type": {
+      "type": "string",
+      "title": "Customer Type",
+      "enum": [
+        "local",
+        "corporate",
+        "export",
+        "walk_in"
+      ],
+      "default": "local"
+    },
+    "code": {
+      "type": "string",
+      "title": "Customer Code"
+    },
+    "first_name": {
+      "type": "string",
+      "title": "First Name"
+    },
+    "last_name": {
+      "type": "string",
+      "title": "Last Name"
+    },
+    "company_name": {
+      "type": "string",
+      "title": "Company Name"
+    },
+    "email": {
+      "type": "string",
+      "title": "Email",
+      "format": "email"
+    },
+    "phone": {
+      "type": "string",
+      "title": "Phone"
+    },
+    "country": {
+      "type": "string",
+      "title": "Country",
+      "default": "Uganda"
+    },
+    "region": {
+      "type": "string",
+      "title": "Region"
+    },
+    "city": {
+      "type": "string",
+      "title": "City"
+    },
+    "address_line1": {
+      "type": "string",
+      "title": "Address Line 1"
+    },
+    "address_line2": {
+      "type": "string",
+      "title": "Address Line 2"
+    },
+    "tax_id": {
+      "type": "string",
+      "title": "Tax ID"
+    },
+    "vat_number": {
+      "type": "string",
+      "title": "VAT Number"
+    },
+    "credit_limit": {
+      "type": "number",
+      "title": "Credit Limit",
+      "default": 0
+    },
+    "balance": {
+      "type": "number",
+      "title": "Balance",
+      "default": 0
+    },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "enum": [
+        "active",
+        "inactive",
+        "blacklisted"
+      ],
+      "default": "active"
+    },
+    "notes": {
+      "type": "string",
+      "title": "Notes"
+    },
+    "preferred_channel": {
+      "type": "string",
+      "title": "Preferred Channel",
+      "enum": [
+        "email",
+        "sms",
+        "whatsapp",
+        "phone"
+      ],
+      "default": "email"
+    }
+  },
+  "required": [
+    "customer_type",
+    "code",
+    "first_name"
+  ]
+}

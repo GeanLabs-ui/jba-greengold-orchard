@@ -1,0 +1,72 @@
+{
+  "name": "StockMovement",
+  "type": "object",
+  "properties": {
+    "movement_code": {
+      "type": "string",
+      "title": "Movement Code"
+    },
+    "movement_type": {
+      "type": "string",
+      "title": "Movement Type",
+      "enum": [
+        "in",
+        "out",
+        "transfer",
+        "adjustment",
+        "reservation"
+      ],
+      "default": "in"
+    },
+    "warehouse_id": {
+      "type": "string",
+      "title": "Warehouse ID"
+    },
+    "warehouse_name": {
+      "type": "string",
+      "title": "Warehouse Name"
+    },
+    "product_id": {
+      "type": "string",
+      "title": "Product ID"
+    },
+    "product_name": {
+      "type": "string",
+      "title": "Product Name"
+    },
+    "quantity": {
+      "type": "number",
+      "title": "Quantity",
+      "default": 0
+    },
+    "unit_of_measure": {
+      "type": "string",
+      "title": "Unit",
+      "default": "kg"
+    },
+    "unit_cost": {
+      "type": "number",
+      "title": "Unit Cost",
+      "default": 0
+    },
+    "source_document_type": {
+      "type": "string",
+      "title": "Source Document Type"
+    },
+    "source_document_id": {
+      "type": "string",
+      "title": "Source Document ID"
+    },
+    "remarks": {
+      "type": "string",
+      "title": "Remarks"
+    }
+  },
+  "required": [
+    "movement_code",
+    "movement_type",
+    "warehouse_id",
+    "product_id",
+    "quantity"
+  ]
+}

@@ -1,0 +1,120 @@
+{
+  "name": "ExportShipment",
+  "type": "object",
+  "properties": {
+    "export_code": {
+      "type": "string",
+      "title": "Export Code"
+    },
+    "customer_id": {
+      "type": "string",
+      "title": "Customer ID"
+    },
+    "customer_name": {
+      "type": "string",
+      "title": "Customer Name"
+    },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "enum": [
+        "draft",
+        "preparing",
+        "in_transit",
+        "delivered",
+        "delayed",
+        "cancelled"
+      ],
+      "default": "draft"
+    },
+    "shipment_date": {
+      "type": "string",
+      "title": "Shipment Date",
+      "format": "date"
+    },
+    "destination_country": {
+      "type": "string",
+      "title": "Destination Country"
+    },
+    "incoterm": {
+      "type": "string",
+      "title": "Incoterm",
+      "enum": [
+        "FOB",
+        "CIF",
+        "EXW",
+        "CFR",
+        "DAP"
+      ],
+      "default": "FOB"
+    },
+    "container_number": {
+      "type": "string",
+      "title": "Container Number"
+    },
+    "vessel_name": {
+      "type": "string",
+      "title": "Vessel Name"
+    },
+    "port_of_loading": {
+      "type": "string",
+      "title": "Port of Loading"
+    },
+    "port_of_discharge": {
+      "type": "string",
+      "title": "Port of Discharge"
+    },
+    "line_items": {
+      "type": "array",
+      "title": "Line Items",
+      "items": {
+        "type": "object",
+        "properties": {
+          "product_id": {
+            "type": "string"
+          },
+          "product_name": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "unit_price": {
+            "type": "number"
+          },
+          "line_total": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "total_amount": {
+      "type": "number",
+      "title": "Total Amount",
+      "default": 0
+    },
+    "compliance_documents": {
+      "type": "array",
+      "title": "Compliance Documents",
+      "items": {
+        "type": "string"
+      }
+    },
+    "certifications_required": {
+      "type": "array",
+      "title": "Certifications Required",
+      "items": {
+        "type": "string"
+      }
+    },
+    "notes": {
+      "type": "string",
+      "title": "Notes"
+    }
+  },
+  "required": [
+    "export_code",
+    "customer_id",
+    "destination_country"
+  ]
+}

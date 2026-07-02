@@ -1,0 +1,68 @@
+{
+  "name": "ContentPage",
+  "type": "object",
+  "properties": {
+    "page_type": {
+      "type": "string",
+      "title": "Page Type",
+      "enum": [
+        "home",
+        "about",
+        "products",
+        "farms",
+        "sustainability",
+        "export",
+        "local_supply",
+        "media",
+        "news",
+        "careers",
+        "contact"
+      ],
+      "default": "about"
+    },
+    "slug": {
+      "type": "string",
+      "title": "Slug"
+    },
+    "title": {
+      "type": "string",
+      "title": "Title"
+    },
+    "summary": {
+      "type": "string",
+      "title": "Summary"
+    },
+    "body": {
+      "type": "string",
+      "title": "Body Content"
+    },
+    "hero_image": {
+      "type": "string",
+      "title": "Hero Image URL",
+      "format": "uri"
+    },
+    "seo_title": {
+      "type": "string",
+      "title": "SEO Title"
+    },
+    "seo_description": {
+      "type": "string",
+      "title": "SEO Description"
+    },
+    "is_published": {
+      "type": "boolean",
+      "title": "Published",
+      "default": true
+    },
+    "published_at": {
+      "type": "string",
+      "title": "Published At",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "page_type",
+    "slug",
+    "title"
+  ]
+}

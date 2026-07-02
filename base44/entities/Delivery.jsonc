@@ -1,0 +1,82 @@
+{
+  "name": "Delivery",
+  "type": "object",
+  "properties": {
+    "delivery_code": {
+      "type": "string",
+      "title": "Delivery Code"
+    },
+    "order_id": {
+      "type": "string",
+      "title": "Order ID"
+    },
+    "order_number": {
+      "type": "string",
+      "title": "Order Number"
+    },
+    "customer_id": {
+      "type": "string",
+      "title": "Customer ID"
+    },
+    "customer_name": {
+      "type": "string",
+      "title": "Customer Name"
+    },
+    "vehicle_id": {
+      "type": "string",
+      "title": "Vehicle ID"
+    },
+    "vehicle_plate": {
+      "type": "string",
+      "title": "Vehicle Plate"
+    },
+    "driver_name": {
+      "type": "string",
+      "title": "Driver Name"
+    },
+    "dispatch_date": {
+      "type": "string",
+      "title": "Dispatch Date",
+      "format": "date-time"
+    },
+    "delivery_date": {
+      "type": "string",
+      "title": "Delivery Date",
+      "format": "date-time"
+    },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "enum": [
+        "scheduled",
+        "in_transit",
+        "delivered",
+        "failed",
+        "delayed"
+      ],
+      "default": "scheduled"
+    },
+    "destination_address": {
+      "type": "string",
+      "title": "Destination Address"
+    },
+    "route": {
+      "type": "string",
+      "title": "Route"
+    },
+    "delivery_notes": {
+      "type": "string",
+      "title": "Delivery Notes"
+    },
+    "proof_of_delivery": {
+      "type": "string",
+      "title": "Proof of Delivery URL",
+      "format": "uri"
+    }
+  },
+  "required": [
+    "delivery_code",
+    "order_id",
+    "destination_address"
+  ]
+}
