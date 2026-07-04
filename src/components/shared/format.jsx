@@ -1,7 +1,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 
-export function formatCurrency(amount, currency = 'UGX') {
+export function formatCurrency(amount, currency = 'GHS') {
   if (amount === null || amount === undefined) return `${currency} 0`;
   const formatted = Number(amount).toLocaleString('en-US', { maximumFractionDigits: 0 });
   return `${currency} ${formatted}`;

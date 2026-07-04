@@ -7,7 +7,7 @@ export default function About() {
       <section className="relative overflow-hidden bg-gradient-to-br from-emerald-900 to-emerald-700 py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
-            <h1 className="font-heading text-4xl font-bold tracking-tight text-white md:text-5xl">About MangoOps</h1>
+            <h1 className="font-heading text-4xl font-bold tracking-tight text-white md:text-5xl">About JBA GreenGold</h1>
             <p className="mt-4 text-lg text-emerald-100">
               A leading mango business combining sustainable farming, modern operations, and global export capabilities —
               all managed from a single centralized platform.
@@ -24,7 +24,7 @@ export default function About() {
               <h2 className="mt-2 font-heading text-3xl font-bold tracking-tight">From Small Farms to Global Markets</h2>
               <div className="mt-4 space-y-4 text-muted-foreground">
                 <p>
-                  Founded with a vision to transform mango farming in Uganda, MangoOps started as a single farm
+                  Founded with a vision to transform mango farming in Ghana, JBA GreenGold started as a single farm
                   operation and has grown into a comprehensive mango business serving local, corporate, and export markets.
                 </p>
                 <p>

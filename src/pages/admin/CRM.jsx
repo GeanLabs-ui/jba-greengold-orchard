@@ -20,7 +20,7 @@ export default function CRM() {
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ customer_type: 'local', code: '', first_name: '', last_name: '', company_name: '', email: '', phone: '', country: 'Uganda', region: '', city: '', address_line1: '', notes: '' });
+  const [form, setForm] = useState({ customer_type: 'local', code: '', first_name: '', last_name: '', company_name: '', email: '', phone: '', country: 'Ghana', region: '', city: '', address_line1: '', notes: '' });
 
   const load = () => {
     base44.entities.Customer.list('-created_date')
@@ -45,7 +45,7 @@ export default function CRM() {
       });
       toast({ title: 'Customer created successfully' });
       setOpen(false);
-      setForm({ customer_type: 'local', code: '', first_name: '', last_name: '', company_name: '', email: '', phone: '', country: 'Uganda', region: '', city: '', address_line1: '', notes: '' });
+      setForm({ customer_type: 'local', code: '', first_name: '', last_name: '', company_name: '', email: '', phone: '', country: 'Ghana', region: '', city: '', address_line1: '', notes: '' });
       load();
     } catch {
       toast({ title: 'Error creating customer', variant: 'destructive' });

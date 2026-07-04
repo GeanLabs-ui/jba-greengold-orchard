@@ -42,7 +42,7 @@ export default function LocalSupply() {
                 {[
                   { icon: Clock, title: 'Fresh Daily', desc: 'Harvested and delivered within 24–48 hours for maximum freshness.' },
                   { icon: Package, title: 'Flexible Quantities', desc: 'From single boxes to truckloads — we serve all order sizes.' },
-                  { icon: Truck, title: 'Free Delivery', desc: 'Free delivery on orders above UGX 500,000 within Kampala and surrounding areas.' },
+                  { icon: Truck, title: 'Free Delivery', desc: 'Free delivery on orders above GHS 500,000 within Accra and surrounding areas.' },
                   { icon: Store, title: 'Quality Guarantee', desc: 'Every delivery is quality-checked. Not satisfied? We replace it free.' },
                 ].map((item) => (
                   <li key={item.title} className="flex gap-4">

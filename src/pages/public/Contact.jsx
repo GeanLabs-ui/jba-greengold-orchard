@@ -97,9 +97,9 @@ export default function Contact() {
               <p className="mt-1 text-sm text-muted-foreground">Reach us directly through any of these channels.</p>
               <div className="mt-6 space-y-4">
                 {[
-                  { icon: MapPin, title: 'Office Location', value: 'Plot 123, Industrial Area, Kampala, Uganda' },
-                  { icon: Phone, title: 'Phone', value: '+256 700 000 000' },
-                  { icon: Mail, title: 'Email', value: 'info@mangoops.com' },
+                  { icon: MapPin, title: 'Office Location', value: 'Plot 123, Industrial Area, Accra, Ghana' },
+                  { icon: Phone, title: 'Phone', value: '+1 (202) 509-4965' },
+                  { icon: Mail, title: 'Email', value: 'info@jbagreengold.com' },
                   { icon: Clock, title: 'Business Hours', value: 'Mon–Fri: 8:00 AM – 5:00 PM' },
                 ].map((item) => (
                   <div key={item.title} className="flex items-start gap-4 rounded-xl border border-border bg-card p-4">

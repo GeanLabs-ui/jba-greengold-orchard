@@ -118,7 +118,7 @@ export default function Home() {
                     <h3 className="mt-1 font-heading text-lg font-semibold">{product.name}</h3>
                     <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{product.description || product.variety}</p>
                     <div className="mt-3 flex items-center justify-between">
-                      <span className="font-heading text-lg font-bold text-primary">UGX {product.price?.toLocaleString()}</span>
+                      <span className="font-heading text-lg font-bold text-primary">GHS {product.price?.toLocaleString()}</span>
                       <span className="text-xs text-muted-foreground">per {product.unit_of_measure}</span>
                     </div>
                   </div>

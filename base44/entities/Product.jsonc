@@ -52,7 +52,7 @@
     "currency": {
       "type": "string",
       "title": "Currency",
-      "default": "UGX"
+      "default": "GHS"
     },
     "vat_rate": {
       "type": "number",

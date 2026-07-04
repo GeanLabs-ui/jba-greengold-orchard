@@ -56,7 +56,7 @@ export default function Finance() {
       </div>
 
       <div className="mt-6 rounded-xl border border-border bg-card p-5 shadow-sm">
-        <h3 className="font-heading font-semibold">Revenue vs Expenses (UGX M)</h3>
+        <h3 className="font-heading font-semibold">Revenue vs Expenses (GHS M)</h3>
         <ResponsiveContainer width="100%" height={280} className="mt-4">
           <BarChart data={monthlyData}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />

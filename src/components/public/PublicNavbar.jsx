@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, Leaf } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import BrandLogo from '@/components/shared/BrandLogo';
 
 const navLinks = [
   { label: 'Home', path: '/' },
@@ -26,10 +27,7 @@ export default function PublicNavbar() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg gradient-mango">
-              <Leaf className="h-5 w-5 text-white" />
-            </div>
-            <span className="font-heading text-xl font-bold tracking-tight">MangoOps</span>
+            <BrandLogo />
           </Link>
 
           <nav className="hidden items-center gap-0.5 lg:flex">

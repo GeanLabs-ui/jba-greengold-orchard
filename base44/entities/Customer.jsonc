@@ -41,7 +41,7 @@
     "country": {
       "type": "string",
       "title": "Country",
-      "default": "Uganda"
+      "default": "Ghana"
     },
     "region": {
       "type": "string",

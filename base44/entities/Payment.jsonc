@@ -47,7 +47,7 @@
     "currency": {
       "type": "string",
       "title": "Currency",
-      "default": "UGX"
+      "default": "GHS"
     },
     "status": {
       "type": "string",

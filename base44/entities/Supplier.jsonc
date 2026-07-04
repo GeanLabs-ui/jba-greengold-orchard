@@ -22,7 +22,7 @@
     "country": {
       "type": "string",
       "title": "Country",
-      "default": "Uganda"
+      "default": "Ghana"
     },
     "address": {
       "type": "string",

@@ -36,7 +36,7 @@
     "currency": {
       "type": "string",
       "title": "Currency",
-      "default": "UGX"
+      "default": "GHS"
     },
     "vendor_name": {
       "type": "string",

@@ -4,12 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 
 const openRoles = [
-  { title: 'Farm Manager', dept: 'Farm Operations', location: 'Mukono', type: 'Full-time' },
-  { title: 'Export Sales Executive', dept: 'Sales & Marketing', location: 'Kampala', type: 'Full-time' },
-  { title: 'Quality Control Officer', dept: 'Warehouse', location: 'Kampala', type: 'Full-time' },
-  { title: 'Logistics Coordinator', dept: 'Logistics', location: 'Kampala', type: 'Full-time' },
-  { title: 'Harvest Team Lead', dept: 'Farm Operations', location: 'Mukono', type: 'Seasonal' },
-  { title: 'Accountant', dept: 'Finance', location: 'Kampala', type: 'Full-time' },
+  { title: 'Farm Manager', dept: 'Farm Operations', location: 'Kumasi', type: 'Full-time' },
+  { title: 'Export Sales Executive', dept: 'Sales & Marketing', location: 'Accra', type: 'Full-time' },
+  { title: 'Quality Control Officer', dept: 'Warehouse', location: 'Accra', type: 'Full-time' },
+  { title: 'Logistics Coordinator', dept: 'Logistics', location: 'Accra', type: 'Full-time' },
+  { title: 'Harvest Team Lead', dept: 'Farm Operations', location: 'Kumasi', type: 'Seasonal' },
+  { title: 'Accountant', dept: 'Finance', location: 'Accra', type: 'Full-time' },
 ];
 
 export default function Careers() {

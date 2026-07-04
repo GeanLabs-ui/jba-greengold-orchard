@@ -21,7 +21,7 @@
     "country": {
       "type": "string",
       "title": "Country",
-      "default": "Uganda"
+      "default": "Ghana"
     },
     "latitude": {
       "type": "number",
