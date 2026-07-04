@@ -26,11 +26,12 @@ export default function Home() {
       <section className="relative overflow-hidden bg-gradient-to-br from-emerald-900 via-emerald-800 to-amber-800">
         <div className="absolute inset-0 overflow-hidden">
           <iframe
-            src="https://www.youtube.com/embed/Qe-JH3_3yNw?autoplay=1&mute=1&loop=1&playlist=Qe-JH3_3yNw&controls=0&showinfo=0&modestbranding=1&rel=0&playsinline=1&iv_load_policy=3"
+            src="https://www.youtube-nocookie.com/embed/Qe-JH3_3yNw?autoplay=1&mute=1&loop=1&playlist=Qe-JH3_3yNw&controls=0&showinfo=0&modestbranding=1&rel=0&playsinline=1&iv_load_policy=3&disablekb=1&fs=0&cc_load_policy=0"
             title="Mango farm background video"
-            allow="autoplay; encrypted-media"
-            className="pointer-events-none absolute left-1/2 top-1/2 h-[180%] w-[180%] -translate-x-1/2 -translate-y-1/2 scale-125 object-cover opacity-40"
+            allow="autoplay; encrypted-media; picture-in-picture"
+            className="pointer-events-none absolute left-1/2 top-1/2 h-[56.25vw] w-[100vw] min-h-full min-w-full -translate-x-1/2 -translate-y-1/2 opacity-40"
             frameBorder="0"
+            allowFullScreen={false}
           />
           <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/60 via-emerald-800/50 to-amber-800/60" />
         </div>
