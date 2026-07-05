@@ -36,7 +36,7 @@ export default function PortalLayout() {
     <div className="flex min-h-screen bg-muted/30">
       <aside className="hidden w-64 shrink-0 flex-col border-r border-border bg-card lg:flex">
         <div className="flex h-16 items-center gap-2 border-b border-border px-4">
-          <BrandLogo className="h-12" />
+          <BrandLogo className="h-16" />
         </div>
         <div className="flex-1"><SidebarContent /></div>
         <div className="border-t border-border p-3">
@@ -50,7 +50,7 @@ export default function PortalLayout() {
         <header className="flex h-16 items-center gap-3 border-b border-border bg-card px-4 md:px-6">
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild><button className="lg:hidden"><Menu className="h-5 w-5" /></button></SheetTrigger>
-            <SheetContent side="left" className="w-64 p-0"><div className="flex h-16 items-center gap-2 border-b border-border px-4"><BrandLogo className="h-12" /></div><SidebarContent /></SheetContent>
+            <SheetContent side="left" className="w-64 p-0"><div className="flex h-16 items-center gap-2 border-b border-border px-4"><BrandLogo className="h-16" /></div><SidebarContent /></SheetContent>
           </Sheet>
           <h1 className="font-heading text-lg font-semibold">My Account</h1>
           <div className="ml-auto flex items-center gap-3">
