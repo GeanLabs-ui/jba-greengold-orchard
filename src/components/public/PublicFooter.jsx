@@ -9,7 +9,7 @@ export default function PublicFooter() {
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="grid gap-8 md:grid-cols-4">
           <div>
-            <BrandLogo className="h-12" />
+            <BrandLogo className="h-16" />
             <p className="mt-3 text-sm text-slate-400">
               Growing today, sustaining tomorrow — centralized mango business management from farm to export.
             </p>

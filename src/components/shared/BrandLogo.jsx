@@ -8,7 +8,7 @@ export default function BrandLogo({ className }) {
     <img
       src={LOGO_URL}
       alt="JBA GreenGold Orchard"
-      className={cn('h-10 w-auto rounded-lg object-contain', className)}
+      className={cn('h-14 w-auto object-contain', className)}
     />
   );
 }
