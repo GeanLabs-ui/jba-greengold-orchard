@@ -2,6 +2,7 @@ import React from 'react';
 import { Globe2, Ship, FileCheck, Package, Truck, ArrowRight, Plane, Container, Leaf } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
+import WorldMap from '@/components/export/WorldMap';
 
 const HEADER_IMG = 'https://media.base44.com/images/public/6a46e07bc7a700bfb99375f8/e9dd55d5c_image.png';
 const PACKAGING_IMAGES = [
@@ -32,15 +33,11 @@ const EXPORT_FLOW = [
   { icon: Globe2, label: 'Destination', desc: 'Delivered to global markets' },
 ];
 
-const MARKETS = [
-  { country: 'United Kingdom', flag: '🇬🇧' },
-  { country: 'Netherlands', flag: '🇳🇱' },
-  { country: 'UAE', flag: '🇦🇪' },
-  { country: 'Saudi Arabia', flag: '🇸🇦' },
-  { country: 'Germany', flag: '🇩🇪' },
-  { country: 'France', flag: '🇫🇷' },
-  { country: 'Qatar', flag: '🇶🇦' },
-  { country: 'China', flag: '🇨🇳' },
+const SERVICES = [
+  { icon: Ship, title: 'Sea & Air Freight', desc: 'Flexible shipping via reefer containers and air freight for time-sensitive deliveries.' },
+  { icon: FileCheck, title: 'Full Compliance', desc: 'Phytosanitary certificates, Global GAP, HACCP, and destination-specific compliance.' },
+  { icon: Package, title: 'Quality Packaging', desc: 'Modified atmosphere packaging, temperature monitoring, and grade-specific sorting.' },
+  { icon: Truck, title: 'Cold Chain Logistics', desc: 'End-to-end temperature-controlled supply chain from farm to destination port.' },
 ];
 
 export default function Export() {
@@ -73,16 +70,41 @@ export default function Export() {
         </div>
       </section>
 
-      {/* Export flow with movement background */}
-      <section className="relative overflow-hidden py-16 lg:py-24">
-        {/* Subtle world-map / movement pattern */}
+      {/* Packaging showcase — first */}
+      <section className="py-16 lg:py-24">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h2 className="font-heading text-3xl font-bold tracking-tight">Export-Ready Packaging</h2>
+            <p className="mt-2 text-muted-foreground">Our products travel the world in packaging designed for quality, compliance, and shelf appeal.</p>
+          </div>
+          <div className="mt-12 grid gap-8 md:grid-cols-3">
+            {PACKAGING_IMAGES.map((pkg) => (
+              <div key={pkg.title} className="group overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-shadow hover:shadow-lg">
+                <div className="aspect-[4/3] overflow-hidden bg-muted/20">
+                  <img
+                    src={pkg.url}
+                    alt={pkg.title}
+                    className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-105"
+                  />
+                </div>
+                <div className="p-5">
+                  <h3 className="font-heading text-lg font-semibold">{pkg.title}</h3>
+                  <p className="mt-1.5 text-sm text-muted-foreground">{pkg.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Export journey — second */}
+      <section className="relative overflow-hidden bg-muted/30 py-16 lg:py-24">
         <div
           className="absolute inset-0 opacity-[0.04]"
           style={{
             backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='600' viewBox='0 0 1200 600'%3E%3Cdefs%3E%3Cpattern id='dots' x='0' y='0' width='24' height='24' patternUnits='userSpaceOnUse'%3E%3Ccircle cx='2' cy='2' r='1.5' fill='%232D5A27'/%3E%3C/pattern%3E%3C/pattern%3E%3Crect width='1200' height='600' fill='url(%23dots)'/%3E%3C/svg%3E")`,
           }}
         />
-        {/* Animated flow lines */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute left-0 top-1/4 h-px w-full bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
           <div className="absolute left-0 top-2/3 h-px w-full bg-gradient-to-r from-transparent via-accent/20 to-transparent" />
@@ -112,8 +134,8 @@ export default function Export() {
         </div>
       </section>
 
-      {/* Global reach + markets */}
-      <section className="bg-muted/30 py-16 lg:py-24">
+      {/* Global reach with world map */}
+      <section className="py-16 lg:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid gap-10 lg:grid-cols-2 lg:items-center">
             <div>
@@ -123,12 +145,7 @@ export default function Export() {
                 Our export operations are built on certified quality, reliable logistics, and complete documentation.
               </p>
               <div className="mt-6 space-y-4">
-                {[
-                  { icon: Ship, title: 'Sea & Air Freight', desc: 'Flexible shipping via reefer containers and air freight for time-sensitive deliveries.' },
-                  { icon: FileCheck, title: 'Full Compliance', desc: 'Phytosanitary certificates, Global GAP, HACCP, and destination-specific compliance.' },
-                  { icon: Package, title: 'Quality Packaging', desc: 'Modified atmosphere packaging, temperature monitoring, and grade-specific sorting.' },
-                  { icon: Truck, title: 'Cold Chain Logistics', desc: 'End-to-end temperature-controlled supply chain from farm to destination port.' },
-                ].map((item) => (
+                {SERVICES.map((item) => (
                   <div key={item.title} className="flex gap-4">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
                       <item.icon className="h-5 w-5 text-primary" />
@@ -141,41 +158,7 @@ export default function Export() {
                 ))}
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-              {MARKETS.map((m) => (
-                <div key={m.country} className="rounded-xl border border-border bg-card p-5 text-center shadow-sm transition-shadow hover:shadow-md">
-                  <p className="text-4xl">{m.flag}</p>
-                  <p className="mt-2 text-sm font-medium">{m.country}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Packaging showcase */}
-      <section className="py-16 lg:py-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h2 className="font-heading text-3xl font-bold tracking-tight">Export-Ready Packaging</h2>
-            <p className="mt-2 text-muted-foreground">Our products travel the world in packaging designed for quality, compliance, and shelf appeal.</p>
-          </div>
-          <div className="mt-12 grid gap-8 md:grid-cols-3">
-            {PACKAGING_IMAGES.map((pkg) => (
-              <div key={pkg.title} className="group overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-shadow hover:shadow-lg">
-                <div className="aspect-[3/4] overflow-hidden bg-muted/20">
-                  <img
-                    src={pkg.url}
-                    alt={pkg.title}
-                    className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-105"
-                  />
-                </div>
-                <div className="p-6">
-                  <h3 className="font-heading text-lg font-semibold">{pkg.title}</h3>
-                  <p className="mt-2 text-sm text-muted-foreground">{pkg.desc}</p>
-                </div>
-              </div>
-            ))}
+            <WorldMap />
           </div>
         </div>
       </section>
