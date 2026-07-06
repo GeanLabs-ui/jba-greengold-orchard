@@ -4,11 +4,17 @@ import { Leaf, Target, Eye, Award, Users, Globe2 } from 'lucide-react';
 export default function About() {
   return (
     <div>
-      <section className="relative overflow-hidden bg-gradient-to-br from-emerald-900 to-emerald-700 py-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <section className="relative overflow-hidden py-20">
+        <img
+          src="https://media.base44.com/images/public/6a46e07bc7a700bfb99375f8/251809c87_image.png"
+          alt="JBA GreenGold mango orchard"
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-black/30" />
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
             <h1 className="font-heading text-4xl font-bold tracking-tight text-white md:text-5xl">About JBA GreenGold</h1>
-            <p className="mt-4 text-lg text-emerald-100">
+            <p className="mt-4 text-lg text-white/90">
               A leading mango business combining sustainable farming, modern operations, and global export capabilities —
               all managed from a single centralized platform.
             </p>
