@@ -1,6 +1,13 @@
 import React from 'react';
 
-export default function DataTable({ items, columns, emptyMessage = 'No records found.' }) {
+export default function DataTable({
+  items,
+  columns,
+  emptyMessage = 'No records found.',
+  onRowClick,
+  selectedId,
+  rowActions,
+}) {
   if (!items || items.length === 0) {
     return (
       <div className="rounded-xl border border-border bg-card p-12 text-center text-muted-foreground">
@@ -19,11 +26,16 @@ export default function DataTable({ items, columns, emptyMessage = 'No records f
                 {col.label}
               </th>
             ))}
+            {rowActions && <th className="px-4 py-3 text-right font-semibold text-muted-foreground">Actions</th>}
           </tr>
         </thead>
         <tbody className="divide-y divide-border">
           {items.map((item, i) => (
-            <tr key={item.id || i} className="hover:bg-muted/30 transition-colors">
+            <tr
+              key={item.id || i}
+              className={`transition-colors hover:bg-muted/30 ${onRowClick ? 'cursor-pointer' : ''} ${selectedId === item.id ? 'bg-primary/10' : ''}`}
+              onClick={() => onRowClick?.(item)}
+            >
               {columns.map((col) => {
                 const val = item[col.key];
                 return (
@@ -32,6 +44,11 @@ export default function DataTable({ items, columns, emptyMessage = 'No records f
                   </td>
                 );
               })}
+              {rowActions && (
+                <td className="px-4 py-3 text-right" onClick={(event) => event.stopPropagation()}>
+                  <div className="flex justify-end gap-2">{rowActions(item)}</div>
+                </td>
+              )}
             </tr>
           ))}
         </tbody>

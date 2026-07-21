@@ -1,11 +1,29 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, FileText, Receipt, CreditCard, RotateCcw } from 'lucide-react';
+import { FileText, Receipt, CreditCard, RotateCcw } from 'lucide-react';
 import PageHeader from '@/components/shared/PageHeader';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { formatCurrency, formatDate } from '@/components/shared/format';
-import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import AdminCreateDialog from '@/components/admin/AdminCreateDialog';
 import { base44 } from '@/api/base44Client';
+
+const invoiceFields = [
+  { name: 'customer_name', label: 'Customer', required: true },
+  { name: 'invoice_date', label: 'Invoice Date', type: 'date', required: true },
+  { name: 'due_date', label: 'Due Date', type: 'date' },
+  { name: 'total_amount', label: 'Total Amount', type: 'number', required: true },
+  {
+    name: 'status',
+    label: 'Status',
+    type: 'select',
+    defaultValue: 'unpaid',
+    options: [
+      { value: 'unpaid', label: 'Unpaid' },
+      { value: 'partial', label: 'Partial' },
+      { value: 'paid', label: 'Paid' },
+    ],
+  },
+];
 
 export default function Sales() {
   const [invoices, setInvoices] = useState([]);
@@ -13,12 +31,20 @@ export default function Sales() {
   const [payments, setPayments] = useState([]);
   const [returns, setReturns] = useState([]);
 
-  useEffect(() => {
+  const load = () => {
     base44.entities.Invoice.list('-invoice_date', 50).then((d) => setInvoices(d || [])).catch(() => {});
     base44.entities.Quotation.list('-quote_date', 50).then((d) => setQuotations(d || [])).catch(() => {});
     base44.entities.Payment.list('-payment_date', 50).then((d) => setPayments(d || [])).catch(() => {});
     base44.entities.Return.list('-return_date', 50).then((d) => setReturns(d || [])).catch(() => {});
-  }, []);
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const createInvoice = (payload) => base44.entities.Invoice.create({
+    ...payload,
+    invoice_number: `INV-${Date.now().toString().slice(-6)}`,
+    balance_due: payload.status === 'paid' ? 0 : payload.total_amount,
+  });
 
   const totalOutstanding = invoices.filter((i) => i.status !== 'paid').reduce((sum, i) => sum + (i.balance_due || 0), 0);
   const totalPaid = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
@@ -26,7 +52,15 @@ export default function Sales() {
   return (
     <div>
       <PageHeader title="Sales Management" description="Quotations, invoices, payments, receipts, and returns.">
-        <Button className="gradient-mango text-white"><Plus className="mr-2 h-4 w-4" /> New Invoice</Button>
+        <AdminCreateDialog
+          title="New Invoice"
+          description="Create an invoice and add it to sales tracking."
+          buttonLabel="New Invoice"
+          fields={invoiceFields}
+          onCreate={createInvoice}
+          onCreated={load}
+          submitLabel="Create Invoice"
+        />
       </PageHeader>
 
       <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

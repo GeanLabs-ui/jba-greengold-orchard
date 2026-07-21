@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Leaf, LayoutDashboard, ShoppingCart, CreditCard, FileText, LogOut, Menu, Bell } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, CreditCard, FileText, LogOut, Menu, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import BrandLogo from '@/components/shared/BrandLogo';

@@ -1,0 +1,37 @@
+{
+  "name": "FarmTask",
+  "type": "object",
+  "properties": {
+    "task_code": { "type": "string", "title": "Task Code" },
+    "farm_id": { "type": "string", "title": "Farm ID" },
+    "farm_name": { "type": "string", "title": "Farm Name" },
+    "block_id": { "type": "string", "title": "Block ID" },
+    "block_name": { "type": "string", "title": "Block Name" },
+    "title": { "type": "string", "title": "Task Title" },
+    "category": {
+      "type": "string",
+      "title": "Category",
+      "enum": ["irrigation", "planting", "harvest", "pest_control", "fertilizer", "maintenance", "general"],
+      "default": "general"
+    },
+    "priority": {
+      "type": "string",
+      "title": "Priority",
+      "enum": ["low", "medium", "high", "urgent"],
+      "default": "medium"
+    },
+    "assigned_to_name": { "type": "string", "title": "Assigned To" },
+    "due_date": { "type": "string", "title": "Due Date", "format": "date" },
+    "recurrence_rule": { "type": "string", "title": "Recurrence Rule" },
+    "weather_trigger": { "type": "string", "title": "Weather Trigger" },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "enum": ["open", "in_progress", "completed", "blocked", "cancelled"],
+      "default": "open"
+    },
+    "progress_percent": { "type": "number", "title": "Progress Percent", "default": 0 },
+    "notes": { "type": "string", "title": "Notes" }
+  },
+  "required": ["task_code", "farm_id", "title"]
+}

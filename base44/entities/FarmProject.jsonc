@@ -1,0 +1,25 @@
+{
+  "name": "FarmProject",
+  "type": "object",
+  "properties": {
+    "project_code": { "type": "string", "title": "Project Code" },
+    "farm_id": { "type": "string", "title": "Farm ID" },
+    "farm_name": { "type": "string", "title": "Farm Name" },
+    "title": { "type": "string", "title": "Title" },
+    "project_type": { "type": "string", "title": "Project Type", "default": "infrastructure" },
+    "start_date": { "type": "string", "title": "Start Date", "format": "date" },
+    "due_date": { "type": "string", "title": "Due Date", "format": "date" },
+    "budget_amount": { "type": "number", "title": "Budget Amount", "default": 0 },
+    "actual_cost": { "type": "number", "title": "Actual Cost", "default": 0 },
+    "progress_percent": { "type": "number", "title": "Progress Percent", "default": 0 },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "enum": ["planned", "active", "blocked", "completed", "cancelled"],
+      "default": "planned"
+    },
+    "owner_name": { "type": "string", "title": "Owner" },
+    "notes": { "type": "string", "title": "Notes" }
+  },
+  "required": ["project_code", "farm_id", "title"]
+}

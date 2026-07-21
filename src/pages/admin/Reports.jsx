@@ -3,6 +3,7 @@ import { FileText, BarChart3, FileSpreadsheet, FileBarChart, TrendingUp, Package
 import PageHeader from '@/components/shared/PageHeader';
 import { Button } from '@/components/ui/button';
 import MetricCard from '@/components/shared/MetricCard';
+import { useToast } from '@/components/ui/use-toast';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, LineChart, Line } from 'recharts';
 
 const salesData = [
@@ -24,11 +25,47 @@ const reportTypes = [
 ];
 
 export default function Reports() {
+  const { toast } = useToast();
+
+  const downloadExcel = (reportTitle = 'Business Report') => {
+    const rows = [
+      ['Report', reportTitle],
+      ['Avg. Order Value', 'UGX 1.2M'],
+      ['On-time Delivery', '94%'],
+      ['Customer Retention', '87%'],
+      ['Stock Turnover', '3.2x'],
+    ];
+    const blob = new Blob([rows.map((row) => row.join(',')).join('\n')], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${reportTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    toast({ title: `${reportTitle} spreadsheet exported` });
+  };
+
+  const downloadPdf = async (reportTitle = 'Business Report') => {
+    const { jsPDF } = await import('jspdf');
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.text(reportTitle, 14, 18);
+    doc.setFontSize(11);
+    doc.text('Avg. Order Value: UGX 1.2M', 14, 34);
+    doc.text('On-time Delivery: 94%', 14, 44);
+    doc.text('Customer Retention: 87%', 14, 54);
+    doc.text('Stock Turnover: 3.2x', 14, 64);
+    doc.save(`${reportTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.pdf`);
+    toast({ title: `${reportTitle} PDF exported` });
+  };
+
   return (
     <div>
       <PageHeader title="Analytics & Reporting" description="Generate and export business reports.">
-        <Button variant="outline" size="sm"><FileSpreadsheet className="mr-2 h-4 w-4" /> Export Excel</Button>
-        <Button size="sm" className="gradient-mango text-white"><FileBarChart className="mr-2 h-4 w-4" /> Export PDF</Button>
+        <Button variant="outline" size="sm" onClick={() => downloadExcel()}><FileSpreadsheet className="mr-2 h-4 w-4" /> Export Excel</Button>
+        <Button size="sm" className="gradient-mango text-white" onClick={() => downloadPdf()}><FileBarChart className="mr-2 h-4 w-4" /> Export PDF</Button>
       </PageHeader>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -77,8 +114,8 @@ export default function Reports() {
               <h4 className="mt-3 font-semibold">{r.title}</h4>
               <p className="mt-1 text-sm text-muted-foreground">{r.desc}</p>
               <div className="mt-3 flex gap-2">
-                <Button variant="outline" size="sm" className="flex-1"><FileSpreadsheet className="mr-1 h-3 w-3" /> Excel</Button>
-                <Button variant="outline" size="sm" className="flex-1"><FileBarChart className="mr-1 h-3 w-3" /> PDF</Button>
+                <Button variant="outline" size="sm" className="flex-1" onClick={() => downloadExcel(r.title)}><FileSpreadsheet className="mr-1 h-3 w-3" /> Excel</Button>
+                <Button variant="outline" size="sm" className="flex-1" onClick={() => downloadPdf(r.title)}><FileBarChart className="mr-1 h-3 w-3" /> PDF</Button>
               </div>
             </div>
           ))}

@@ -1,12 +1,40 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Search, Package, AlertTriangle, ArrowDownUp } from 'lucide-react';
+import { Search, Package, AlertTriangle, ArrowDownUp } from 'lucide-react';
 import PageHeader from '@/components/shared/PageHeader';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { formatNumber, formatDate } from '@/components/shared/format';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import AdminCreateDialog from '@/components/admin/AdminCreateDialog';
 import { base44 } from '@/api/base44Client';
+
+const stockFields = [
+  { name: 'product_name', label: 'Product Name', required: true },
+  { name: 'sku', label: 'SKU' },
+  { name: 'warehouse_name', label: 'Warehouse', required: true },
+  { name: 'bin_location', label: 'Bin Location' },
+  { name: 'quantity_on_hand', label: 'Quantity On Hand', type: 'number', required: true },
+  { name: 'reorder_level', label: 'Reorder Level', type: 'number', defaultValue: 0 },
+  { name: 'unit_of_measure', label: 'Unit', defaultValue: 'kg' },
+];
+
+const movementFields = [
+  { name: 'product_name', label: 'Product Name', required: true },
+  { name: 'warehouse_name', label: 'Warehouse', required: true },
+  {
+    name: 'movement_type',
+    label: 'Movement Type',
+    type: 'select',
+    defaultValue: 'in',
+    options: [
+      { value: 'in', label: 'Inbound' },
+      { value: 'out', label: 'Outbound' },
+      { value: 'adjustment', label: 'Adjustment' },
+    ],
+  },
+  { name: 'quantity', label: 'Quantity', type: 'number', required: true },
+  { name: 'movement_date', label: 'Movement Date', type: 'date' },
+];
 
 export default function Inventory() {
   const [stockItems, setStockItems] = useState([]);
@@ -15,7 +43,8 @@ export default function Inventory() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
 
-  useEffect(() => {
+  const load = () => {
+    setLoading(true);
     Promise.all([
       base44.entities.StockItem.list('-created_date', 100),
       base44.entities.StockMovement.list('-created_date', 50),
@@ -26,7 +55,19 @@ export default function Inventory() {
       setWarehouses(whs || []);
       setLoading(false);
     }).catch(() => setLoading(false));
-  }, []);
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const createStock = (payload) => base44.entities.StockItem.create({
+    ...payload,
+    quantity_reserved: 0,
+  });
+
+  const createMovement = (payload) => base44.entities.StockMovement.create({
+    ...payload,
+    movement_code: `MOV-${Date.now().toString().slice(-6)}`,
+  });
 
   const filteredStock = stockItems.filter((s) => !search || s.product_name?.toLowerCase().includes(search.toLowerCase()) || s.sku?.toLowerCase().includes(search.toLowerCase()));
   const lowStockItems = stockItems.filter((s) => s.quantity_on_hand <= s.reorder_level);
@@ -34,8 +75,27 @@ export default function Inventory() {
   return (
     <div>
       <PageHeader title="Inventory Management" description="Stock levels, movements, and warehouse allocations.">
-        <Button variant="outline" className="border-primary text-primary"><ArrowDownUp className="mr-2 h-4 w-4" /> Stock Movement</Button>
-        <Button className="gradient-mango text-white"><Plus className="mr-2 h-4 w-4" /> Add Stock</Button>
+        <AdminCreateDialog
+          title="Stock Movement"
+          description="Record an inbound, outbound, or adjustment movement."
+          buttonLabel="Stock Movement"
+          buttonIcon={ArrowDownUp}
+          buttonVariant="outline"
+          buttonClassName="border-primary text-primary"
+          fields={movementFields}
+          onCreate={createMovement}
+          onCreated={load}
+          submitLabel="Record Movement"
+        />
+        <AdminCreateDialog
+          title="Add Stock"
+          description="Create a stock item for a warehouse."
+          buttonLabel="Add Stock"
+          fields={stockFields}
+          onCreate={createStock}
+          onCreated={load}
+          submitLabel="Add Stock"
+        />
       </PageHeader>
 
       <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

@@ -1,0 +1,30 @@
+{
+  "name": "FarmFinanceRecord",
+  "type": "object",
+  "properties": {
+    "record_code": { "type": "string", "title": "Record Code" },
+    "farm_id": { "type": "string", "title": "Farm ID" },
+    "farm_name": { "type": "string", "title": "Farm Name" },
+    "block_id": { "type": "string", "title": "Block ID" },
+    "block_name": { "type": "string", "title": "Block Name" },
+    "record_date": { "type": "string", "title": "Record Date", "format": "date" },
+    "record_type": {
+      "type": "string",
+      "title": "Record Type",
+      "enum": ["expense", "income", "budget"],
+      "default": "expense"
+    },
+    "category": { "type": "string", "title": "Category" },
+    "description": { "type": "string", "title": "Description" },
+    "amount": { "type": "number", "title": "Amount", "default": 0 },
+    "currency": { "type": "string", "title": "Currency", "default": "GHS" },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "enum": ["draft", "recorded", "approved"],
+      "default": "recorded"
+    },
+    "notes": { "type": "string", "title": "Notes" }
+  },
+  "required": ["record_code", "farm_id", "record_date", "category", "amount"]
+}

@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Banknote, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
+import { Banknote, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
 import PageHeader from '@/components/shared/PageHeader';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { formatCurrency, formatDate } from '@/components/shared/format';
-import { Button } from '@/components/ui/button';
 import DataTable from '@/components/shared/DataTable';
 import MetricCard from '@/components/shared/MetricCard';
+import AdminCreateDialog from '@/components/admin/AdminCreateDialog';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { base44 } from '@/api/base44Client';
 
@@ -18,13 +18,32 @@ const monthlyData = [
   { month: 'Jun', revenue: 92, expenses: 48 },
 ];
 
+const expenseFields = [
+  { name: 'category', label: 'Category', required: true },
+  { name: 'vendor_name', label: 'Vendor' },
+  { name: 'expense_date', label: 'Expense Date', type: 'date', required: true },
+  { name: 'amount', label: 'Amount', type: 'number', required: true },
+  {
+    name: 'status',
+    label: 'Status',
+    type: 'select',
+    defaultValue: 'pending',
+    options: [
+      { value: 'pending', label: 'Pending' },
+      { value: 'approved', label: 'Approved' },
+      { value: 'paid', label: 'Paid' },
+    ],
+  },
+];
+
 export default function Finance() {
   const [invoices, setInvoices] = useState([]);
   const [payments, setPayments] = useState([]);
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const load = () => {
+    setLoading(true);
     Promise.all([
       base44.entities.Invoice.list('-invoice_date', 50),
       base44.entities.Payment.list('-payment_date', 50),
@@ -35,7 +54,14 @@ export default function Finance() {
       setExpenses(exps || []);
       setLoading(false);
     }).catch(() => setLoading(false));
-  }, []);
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const createExpense = (payload) => base44.entities.Expense.create({
+    ...payload,
+    expense_number: `EXP-${Date.now().toString().slice(-6)}`,
+  });
 
   const totalRevenue = payments.reduce((s, p) => s + (p.amount || 0), 0);
   const totalExpenses = expenses.reduce((s, e) => s + (e.amount || 0), 0);
@@ -45,7 +71,15 @@ export default function Finance() {
   return (
     <div>
       <PageHeader title="Finance" description="Revenue, expenses, payments, and financial summaries.">
-        <Button className="gradient-mango text-white"><Plus className="mr-2 h-4 w-4" /> Record Expense</Button>
+        <AdminCreateDialog
+          title="Record Expense"
+          description="Add an expense to finance tracking."
+          buttonLabel="Record Expense"
+          fields={expenseFields}
+          onCreate={createExpense}
+          onCreated={load}
+          submitLabel="Record Expense"
+        />
       </PageHeader>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

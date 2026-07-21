@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, ArrowLeft, ChevronRight } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 
 export default function News() {

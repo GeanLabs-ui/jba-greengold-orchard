@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { FileText, Download, FileCheck, Receipt, FileBarChart } from 'lucide-react';
+import { Download, FileCheck, Receipt, FileBarChart } from 'lucide-react';
 import PageHeader from '@/components/shared/PageHeader';
 import { formatDate } from '@/components/shared/format';
 import { Button } from '@/components/ui/button';

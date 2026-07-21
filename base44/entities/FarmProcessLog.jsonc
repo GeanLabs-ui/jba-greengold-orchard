@@ -1,0 +1,105 @@
+{
+  "name": "FarmProcessLog",
+  "type": "object",
+  "properties": {
+    "log_code": {
+      "type": "string",
+      "title": "Log Code"
+    },
+    "phase": {
+      "type": "string",
+      "title": "Farm Process Phase",
+      "enum": [
+        "land_clearing",
+        "seedling",
+        "transplanting",
+        "crop_management",
+        "harvest",
+        "post_harvest"
+      ],
+      "default": "land_clearing"
+    },
+    "farm_id": {
+      "type": "string",
+      "title": "Farm ID"
+    },
+    "farm_name": {
+      "type": "string",
+      "title": "Farm Name"
+    },
+    "block_id": {
+      "type": "string",
+      "title": "Block ID"
+    },
+    "block_name": {
+      "type": "string",
+      "title": "Block / Plot"
+    },
+    "activity_title": {
+      "type": "string",
+      "title": "Activity"
+    },
+    "performed_by_name": {
+      "type": "string",
+      "title": "Who Is Doing It"
+    },
+    "role_or_team": {
+      "type": "string",
+      "title": "Role / Team"
+    },
+    "activity_date": {
+      "type": "string",
+      "title": "Activity Date",
+      "format": "date"
+    },
+    "start_time": {
+      "type": "string",
+      "title": "Start Time"
+    },
+    "end_time": {
+      "type": "string",
+      "title": "End Time"
+    },
+    "quantity": {
+      "type": "number",
+      "title": "Quantity",
+      "default": 0
+    },
+    "unit_of_measure": {
+      "type": "string",
+      "title": "Unit"
+    },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "enum": [
+        "planned",
+        "in_progress",
+        "completed",
+        "blocked"
+      ],
+      "default": "planned"
+    },
+    "created_by_name": {
+      "type": "string",
+      "title": "Recorded By"
+    },
+    "recorded_at": {
+      "type": "string",
+      "title": "Recorded At",
+      "format": "date-time"
+    },
+    "notes": {
+      "type": "string",
+      "title": "Notes"
+    }
+  },
+  "required": [
+    "log_code",
+    "phase",
+    "farm_name",
+    "activity_title",
+    "performed_by_name",
+    "activity_date"
+  ]
+}

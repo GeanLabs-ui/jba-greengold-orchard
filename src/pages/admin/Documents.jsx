@@ -1,19 +1,40 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, FolderOpen, FileText, Award, Download } from 'lucide-react';
+import { FolderOpen, FileText, Award, Download } from 'lucide-react';
 import PageHeader from '@/components/shared/PageHeader';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { formatDate } from '@/components/shared/format';
 import { Button } from '@/components/ui/button';
 import DataTable from '@/components/shared/DataTable';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import AdminCreateDialog from '@/components/admin/AdminCreateDialog';
 import { base44 } from '@/api/base44Client';
+
+const certificationFields = [
+  { name: 'name', label: 'Document Name', required: true },
+  { name: 'issuer', label: 'Issuer' },
+  { name: 'certificate_number', label: 'Certificate #' },
+  { name: 'valid_from', label: 'Valid From', type: 'date' },
+  { name: 'valid_to', label: 'Valid To', type: 'date' },
+  {
+    name: 'status',
+    label: 'Status',
+    type: 'select',
+    defaultValue: 'valid',
+    options: [
+      { value: 'valid', label: 'Valid' },
+      { value: 'pending', label: 'Pending' },
+      { value: 'expired', label: 'Expired' },
+    ],
+  },
+];
 
 export default function Documents() {
   const [certifications, setCertifications] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const load = () => {
+    setLoading(true);
     Promise.all([
       base44.entities.Certification.list(),
       base44.entities.Notification.list('-created_date', 50),
@@ -22,12 +43,22 @@ export default function Documents() {
       setNotifications(notifs || []);
       setLoading(false);
     }).catch(() => setLoading(false));
-  }, []);
+  };
+
+  useEffect(() => { load(); }, []);
 
   return (
     <div>
       <PageHeader title="Document Management" description="Certifications, notifications, and business documents.">
-        <Button className="gradient-mango text-white"><Plus className="mr-2 h-4 w-4" /> Upload Document</Button>
+        <AdminCreateDialog
+          title="Upload Document"
+          description="Register a certification or business document record."
+          buttonLabel="Upload Document"
+          fields={certificationFields}
+          onCreate={(payload) => base44.entities.Certification.create(payload)}
+          onCreated={load}
+          submitLabel="Save Document"
+        />
       </PageHeader>
 
       <Tabs defaultValue="certifications">
@@ -52,7 +83,11 @@ export default function Documents() {
                     {cert.certificate_number && <p className="text-xs">#{cert.certificate_number}</p>}
                   </div>
                   {cert.document_url && (
-                    <Button variant="outline" size="sm" className="mt-3 w-full"><Download className="mr-1 h-3 w-3" /> Download</Button>
+                    <Button variant="outline" size="sm" className="mt-3 w-full" asChild>
+                      <a href={cert.document_url} target="_blank" rel="noreferrer">
+                        <Download className="mr-1 h-3 w-3" /> Download
+                      </a>
+                    </Button>
                   )}
                 </div>
               )) : <div className="col-span-full text-center py-12 text-muted-foreground"><FolderOpen className="mx-auto h-12 w-12" /><p className="mt-3">No certifications registered.</p></div>}

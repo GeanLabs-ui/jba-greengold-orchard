@@ -1,0 +1,105 @@
+{
+  "name": "JobApplication",
+  "type": "object",
+  "properties": {
+    "application_number": {
+      "type": "string",
+      "title": "Application Number"
+    },
+    "candidate_name": {
+      "type": "string",
+      "title": "Candidate Name"
+    },
+    "email": {
+      "type": "string",
+      "title": "Email",
+      "format": "email"
+    },
+    "phone": {
+      "type": "string",
+      "title": "Phone"
+    },
+    "role_applied_for": {
+      "type": "string",
+      "title": "Role Applied For"
+    },
+    "candidate_summary": {
+      "type": "string",
+      "title": "Skills and Experience Summary"
+    },
+    "resume_file_name": {
+      "type": "string",
+      "title": "Resume File Name"
+    },
+    "resume_file_url": {
+      "type": "string",
+      "title": "Resume File URL"
+    },
+    "cover_letter_file_name": {
+      "type": "string",
+      "title": "Cover Letter File Name"
+    },
+    "cover_letter_file_url": {
+      "type": "string",
+      "title": "Cover Letter File URL"
+    },
+    "certificate_file_name": {
+      "type": "string",
+      "title": "Certificate File Name"
+    },
+    "certificate_file_url": {
+      "type": "string",
+      "title": "Certificate File URL"
+    },
+    "ats_score": {
+      "type": "number",
+      "title": "ATS Score",
+      "default": 0
+    },
+    "ats_status": {
+      "type": "string",
+      "title": "ATS Status",
+      "enum": [
+        "pass",
+        "review",
+        "needs_improvement"
+      ],
+      "default": "review"
+    },
+    "ats_matched_keywords": {
+      "type": "array",
+      "title": "ATS Matched Keywords",
+      "items": {
+        "type": "string"
+      }
+    },
+    "status": {
+      "type": "string",
+      "title": "Application Status",
+      "enum": [
+        "new",
+        "reviewing",
+        "shortlisted",
+        "interview",
+        "rejected",
+        "hired"
+      ],
+      "default": "new"
+    },
+    "source": {
+      "type": "string",
+      "title": "Source"
+    },
+    "notes": {
+      "type": "string",
+      "title": "Notes"
+    }
+  },
+  "required": [
+    "application_number",
+    "candidate_name",
+    "role_applied_for",
+    "resume_file_name",
+    "cover_letter_file_name"
+  ]
+}

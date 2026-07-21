@@ -1,22 +1,60 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import PageHeader from '@/components/shared/PageHeader';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { formatCurrency, formatDate } from '@/components/shared/format';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import AdminCreateDialog from '@/components/admin/AdminCreateDialog';
 import { base44 } from '@/api/base44Client';
+
+const orderFields = [
+  { name: 'customer_name', label: 'Customer', required: true },
+  { name: 'order_date', label: 'Order Date', type: 'date', required: true },
+  {
+    name: 'source',
+    label: 'Source',
+    type: 'select',
+    defaultValue: 'manual',
+    options: [
+      { value: 'manual', label: 'Manual' },
+      { value: 'portal', label: 'Customer Portal' },
+      { value: 'phone', label: 'Phone' },
+      { value: 'walk_in', label: 'Walk-in' },
+    ],
+  },
+  { name: 'total_amount', label: 'Total Amount', type: 'number', required: true },
+  {
+    name: 'status',
+    label: 'Status',
+    type: 'select',
+    defaultValue: 'draft',
+    options: [
+      { value: 'draft', label: 'Draft' },
+      { value: 'confirmed', label: 'Confirmed' },
+      { value: 'dispatched', label: 'Dispatched' },
+      { value: 'delivered', label: 'Delivered' },
+    ],
+  },
+];
 
 export default function Orders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
 
-  useEffect(() => {
+  const load = () => {
+    setLoading(true);
     base44.entities.Order.list('-order_date')
       .then((d) => { setOrders(d || []); setLoading(false); })
       .catch(() => setLoading(false));
-  }, []);
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const createOrder = (payload) => base44.entities.Order.create({
+    ...payload,
+    order_number: `ORD-${Date.now().toString().slice(-6)}`,
+  });
 
   const filtered = orders.filter((o) => !search || o.order_number?.toLowerCase().includes(search.toLowerCase()) || o.customer_name?.toLowerCase().includes(search.toLowerCase()));
 
@@ -30,7 +68,15 @@ export default function Orders() {
   return (
     <div>
       <PageHeader title="Order Management" description="Track orders from creation through fulfillment.">
-        <Button className="gradient-mango text-white"><Plus className="mr-2 h-4 w-4" /> New Order</Button>
+        <AdminCreateDialog
+          title="New Order"
+          description="Create a customer order and add it to the order pipeline."
+          buttonLabel="New Order"
+          fields={orderFields}
+          onCreate={createOrder}
+          onCreated={load}
+          submitLabel="Create Order"
+        />
       </PageHeader>
 
       <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

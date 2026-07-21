@@ -1,26 +1,61 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Ship, Globe2 } from 'lucide-react';
+import { Ship, Globe2 } from 'lucide-react';
 import PageHeader from '@/components/shared/PageHeader';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { formatCurrency, formatDate } from '@/components/shared/format';
-import { Button } from '@/components/ui/button';
 import DataTable from '@/components/shared/DataTable';
+import AdminCreateDialog from '@/components/admin/AdminCreateDialog';
 import { base44 } from '@/api/base44Client';
+
+const shipmentFields = [
+  { name: 'customer_name', label: 'Customer', required: true },
+  { name: 'destination_country', label: 'Destination Country', required: true },
+  { name: 'incoterm', label: 'Incoterm', defaultValue: 'FOB' },
+  { name: 'shipment_date', label: 'Shipment Date', type: 'date' },
+  { name: 'total_amount', label: 'Shipment Value', type: 'number' },
+  {
+    name: 'status',
+    label: 'Status',
+    type: 'select',
+    defaultValue: 'preparing',
+    options: [
+      { value: 'preparing', label: 'Preparing' },
+      { value: 'in_transit', label: 'In Transit' },
+      { value: 'delivered', label: 'Delivered' },
+    ],
+  },
+];
 
 export default function ExportOps() {
   const [shipments, setShipments] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const load = () => {
+    setLoading(true);
     base44.entities.ExportShipment.list('-created_date', 50)
       .then((d) => { setShipments(d || []); setLoading(false); })
       .catch(() => setLoading(false));
-  }, []);
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const createShipment = (payload) => base44.entities.ExportShipment.create({
+    ...payload,
+    export_code: `EXP-SH-${Date.now().toString().slice(-6)}`,
+  });
 
   return (
     <div>
       <PageHeader title="Export Operations" description="Manage export shipments, compliance, and destination tracking.">
-        <Button className="gradient-mango text-white"><Plus className="mr-2 h-4 w-4" /> New Export Shipment</Button>
+        <AdminCreateDialog
+          title="New Export Shipment"
+          description="Create an export shipment record."
+          buttonLabel="New Export Shipment"
+          fields={shipmentFields}
+          onCreate={createShipment}
+          onCreated={load}
+          submitLabel="Create Shipment"
+        />
       </PageHeader>
 
       <div className="mb-6 grid gap-4 sm:grid-cols-4">

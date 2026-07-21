@@ -4,6 +4,39 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { base44 } from '@/api/base44Client';
 
+const PRODUCT_IMAGE_BY_NAME = {
+  'Premium Kent Mango': '/products/box-package.png',
+  'Dried Mango Slices': '/products/dried-mango.png',
+  'Mango Pulp': '/products/mango-pudding.png',
+};
+
+const BRANDED_PRODUCT_CARDS = [
+  {
+    id: 'branded_dehydrated_mango_jar',
+    name: 'Dehydrated Mango Jar',
+    sku: 'MNG-JAR-180',
+    product_type: 'dried',
+    variety: 'Premium dried mango',
+    description: '180g jar format for premium dehydrated mango slices.',
+    price: 32000,
+    unit_of_measure: 'jar',
+    image_url: '/products/dried-mango-jar.png',
+    is_active: true,
+  },
+  {
+    id: 'branded_mango_pudding',
+    name: 'Mango Pudding with Milk',
+    sku: 'MNG-PUD-150',
+    product_type: 'pulp',
+    variety: 'Ready-to-eat dessert',
+    description: '150g mango pudding pouch with milk for retail shelves.',
+    price: 18000,
+    unit_of_measure: 'pouch',
+    image_url: '/products/mango-pudding.png',
+    is_active: true,
+  },
+];
+
 export default function Products() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -16,7 +49,15 @@ export default function Products() {
       .catch(() => setLoading(false));
   }, []);
 
-  const filtered = products.filter((p) => {
+  const productCatalog = [
+    ...products.map((product) => ({
+      ...product,
+      image_url: PRODUCT_IMAGE_BY_NAME[product.name] || product.image_url,
+    })),
+    ...BRANDED_PRODUCT_CARDS.filter((branded) => !products.some((product) => product.name === branded.name)),
+  ];
+
+  const filtered = productCatalog.filter((p) => {
     const matchSearch = !search || p.name?.toLowerCase().includes(search.toLowerCase()) || p.sku?.toLowerCase().includes(search.toLowerCase());
     const matchFilter = filter === 'all' || p.product_type === filter;
     return matchSearch && matchFilter;
@@ -61,9 +102,9 @@ export default function Products() {
             ) : filtered.length > 0 ? (
               filtered.map((product) => (
                 <div key={product.id} className="group overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-shadow hover:shadow-lg">
-                  <div className="aspect-square overflow-hidden bg-muted">
+                  <div className="aspect-square overflow-hidden bg-white">
                     {product.image_url ? (
-                      <img src={product.image_url} alt={product.name} className="h-full w-full object-cover transition-transform group-hover:scale-105" />
+                      <img src={product.image_url} alt={product.name} className="h-full w-full object-contain p-3 transition-transform group-hover:scale-105" />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-amber-100 to-emerald-100">
                         <Package className="h-12 w-12 text-primary/40" />

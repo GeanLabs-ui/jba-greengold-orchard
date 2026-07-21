@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Leaf } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import BrandLogo from '@/components/shared/BrandLogo';
 
 const navLinks = [
-  { label: 'Home', path: '/' },
   { label: 'About', path: '/about' },
   { label: 'Products', path: '/products' },
   { label: 'Farms', path: '/farms' },
@@ -26,7 +25,7 @@ export default function PublicNavbar() {
     <header className="sticky top-0 z-50 glass border-b border-border/60">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
-          <Link to="/" className="flex items-center gap-2" aria-label="JBA GreenGold Orchard — Home">
+          <Link to="/" className="flex items-center gap-2" aria-label="JBA GreenGold Orchard Home">
             <BrandLogo />
           </Link>
 
@@ -49,9 +48,6 @@ export default function PublicNavbar() {
           <div className="hidden items-center gap-2 lg:flex">
             <Button variant="ghost" size="sm" asChild>
               <Link to="/portal">Customer Portal</Link>
-            </Button>
-            <Button size="sm" asChild>
-              <Link to="/admin">Dashboard</Link>
             </Button>
           </div>
 
@@ -81,9 +77,6 @@ export default function PublicNavbar() {
             <div className="flex gap-2 pt-2">
               <Button variant="outline" size="sm" className="flex-1" asChild>
                 <Link to="/portal" onClick={() => setOpen(false)}>Portal</Link>
-              </Button>
-              <Button size="sm" className="flex-1" asChild>
-                <Link to="/admin" onClick={() => setOpen(false)}>Dashboard</Link>
               </Button>
             </div>
           </nav>

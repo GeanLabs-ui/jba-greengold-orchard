@@ -1,0 +1,22 @@
+{
+  "name": "FarmComplianceRecord",
+  "type": "object",
+  "properties": {
+    "record_code": { "type": "string", "title": "Record Code" },
+    "farm_id": { "type": "string", "title": "Farm ID" },
+    "farm_name": { "type": "string", "title": "Farm Name" },
+    "compliance_area": { "type": "string", "title": "Compliance Area" },
+    "requirement": { "type": "string", "title": "Requirement" },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "enum": ["pending", "complete", "overdue", "non_compliant"],
+      "default": "pending"
+    },
+    "due_date": { "type": "string", "title": "Due Date", "format": "date" },
+    "completed_date": { "type": "string", "title": "Completed Date", "format": "date" },
+    "evidence_reference": { "type": "string", "title": "Evidence Reference" },
+    "notes": { "type": "string", "title": "Notes" }
+  },
+  "required": ["record_code", "farm_id", "compliance_area", "requirement"]
+}

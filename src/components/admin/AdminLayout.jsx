@@ -6,11 +6,15 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 
 export default function AdminLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   return (
     <div className="flex h-screen overflow-hidden bg-muted/30">
       <div className="hidden lg:flex lg:flex-col">
-        <AdminSidebar />
+        <AdminSidebar
+          collapsed={sidebarCollapsed}
+          onToggleCollapsed={() => setSidebarCollapsed((collapsed) => !collapsed)}
+        />
       </div>
 
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>

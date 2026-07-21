@@ -1,0 +1,18 @@
+{
+  "cookies": [],
+  "origins": [
+    {
+      "origin": "http://127.0.0.1:5173",
+      "localStorage": [
+        {
+          "name": "mango_farm_local:users",
+          "value": "[{\"id\":\"playwright_admin\",\"email\":\"admin@example.com\",\"full_name\":\"Playwright Admin\",\"role\":\"admin\",\"created_date\":\"2026-07-07T00:00:00.000Z\"}]"
+        },
+        {
+          "name": "mango_farm_local:session",
+          "value": "{\"userId\":\"playwright_admin\",\"access_token\":\"playwright_token\"}"
+        }
+      ]
+    }
+  ]
+}

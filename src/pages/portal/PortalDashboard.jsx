@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingCart, CreditCard, FileText, Wallet, ArrowRight, Package, Truck, CheckCircle2 } from 'lucide-react';
+import { ShoppingCart, CreditCard, FileText, Wallet, ArrowRight, Package, CheckCircle2 } from 'lucide-react';
 import PageHeader from '@/components/shared/PageHeader';
 import MetricCard from '@/components/shared/MetricCard';
 import StatusBadge from '@/components/shared/StatusBadge';
-import { formatCurrency, formatDate, timeAgo } from '@/components/shared/format';
-import { Button } from '@/components/ui/button';
+import { formatCurrency, formatDate } from '@/components/shared/format';
 import { base44 } from '@/api/base44Client';
 
 export default function PortalDashboard() {

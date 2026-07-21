@@ -1,0 +1,31 @@
+{
+  "name": "PesticideApplication",
+  "type": "object",
+  "properties": {
+    "application_code": { "type": "string", "title": "Application Code" },
+    "farm_id": { "type": "string", "title": "Farm ID" },
+    "farm_name": { "type": "string", "title": "Farm Name" },
+    "block_id": { "type": "string", "title": "Block ID" },
+    "block_name": { "type": "string", "title": "Block Name" },
+    "crop": { "type": "string", "title": "Crop" },
+    "product_name": { "type": "string", "title": "Product Name" },
+    "active_ingredient": { "type": "string", "title": "Active Ingredient" },
+    "application_date": { "type": "string", "title": "Application Date", "format": "date" },
+    "application_rate": { "type": "string", "title": "Application Rate" },
+    "quantity_used": { "type": "number", "title": "Quantity Used", "default": 0 },
+    "target_pest": { "type": "string", "title": "Target Pest" },
+    "treated_area_acres": { "type": "number", "title": "Treated Area Acres", "default": 0 },
+    "pre_harvest_interval_days": { "type": "number", "title": "PHI Days", "default": 0 },
+    "reentry_interval_hours": { "type": "number", "title": "REI Hours", "default": 0 },
+    "applicator_name": { "type": "string", "title": "Applicator" },
+    "weather_conditions": { "type": "string", "title": "Weather Conditions" },
+    "compliance_status": {
+      "type": "string",
+      "title": "Compliance Status",
+      "enum": ["recorded", "review_needed", "approved", "non_compliant"],
+      "default": "recorded"
+    },
+    "notes": { "type": "string", "title": "Notes" }
+  },
+  "required": ["application_code", "farm_id", "product_name", "application_date"]
+}

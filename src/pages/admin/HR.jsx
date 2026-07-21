@@ -1,19 +1,52 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Users, Calendar, Briefcase } from 'lucide-react';
+import { Users, Briefcase } from 'lucide-react';
 import PageHeader from '@/components/shared/PageHeader';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { formatDate } from '@/components/shared/format';
-import { Button } from '@/components/ui/button';
 import DataTable from '@/components/shared/DataTable';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import AdminCreateDialog from '@/components/admin/AdminCreateDialog';
 import { base44 } from '@/api/base44Client';
+
+const employeeFields = [
+  { name: 'first_name', label: 'First Name', required: true },
+  { name: 'last_name', label: 'Last Name', required: true },
+  { name: 'job_title', label: 'Job Title', required: true },
+  { name: 'department', label: 'Department', required: true },
+  { name: 'email', label: 'Email', type: 'email' },
+  { name: 'phone', label: 'Phone' },
+  { name: 'hire_date', label: 'Hire Date', type: 'date' },
+  {
+    name: 'employment_type',
+    label: 'Employment Type',
+    type: 'select',
+    defaultValue: 'full_time',
+    options: [
+      { value: 'full_time', label: 'Full-time' },
+      { value: 'part_time', label: 'Part-time' },
+      { value: 'contract', label: 'Contract' },
+    ],
+  },
+  {
+    name: 'status',
+    label: 'Status',
+    type: 'select',
+    defaultValue: 'active',
+    options: [
+      { value: 'active', label: 'Active' },
+      { value: 'inactive', label: 'Inactive' },
+      { value: 'on_leave', label: 'On Leave' },
+    ],
+  },
+];
 
 export default function HR() {
   const [employees, setEmployees] = useState([]);
   const [attendance, setAttendance] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const load = () => {
+    setLoading(true);
     Promise.all([
       base44.entities.Employee.list('-created_date', 100),
       base44.entities.Attendance.list('-attendance_date', 50),
@@ -22,7 +55,14 @@ export default function HR() {
       setAttendance(atts || []);
       setLoading(false);
     }).catch(() => setLoading(false));
-  }, []);
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const createEmployee = (payload) => base44.entities.Employee.create({
+    ...payload,
+    employee_code: `EMP-${Date.now().toString().slice(-6)}`,
+  });
 
   const departments = {};
   employees.forEach((e) => { departments[e.department] = (departments[e.department] || 0) + 1; });
@@ -30,7 +70,15 @@ export default function HR() {
   return (
     <div>
       <PageHeader title="Human Resources" description="Employee records, departments, attendance, and role management.">
-        <Button className="gradient-mango text-white"><Plus className="mr-2 h-4 w-4" /> Add Employee</Button>
+        <AdminCreateDialog
+          title="Add Employee"
+          description="Create a staff record for HR tracking."
+          buttonLabel="Add Employee"
+          fields={employeeFields}
+          onCreate={createEmployee}
+          onCreated={load}
+          submitLabel="Add Employee"
+        />
       </PageHeader>
 
       <div className="mb-6 grid gap-4 sm:grid-cols-3">

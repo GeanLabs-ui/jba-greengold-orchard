@@ -1,0 +1,21 @@
+{
+  "name": "FarmBlock",
+  "type": "object",
+  "properties": {
+    "farm_id": { "type": "string", "title": "Farm ID" },
+    "farm_name": { "type": "string", "title": "Farm Name" },
+    "block_code": { "type": "string", "title": "Block Code" },
+    "name": { "type": "string", "title": "Block Name" },
+    "area_acres": { "type": "number", "title": "Area Acres", "default": 0 },
+    "mango_variety": { "type": "string", "title": "Mango Variety" },
+    "soil_condition": { "type": "string", "title": "Soil Condition" },
+    "irrigation_status": { "type": "string", "title": "Irrigation Status" },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "enum": ["active", "fallow", "maintenance"],
+      "default": "active"
+    }
+  },
+  "required": ["farm_id", "block_code", "name"]
+}

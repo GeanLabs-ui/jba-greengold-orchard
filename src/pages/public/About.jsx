@@ -6,7 +6,7 @@ export default function About() {
     <div>
       <section className="relative overflow-hidden py-20">
         <img
-          src="https://media.base44.com/images/public/6a46e07bc7a700bfb99375f8/251809c87_image.png"
+          src="https://images.unsplash.com/photo-1553279768-865429fa0078?w=1600&q=80"
           alt="JBA GreenGold mango orchard"
           className="absolute inset-0 h-full w-full object-cover"
         />

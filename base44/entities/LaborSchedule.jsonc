@@ -1,0 +1,28 @@
+{
+  "name": "LaborSchedule",
+  "type": "object",
+  "properties": {
+    "schedule_code": { "type": "string", "title": "Schedule Code" },
+    "farm_id": { "type": "string", "title": "Farm ID" },
+    "farm_name": { "type": "string", "title": "Farm Name" },
+    "block_id": { "type": "string", "title": "Block ID" },
+    "block_name": { "type": "string", "title": "Block Name" },
+    "work_date": { "type": "string", "title": "Work Date", "format": "date" },
+    "shift_start": { "type": "string", "title": "Shift Start" },
+    "shift_end": { "type": "string", "title": "Shift End" },
+    "team_name": { "type": "string", "title": "Team Name" },
+    "worker_count": { "type": "number", "title": "Worker Count", "default": 0 },
+    "supervisor_name": { "type": "string", "title": "Supervisor" },
+    "task_summary": { "type": "string", "title": "Task Summary" },
+    "hours_planned": { "type": "number", "title": "Hours Planned", "default": 0 },
+    "hours_completed": { "type": "number", "title": "Hours Completed", "default": 0 },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "enum": ["scheduled", "in_progress", "completed", "cancelled"],
+      "default": "scheduled"
+    },
+    "notes": { "type": "string", "title": "Notes" }
+  },
+  "required": ["schedule_code", "farm_id", "work_date", "task_summary"]
+}

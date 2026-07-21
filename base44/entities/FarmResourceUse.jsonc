@@ -1,0 +1,23 @@
+{
+  "name": "FarmResourceUse",
+  "type": "object",
+  "properties": {
+    "usage_code": { "type": "string", "title": "Usage Code" },
+    "farm_id": { "type": "string", "title": "Farm ID" },
+    "farm_name": { "type": "string", "title": "Farm Name" },
+    "block_id": { "type": "string", "title": "Block ID" },
+    "block_name": { "type": "string", "title": "Block Name" },
+    "resource_type": {
+      "type": "string",
+      "title": "Resource Type",
+      "enum": ["seed", "fertilizer", "chemical", "water", "equipment", "fuel", "other"]
+    },
+    "item_name": { "type": "string", "title": "Item Name" },
+    "quantity": { "type": "number", "title": "Quantity", "default": 0 },
+    "unit_of_measure": { "type": "string", "title": "Unit", "default": "unit" },
+    "unit_cost": { "type": "number", "title": "Unit Cost", "default": 0 },
+    "usage_date": { "type": "string", "title": "Usage Date", "format": "date" },
+    "notes": { "type": "string", "title": "Notes" }
+  },
+  "required": ["usage_code", "farm_id", "resource_type", "item_name", "usage_date"]
+}

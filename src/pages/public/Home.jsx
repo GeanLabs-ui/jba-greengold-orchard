@@ -9,6 +9,34 @@ export default function Home() {
   const [newsPosts, setNewsPosts] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const featuredImageByName = {
+    'Dried Mango Slices': '/products/dried-mango.png',
+    'Premium Kent Mango': '/products/box-package.png',
+  };
+
+  const packagingShowcase = [
+    {
+      src: '/products/box-package.png',
+      alt: 'JBA GreenGold Orchard fresh mango export box package',
+      title: 'Fresh Mango Export Box',
+    },
+    {
+      src: '/products/dried-mango.png',
+      alt: 'JBA GreenGold Orchard dried mango retail pouch front and back',
+      title: 'Dried Mango Pouch',
+    },
+    {
+      src: '/products/dried-mango-jar.png',
+      alt: 'JBA GreenGold Orchard dehydrated mango jar',
+      title: 'Dehydrated Mango Jar',
+    },
+    {
+      src: '/products/mango-pudding.png',
+      alt: 'JBA GreenGold Orchard mango pudding with milk pouch',
+      title: 'Mango Pudding Pouch',
+    },
+  ];
+
   useEffect(() => {
     Promise.all([
       base44.entities.Product.filter({ featured: true, is_active: true }, '-created_date', 6).catch(() => []),
@@ -105,8 +133,12 @@ export default function Home() {
               featuredProducts.map((product) => (
                 <div key={product.id} className="group overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-shadow hover:shadow-lg">
                   <div className="aspect-[4/3] overflow-hidden bg-muted">
-                    {product.image_url ? (
-                      <img src={product.image_url} alt={product.name} className="h-full w-full object-cover transition-transform group-hover:scale-105" />
+                    {(featuredImageByName[product.name] || product.image_url) ? (
+                      <img
+                        src={featuredImageByName[product.name] || product.image_url}
+                        alt={product.name}
+                        className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                      />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-amber-100 to-emerald-100">
                         <Sprout className="h-12 w-12 text-primary/40" />
@@ -127,6 +159,38 @@ export default function Home() {
             ) : (
               <p className="col-span-full text-center text-muted-foreground py-8">Products coming soon.</p>
             )}
+          </div>
+        </div>
+      </section>
+
+      {/* Product Packaging */}
+      <section className="border-y border-border bg-muted/30 py-16 lg:py-20">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="grid gap-10 lg:grid-cols-[0.75fr_1.25fr] lg:items-end">
+            <div>
+              <span className="text-sm font-semibold uppercase text-primary">Product Range</span>
+              <h2 className="mt-2 font-heading text-3xl font-bold tracking-tight">Retail and export packaging ready for market.</h2>
+              <p className="mt-3 text-muted-foreground">
+                Fresh mango cartons, dried mango packs, jars, and pudding pouches built around the JBA GreenGold Orchard brand.
+              </p>
+              <Button variant="outline" className="mt-6" asChild>
+                <Link to="/export">View Export Packaging <ArrowRight className="ml-2 h-4 w-4" /></Link>
+              </Button>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              {packagingShowcase.map((item) => (
+                <figure key={item.title} className="group overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+                  <div className="aspect-[4/3] bg-white">
+                    <img
+                      src={item.src}
+                      alt={item.alt}
+                      className="h-full w-full object-contain p-3 transition-transform duration-300 group-hover:scale-105"
+                    />
+                  </div>
+                  <figcaption className="border-t border-border px-4 py-3 text-sm font-medium">{item.title}</figcaption>
+                </figure>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -236,7 +300,7 @@ export default function Home() {
                 <Link to="/contact">Contact Us Today</Link>
               </Button>
               <Button size="lg" variant="outline" className="border-white/40 text-white hover:bg-white/10" asChild>
-                <Link to="/admin">View Dashboard</Link>
+                <Link to="/products">Explore Products</Link>
               </Button>
             </div>
           </div>

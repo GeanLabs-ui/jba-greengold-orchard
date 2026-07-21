@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Package, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import PageHeader from '@/components/shared/PageHeader';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { formatCurrency, formatDate } from '@/components/shared/format';

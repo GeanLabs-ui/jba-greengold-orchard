@@ -1,0 +1,23 @@
+{
+  "name": "FarmNote",
+  "type": "object",
+  "properties": {
+    "farm_id": { "type": "string", "title": "Farm ID" },
+    "farm_name": { "type": "string", "title": "Farm Name" },
+    "block_id": { "type": "string", "title": "Block ID" },
+    "block_name": { "type": "string", "title": "Block Name" },
+    "note_date": { "type": "string", "title": "Note Date", "format": "date" },
+    "category": {
+      "type": "string",
+      "title": "Category",
+      "enum": ["field_observation", "soil_health", "crop_health", "weather", "pest_pressure", "general"],
+      "default": "field_observation"
+    },
+    "title": { "type": "string", "title": "Title" },
+    "body": { "type": "string", "title": "Body" },
+    "soil_condition": { "type": "string", "title": "Soil Condition" },
+    "crop_condition": { "type": "string", "title": "Crop Condition" },
+    "pest_pressure": { "type": "string", "title": "Pest Pressure" }
+  },
+  "required": ["farm_id", "note_date", "title", "body"]
+}

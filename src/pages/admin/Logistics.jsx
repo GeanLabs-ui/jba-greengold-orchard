@@ -1,19 +1,39 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Truck, Package } from 'lucide-react';
+import { Truck, Package } from 'lucide-react';
 import PageHeader from '@/components/shared/PageHeader';
 import StatusBadge from '@/components/shared/StatusBadge';
-import { formatDate, formatDateTime } from '@/components/shared/format';
-import { Button } from '@/components/ui/button';
+import { formatDateTime } from '@/components/shared/format';
 import DataTable from '@/components/shared/DataTable';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import AdminCreateDialog from '@/components/admin/AdminCreateDialog';
 import { base44 } from '@/api/base44Client';
+
+const deliveryFields = [
+  { name: 'order_number', label: 'Order #', required: true },
+  { name: 'customer_name', label: 'Customer', required: true },
+  { name: 'vehicle_plate', label: 'Vehicle Plate' },
+  { name: 'driver_name', label: 'Driver' },
+  { name: 'dispatch_date', label: 'Dispatch Date', type: 'datetime-local' },
+  {
+    name: 'status',
+    label: 'Status',
+    type: 'select',
+    defaultValue: 'scheduled',
+    options: [
+      { value: 'scheduled', label: 'Scheduled' },
+      { value: 'in_transit', label: 'In Transit' },
+      { value: 'delivered', label: 'Delivered' },
+    ],
+  },
+];
 
 export default function Logistics() {
   const [deliveries, setDeliveries] = useState([]);
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const load = () => {
+    setLoading(true);
     Promise.all([
       base44.entities.Delivery.list('-created_date', 50),
       base44.entities.Vehicle.list(),
@@ -22,7 +42,14 @@ export default function Logistics() {
       setVehicles(vehs || []);
       setLoading(false);
     }).catch(() => setLoading(false));
-  }, []);
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const createDelivery = (payload) => base44.entities.Delivery.create({
+    ...payload,
+    delivery_code: `DEL-${Date.now().toString().slice(-6)}`,
+  });
 
   const inTransit = deliveries.filter((d) => d.status === 'in_transit').length;
   const delivered = deliveries.filter((d) => d.status === 'delivered').length;
@@ -30,7 +57,15 @@ export default function Logistics() {
   return (
     <div>
       <PageHeader title="Delivery & Logistics" description="Dispatch tracking, route management, and proof of delivery.">
-        <Button className="gradient-mango text-white"><Plus className="mr-2 h-4 w-4" /> Schedule Delivery</Button>
+        <AdminCreateDialog
+          title="Schedule Delivery"
+          description="Create a delivery dispatch record."
+          buttonLabel="Schedule Delivery"
+          fields={deliveryFields}
+          onCreate={createDelivery}
+          onCreated={load}
+          submitLabel="Schedule Delivery"
+        />
       </PageHeader>
 
       <div className="mb-6 grid gap-4 sm:grid-cols-4">

@@ -4,22 +4,27 @@ import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import WorldMap from '@/components/export/WorldMap';
 
-const HEADER_IMG = 'https://media.base44.com/images/public/6a46e07bc7a700bfb99375f8/e9dd55d5c_image.png';
+const HEADER_IMG = 'https://images.unsplash.com/photo-1494412519320-aa613dfb7738?w=1600&q=80';
 const PACKAGING_IMAGES = [
   {
-    url: 'https://media.base44.com/images/public/6a46e07bc7a700bfb99375f8/05d93b5d0_image.png',
+    url: '/products/box-package.png',
+    title: 'Fresh Mango Export Box',
+    desc: '4kg corrugated export-grade carton for fresh mangoes, designed for cold-chain sea freight and air cargo.',
+  },
+  {
+    url: '/products/dried-mango.png',
     title: 'Dried Mango Pouch',
-    desc: '250g retail pouch — 100% natural, soft & chewy dried mango with HACCP, ISO, GMP & Halal certifications.',
+    desc: '250g retail pouch for dried mango slices with shelf-ready front and back packaging.',
   },
   {
-    url: 'https://media.base44.com/images/public/6a46e07bc7a700bfb99375f8/be0521630_image.png',
-    title: 'Export Carton (4kg)',
-    desc: 'Corrugated export-grade carton for fresh mangoes, designed for cold-chain sea freight and air cargo.',
+    url: '/products/dried-mango-jar.png',
+    title: 'Dehydrated Mango Jar',
+    desc: '180g jar format for premium dehydrated mango, packaged for gift, retail, and specialty shelves.',
   },
   {
-    url: 'https://media.base44.com/images/public/6a46e07bc7a700bfb99375f8/c96040d26_image.png',
+    url: '/products/mango-pudding.png',
     title: 'Mango Pudding Pouch',
-    desc: '150g ready-to-eat mango pudding with milk — rich, creamy and a good source of calcium.',
+    desc: '150g ready-to-eat mango pudding with milk, designed for convenience retail and export assortments.',
   },
 ];
 
@@ -77,7 +82,7 @@ export default function Export() {
             <h2 className="font-heading text-3xl font-bold tracking-tight">Export-Ready Packaging</h2>
             <p className="mt-2 text-muted-foreground">Our products travel the world in packaging designed for quality, compliance, and shelf appeal.</p>
           </div>
-          <div className="mt-12 grid gap-8 md:grid-cols-3">
+          <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
             {PACKAGING_IMAGES.map((pkg) => (
               <div key={pkg.title} className="group overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-shadow hover:shadow-lg">
                 <div className="aspect-[4/3] overflow-hidden bg-muted/20">

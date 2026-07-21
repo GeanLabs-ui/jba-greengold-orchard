@@ -2,16 +2,17 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   TrendingUp, ShoppingCart, Truck, FileWarning, Users, Sprout,
-  Banknote, Package, ArrowRight, Activity, Clock, CheckCircle2, AlertCircle
+  Banknote, Package, ArrowRight, Activity, CheckCircle2, AlertCircle
 } from 'lucide-react';
 import MetricCard from '@/components/shared/MetricCard';
 import PageHeader from '@/components/shared/PageHeader';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { formatCurrency, formatNumber, timeAgo } from '@/components/shared/format';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/use-toast';
 import { base44 } from '@/api/base44Client';
 import {
-  ResponsiveContainer, AreaChart, Area, BarChart, Bar, XAxis, YAxis,
+  ResponsiveContainer, AreaChart, Area, XAxis, YAxis,
   Tooltip, CartesianGrid, PieChart, Pie, Cell
 } from 'recharts';
 
@@ -33,13 +34,15 @@ const harvestData = [
 ];
 
 export default function AdminDashboard() {
+  const { toast } = useToast();
   const [stats, setStats] = useState({ customers: 0, orders: 0, invoices: 0, products: 0, farms: 0, harvests: 0, deliveries: 0, employees: 0 });
   const [recentOrders, setRecentOrders] = useState([]);
   const [pendingInvoices, setPendingInvoices] = useState([]);
   const [lowStock, setLowStock] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const loadDashboard = () => {
+    setLoading(true);
     Promise.all([
       base44.entities.Customer.list('-created_date', 100).catch(() => []),
       base44.entities.Order.list('-created_date', 5).catch(() => []),
@@ -65,14 +68,45 @@ export default function AdminDashboard() {
       setPendingInvoices(invoices || []);
       setLowStock((stock || []).filter((s) => s.quantity_on_hand <= s.reorder_level).slice(0, 5));
       setLoading(false);
+    }).catch(() => setLoading(false));
+  };
+
+  useEffect(() => { loadDashboard(); }, []);
+
+  const exportDashboard = async () => {
+    const { jsPDF } = await import('jspdf');
+    const doc = new jsPDF();
+    const rows = [
+      ['Customers', stats.customers],
+      ['Orders', stats.orders],
+      ['Pending Invoices', stats.invoices],
+      ['Products', stats.products],
+      ['Farms', stats.farms],
+      ['Harvests', stats.harvests],
+      ['Deliveries', stats.deliveries],
+      ['Employees', stats.employees],
+    ];
+
+    doc.setFontSize(16);
+    doc.text('Dashboard Summary', 14, 18);
+    doc.setFontSize(11);
+    rows.forEach(([label, value], index) => {
+      doc.text(`${label}: ${value}`, 14, 32 + index * 8);
     });
-  }, []);
+    doc.save('dashboard-summary.pdf');
+    toast({ title: 'Dashboard PDF exported' });
+  };
+
+  const refreshDashboard = () => {
+    loadDashboard();
+    toast({ title: 'Dashboard refreshed' });
+  };
 
   return (
     <div>
       <PageHeader title="Dashboard Overview" description="Live business performance across sales, operations, and finance.">
-        <Button variant="outline" size="sm">Export PDF</Button>
-        <Button size="sm" className="gradient-mango text-white">Refresh</Button>
+        <Button variant="outline" size="sm" onClick={exportDashboard}>Export PDF</Button>
+        <Button size="sm" className="gradient-mango text-white" onClick={refreshDashboard} disabled={loading}>Refresh</Button>
       </PageHeader>
 
       {/* KPI Strip */}

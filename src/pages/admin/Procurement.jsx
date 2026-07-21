@@ -1,19 +1,39 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, FileText, Package } from 'lucide-react';
+import { FileText, Package } from 'lucide-react';
 import PageHeader from '@/components/shared/PageHeader';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { formatCurrency, formatDate } from '@/components/shared/format';
-import { Button } from '@/components/ui/button';
 import DataTable from '@/components/shared/DataTable';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import AdminCreateDialog from '@/components/admin/AdminCreateDialog';
 import { base44 } from '@/api/base44Client';
+
+const purchaseOrderFields = [
+  { name: 'supplier_name', label: 'Supplier', required: true },
+  { name: 'order_date', label: 'Order Date', type: 'date', required: true },
+  { name: 'expected_delivery_date', label: 'Expected Delivery', type: 'date' },
+  { name: 'total_amount', label: 'Total Amount', type: 'number', required: true },
+  {
+    name: 'status',
+    label: 'Status',
+    type: 'select',
+    defaultValue: 'draft',
+    options: [
+      { value: 'draft', label: 'Draft' },
+      { value: 'sent', label: 'Sent' },
+      { value: 'received', label: 'Received' },
+      { value: 'cancelled', label: 'Cancelled' },
+    ],
+  },
+];
 
 export default function Procurement() {
   const [suppliers, setSuppliers] = useState([]);
   const [pos, setPos] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const load = () => {
+    setLoading(true);
     Promise.all([
       base44.entities.Supplier.list(),
       base44.entities.PurchaseOrder.list('-order_date', 50),
@@ -22,12 +42,27 @@ export default function Procurement() {
       setPos(orders || []);
       setLoading(false);
     }).catch(() => setLoading(false));
-  }, []);
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const createPurchaseOrder = (payload) => base44.entities.PurchaseOrder.create({
+    ...payload,
+    po_number: `PO-${Date.now().toString().slice(-6)}`,
+  });
 
   return (
     <div>
       <PageHeader title="Procurement & Suppliers" description="Manage suppliers, purchase orders, and procurement workflows.">
-        <Button className="gradient-mango text-white"><Plus className="mr-2 h-4 w-4" /> New Purchase Order</Button>
+        <AdminCreateDialog
+          title="New Purchase Order"
+          description="Create a supplier purchase order."
+          buttonLabel="New Purchase Order"
+          fields={purchaseOrderFields}
+          onCreate={createPurchaseOrder}
+          onCreated={load}
+          submitLabel="Create Purchase Order"
+        />
       </PageHeader>
 
       <div className="mb-6 grid gap-4 sm:grid-cols-3">

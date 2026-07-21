@@ -43,6 +43,7 @@ const statusConfig = {
   planned: { label: 'Planned', class: 'bg-blue-100 text-blue-700' },
   in_progress: { label: 'In Progress', class: 'bg-indigo-100 text-indigo-700' },
   completed: { label: 'Completed', class: 'bg-emerald-100 text-emerald-700' },
+  blocked: { label: 'Blocked', class: 'bg-red-100 text-red-700' },
   // Export shipment
   preparing: { label: 'Preparing', class: 'bg-amber-100 text-amber-700' },
   // Approval

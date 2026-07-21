@@ -1,12 +1,36 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Newspaper, FileText, Inbox } from 'lucide-react';
+import { Newspaper, FileText, Inbox } from 'lucide-react';
 import PageHeader from '@/components/shared/PageHeader';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { formatDate, timeAgo } from '@/components/shared/format';
-import { Button } from '@/components/ui/button';
 import DataTable from '@/components/shared/DataTable';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import AdminCreateDialog from '@/components/admin/AdminCreateDialog';
 import { base44 } from '@/api/base44Client';
+
+const postFields = [
+  { name: 'title', label: 'Title', required: true, wide: true },
+  { name: 'category', label: 'Category', required: true },
+  { name: 'author_name', label: 'Author' },
+  { name: 'published_at', label: 'Published At', type: 'datetime-local' },
+  {
+    name: 'status',
+    label: 'Status',
+    type: 'select',
+    defaultValue: 'draft',
+    options: [
+      { value: 'draft', label: 'Draft' },
+      { value: 'published', label: 'Published' },
+    ],
+  },
+  { name: 'excerpt', label: 'Excerpt', type: 'textarea', wide: true },
+];
+
+const slugify = (value) => String(value)
+  .trim()
+  .toLowerCase()
+  .replace(/[^a-z0-9]+/g, '-')
+  .replace(/^-+|-+$/g, '');
 
 export default function Content() {
   const [pages, setPages] = useState([]);
@@ -14,7 +38,8 @@ export default function Content() {
   const [inquiries, setInquiries] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const load = () => {
+    setLoading(true);
     Promise.all([
       base44.entities.ContentPage.list('-updated_date', 50),
       base44.entities.NewsPost.list('-published_at', 50),
@@ -25,12 +50,28 @@ export default function Content() {
       setInquiries(inqs || []);
       setLoading(false);
     }).catch(() => setLoading(false));
-  }, []);
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const createPost = (payload) => base44.entities.NewsPost.create({
+    ...payload,
+    slug: `${slugify(payload.title)}-${Date.now().toString().slice(-4)}`,
+    content: payload.excerpt || '',
+  });
 
   return (
     <div>
       <PageHeader title="Content Management" description="Manage website pages, news posts, and customer inquiries.">
-        <Button className="gradient-mango text-white"><Plus className="mr-2 h-4 w-4" /> New Post</Button>
+        <AdminCreateDialog
+          title="New Post"
+          description="Create a news post for the public site."
+          buttonLabel="New Post"
+          fields={postFields}
+          onCreate={createPost}
+          onCreated={load}
+          submitLabel="Create Post"
+        />
       </PageHeader>
 
       <Tabs defaultValue="inquiries">

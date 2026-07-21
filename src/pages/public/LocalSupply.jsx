@@ -3,30 +3,80 @@ import { Truck, Store, Package, Clock, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 
+const SUPPLY_TYPES = [
+  {
+    icon: Store,
+    title: 'Retail Supply',
+    desc: 'Fresh mangoes supplied to supermarkets, grocery stores, and fruit vendors with reliable weekly deliveries.',
+    image: '/pages/local-supply-retail.png',
+  },
+  {
+    icon: Package,
+    title: 'Wholesale',
+    desc: 'Bulk supply for distributors and processors. Competitive pricing with flexible ordering and volume discounts.',
+    image: '/pages/local-supply-wholesale.png',
+  },
+  {
+    icon: Truck,
+    title: 'Direct Delivery',
+    desc: 'Door-to-door delivery service for businesses and institutions. Same-day or scheduled delivery options.',
+    image: '/pages/local-supply-delivery.png',
+    transparentImage: true,
+  },
+];
+
 export default function LocalSupply() {
   return (
-    <div>
-      <section className="bg-gradient-to-br from-amber-600 to-orange-600 py-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <h1 className="font-heading text-4xl font-bold tracking-tight text-white">Local Supply</h1>
-          <p className="mt-2 text-amber-50">Fresh mangoes delivered to retailers, wholesalers, and walk-in customers across the region.</p>
+    <div className="relative overflow-hidden bg-background">
+      <section className="relative overflow-hidden py-20 md:py-28">
+        <img
+          src="/pages/local-supply-header.png"
+          alt="Fresh mangoes under an orchard tree for local supply"
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/45 to-black/15" />
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <h1 className="font-heading text-4xl font-bold tracking-tight text-white md:text-5xl">Local Supply</h1>
+          <p className="mt-3 max-w-2xl text-lg text-amber-50">
+            Fresh mangoes delivered to retailers, wholesalers, and walk-in customers across the region.
+          </p>
         </div>
       </section>
 
-      <section className="py-16 lg:py-24">
+      <section className="bg-background py-16 lg:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid gap-8 md:grid-cols-3">
-            {[
-              { icon: Store, title: 'Retail Supply', desc: 'Fresh mangoes supplied to supermarkets, grocery stores, and fruit vendors with reliable weekly deliveries.' },
-              { icon: Package, title: 'Wholesale', desc: 'Bulk supply for distributors and processors. Competitive pricing with flexible ordering and volume discounts.' },
-              { icon: Truck, title: 'Direct Delivery', desc: 'Door-to-door delivery service for businesses and institutions. Same-day or scheduled delivery options.' },
-            ].map((item) => (
-              <div key={item.title} className="rounded-2xl border border-border bg-card p-8 shadow-sm">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl gradient-mango">
-                  <item.icon className="h-7 w-7 text-white" />
+            {SUPPLY_TYPES.map((item) => (
+              <div
+                key={item.title}
+                className={`group relative min-h-[360px] overflow-hidden rounded-2xl border shadow-xl ${
+                  item.transparentImage ? 'border-emerald-900/15 bg-gradient-to-br from-emerald-950 via-emerald-800 to-amber-700' : 'border-white/20'
+                }`}
+              >
+                {item.transparentImage ? (
+                  <img
+                    src={item.image}
+                    alt={`${item.title} truck`}
+                    className="absolute inset-x-0 top-7 mx-auto h-[58%] w-[94%] object-contain transition-transform duration-500 group-hover:scale-105"
+                  />
+                ) : (
+                  <>
+                    <img
+                      src={item.image}
+                      alt={`${item.title} background`}
+                      className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/10" />
+                  </>
+                )}
+                {item.transparentImage && <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-white/10" />}
+                <div className="relative flex h-full min-h-[360px] flex-col justify-end p-8 text-white">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-sm">
+                    <item.icon className="h-7 w-7 text-white" />
+                  </div>
+                  <h3 className="mt-4 font-heading text-xl font-bold">{item.title}</h3>
+                  <p className="mt-2 text-sm text-white/85">{item.desc}</p>
                 </div>
-                <h3 className="mt-4 font-heading text-xl font-bold">{item.title}</h3>
-                <p className="mt-2 text-sm text-muted-foreground">{item.desc}</p>
               </div>
             ))}
           </div>
@@ -60,7 +110,7 @@ export default function LocalSupply() {
                 <Link to="/contact">Place an Order <ArrowRight className="ml-2 h-4 w-4" /></Link>
               </Button>
             </div>
-            <img src="https://images.unsplash.com/photo-1546470427-227df1e3b9b8?w=800&q=80" alt="Local mango supply" className="rounded-2xl shadow-xl" />
+            <img src="/pages/local-supply-why-choose.png" alt="Why choose JBA GreenGold local supply" className="rounded-2xl shadow-xl" />
           </div>
         </div>
       </section>

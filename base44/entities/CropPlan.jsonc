@@ -1,0 +1,26 @@
+{
+  "name": "CropPlan",
+  "type": "object",
+  "properties": {
+    "plan_code": { "type": "string", "title": "Plan Code" },
+    "farm_id": { "type": "string", "title": "Farm ID" },
+    "farm_name": { "type": "string", "title": "Farm Name" },
+    "block_id": { "type": "string", "title": "Block ID" },
+    "block_name": { "type": "string", "title": "Block Name" },
+    "crop_variety": { "type": "string", "title": "Crop Variety" },
+    "season": { "type": "string", "title": "Season" },
+    "planting_date": { "type": "string", "title": "Planting Date", "format": "date" },
+    "expected_harvest_start": { "type": "string", "title": "Expected Harvest Start", "format": "date" },
+    "expected_harvest_end": { "type": "string", "title": "Expected Harvest End", "format": "date" },
+    "target_yield_kg": { "type": "number", "title": "Target Yield Kg", "default": 0 },
+    "budget_amount": { "type": "number", "title": "Budget Amount", "default": 0 },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "enum": ["planned", "active", "completed", "cancelled"],
+      "default": "planned"
+    },
+    "notes": { "type": "string", "title": "Notes" }
+  },
+  "required": ["plan_code", "farm_id", "crop_variety"]
+}
