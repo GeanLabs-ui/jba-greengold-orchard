@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import BrandLogo from '@/components/shared/BrandLogo';
 import { farmDailyActivitiesNavigation } from '@/lib/farm-navigation';
@@ -60,11 +60,17 @@ export default function AdminSidebar({ collapsed = false, onToggleCollapsed }) {
   const [fdaExpanded, setFdaExpanded] = useState(
     location.pathname.startsWith('/admin/farm-daily-activities')
   );
+  const prevPathnameRef = useRef(location.pathname);
 
   useEffect(() => {
-    if (location.pathname.startsWith('/admin/farm-daily-activities')) {
+    const wasFDA = prevPathnameRef.current.startsWith('/admin/farm-daily-activities');
+    const isFDA = location.pathname.startsWith('/admin/farm-daily-activities');
+
+    if (isFDA && !wasFDA) {
       setFdaExpanded(true);
     }
+
+    prevPathnameRef.current = location.pathname;
   }, [location.pathname]);
 
   return (

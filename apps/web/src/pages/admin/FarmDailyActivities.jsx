@@ -1,4 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { farmDailyActivitiesNavigation } from '@/lib/farm-navigation';
 import {
   AlertTriangle,
   BarChart3,
@@ -429,10 +431,37 @@ const approvalColumns = [
   { key: 'status', label: 'Status', render: (value) => <StatusBadge status={String(value).toLowerCase()} label={value} /> },
 ];
 
+const routeToPageName = {
+  'dashboard': 'Farm Operations Dashboard',
+  'activities': 'Daily Activities',
+  'work-orders': 'Work Orders',
+  'harvests': 'Harvest Operations',
+  'labour': 'Labour Management',
+  'equipment': 'Equipment Management',
+  'inputs': 'Chemicals & Fertilizers',
+  'quality-control': 'Quality Control',
+  'expenses': 'Farm Expenses',
+  'reports': 'Daily Supervisor Reports'
+};
+
 export default function FarmDailyActivities() {
   const { toast } = useToast();
-  const [activePage, setActivePage] = useState(pageMap[0].name);
-  const [activeScreen, setActiveScreen] = useState(pageMap[0].screens[0]);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const pathname = location.pathname;
+
+  const activeSection = farmDailyActivitiesNavigation.find(
+    (section) => pathname.startsWith(section.path)
+  ) || farmDailyActivitiesNavigation[0];
+
+  const activeChild = activeSection.children.find(
+    (child) => pathname === child.path
+  ) || activeSection.children[0];
+
+  const activePage = routeToPageName[activeSection.path.split('/').pop()] || activeSection.title;
+  const activeScreen = activeChild.screen;
+  const activeChildFilter = activeChild.filter;
+
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState({});
@@ -536,6 +565,17 @@ export default function FarmDailyActivities() {
   };
 
   useEffect(() => { load(); }, []);
+
+  useEffect(() => {
+    const matchedSection = farmDailyActivitiesNavigation.find(
+      (section) => pathname === section.path || pathname === `${section.path}/`
+    );
+    if (matchedSection && matchedSection.children?.[0]) {
+      navigate(matchedSection.children[0].path, { replace: true });
+    } else if (pathname === '/admin/farm-daily-activities' || pathname === '/admin/farm-daily-activities/') {
+      navigate('/admin/farm-daily-activities/dashboard/overview', { replace: true });
+    }
+  }, [pathname, navigate]);
 
   const activePageConfig = pageMap.find((page) => page.name === activePage) || pageMap[0];
   const lowerSearch = search.toLowerCase();
@@ -1939,21 +1979,45 @@ export default function FarmDailyActivities() {
   const renderScreen = () => {
     if (loading) return <div className="h-96 animate-pulse rounded-xl bg-muted" />;
 
-    const activities = filterRows(data.dailyActivities || [], ['activity_code', 'title', 'farm_name', 'block_name', 'category', 'supervisor_name']);
-    const workOrders = filterRows(data.workOrders || [], ['work_order_code', 'title', 'farm_name', 'block_name', 'category']);
-    const harvests = filterRows(data.harvestBatches || [], ['harvest_code', 'batch_number', 'farm_name', 'block_name', 'team', 'supervisor']);
-    const attendance = filterRows(data.attendance || [], ['worker_name', 'team', 'role', 'activity']);
-    const equipment = filterRows(data.equipment || [], ['equipment_name', 'category', 'farm_assigned', 'status']);
-    const inputUsage = filterRows(data.inputUsage || [], ['application_code', 'input_name', 'input_type', 'farm_name', 'activity']);
-    const inputs = filterRows(data.farmInputs || [], ['input_name', 'type', 'category', 'supplier']);
-    const inventory = filterRows(data.inventoryUsage || [], ['usage_code', 'item', 'item_category', 'farm_name', 'activity']);
-    const qcs = filterRows(data.qualityChecks || [], ['qc_code', 'batch_number', 'farm_name', 'inspector', 'stage']);
-    const losses = filterRows(data.wasteLosses || [], ['loss_code', 'loss_type', 'farm_name', 'batch_number']);
-    const weather = filterRows(data.weatherLogs || [], ['weather_code', 'farm_name', 'weather_condition', 'recorded_by']);
-    const expenses = filterRows(data.farmExpenses || [], ['expense_code', 'farm_name', 'activity', 'category', 'description']);
-    const reports = filterRows(data.dailyReports || [], ['report_code', 'farm_name', 'supervisor']);
-    const approvals = filterRows(data.approvals || [], ['approval_code', 'module', 'record_code', 'approver']);
-    const notifications = filterRows(data.notifications || [], ['title', 'message', 'type']);
+    let activities = filterRows(data.dailyActivities || [], ['activity_code', 'title', 'farm_name', 'block_name', 'category', 'supervisor_name']);
+    let workOrders = filterRows(data.workOrders || [], ['work_order_code', 'title', 'farm_name', 'block_name', 'category']);
+    let harvests = filterRows(data.harvestBatches || [], ['harvest_code', 'batch_number', 'farm_name', 'block_name', 'team', 'supervisor']);
+    let attendance = filterRows(data.attendance || [], ['worker_name', 'team', 'role', 'activity']);
+    let equipment = filterRows(data.equipment || [], ['equipment_name', 'category', 'farm_assigned', 'status']);
+    let inputUsage = filterRows(data.inputUsage || [], ['application_code', 'input_name', 'input_type', 'farm_name', 'activity']);
+    let inputs = filterRows(data.farmInputs || [], ['input_name', 'type', 'category', 'supplier']);
+    let inventory = filterRows(data.inventoryUsage || [], ['usage_code', 'item', 'item_category', 'farm_name', 'activity']);
+    let qcs = filterRows(data.qualityChecks || [], ['qc_code', 'batch_number', 'farm_name', 'inspector', 'stage']);
+    let losses = filterRows(data.wasteLosses || [], ['loss_code', 'loss_type', 'farm_name', 'batch_number']);
+    let weather = filterRows(data.weatherLogs || [], ['weather_code', 'farm_name', 'weather_condition', 'recorded_by']);
+    let expenses = filterRows(data.farmExpenses || [], ['expense_code', 'farm_name', 'activity', 'category', 'description']);
+    let reports = filterRows(data.dailyReports || [], ['report_code', 'farm_name', 'supervisor']);
+    let approvals = filterRows(data.approvals || [], ['approval_code', 'module', 'record_code', 'approver']);
+    let notifications = filterRows(data.notifications || [], ['title', 'message', 'type']);
+
+    if (activeChildFilter) {
+      if (activeChildFilter.status) {
+        const s = activeChildFilter.status;
+        activities = activities.filter((x) => x.status === s);
+        workOrders = workOrders.filter((x) => x.status === s);
+        harvests = harvests.filter((x) => x.status === s);
+        qcs = qcs.filter((x) => x.status === s);
+        expenses = expenses.filter((x) => x.status === s);
+      }
+      if (activeChildFilter.rejectedOnly) {
+        harvests = harvests.filter((x) => asNumber(x.rejected_kg) > 0 || x.status === 'Rejected');
+      }
+      if (activeChildFilter.category) {
+        expenses = expenses.filter((x) => x.category === activeChildFilter.category);
+      }
+      if (activeChildFilter.categoryGroup) {
+        if (activeChildFilter.categoryGroup === 'inputs') {
+          expenses = expenses.filter((x) => ['Fertilizer', 'Chemical', 'Input'].includes(x.category));
+        } else if (activeChildFilter.categoryGroup === 'equipment') {
+          expenses = expenses.filter((x) => ['Equipment Repair', 'Maintenance', 'Equipment'].includes(x.category));
+        }
+      }
+    }
 
     switch (activeScreen) {
       case 'Dashboard Overview':
@@ -2241,74 +2305,110 @@ export default function FarmDailyActivities() {
     }
   };
 
-  const changePage = (page) => {
-    setActivePage(page.name);
-    setActiveScreen(page.screens[0]);
+  const getPageInfo = () => {
+    switch (activePage) {
+      case 'Farm Operations Dashboard':
+        return {
+          placeholder: 'Search dashboard...',
+          action: createAction('Create Activity', activityFields, createDailyActivity, 'Create Activity')
+        };
+      case 'Daily Activities':
+        return {
+          placeholder: 'Search activities...',
+          action: createAction('Add Activity', activityFields, createDailyActivity, 'Add Activity')
+        };
+      case 'Work Orders':
+        return {
+          placeholder: 'Search work orders...',
+          action: createAction('Create Work Order', workOrderFields, createWorkOrder, 'Create Work Order')
+        };
+      case 'Harvest Operations':
+        return {
+          placeholder: 'Search harvest batches...',
+          action: createAction('Record Harvest', harvestFields, syncHarvestBatch, 'Record Harvest')
+        };
+      case 'Labour Management':
+        return {
+          placeholder: 'Search workers...',
+          action: createAction('Assign Workers', attendanceFields, createAttendance, 'Assign Workers')
+        };
+      case 'Equipment Management':
+        return {
+          placeholder: 'Search equipment...',
+          action: createAction('Add Equipment Record', equipmentFields, createEquipment, 'Add Equipment Record')
+        };
+      case 'Chemicals & Fertilizers': // Input Usage
+        return {
+          placeholder: 'Search inputs...',
+          action: createAction('Record Input Usage', inputUsageFields, createInputUsage, 'Record Input Usage')
+        };
+      case 'Quality Control':
+        return {
+          placeholder: 'Search inspections...',
+          action: createAction('Create Inspection', qcFields, createQc, 'Create Inspection')
+        };
+      case 'Farm Expenses': // Expenses
+        return {
+          placeholder: 'Search expenses...',
+          action: createAction('Record Expense', expenseFields, createExpense, 'Record Expense')
+        };
+      case 'Daily Supervisor Reports': // Reports
+        return {
+          placeholder: 'Search reports...',
+          action: createAction('Generate Report', reportFields, createReport, 'Generate Report')
+        };
+      default:
+        return {
+          placeholder: 'Search...',
+          action: null
+        };
+    }
   };
+
+  const pageInfo = getPageInfo();
 
   return (
     <div className="space-y-6">
-      <div className="sticky top-0 z-20 -mx-2 space-y-2 border-b border-border bg-background/95 px-2 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/85">
-        <div className="flex items-center justify-between gap-3">
+      <div className="sticky top-0 z-20 -mx-2 space-y-3 border-b border-border bg-background/95 px-2 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/85">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
-            <h2 className="truncate font-heading text-lg font-bold">{activePage}</h2>
+            <h1 className="truncate font-heading text-xl font-bold">{activePage}</h1>
           </div>
-          <div className="hidden shrink-0 items-center gap-2 md:flex">
-            <Input className="w-72" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search current records..." />
-            {createAction('Create Activity', activityFields, createDailyActivity, 'Create Activity')}
-            <Button variant="outline" onClick={load}><RefreshCw className="mr-2 h-4 w-4" />Refresh</Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Input
+              className="w-full sm:w-64"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder={pageInfo.placeholder}
+            />
+            {pageInfo.action}
+            <Button variant="outline" size="sm" onClick={load} className="h-10">
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Refresh
+            </Button>
           </div>
         </div>
 
-        <div className="flex gap-2 overflow-x-auto pb-3 scrollbar-thin">
-          {pageMap.map((page) => {
-            const Icon = page.icon;
-            const isActive = page.name === activePage;
-            return (
-              <button
-                key={page.name}
-                type="button"
-                onClick={() => changePage(page)}
-                className={`flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                  isActive
-                    ? 'bg-primary text-primary-foreground shadow-sm'
-                    : 'border border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-                <span className="whitespace-nowrap">{page.name}</span>
-                <span className={`rounded px-1.5 py-0.5 text-[10px] ${isActive ? 'bg-white/20 text-white' : 'bg-muted text-muted-foreground'}`}>
-                  {page.screens.length}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="mt-2">
+        {/* Top horizontal submenu */}
+        <div className="border-t border-border/45 pt-2">
           <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
-            {activePageConfig.screens.map((screen) => (
-              <button
-                key={screen}
-                type="button"
-                onClick={() => setActiveScreen(screen)}
-                className={`shrink-0 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                  activeScreen === screen
-                    ? 'bg-foreground text-background'
-                    : 'border border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
-                }`}
-              >
-                {screen}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="grid gap-2 md:hidden">
-          <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search current records..." />
-          <div className="flex gap-2">
-            {createAction('Create Activity', activityFields, createDailyActivity, 'Create Activity')}
-            <Button variant="outline" onClick={load}><RefreshCw className="mr-2 h-4 w-4" />Refresh</Button>
+            {activeSection.children.map((child) => {
+              const isChildActive = pathname === child.path;
+              return (
+                <button
+                  key={child.path}
+                  type="button"
+                  onClick={() => navigate(child.path)}
+                  className={`shrink-0 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+                    isChildActive
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'border border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
+                  }`}
+                >
+                  {child.title}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
