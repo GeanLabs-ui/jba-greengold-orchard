@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="106mm" height="156mm" viewBox="0 0 106 156" version="1.1">
+  <title>JBA GreenGold Orchard Dried Mango Front Label - Vector</title>
+  <desc>Pure vector front label with 3mm bleed, 100mm x 150mm trim, and 4mm safe area. No bitmap images are embedded.</desc>
+  <defs>
+    <linearGradient id="paper" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fbf7ec"/>
+      <stop offset="0.52" stop-color="#fffdf6"/>
+      <stop offset="1" stop-color="#efe6d4"/>
+    </linearGradient>
+    <linearGradient id="green" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#073d17"/>
+      <stop offset="0.55" stop-color="#00501d"/>
+      <stop offset="1" stop-color="#063814"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f9c600"/>
+      <stop offset="0.55" stop-color="#f0a400"/>
+      <stop offset="1" stop-color="#c57c00"/>
+    </linearGradient>
+    <linearGradient id="mango" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffd94c"/>
+      <stop offset="0.45" stop-color="#f7ad11"/>
+      <stop offset="1" stop-color="#e37d00"/>
+    </linearGradient>
+    <linearGradient id="mango2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff06a"/>
+      <stop offset="0.5" stop-color="#f6b21c"/>
+      <stop offset="1" stop-color="#d87300"/>
+    </linearGradient>
+    <filter id="softShadow" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0.7" dy="1.2" stdDeviation="0.9" flood-color="#3a2a12" flood-opacity="0.22"/>
+    </filter>
+    <path id="leafVein" d="M0 0 C6 8 14 13 24 15"/>
+    <symbol id="brandMark" viewBox="0 0 48 46">
+      <path d="M24 2 C12 13 8 26 16 42 C17 31 22 23 32 17 C31 11 28 6 24 2Z" fill="#005321"/>
+      <path d="M35 9 C42 21 39 34 25 43 C27 31 26 22 21 16 C26 15 31 12 35 9Z" fill="#3a2508"/>
+      <path d="M16 38 C19 27 25 19 35 15" fill="none" stroke="#fffdf2" stroke-width="2.8" stroke-linecap="round"/>
+      <path d="M23 42 C28 35 35 31 44 29" fill="none" stroke="#fffdf2" stroke-width="1.7" stroke-linecap="round"/>
+      <path d="M27 43 C33 38 39 36 45 35" fill="none" stroke="#0b376f" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="22" cy="24" r="5" fill="#fffdf2"/>
+      <path d="M19 29 C15 32 13 36 13 40" fill="none" stroke="#fffdf2" stroke-width="2.2" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="roundIcon" viewBox="0 0 16 16">
+      <circle cx="8" cy="8" r="7.2" fill="#fffdf2" stroke="#d8a400" stroke-width="0.9"/>
+      <path d="M4.2 8.2 C5.5 4.2 9.2 3.5 12 4.4 C11.2 8.5 8.2 11 4.2 10.8 C5 9.8 6.2 8.5 8 7.6" fill="#0b5a25"/>
+    </symbol>
+  </defs>
+
+  <rect x="0" y="0" width="106" height="156" rx="3" fill="url(#paper)"/>
+  <rect id="bleed-background" x="0" y="0" width="106" height="156" rx="3" fill="url(#paper)"/>
+  <path d="M0 0 H106 V18 C85 16 66 23 48 31 C30 39 14 39 0 34 Z" fill="url(#green)"/>
+  <path d="M0 34 C14 39 30 39 48 31 C66 23 85 16 106 18 L106 20 C85 18 67 25 49 33 C30 42 14 42 0 36 Z" fill="#f6b100"/>
+  <path d="M0 36 C14 42 30 42 49 33 C67 25 85 18 106 20" fill="none" stroke="#fff8e7" stroke-width="0.7"/>
+  <path d="M0 126 C20 134 39 132 58 126 C75 121 91 119 106 123 V156 H0 Z" fill="url(#green)"/>
+  <path d="M0 125 C20 133 39 131 58 125 C75 120 91 118 106 122" fill="none" stroke="#f6b100" stroke-width="2"/>
+  <path d="M0 123 C20 131 39 129 58 123 C75 118 91 116 106 120" fill="none" stroke="#fff8e7" stroke-width="0.55"/>
+
+  <g opacity="0.42" stroke="#b08a50" stroke-width="0.28" fill="none">
+    <path d="M3 36 C8 42 9 52 10 61 C12 50 16 44 24 40"/>
+    <path d="M4 39 C8 40 11 43 14 47"/>
+    <path d="M5 43 C10 45 13 49 16 54"/>
+    <path d="M7 48 C11 50 14 54 17 59"/>
+    <path d="M97 62 C100 54 102 48 106 43"/>
+    <path d="M100 58 C96 55 92 54 88 55"/>
+    <use href="#leafVein" transform="translate(92 65) rotate(-45) scale(.55)"/>
+  </g>
+
+  <text x="53" y="10" text-anchor="middle" font-family="Montserrat, Arial, sans-serif" font-size="3.1" font-weight="700" letter-spacing="0.4" fill="#fff7d7">PREMIUM QUALITY • 100% NATURAL &amp; NO PRESERVATIVES</text>
+
+  <g transform="translate(31 39)">
+    <use href="#brandMark" x="14" y="-8" width="26" height="25"/>
+    <text x="27" y="34" text-anchor="middle" font-family="Montserrat, Arial, sans-serif" font-size="9" font-weight="800" fill="#075226">JBA Green<tspan fill="#d79400">Gold</tspan></text>
+    <text x="27" y="40" text-anchor="middle" font-family="Montserrat, Arial, sans-serif" font-size="4.6" font-weight="700" letter-spacing="3.1" fill="#2b1608">ORCHARD</text>
+    <line x1="6" y1="43" x2="48" y2="43" stroke="#2b1608" stroke-width="0.35"/>
+    <text x="27" y="48" text-anchor="middle" font-family="Montserrat, Arial, sans-serif" font-size="2.6" font-weight="600" letter-spacing=".3" fill="#442810">GROWING TODAY, SUSTAINING TOMORROW</text>
+  </g>
+
+  <g transform="translate(9 78)">
+    <text x="0" y="0" font-family="Montserrat, Arial, sans-serif" font-size="9" font-weight="900" fill="#063f1b">DRIED</text>
+    <text x="0" y="11" font-family="Montserrat, Arial, sans-serif" font-size="12" font-weight="900" fill="#351b08">MANGO</text>
+    <text x="0" y="20" font-family="Montserrat, Arial, sans-serif" font-size="3.2" font-weight="800" fill="#3b1d0b">SWEETENED | SOFT &amp; CHEWY</text>
+    <text x="0" y="25" font-family="Montserrat, Arial, sans-serif" font-size="3.2" font-weight="800" fill="#3b1d0b">RICH IN NUTRIENTS</text>
+  </g>
+
+  <g transform="translate(8 103)" font-family="Montserrat, Arial, sans-serif">
+    <use href="#roundIcon" x="0" y="0" width="8" height="8"/>
+    <text x="12" y="3" font-size="2.2" font-weight="800" fill="#3b1d0b">REAL MANGOES</text>
+    <text x="12" y="6" font-size="1.55" fill="#4a3b25">Naturally delicious</text>
+    <use href="#roundIcon" x="0" y="10" width="8" height="8"/>
+    <text x="12" y="13" font-size="2.2" font-weight="800" fill="#3b1d0b">PREMIUM QUALITY</text>
+    <text x="12" y="16" font-size="1.55" fill="#4a3b25">Resealable freshness</text>
+    <use href="#roundIcon" x="0" y="20" width="8" height="8"/>
+    <text x="12" y="23" font-size="2.2" font-weight="800" fill="#3b1d0b">NATURALLY TASTY</text>
+    <text x="12" y="26" font-size="1.55" fill="#4a3b25">Made with African mangoes</text>
+  </g>
+
+  <g filter="url(#softShadow)">
+    <path d="M57 95 C67 82 82 78 99 80 C94 92 84 99 69 102 C63 103 59 101 57 95Z" fill="#4f7f15"/>
+    <path d="M59 95 C69 88 81 84 97 81" fill="none" stroke="#d8f0a4" stroke-width="0.7"/>
+    <path d="M48 110 C55 102 69 100 84 104 C79 113 66 117 50 116 Z" fill="#3f7416"/>
+    <path d="M51 111 C61 107 71 105 82 105" fill="none" stroke="#d8f0a4" stroke-width="0.55"/>
+    <ellipse cx="76" cy="107" rx="26" ry="11" fill="#c6842c" transform="rotate(-5 76 107)"/>
+    <ellipse cx="77" cy="101" rx="24" ry="8" fill="#efc985" transform="rotate(-4 77 101)"/>
+    <ellipse cx="75" cy="92" rx="28" ry="13" fill="url(#mango)" transform="rotate(-26 75 92)"/>
+    <ellipse cx="88" cy="100" rx="26" ry="11" fill="url(#mango2)" transform="rotate(-19 88 100)"/>
+    <ellipse cx="72" cy="108" rx="27" ry="11" fill="url(#mango)" transform="rotate(-14 72 108)"/>
+    <ellipse cx="91" cy="113" rx="23" ry="10" fill="url(#mango2)" transform="rotate(-18 91 113)"/>
+    <ellipse cx="62" cy="117" rx="24" ry="10" fill="url(#mango)" transform="rotate(-12 62 117)"/>
+    <path d="M53 105 C63 99 75 96 89 95" fill="none" stroke="#ffe479" stroke-opacity=".65" stroke-width="0.7"/>
+    <path d="M44 121 C56 116 69 113 84 113" fill="none" stroke="#ffe479" stroke-opacity=".55" stroke-width="0.6"/>
+  </g>
+
+  <g transform="translate(84 35)">
+    <circle cx="8" cy="8" r="7" fill="none" stroke="#3a2508" stroke-width="0.45"/>
+    <circle cx="8" cy="8" r="4.3" fill="none" stroke="#3a2508" stroke-width="0.3" stroke-dasharray="1.2 1"/>
+    <text x="8" y="5.5" text-anchor="middle" font-family="Montserrat, Arial, sans-serif" font-size="1.8" font-weight="800" fill="#3a2508">PREMIUM</text>
+    <text x="8" y="10.3" text-anchor="middle" font-family="Montserrat, Arial, sans-serif" font-size="2.6" font-weight="900" fill="#9a7100">100%</text>
+    <text x="8" y="13.2" text-anchor="middle" font-family="Montserrat, Arial, sans-serif" font-size="1.7" font-weight="800" fill="#3a2508">NATURAL</text>
+  </g>
+
+  <text x="8" y="143" font-family="Montserrat, Arial, sans-serif" font-size="3.2" font-weight="900" fill="#f6bd00">PRODUCT OF AFRICA</text>
+  <text x="8" y="147" font-family="Montserrat, Arial, sans-serif" font-size="2.1" font-weight="700" fill="#fff8e7">FRESH FOOD FOR THE WORLD.</text>
+  <text x="88" y="146" text-anchor="middle" font-family="Montserrat, Arial, sans-serif" font-size="2.2" font-weight="800" fill="#fff8e7">NET WEIGHT</text>
+  <text x="88" y="152" text-anchor="middle" font-family="Montserrat, Arial, sans-serif" font-size="6" font-weight="900" fill="#fff8e7">250g</text>
+
+  <rect id="trim-line-100x150mm" x="3" y="3" width="100" height="150" rx="2.5" fill="none" stroke="#00a2ff" stroke-width="0.18" stroke-dasharray="2 1.4"/>
+  <rect id="safe-area" x="7" y="7" width="92" height="142" rx="1.5" fill="none" stroke="#ec008c" stroke-width="0.14" stroke-dasharray="1.3 1.2"/>
+</svg>
