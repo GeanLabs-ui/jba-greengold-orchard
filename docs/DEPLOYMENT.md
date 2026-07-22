@@ -26,6 +26,8 @@ Create `staging` and `production` environments. In each, add secrets `CLOUDFLARE
 
 Set production `APP_URL` to `https://jbagreengoldorchard.farm` and staging to `https://staging.jbagreengoldorchard.farm`. Require reviewers on the production environment.
 
+Required reviewers and protected branches for a private repository require a paid GitHub plan. Do not treat the current Free-plan branch restriction alone as the production approval control; upgrade before launch.
+
 ## First release
 
 1. Replace all placeholder Hyperdrive binding IDs.

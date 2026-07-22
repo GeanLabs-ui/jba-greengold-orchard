@@ -19,4 +19,6 @@ For an urgent correction, branch `hotfix/<ticket>-short-name` from `main`, revie
 
 Create branch rules for both `main` and `staging`: require pull requests, at least one review, Code Owners review for security/infrastructure paths, status checks `verify` and `analyze`, resolved conversations, linear history for feature branches, signed commits where available, and block deletions/force pushes. Restrict the production deployment environment to `main` and add required reviewers.
 
+The repository is private. GitHub rejected branch protection and required environment reviewers on the current Free plan; upgrade the account/repository to GitHub Pro before production, then apply the rules above. The existing deployment environments are already restricted to their matching `main` and `staging` branches.
+
 The initial Code Owner is `@Nyamesem22`; replace it with a GitHub team when additional maintainers join.
