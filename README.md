@@ -1,26 +1,34 @@
-# Mango Farm Platform
+# JBA GreenGold Orchard
 
-Standalone React/Vite application for the public website, customer portal, and staff/admin workspace.
+Production monorepo for the public website, customer portal, staff workspace, and API.
 
-The app now runs without a Base44 backend. Authentication and demo business records are stored locally in the browser with `localStorage`, so development can continue independently.
+## Architecture
 
-## Run Locally
+- React/Vite frontend on Cloudflare Pages
+- Hono API on Cloudflare Workers, reached through a Pages service binding at `/api/v1`
+- Neon PostgreSQL through Cloudflare Hyperdrive
+- Private application documents in Cloudflare R2
+- HttpOnly database-backed sessions, CSRF protection, role permissions, Turnstile, rate limits, audit logs, and structured Worker logs
 
-```bash
-npm install
-npm run dev
-```
+## Local development
 
-Open the local URL printed by Vite.
+1. Copy `.env.example` to `.env` and set a Neon development `DATABASE_URL`.
+2. Put Worker-only local values in `apps/api/.dev.vars`.
+3. Run `npm ci`, `npm run db:migrate`, and then run `npm run dev:web` and `npm run dev:api` in separate terminals.
+4. Open `http://localhost:5173`.
 
-## Admin Access
-
-Open `/admin` directly. If no local account exists yet, register a new account first. The first registered account is automatically assigned the `admin` role; later accounts default to `user`.
-
-Local data is stored in browser storage under keys starting with `mango_farm_local`.
-
-## Build
+Run the full release gate with:
 
 ```bash
-npm run build
+npm run check
 ```
+
+The first administrator is created by registering normally and then running:
+
+```bash
+npm run admin:promote -- --email=admin@example.com
+```
+
+Deployment and branch setup are documented in `docs/DEPLOYMENT.md` and `docs/BRANCHING.md`.
+
+Database changes are committed as ordered SQL files in `packages/database/migrations`. Applied files are checksum-locked and must never be edited; add a new migration instead.

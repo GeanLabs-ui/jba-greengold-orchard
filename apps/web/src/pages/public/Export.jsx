@@ -7,22 +7,22 @@ import WorldMap from '@/components/export/WorldMap';
 const HEADER_IMG = 'https://images.unsplash.com/photo-1494412519320-aa613dfb7738?w=1600&q=80';
 const PACKAGING_IMAGES = [
   {
-    url: '/products/box-package.png',
+    url: '/products/box-package.webp',
     title: 'Fresh Mango Export Box',
     desc: '4kg corrugated export-grade carton for fresh mangoes, designed for cold-chain sea freight and air cargo.',
   },
   {
-    url: '/products/dried-mango.png',
+    url: '/products/dried-mango.webp',
     title: 'Dried Mango Pouch',
     desc: '250g retail pouch for dried mango slices with shelf-ready front and back packaging.',
   },
   {
-    url: '/products/dried-mango-jar.png',
+    url: '/products/dried-mango-jar.webp',
     title: 'Dehydrated Mango Jar',
     desc: '180g jar format for premium dehydrated mango, packaged for gift, retail, and specialty shelves.',
   },
   {
-    url: '/products/mango-pudding.png',
+    url: '/products/mango-pudding.webp',
     title: 'Mango Pudding Pouch',
     desc: '150g ready-to-eat mango pudding with milk, designed for convenience retail and export assortments.',
   },

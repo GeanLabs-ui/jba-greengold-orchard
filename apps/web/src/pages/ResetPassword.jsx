@@ -76,6 +76,8 @@ export default function ResetPassword() {
               autoFocus
               placeholder="••••••••"
               value={newPassword}
+              minLength={12}
+              maxLength={128}
               onChange={(e) => setNewPassword(e.target.value)}
               className="pl-10 h-12"
               required
@@ -92,6 +94,8 @@ export default function ResetPassword() {
               autoComplete="new-password"
               placeholder="••••••••"
               value={confirmPassword}
+              minLength={12}
+              maxLength={128}
               onChange={(e) => setConfirmPassword(e.target.value)}
               className="pl-10 h-12"
               required

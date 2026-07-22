@@ -18,6 +18,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { base44 } from '@/api/base44Client';
+import TurnstileWidget from '@/components/TurnstileWidget';
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024;
 
@@ -101,28 +102,6 @@ const calculateAtsScore = ({ roleAppliedFor, summary, resume, coverLetter, certi
   };
 };
 
-const readFilePayload = (file) => new Promise((resolve, reject) => {
-  if (!file) {
-    resolve(null);
-    return;
-  }
-
-  if (file.size > MAX_FILE_SIZE) {
-    reject(new Error(`${file.name} is larger than 2MB.`));
-    return;
-  }
-
-  const reader = new FileReader();
-  reader.onload = () => resolve({
-    name: file.name,
-    type: file.type,
-    size: file.size,
-    data_url: reader.result,
-  });
-  reader.onerror = () => reject(new Error(`Could not read ${file.name}.`));
-  reader.readAsDataURL(file);
-});
-
 const ApplicationFileInput = ({ id, label, required, file, onChange }) => (
   <label htmlFor={id} className="block rounded-lg border border-amber-100 bg-white p-4 shadow-sm">
     <span className="flex items-center gap-2 text-sm font-semibold text-emerald-950">
@@ -147,6 +126,7 @@ export default function Careers() {
   const [form, setForm] = useState(initialForm);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState('');
+  const [turnstileToken, setTurnstileToken] = useState('');
   const atsPreview = useMemo(() => calculateAtsScore(form), [form]);
 
   const updateField = (name, value) => {
@@ -160,33 +140,21 @@ export default function Careers() {
     setMessage('');
 
     try {
-      const [resumePayload, coverLetterPayload, certificatePayload] = await Promise.all([
-        readFilePayload(form.resume),
-        readFilePayload(form.coverLetter),
-        readFilePayload(form.certificate),
-      ]);
+      for (const file of [form.resume, form.coverLetter, form.certificate].filter(Boolean)) {
+        if (file.size > MAX_FILE_SIZE) throw new Error(`${file.name} is larger than 2MB.`);
+      }
       const ats = calculateAtsScore(form);
-
-      await base44.entities.JobApplication.create({
-        application_number: `APP-${Date.now().toString().slice(-6)}`,
-        candidate_name: form.candidateName.trim(),
-        email: form.email.trim(),
-        phone: form.phone.trim(),
-        role_applied_for: form.roleAppliedFor,
-        candidate_summary: form.summary.trim(),
-        resume_file_name: resumePayload?.name,
-        resume_file_url: resumePayload?.data_url,
-        cover_letter_file_name: coverLetterPayload?.name,
-        cover_letter_file_url: coverLetterPayload?.data_url,
-        certificate_file_name: certificatePayload?.name,
-        certificate_file_url: certificatePayload?.data_url,
-        ats_score: ats.score,
-        ats_status: ats.status,
-        ats_matched_keywords: ats.matchedKeywords,
-        status: 'new',
-        source: 'Careers page',
-        notes: ats.score >= 95 ? 'ATS pass. Ready for admin review.' : 'Needs HR review before shortlisting.',
-      });
+      const payload = new FormData();
+      payload.set('candidateName', form.candidateName.trim());
+      payload.set('email', form.email.trim());
+      payload.set('phone', form.phone.trim());
+      payload.set('roleAppliedFor', form.roleAppliedFor);
+      payload.set('summary', form.summary.trim());
+      payload.set('turnstileToken', turnstileToken);
+      if (form.resume) payload.set('resume', form.resume);
+      if (form.coverLetter) payload.set('coverLetter', form.coverLetter);
+      if (form.certificate) payload.set('certificate', form.certificate);
+      await base44.applications.submit(payload);
 
       setForm(initialForm);
       setMessage(`Application submitted. ATS tracking score: ${ats.score}%.`);
@@ -223,7 +191,7 @@ export default function Careers() {
 
           <div className="relative">
             <img
-              src="/pages/careers-hero-team.png"
+              src="/pages/careers-hero-team.webp"
               alt="JBA GreenGold team reviewing mango orchard work"
               className="h-auto w-full object-contain"
             />
@@ -366,7 +334,8 @@ export default function Careers() {
               </div>
             )}
 
-            <Button disabled={submitting} className="mt-6 h-12 rounded-lg bg-emerald-900 px-8 text-white hover:bg-emerald-800">
+            <TurnstileWidget onToken={setTurnstileToken} />
+            <Button disabled={submitting || !turnstileToken} className="mt-6 h-12 rounded-lg bg-emerald-900 px-8 text-white hover:bg-emerald-800">
               {submitting ? 'Submitting...' : 'Submit Application'}
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
@@ -394,7 +363,7 @@ export default function Careers() {
       <section className="bg-[#fffaf0] px-4 pb-16 pt-5 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl overflow-hidden rounded-lg shadow-xl">
           <img
-            src="/pages/careers-cta-banner.png"
+            src="/pages/careers-cta-banner.webp"
             alt="Ready to grow with JBA GreenGold Orchard"
             className="h-auto w-full object-contain"
           />

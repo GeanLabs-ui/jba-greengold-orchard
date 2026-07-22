@@ -6,14 +6,35 @@
     "packages/*"
   ],
   "scripts": {
+    "dev": "npm run dev:web",
     "dev:web": "npm run dev -w apps/web",
+    "build": "npm run build:web && npm run typecheck:api",
     "build:web": "npm run build -w apps/web",
+    "lint": "npm run lint:web",
     "lint:web": "npm run lint -w apps/web",
+    "typecheck": "npm run typecheck:web && npm run typecheck:api && npm run typecheck:packages",
     "typecheck:web": "npm run typecheck -w apps/web",
+    "typecheck:api": "npm run typecheck -w apps/api",
+    "typecheck:packages": "npx tsc -p packages/database/tsconfig.json --noEmit && npx tsc -p packages/authorization/tsconfig.json --noEmit",
+    "test": "vitest run",
+    "check": "npm run lint && npm run typecheck && npm run test && npm run build:web",
     "dev:api": "npm run dev -w apps/api",
-    "deploy:api": "npm run deploy -w apps/api"
+    "db:migrate": "npm run migrate -w packages/database",
+    "admin:promote": "node scripts/promote-admin.mjs",
+    "deploy:api:staging": "npm run deploy:staging -w apps/api",
+    "deploy:api:production": "npm run deploy:production -w apps/api",
+    "deploy:pages:staging": "wrangler pages deploy apps/web/dist --project-name=jba-greengold-orchard --branch=staging",
+    "deploy:pages:production": "wrangler pages deploy apps/web/dist --project-name=jba-greengold-orchard --branch=main",
+    "assets:optimize": "node scripts/optimize-images.mjs"
   },
   "devDependencies": {
-    "drizzle-orm": "^0.45.2"
+    "drizzle-orm": "^0.45.2",
+    "sharp": "^0.35.3",
+    "vitest": "^4.0.0",
+    "wrangler": "4.113.0"
+  },
+  "overrides": {
+    "sharp": "$sharp",
+    "esbuild": "0.28.1"
   }
 }

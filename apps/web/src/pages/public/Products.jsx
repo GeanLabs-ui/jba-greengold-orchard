@@ -5,9 +5,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { base44 } from '@/api/base44Client';
 
 const PRODUCT_IMAGE_BY_NAME = {
-  'Premium Kent Mango': '/products/box-package.png',
-  'Dried Mango Slices': '/products/dried-mango.png',
-  'Mango Pulp': '/products/mango-pudding.png',
+  'Premium Kent Mango': '/products/box-package.webp',
+  'Dried Mango Slices': '/products/dried-mango.webp',
+  'Mango Pulp': '/products/mango-pudding.webp',
 };
 
 const BRANDED_PRODUCT_CARDS = [
@@ -20,7 +20,7 @@ const BRANDED_PRODUCT_CARDS = [
     description: '180g jar format for premium dehydrated mango slices.',
     price: 32000,
     unit_of_measure: 'jar',
-    image_url: '/products/dried-mango-jar.png',
+    image_url: '/products/dried-mango-jar.webp',
     is_active: true,
   },
   {
@@ -32,7 +32,7 @@ const BRANDED_PRODUCT_CARDS = [
     description: '150g mango pudding pouch with milk for retail shelves.',
     price: 18000,
     unit_of_measure: 'pouch',
-    image_url: '/products/mango-pudding.png',
+    image_url: '/products/mango-pudding.webp',
     is_active: true,
   },
 ];

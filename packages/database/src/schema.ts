@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, integer, boolean, real, jsonb } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, integer, boolean, real, jsonb, index, primaryKey } from 'drizzle-orm/pg-core';
 
 // --- IAM Domain ---
 export const users = pgTable('users', {
@@ -9,9 +9,90 @@ export const users = pgTable('users', {
   fullName: text('full_name'),
   role: text('role').default('user'),
   status: text('status').default('active'),
+  emailVerifiedAt: timestamp('email_verified_at', { withTimezone: true }),
+  lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
+
+export const organizations = pgTable('organizations', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  slug: text('slug').unique().notNull(),
+  status: text('status').default('active').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const organizationMembers = pgTable('organization_members', {
+  organizationId: text('organization_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  role: text('role').default('customer').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  primaryKey({ columns: [table.organizationId, table.userId] }),
+  index('organization_members_user_idx').on(table.userId),
+]);
+
+export const sessions = pgTable('sessions', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  tokenHash: text('token_hash').unique().notNull(),
+  csrfToken: text('csrf_token').notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  lastSeenAt: timestamp('last_seen_at', { withTimezone: true }).defaultNow().notNull(),
+  userAgent: text('user_agent'),
+  ipAddress: text('ip_address'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [index('sessions_user_idx').on(table.userId), index('sessions_expiry_idx').on(table.expiresAt)]);
+
+export const passwordResetTokens = pgTable('password_reset_tokens', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  tokenHash: text('token_hash').unique().notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  usedAt: timestamp('used_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [index('password_reset_user_idx').on(table.userId)]);
+
+export const entityRecords = pgTable('entity_records', {
+  id: text('id').primaryKey(),
+  entityName: text('entity_name').notNull(),
+  organizationId: text('organization_id').references(() => organizations.id, { onDelete: 'cascade' }),
+  ownerUserId: text('owner_user_id').references(() => users.id, { onDelete: 'set null' }),
+  data: jsonb('data').notNull(),
+  createdBy: text('created_by').references(() => users.id, { onDelete: 'set null' }),
+  updatedBy: text('updated_by').references(() => users.id, { onDelete: 'set null' }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  index('entity_records_entity_created_idx').on(table.entityName, table.createdAt),
+  index('entity_records_owner_idx').on(table.ownerUserId, table.entityName),
+  index('entity_records_org_idx').on(table.organizationId, table.entityName),
+]);
+
+export const fileObjects = pgTable('file_objects', {
+  id: text('id').primaryKey(),
+  objectKey: text('object_key').unique().notNull(),
+  originalName: text('original_name').notNull(),
+  contentType: text('content_type').notNull(),
+  sizeBytes: integer('size_bytes').notNull(),
+  ownerUserId: text('owner_user_id').references(() => users.id, { onDelete: 'set null' }),
+  recordId: text('record_id'),
+  status: text('status').default('quarantined').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [index('file_objects_record_idx').on(table.recordId)]);
+
+export const rateLimitWindows = pgTable('rate_limit_windows', {
+  keyHash: text('key_hash').notNull(),
+  action: text('action').notNull(),
+  windowStart: timestamp('window_start', { withTimezone: true }).notNull(),
+  count: integer('count').default(1).notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+}, (table) => [
+  primaryKey({ columns: [table.keyHash, table.action, table.windowStart] }),
+  index('rate_limit_expiry_idx').on(table.expiresAt),
+]);
 
 // --- Farm Operations Domain ---
 export const farms = pgTable('farms', {

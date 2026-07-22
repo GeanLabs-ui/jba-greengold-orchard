@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
@@ -7,6 +7,7 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ScrollToTop from './components/ScrollToTop';
+import SeoManager from './components/SeoManager';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { hasAdminAccess } from '@/lib/access-control';
 import { Button } from '@/components/ui/button';
@@ -21,42 +22,42 @@ import AdminLayout from '@/components/admin/AdminLayout';
 // Portal layout
 import PortalLayout from '@/components/portal/PortalLayout';
 // Public pages
-import Home from '@/pages/public/Home';
-import About from '@/pages/public/About';
-import Products from '@/pages/public/Products';
-import Farms from '@/pages/public/Farms';
-import Sustainability from '@/pages/public/Sustainability';
-import ExportPage from '@/pages/public/Export';
-import LocalSupply from '@/pages/public/LocalSupply';
-import Media from '@/pages/public/Media';
-import News from '@/pages/public/News';
-import NewsDetail from '@/pages/public/NewsDetail';
-import Careers from '@/pages/public/Careers';
-import Contact from '@/pages/public/Contact';
+const Home = lazy(() => import('@/pages/public/Home'));
+const About = lazy(() => import('@/pages/public/About'));
+const Products = lazy(() => import('@/pages/public/Products'));
+const Farms = lazy(() => import('@/pages/public/Farms'));
+const Sustainability = lazy(() => import('@/pages/public/Sustainability'));
+const ExportPage = lazy(() => import('@/pages/public/Export'));
+const LocalSupply = lazy(() => import('@/pages/public/LocalSupply'));
+const Media = lazy(() => import('@/pages/public/Media'));
+const News = lazy(() => import('@/pages/public/News'));
+const NewsDetail = lazy(() => import('@/pages/public/NewsDetail'));
+const Careers = lazy(() => import('@/pages/public/Careers'));
+const Contact = lazy(() => import('@/pages/public/Contact'));
 // Admin pages
-import AdminDashboard from '@/pages/admin/AdminDashboard';
-import CRM from '@/pages/admin/CRM';
-import Sales from '@/pages/admin/Sales';
-import Orders from '@/pages/admin/Orders';
-import Inventory from '@/pages/admin/Inventory';
-import FarmsAdmin from '@/pages/admin/FarmsAdmin';
-import Harvests from '@/pages/admin/Harvests';
-import FarmDailyActivities from '@/pages/admin/FarmDailyActivities';
-import Logistics from '@/pages/admin/Logistics';
-import Procurement from '@/pages/admin/Procurement';
-import Finance from '@/pages/admin/Finance';
-import ExportOps from '@/pages/admin/ExportOps';
-import HR from '@/pages/admin/HR';
-import Applications from '@/pages/admin/Applications';
-import Content from '@/pages/admin/Content';
-import Documents from '@/pages/admin/Documents';
-import Reports from '@/pages/admin/Reports';
-import SettingsPage from '@/pages/admin/SettingsPage';
+const AdminDashboard = lazy(() => import('@/pages/admin/AdminDashboard'));
+const CRM = lazy(() => import('@/pages/admin/CRM'));
+const Sales = lazy(() => import('@/pages/admin/Sales'));
+const Orders = lazy(() => import('@/pages/admin/Orders'));
+const Inventory = lazy(() => import('@/pages/admin/Inventory'));
+const FarmsAdmin = lazy(() => import('@/pages/admin/FarmsAdmin'));
+const Harvests = lazy(() => import('@/pages/admin/Harvests'));
+const FarmDailyActivities = lazy(() => import('@/pages/admin/FarmDailyActivities'));
+const Logistics = lazy(() => import('@/pages/admin/Logistics'));
+const Procurement = lazy(() => import('@/pages/admin/Procurement'));
+const Finance = lazy(() => import('@/pages/admin/Finance'));
+const ExportOps = lazy(() => import('@/pages/admin/ExportOps'));
+const HR = lazy(() => import('@/pages/admin/HR'));
+const Applications = lazy(() => import('@/pages/admin/Applications'));
+const Content = lazy(() => import('@/pages/admin/Content'));
+const Documents = lazy(() => import('@/pages/admin/Documents'));
+const Reports = lazy(() => import('@/pages/admin/Reports'));
+const SettingsPage = lazy(() => import('@/pages/admin/SettingsPage'));
 // Portal pages
-import PortalDashboard from '@/pages/portal/PortalDashboard';
-import PortalOrders from '@/pages/portal/PortalOrders';
-import PortalPayments from '@/pages/portal/PortalPayments';
-import PortalDocuments from '@/pages/portal/PortalDocuments';
+const PortalDashboard = lazy(() => import('@/pages/portal/PortalDashboard'));
+const PortalOrders = lazy(() => import('@/pages/portal/PortalOrders'));
+const PortalPayments = lazy(() => import('@/pages/portal/PortalPayments'));
+const PortalDocuments = lazy(() => import('@/pages/portal/PortalDocuments'));
 
 const AdminSignInRedirect = () => {
   const { navigateToLogin } = useAuth();
@@ -113,6 +114,7 @@ const AuthenticatedApp = () => {
 
   // Render the main app
   return (
+    <Suspense fallback={<div className="fixed inset-0 flex items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-emerald-800" /></div>}>
     <Routes>
       {/* Authentication */}
       <Route path="/login" element={<Login />} />
@@ -170,15 +172,18 @@ const AuthenticatedApp = () => {
       </Route>
 
       {/* Customer portal */}
-      <Route path="/portal" element={<PortalLayout />}>
-        <Route index element={<PortalDashboard />} />
-        <Route path="orders" element={<PortalOrders />} />
-        <Route path="payments" element={<PortalPayments />} />
-        <Route path="documents" element={<PortalDocuments />} />
+      <Route element={<ProtectedRoute unauthenticatedElement={<AdminSignInRedirect />} unauthorizedElement={<AdminAccessDenied />} />}>
+        <Route path="/portal" element={<PortalLayout />}>
+          <Route index element={<PortalDashboard />} />
+          <Route path="orders" element={<PortalOrders />} />
+          <Route path="payments" element={<PortalPayments />} />
+          <Route path="documents" element={<PortalDocuments />} />
+        </Route>
       </Route>
 
       <Route path="*" element={<PageNotFound />} />
     </Routes>
+    </Suspense>
   );
 };
 
@@ -190,6 +195,7 @@ function App() {
       <QueryClientProvider client={queryClientInstance}>
         <Router>
           <ScrollToTop />
+          <SeoManager />
           <AuthenticatedApp />
         </Router>
         <Toaster />

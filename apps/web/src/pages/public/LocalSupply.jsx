@@ -8,19 +8,19 @@ const SUPPLY_TYPES = [
     icon: Store,
     title: 'Retail Supply',
     desc: 'Fresh mangoes supplied to supermarkets, grocery stores, and fruit vendors with reliable weekly deliveries.',
-    image: '/pages/local-supply-retail.png',
+    image: '/pages/local-supply-retail.webp',
   },
   {
     icon: Package,
     title: 'Wholesale',
     desc: 'Bulk supply for distributors and processors. Competitive pricing with flexible ordering and volume discounts.',
-    image: '/pages/local-supply-wholesale.png',
+    image: '/pages/local-supply-wholesale.webp',
   },
   {
     icon: Truck,
     title: 'Direct Delivery',
     desc: 'Door-to-door delivery service for businesses and institutions. Same-day or scheduled delivery options.',
-    image: '/pages/local-supply-delivery.png',
+    image: '/pages/local-supply-delivery.webp',
     transparentImage: true,
   },
 ];
@@ -30,7 +30,7 @@ export default function LocalSupply() {
     <div className="relative overflow-hidden bg-background">
       <section className="relative overflow-hidden py-20 md:py-28">
         <img
-          src="/pages/local-supply-header.png"
+          src="/pages/local-supply-header.webp"
           alt="Fresh mangoes under an orchard tree for local supply"
           className="absolute inset-0 h-full w-full object-cover"
         />
@@ -110,7 +110,7 @@ export default function LocalSupply() {
                 <Link to="/contact">Place an Order <ArrowRight className="ml-2 h-4 w-4" /></Link>
               </Button>
             </div>
-            <img src="/pages/local-supply-why-choose.png" alt="Why choose JBA GreenGold local supply" className="rounded-2xl shadow-xl" />
+            <img src="/pages/local-supply-why-choose.webp" alt="Why choose JBA GreenGold local supply" className="rounded-2xl shadow-xl" loading="lazy" decoding="async" />
           </div>
         </div>
       </section>
