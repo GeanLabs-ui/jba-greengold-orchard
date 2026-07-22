@@ -32,3 +32,5 @@ npm run admin:promote -- --email=admin@example.com
 Deployment and branch setup are documented in `docs/DEPLOYMENT.md` and `docs/BRANCHING.md`.
 
 Database changes are committed as ordered SQL files in `packages/database/migrations`. Applied files are checksum-locked and must never be edited; add a new migration instead.
+
+Set `DATABASE_URL` and run `npm run db:inspect` to print the live database's tables and columns without changing data.
