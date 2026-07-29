@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X } from 'lucide-react';
+import { ArrowRight, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import BrandLogo from '@/components/shared/BrandLogo';
 
 const navLinks = [
   { label: 'About', path: '/about' },
@@ -22,11 +21,15 @@ export default function PublicNavbar() {
   const location = useLocation();
 
   return (
-    <header className="sticky top-0 z-50 glass border-b border-border/60">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between">
+    <header className="sticky top-0 z-50 border-b border-[#0b432f]/10 bg-[#fffdf7]/95 backdrop-blur-xl">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10">
+        <div className="flex h-[4.5rem] items-center justify-between">
           <Link to="/" className="flex items-center gap-2" aria-label="JBA GreenGold Orchard Home">
-            <BrandLogo />
+            <img
+              src="/brand/header-logo-reference.webp"
+              alt="JBA GreenGold Orchard"
+              className="h-11 w-auto object-contain"
+            />
           </Link>
 
           <nav className="hidden items-center gap-0.5 lg:flex">
@@ -34,10 +37,10 @@ export default function PublicNavbar() {
               <Link
                 key={link.path}
                 to={link.path}
-                className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                className={`relative px-2.5 py-2 text-[13px] font-medium transition-colors ${
                   location.pathname === link.path
-                    ? 'text-primary'
-                    : 'text-muted-foreground hover:text-foreground'
+                    ? 'text-[#b77708] after:absolute after:inset-x-2.5 after:-bottom-1 after:h-px after:bg-[#d39a27]'
+                    : 'text-[#253a31] hover:text-[#b77708]'
                 }`}
               >
                 {link.label}
@@ -46,8 +49,8 @@ export default function PublicNavbar() {
           </nav>
 
           <div className="hidden items-center gap-2 lg:flex">
-            <Button variant="ghost" size="sm" asChild>
-              <Link to="/portal">Customer Portal</Link>
+            <Button size="sm" className="h-11 rounded-md bg-[#063c2b] px-5 text-white hover:bg-[#0a5039]" asChild>
+              <Link to="/portal">Customer Portal <ArrowRight className="ml-3 h-4 w-4" /></Link>
             </Button>
           </div>
 

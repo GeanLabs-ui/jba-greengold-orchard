@@ -30,12 +30,15 @@
   },
   "devDependencies": {
     "drizzle-orm": "^0.45.2",
+    "esbuild": "0.25.12",
     "sharp": "^0.35.3",
     "vitest": "^4.0.0",
     "wrangler": "4.113.0"
   },
   "overrides": {
     "sharp": "$sharp",
-    "esbuild": "0.28.1"
+    "vite": {
+      "esbuild": "0.25.12"
+    }
   }
 }

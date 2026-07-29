@@ -26,6 +26,7 @@ const Home = lazy(() => import('@/pages/public/Home'));
 const About = lazy(() => import('@/pages/public/About'));
 const Products = lazy(() => import('@/pages/public/Products'));
 const Farms = lazy(() => import('@/pages/public/Farms'));
+const FarmDetail = lazy(() => import('@/pages/public/FarmDetail'));
 const Sustainability = lazy(() => import('@/pages/public/Sustainability'));
 const ExportPage = lazy(() => import('@/pages/public/Export'));
 const LocalSupply = lazy(() => import('@/pages/public/LocalSupply'));
@@ -128,6 +129,7 @@ const AuthenticatedApp = () => {
         <Route path="/about" element={<About />} />
         <Route path="/products" element={<Products />} />
         <Route path="/farms" element={<Farms />} />
+        <Route path="/farms/:slug" element={<FarmDetail />} />
         <Route path="/sustainability" element={<Sustainability />} />
         <Route path="/export" element={<ExportPage />} />
         <Route path="/local-supply" element={<LocalSupply />} />
