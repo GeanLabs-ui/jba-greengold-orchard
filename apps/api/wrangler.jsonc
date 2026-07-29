@@ -36,22 +36,17 @@
       "version_metadata": { "binding": "CF_VERSION_METADATA" },
       "vars": {
         "APP_ENV": "staging",
-        "ALLOWED_ORIGINS": "https://staging.jbagreengoldorchard.farm",
-        "PASSWORD_RESET_URL": "https://staging.jbagreengoldorchard.farm/reset-password",
+        "ALLOWED_ORIGINS": "https://feature-production-readiness.jba-greengold-orchard.pages.dev,https://staging.jbagreengoldorchard.farm",
+        "PASSWORD_RESET_URL": "https://feature-production-readiness.jba-greengold-orchard.pages.dev/reset-password",
         "EMAIL_FROM": "JBA GreenGold Orchard <noreply@jbagreengoldorchard.farm>"
       },
       "hyperdrive": [
         {
           "binding": "HYPERDRIVE",
-          "id": "00000000000000000000000000000000"
+          "id": "4a3cc15fe9c94e9a997649bb00eecf5a"
         }
       ],
-      "r2_buckets": [
-        {
-          "binding": "PRIVATE_FILES",
-          "bucket_name": "jba-greengold-files-staging"
-        }
-      ]
+      "r2_buckets": []
     },
     "production": {
       "name": "mango-farm-api-production",

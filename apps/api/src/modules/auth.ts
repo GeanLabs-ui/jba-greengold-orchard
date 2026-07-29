@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { closeDatabase, createDatabase } from '../db.js';
 import type { AppVariables } from '../middleware/auth.js';
 import { checkRateLimit, requestIp } from '../rate-limit.js';
-import { clearSessionCookie, hashPassword, randomToken, sessionCookie, sha256, verifyPassword } from '../security.js';
+import { clearSessionCookie, randomToken, sessionCookie, sha256 } from '../security.js';
 
 const router = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 const credentialsSchema = z.object({
@@ -61,11 +61,10 @@ router.post('/register', async (c) => {
     }
     const existing = await sql<{ id: string }[]>`SELECT id FROM users WHERE email = ${parsed.data.email} LIMIT 1`;
     if (existing.length) return c.json({ error: { code: 'ACCOUNT_EXISTS', message: 'An account with this email already exists' }, requestId: c.get('requestId') }, 409);
-    const password = await hashPassword(parsed.data.password);
     const userId = crypto.randomUUID();
     await sql`
       INSERT INTO users (id, email, password_hash, password_salt, full_name, role, status)
-      VALUES (${userId}, ${parsed.data.email}, ${password.hash}, ${password.salt}, ${parsed.data.email.split('@')[0]}, 'customer', 'active')
+      VALUES (${userId}, ${parsed.data.email}, crypt(${parsed.data.password}, gen_salt('bf', 12)), NULL, ${parsed.data.email.split('@')[0]}, 'customer', 'active')
     `;
     const csrfToken = await createSession(c, userId);
     return c.json({ data: { user: { id: userId, email: parsed.data.email, role: 'customer' }, csrf_token: csrfToken }, requestId: c.get('requestId') }, 201);
@@ -85,12 +84,15 @@ router.post('/login', async (c) => {
       c.header('Retry-After', String(limit.retryAfter));
       return c.json({ error: { code: 'RATE_LIMITED', message: 'Too many login attempts' }, requestId: c.get('requestId') }, 429);
     }
-    const users = await sql<{ id: string; email: string; password_hash: string | null; password_salt: string | null; role: string; status: string }[]>`
-      SELECT id, email, password_hash, password_salt, role, status FROM users WHERE email = ${parsed.data.email} LIMIT 1
+    const users = await sql<{ id: string; email: string; password_valid: boolean; role: string; status: string }[]>`
+      SELECT id, email, role, status,
+        password_hash IS NOT NULL AND password_hash = crypt(${parsed.data.password}, password_hash) AS password_valid
+      FROM users
+      WHERE email = ${parsed.data.email}
+      LIMIT 1
     `;
     const user = users[0];
-    const valid = Boolean(user?.password_hash && user.password_salt && await verifyPassword(parsed.data.password, user.password_salt, user.password_hash));
-    if (!user || !valid || user.status !== 'active') return c.json({ error: { code: 'INVALID_CREDENTIALS', message: 'Invalid email or password' }, requestId: c.get('requestId') }, 401);
+    if (!user || !user.password_valid || user.status !== 'active') return c.json({ error: { code: 'INVALID_CREDENTIALS', message: 'Invalid email or password' }, requestId: c.get('requestId') }, 401);
     await sql`UPDATE users SET last_login_at = now() WHERE id = ${user.id}`;
     const csrfToken = await createSession(c, user.id);
     return c.json({ data: { user: { id: user.id, email: user.email, role: user.role }, csrf_token: csrfToken }, requestId: c.get('requestId') });
@@ -147,9 +149,8 @@ router.post('/password-reset/confirm', async (c) => {
     const tokens = await sql<{ id: string; user_id: string }[]>`SELECT id, user_id FROM password_reset_tokens WHERE token_hash = ${tokenHash} AND used_at IS NULL AND expires_at > now() LIMIT 1`;
     const token = tokens[0];
     if (!token) return c.json({ error: { code: 'INVALID_RESET', message: 'The reset link is invalid or expired' }, requestId: c.get('requestId') }, 422);
-    const password = await hashPassword(parsed.data.newPassword);
     await sql.begin(async (transaction) => {
-      await transaction`UPDATE users SET password_hash = ${password.hash}, password_salt = ${password.salt}, updated_at = now() WHERE id = ${token.user_id}`;
+      await transaction`UPDATE users SET password_hash = crypt(${parsed.data.newPassword}, gen_salt('bf', 12)), password_salt = NULL, updated_at = now() WHERE id = ${token.user_id}`;
       await transaction`UPDATE password_reset_tokens SET used_at = now() WHERE id = ${token.id}`;
       await transaction`DELETE FROM sessions WHERE user_id = ${token.user_id}`;
     });
