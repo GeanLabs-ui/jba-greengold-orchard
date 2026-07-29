@@ -9,6 +9,7 @@ import { UserPlus, Mail, Lock, Loader2 } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 
 export default function Register() {
+  const isDemoMode = import.meta.env.VITE_DEMO_MODE === 'true';
   const [searchParams] = useSearchParams();
   const fromUrl = getSafeRedirectTarget(searchParams.get("from_url"));
   const [email, setEmail] = useState("");
@@ -56,6 +57,11 @@ export default function Register() {
         </>
       }
     >
+      {isDemoMode && (
+        <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">
+          Preview accounts are stored only in this browser and receive demo administrator access.
+        </div>
+      )}
       {error && (
         <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
           {error}

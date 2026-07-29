@@ -1,3 +1,5 @@
+import { demoBase44 } from './demoBase44Client';
+
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '/api/v1').replace(/\/$/, '');
 let csrfToken = null;
 
@@ -134,4 +136,6 @@ const applications = {
   },
 };
 
-export const base44 = { auth, entities, applications };
+const apiBase44 = { auth, entities, applications };
+
+export const base44 = import.meta.env.VITE_DEMO_MODE === 'true' ? demoBase44 : apiBase44;

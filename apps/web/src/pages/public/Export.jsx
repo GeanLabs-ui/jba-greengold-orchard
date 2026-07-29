@@ -5,21 +5,17 @@ import {
   Boxes,
   CheckCircle2,
   Clock3,
-  Container,
   Download,
   FileCheck2,
   Globe2,
   Leaf,
-  MapPinned,
   PackageCheck,
   Plane,
   Route,
   Ship,
   Snowflake,
   Thermometer,
-  Tractor,
   Truck,
-  Warehouse,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
