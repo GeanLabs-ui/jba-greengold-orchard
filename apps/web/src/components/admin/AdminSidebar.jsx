@@ -6,8 +6,10 @@ import {
   LayoutDashboard, Users, ShoppingCart, Package, Warehouse, Truck,
   Sprout, Scissors, UserCog, FileText, Banknote, Ship, BarChart3,
   FolderOpen, Newspaper, Leaf, Settings, ChevronRight, FileCheck2,
-  PanelLeftClose, PanelLeftOpen, ClipboardList
+  PanelLeftClose, PanelLeftOpen, ClipboardList, MessageSquareText, CalendarDays
 } from 'lucide-react';
+import { base44 } from '@/api/base44Client';
+import { subscribeToDataChanges } from '@/lib/data-sync';
 
 const navSections = [
   {
@@ -20,8 +22,9 @@ const navSections = [
     title: 'Operations',
     items: [
       { label: 'CRM', path: '/admin/crm', icon: Users },
+      { label: 'Client Inquiries', path: '/admin/inquiries', icon: MessageSquareText, countKey: 'inquiries' },
       { label: 'Sales', path: '/admin/sales', icon: ShoppingCart },
-      { label: 'Orders', path: '/admin/orders', icon: Package },
+      { label: 'Orders', path: '/admin/orders', icon: Package, countKey: 'orders' },
       { label: 'Inventory', path: '/admin/inventory', icon: Warehouse },
       { label: 'Logistics', path: '/admin/logistics', icon: Truck },
     ],
@@ -31,7 +34,9 @@ const navSections = [
     items: [
       { label: 'Farms', path: '/admin/farms', icon: Sprout },
       { label: 'Harvests', path: '/admin/harvests', icon: Scissors },
+      { label: 'Production Calendar', path: '/admin/calendar', icon: CalendarDays, countKey: 'calendar' },
       { label: 'Farm Daily Activities', path: '/admin/farm-daily-activities', icon: ClipboardList },
+      { label: 'Daily Routine Check', path: '/admin/daily-routine-check', icon: FileCheck2 },
     ],
   },
   {
@@ -61,6 +66,32 @@ export default function AdminSidebar({ collapsed = false, onToggleCollapsed }) {
     location.pathname.startsWith('/admin/farm-daily-activities')
   );
   const prevPathnameRef = useRef(location.pathname);
+  const [attentionCounts, setAttentionCounts] = useState({ inquiries: 0, orders: 0, calendar: 0 });
+
+  useEffect(() => {
+    let active = true;
+    let timer;
+    const loadCounts = () => Promise.all([
+      base44.entities.Inquiry.list('-created_date', 250).catch(() => []),
+      base44.entities.Order.list('-order_date', 250).catch(() => []),
+      base44.entities.CalendarEvent.list('start_at', 250).catch(() => []),
+    ]).then(([inquiries, orders, calendarEvents]) => {
+      if (!active) return;
+      const now = new Date();
+      setAttentionCounts({
+        inquiries: inquiries.filter((item) => item.status === 'new' || !item.status).length,
+        orders: orders.filter((item) => item.status === 'confirmed').length,
+        calendar: calendarEvents.filter((item) => new Date(item.end_at || item.start_at) < now && !['completed', 'cancelled'].includes(item.status)).length,
+      });
+    });
+    loadCounts();
+    const unsubscribe = subscribeToDataChanges(() => {
+      clearTimeout(timer);
+      timer = setTimeout(loadCounts, 120);
+    }, ['Inquiry', 'Order', 'CalendarEvent']);
+    const interval = window.setInterval(loadCounts, 30000);
+    return () => { active = false; clearTimeout(timer); clearInterval(interval); unsubscribe(); };
+  }, []);
 
   useEffect(() => {
     const wasFDA = prevPathnameRef.current.startsWith('/admin/farm-daily-activities');
@@ -159,7 +190,7 @@ export default function AdminSidebar({ collapsed = false, onToggleCollapsed }) {
                   key={item.path}
                   to={item.path}
                   title={collapsed ? item.label : undefined}
-                  className={`group flex items-center rounded-lg py-2 text-sm font-medium transition-colors ${
+                  className={`group relative flex items-center rounded-lg py-2 text-sm font-medium transition-colors ${
                     collapsed ? 'justify-center px-2' : 'gap-3 px-3'
                   } ${
                     isActive
@@ -169,7 +200,12 @@ export default function AdminSidebar({ collapsed = false, onToggleCollapsed }) {
                 >
                   <Icon className={`h-4 w-4 ${isActive ? 'text-primary' : ''}`} />
                   {!collapsed && item.label}
-                  {isActive && !collapsed && <ChevronRight className="ml-auto h-4 w-4" />}
+                  {item.countKey && attentionCounts[item.countKey] > 0 && (
+                    <span className={`${collapsed ? 'absolute ml-7 -mt-5 h-2.5 w-2.5 p-0' : 'ml-auto min-w-5 px-1.5 py-0.5'} rounded-full bg-primary text-center text-[10px] font-bold text-primary-foreground`}>
+                      {!collapsed && (attentionCounts[item.countKey] > 99 ? '99+' : attentionCounts[item.countKey])}
+                    </span>
+                  )}
+                  {isActive && !collapsed && !item.countKey && <ChevronRight className="ml-auto h-4 w-4" />}
                 </Link>
               );
             })}

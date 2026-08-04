@@ -16,6 +16,7 @@ const statusConfig = {
   cancelled: { label: 'Cancelled', class: 'bg-slate-200 text-slate-600' },
   // Order statuses
   confirmed: { label: 'Confirmed', class: 'bg-blue-100 text-blue-700' },
+  processing: { label: 'Processing', class: 'bg-amber-100 text-amber-700' },
   packed: { label: 'Packed', class: 'bg-violet-100 text-violet-700' },
   dispatched: { label: 'Dispatched', class: 'bg-indigo-100 text-indigo-700' },
   delivered: { label: 'Delivered', class: 'bg-emerald-100 text-emerald-700' },

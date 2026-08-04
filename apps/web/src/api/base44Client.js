@@ -1,4 +1,5 @@
 import { demoBase44 } from './demoBase44Client';
+import { publishDataChange } from '../lib/data-sync';
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '/api/v1').replace(/\/$/, '');
 let csrfToken = null;
@@ -76,13 +77,20 @@ const createEntityApi = (entityName) => ({
     return typeof limit === 'number' ? filtered.slice(0, limit) : filtered;
   },
   async create(payload) {
-    return request(`/entities/${encodeURIComponent(entityName)}`, { method: 'POST', body: payload, publicRequest: entityName === 'Inquiry' });
+    const record = await request(`/entities/${encodeURIComponent(entityName)}`, { method: 'POST', body: payload, publicRequest: entityName === 'Inquiry' });
+    publishDataChange(entityName, 'create', record?.id);
+    if (entityName === 'Inquiry') publishDataChange('Notification', 'create', record?.id);
+    return record;
   },
   async update(id, payload) {
-    return request(`/entities/${encodeURIComponent(entityName)}/${encodeURIComponent(id)}`, { method: 'PATCH', body: payload });
+    const record = await request(`/entities/${encodeURIComponent(entityName)}/${encodeURIComponent(id)}`, { method: 'PATCH', body: payload });
+    publishDataChange(entityName, 'update', id);
+    return record;
   },
   async delete(id) {
-    return request(`/entities/${encodeURIComponent(entityName)}/${encodeURIComponent(id)}`, { method: 'DELETE' });
+    const result = await request(`/entities/${encodeURIComponent(entityName)}/${encodeURIComponent(id)}`, { method: 'DELETE' });
+    publishDataChange(entityName, 'delete', id);
+    return result;
   },
 });
 
@@ -136,6 +144,17 @@ const applications = {
   },
 };
 
-const apiBase44 = { auth, entities, applications };
+const commerce = {
+  async checkoutOrder(payload) {
+    const order = await request('/commerce/orders', { method: 'POST', body: payload });
+    ['Order', 'Invoice', 'Customer', 'Notification'].forEach((entity) => publishDataChange(entity, 'checkout', order?.id));
+    return order;
+  },
+  myOrders() {
+    return request('/commerce/orders');
+  },
+};
+
+const apiBase44 = { auth, entities, applications, commerce };
 
 export const base44 = import.meta.env.VITE_DEMO_MODE === 'true' ? demoBase44 : apiBase44;

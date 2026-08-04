@@ -6,6 +6,7 @@ import { formatCurrency } from '@/components/shared/format';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { base44 } from '@/api/base44Client';
+import { subscribeToDataChanges } from '@/lib/data-sync';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger
 } from '@/components/ui/dialog';
@@ -28,7 +29,15 @@ export default function CRM() {
       .catch(() => setLoading(false));
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    let timer;
+    const unsubscribe = subscribeToDataChanges(() => {
+      clearTimeout(timer);
+      timer = setTimeout(load, 120);
+    }, ['Customer', 'Order', 'Invoice']);
+    return () => { clearTimeout(timer); unsubscribe(); };
+  }, []);
 
   const filtered = customers.filter((c) => {
     const matchSearch = !search || c.first_name?.toLowerCase().includes(search.toLowerCase()) || c.last_name?.toLowerCase().includes(search.toLowerCase()) || c.code?.toLowerCase().includes(search.toLowerCase()) || c.email?.toLowerCase().includes(search.toLowerCase());

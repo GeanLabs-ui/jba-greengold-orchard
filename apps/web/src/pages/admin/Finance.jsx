@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Banknote, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
 import PageHeader from '@/components/shared/PageHeader';
 import StatusBadge from '@/components/shared/StatusBadge';
@@ -8,15 +8,7 @@ import MetricCard from '@/components/shared/MetricCard';
 import AdminCreateDialog from '@/components/admin/AdminCreateDialog';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { base44 } from '@/api/base44Client';
-
-const monthlyData = [
-  { month: 'Jan', revenue: 42, expenses: 28 },
-  { month: 'Feb', revenue: 55, expenses: 32 },
-  { month: 'Mar', revenue: 48, expenses: 30 },
-  { month: 'Apr', revenue: 67, expenses: 38 },
-  { month: 'May', revenue: 79, expenses: 42 },
-  { month: 'Jun', revenue: 92, expenses: 48 },
-];
+import { subscribeToDataChanges } from '@/lib/data-sync';
 
 const expenseFields = [
   { name: 'category', label: 'Category', required: true },
@@ -56,7 +48,15 @@ export default function Finance() {
     }).catch(() => setLoading(false));
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    let timer;
+    const unsubscribe = subscribeToDataChanges(() => {
+      clearTimeout(timer);
+      timer = setTimeout(load, 120);
+    }, ['Invoice', 'Payment', 'Expense']);
+    return () => { clearTimeout(timer); unsubscribe(); };
+  }, []);
 
   const createExpense = (payload) => base44.entities.Expense.create({
     ...payload,
@@ -67,6 +67,20 @@ export default function Finance() {
   const totalExpenses = expenses.reduce((s, e) => s + (e.amount || 0), 0);
   const outstanding = invoices.filter((i) => i.status !== 'paid').reduce((s, i) => s + (i.balance_due || 0), 0);
   const netProfit = totalRevenue - totalExpenses;
+  const monthlyData = useMemo(() => Array.from({ length: 6 }, (_, index) => {
+    const date = new Date();
+    date.setDate(1);
+    date.setMonth(date.getMonth() - (5 - index));
+    const inMonth = (value) => {
+      const current = new Date(value);
+      return current.getFullYear() === date.getFullYear() && current.getMonth() === date.getMonth();
+    };
+    return {
+      month: date.toLocaleDateString('en-GH', { month: 'short' }),
+      revenue: payments.filter((payment) => inMonth(payment.payment_date || payment.created_date)).reduce((sum, payment) => sum + Number(payment.amount || 0), 0),
+      expenses: expenses.filter((expense) => inMonth(expense.expense_date || expense.created_date)).reduce((sum, expense) => sum + Number(expense.amount || 0), 0),
+    };
+  }), [payments, expenses]);
 
   return (
     <div>
@@ -90,7 +104,7 @@ export default function Finance() {
       </div>
 
       <div className="mt-6 rounded-xl border border-border bg-card p-5 shadow-sm">
-        <h3 className="font-heading font-semibold">Revenue vs Expenses (GHS M)</h3>
+        <h3 className="font-heading font-semibold">Revenue vs Expenses (GHS)</h3>
         <ResponsiveContainer width="100%" height={280} className="mt-4">
           <BarChart data={monthlyData}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />

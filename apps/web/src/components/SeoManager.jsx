@@ -6,6 +6,9 @@ const pages = {
   '/': ['JBA GreenGold Orchard', 'Premium mango production, local supply, and export from Ghana.'],
   '/about': ['About JBA GreenGold Orchard', 'Learn about our orchard, people, and responsible mango production.'],
   '/products': ['Mango Products', 'Explore fresh and processed mango products from JBA GreenGold Orchard.'],
+  '/cart': ['Your Basket', 'Review products selected from JBA GreenGold Orchard.'],
+  '/checkout': ['Secure Checkout', 'Confirm delivery details for your JBA GreenGold Orchard order.'],
+  '/my-orders': ['Track My Orders', 'Follow the fulfillment and delivery progress of your orders.'],
   '/farms': ['Our Mango Farms', 'Discover our managed mango farms and production capabilities.'],
   '/sustainability': ['Sustainable Mango Farming', 'Our approach to responsible farming, people, and the environment.'],
   '/export': ['Mango Export Services', 'Export-ready Ghanaian mango products, quality controls, and logistics.'],
@@ -18,7 +21,7 @@ const pages = {
 export default function SeoManager() {
   const { pathname } = useLocation();
   useEffect(() => {
-    const isPrivate = /^\/(admin|portal|login|register|forgot-password|reset-password)/.test(pathname);
+    const isPrivate = /^\/(admin|portal|checkout|my-orders|login|register|forgot-password|reset-password)/.test(pathname);
     const [title, description] = pages[pathname] || ['JBA GreenGold Orchard', 'Premium mango production, local supply, and export from Ghana.'];
     document.title = title;
     const setMeta = (selector, attribute, value) => {

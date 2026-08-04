@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ArrowRight, Menu, X } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { ArrowRight, Menu, PackageSearch, ShoppingBag, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useCart } from '@/lib/CartContext';
 
 const navLinks = [
   { label: 'About', path: '/about' },
@@ -19,6 +21,7 @@ const navLinks = [
 export default function PublicNavbar() {
   const [open, setOpen] = useState(false);
   const location = useLocation();
+  const { itemCount, openCart } = useCart();
 
   return (
     <header className="sticky top-0 z-50 border-b border-[#0b432f]/10 bg-[#fffdf7]/95 backdrop-blur-xl">
@@ -49,6 +52,30 @@ export default function PublicNavbar() {
           </nav>
 
           <div className="hidden items-center gap-2 lg:flex">
+            <Link to="/my-orders" className="inline-flex h-11 items-center gap-2 rounded-md px-3 text-xs font-semibold text-[#253a31] hover:bg-[#0b432f]/5 hover:text-[#a66b0b]">
+              <PackageSearch className="h-4 w-4" /> Track order
+            </Link>
+            <button
+              type="button"
+              onClick={openCart}
+              className="relative grid h-11 w-11 place-items-center rounded-md border border-[#0b432f]/15 text-[#0b432f] transition-colors hover:bg-[#0b432f]/5"
+              aria-label={`Open basket with ${itemCount} items`}
+            >
+              <ShoppingBag className="h-5 w-5" />
+              <AnimatePresence>
+                {itemCount > 0 && (
+                  <motion.span
+                    key={itemCount}
+                    initial={{ scale: 0.5, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.5, opacity: 0 }}
+                    className="absolute -right-2 -top-2 grid h-5 min-w-5 place-items-center rounded-full bg-[#e19100] px-1 text-[10px] font-bold text-white"
+                  >
+                    {itemCount > 99 ? '99+' : itemCount}
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </button>
             <Button size="sm" className="h-11 rounded-md bg-[#063c2b] px-5 text-white hover:bg-[#0a5039]" asChild>
               <Link to="/portal">Customer Portal <ArrowRight className="ml-3 h-4 w-4" /></Link>
             </Button>
@@ -78,6 +105,19 @@ export default function PublicNavbar() {
               </Link>
             ))}
             <div className="flex gap-2 pt-2">
+              <Button variant="outline" size="sm" className="flex-1" asChild>
+                <Link to="/my-orders" onClick={() => setOpen(false)}>Track orders</Link>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1"
+                onClick={() => { setOpen(false); openCart(); }}
+              >
+                <ShoppingBag className="mr-2 h-4 w-4" /> Basket ({itemCount})
+              </Button>
+            </div>
+            <div className="flex gap-2">
               <Button variant="outline" size="sm" className="flex-1" asChild>
                 <Link to="/portal" onClick={() => setOpen(false)}>Portal</Link>
               </Button>

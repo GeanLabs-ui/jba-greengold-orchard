@@ -13,28 +13,28 @@ const ENTITY_NAMES = new Set([
   'WasteLoss', 'WeatherLog', 'FarmExpense', 'DailyReport', 'Approval', 'AuditLog', 'FarmFinanceRecord',
   'FarmComplianceRecord', 'FarmNote', 'FarmProject', 'Delivery', 'Employee', 'Warehouse', 'StockMovement', 'Vehicle',
   'Supplier', 'PurchaseOrder', 'Quotation', 'Return', 'Expense', 'ExportShipment', 'Certification', 'Notification',
-  'ContentPage', 'Inquiry', 'CustomerContract', 'Attendance', 'JobApplication', 'User',
+  'ContentPage', 'Inquiry', 'CustomerContract', 'Attendance', 'JobApplication', 'CalendarEvent', 'CalendarConnection', 'User',
 ]);
 const PUBLIC_READ = new Set(['Product', 'NewsPost', 'Farm', 'ContentPage']);
 const PUBLIC_CREATE = new Set(['Inquiry']);
 const CUSTOMER_READ = new Set(['Order', 'Invoice', 'Payment', 'CustomerContract', 'Notification']);
 const adminRoles = new Set(['super_admin', 'admin']);
 const ROLE_READ_ENTITIES: Partial<Record<AuthUser['role'], Set<string>>> = {
-  farm_manager: new Set(['Farm', 'FarmBlock', 'Harvest', 'FarmProcessLog', 'FarmTask', 'CropPlan', 'FarmResourceUse', 'PesticideApplication', 'LaborSchedule', 'Worker', 'DailyActivity', 'WorkOrder', 'ActivityWorker', 'ActivityEquipment', 'ActivityInput', 'FarmAttendance', 'Equipment', 'EquipmentUsage', 'FarmInput', 'InputUsage', 'HarvestBatch', 'HarvestGrade', 'QualityCheck', 'WasteLoss', 'WeatherLog', 'DailyReport', 'Approval', 'FarmNote', 'FarmProject']),
-  farm_supervisor: new Set(['Farm', 'FarmBlock', 'Harvest', 'FarmProcessLog', 'FarmTask', 'CropPlan', 'FarmResourceUse', 'PesticideApplication', 'LaborSchedule', 'Worker', 'DailyActivity', 'WorkOrder', 'ActivityWorker', 'ActivityEquipment', 'ActivityInput', 'FarmAttendance', 'Equipment', 'EquipmentUsage', 'FarmInput', 'InputUsage', 'HarvestBatch', 'HarvestGrade', 'QualityCheck', 'WasteLoss', 'WeatherLog', 'DailyReport', 'FarmNote']),
+  farm_manager: new Set(['Farm', 'FarmBlock', 'Harvest', 'FarmProcessLog', 'FarmTask', 'CropPlan', 'FarmResourceUse', 'PesticideApplication', 'LaborSchedule', 'Worker', 'DailyActivity', 'WorkOrder', 'ActivityWorker', 'ActivityEquipment', 'ActivityInput', 'FarmAttendance', 'Equipment', 'EquipmentUsage', 'FarmInput', 'InputUsage', 'InventoryUsage', 'HarvestBatch', 'HarvestGrade', 'QualityCheck', 'WasteLoss', 'WeatherLog', 'FarmExpense', 'DailyReport', 'Approval', 'AuditLog', 'FarmFinanceRecord', 'FarmComplianceRecord', 'FarmNote', 'FarmProject', 'Notification', 'StockMovement', 'CalendarEvent', 'CalendarConnection']),
+  farm_supervisor: new Set(['Farm', 'FarmBlock', 'Harvest', 'FarmProcessLog', 'FarmTask', 'CropPlan', 'FarmResourceUse', 'PesticideApplication', 'LaborSchedule', 'Worker', 'DailyActivity', 'WorkOrder', 'ActivityWorker', 'ActivityEquipment', 'ActivityInput', 'FarmAttendance', 'Equipment', 'EquipmentUsage', 'FarmInput', 'InputUsage', 'HarvestBatch', 'HarvestGrade', 'QualityCheck', 'WasteLoss', 'WeatherLog', 'DailyReport', 'FarmNote', 'Notification', 'CalendarEvent', 'CalendarConnection']),
   inventory_officer: new Set(['StockItem', 'Warehouse', 'StockMovement', 'Supplier', 'PurchaseOrder', 'FarmInput', 'InputUsage', 'InventoryUsage']),
   quality_officer: new Set(['Harvest', 'HarvestBatch', 'HarvestGrade', 'QualityCheck', 'WasteLoss', 'Certification', 'FarmComplianceRecord']),
   finance_officer: new Set(['Invoice', 'Payment', 'Expense', 'FarmExpense', 'FarmFinanceRecord', 'PurchaseOrder', 'Quotation', 'CustomerContract']),
   hr_officer: new Set(['Employee', 'Worker', 'Attendance', 'FarmAttendance', 'LaborSchedule', 'JobApplication', 'User']),
-  sales_officer: new Set(['Customer', 'Order', 'Invoice', 'Payment', 'Quotation', 'Return', 'Delivery', 'CustomerContract', 'Product']),
+  sales_officer: new Set(['Customer', 'Order', 'Invoice', 'Payment', 'Quotation', 'Return', 'Delivery', 'CustomerContract', 'Product', 'Inquiry', 'Notification']),
   logistics_officer: new Set(['Order', 'Delivery', 'ExportShipment', 'Vehicle', 'Warehouse', 'StockMovement']),
   content_editor: new Set(['Product', 'NewsPost', 'ContentPage']),
   auditor: new Set([...ENTITY_NAMES].filter((name) => !['User', 'JobApplication'].includes(name))),
   user: new Set(['Farm']),
 };
 const ROLE_WRITE_ENTITIES: Partial<Record<AuthUser['role'], Set<string>>> = {
-  farm_manager: ROLE_READ_ENTITIES.farm_manager,
-  farm_supervisor: new Set(['Harvest', 'FarmProcessLog', 'FarmTask', 'FarmResourceUse', 'PesticideApplication', 'DailyActivity', 'WorkOrder', 'FarmAttendance', 'EquipmentUsage', 'InputUsage', 'WasteLoss', 'WeatherLog', 'DailyReport', 'FarmNote']),
+  farm_manager: new Set([...(ROLE_READ_ENTITIES.farm_manager || [])].filter((name) => name !== 'AuditLog')),
+  farm_supervisor: new Set(['Harvest', 'FarmProcessLog', 'FarmTask', 'FarmResourceUse', 'PesticideApplication', 'DailyActivity', 'WorkOrder', 'FarmAttendance', 'EquipmentUsage', 'InputUsage', 'InventoryUsage', 'HarvestBatch', 'HarvestGrade', 'QualityCheck', 'WasteLoss', 'WeatherLog', 'DailyReport', 'Notification', 'StockMovement', 'FarmNote', 'CalendarEvent', 'CalendarConnection']),
   inventory_officer: ROLE_READ_ENTITIES.inventory_officer,
   quality_officer: ROLE_READ_ENTITIES.quality_officer,
   finance_officer: ROLE_READ_ENTITIES.finance_officer,
@@ -124,6 +124,10 @@ router.post('/:entity', async (c) => {
   if (!payload) return c.json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid or oversized payload' }, requestId: c.get('requestId') }, 422);
   const turnstileToken = typeof payload.turnstile_token === 'string' ? payload.turnstile_token : undefined;
   delete payload.turnstile_token;
+  if (name === 'Inquiry') {
+    payload.status = typeof payload.status === 'string' ? payload.status : 'new';
+    payload.source_page = typeof payload.source_page === 'string' ? payload.source_page : 'contact';
+  }
 
   const sql = createDatabase(c.env);
   try {
@@ -146,6 +150,29 @@ router.post('/:entity', async (c) => {
         INSERT INTO audit_events (id, user_id, action, target_table, record_id, new_values, ip_address)
         VALUES (${crypto.randomUUID()}, ${user?.id || null}, 'create', ${name}, ${id}, ${sql.json(payload)}, ${requestIp(c.req.raw)})
       `;
+      if (name === 'Inquiry') {
+        const sender = typeof payload.name === 'string' ? payload.name : 'Website visitor';
+        const subject = typeof payload.subject === 'string' && payload.subject ? payload.subject : 'New client inquiry';
+        await transaction`
+          INSERT INTO entity_records (id, entity_name, organization_id, owner_user_id, data, created_by, updated_by, created_at, updated_at)
+          VALUES (
+            ${crypto.randomUUID()}, 'Notification', ${user?.organizationId || null}, ${null},
+            ${sql.json({
+              title: 'New client inquiry',
+              message: `${sender}: ${subject}`,
+              type: 'inquiry',
+              notification_type: 'inquiry',
+              channel: 'Admin',
+              status: 'new',
+              inquiry_id: id,
+              record_id: id,
+              entity_name: 'Inquiry',
+              destination: `/admin/inquiries?inquiry=${id}`,
+            })},
+            ${user?.id || null}, ${user?.id || null}, ${now}, ${now}
+          )
+        `;
+      }
     });
     return c.json({ data: { ...payload, id, created_date: now.toISOString(), updated_date: now.toISOString() }, requestId: c.get('requestId') }, 201);
   } finally {

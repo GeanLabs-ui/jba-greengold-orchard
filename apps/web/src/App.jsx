@@ -10,6 +10,7 @@ import ScrollToTop from './components/ScrollToTop';
 import SeoManager from './components/SeoManager';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { hasAdminAccess } from '@/lib/access-control';
+import { CartProvider } from '@/lib/CartContext';
 import { Button } from '@/components/ui/button';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
@@ -25,6 +26,9 @@ import PortalLayout from '@/components/portal/PortalLayout';
 const Home = lazy(() => import('@/pages/public/Home'));
 const About = lazy(() => import('@/pages/public/About'));
 const Products = lazy(() => import('@/pages/public/Products'));
+const Cart = lazy(() => import('@/pages/public/Cart'));
+const Checkout = lazy(() => import('@/pages/public/Checkout'));
+const MyOrders = lazy(() => import('@/pages/public/MyOrders'));
 const Farms = lazy(() => import('@/pages/public/Farms'));
 const FarmDetail = lazy(() => import('@/pages/public/FarmDetail'));
 const Sustainability = lazy(() => import('@/pages/public/Sustainability'));
@@ -38,12 +42,15 @@ const Contact = lazy(() => import('@/pages/public/Contact'));
 // Admin pages
 const AdminDashboard = lazy(() => import('@/pages/admin/AdminDashboard'));
 const CRM = lazy(() => import('@/pages/admin/CRM'));
+const Inquiries = lazy(() => import('@/pages/admin/Inquiries'));
 const Sales = lazy(() => import('@/pages/admin/Sales'));
 const Orders = lazy(() => import('@/pages/admin/Orders'));
 const Inventory = lazy(() => import('@/pages/admin/Inventory'));
 const FarmsAdmin = lazy(() => import('@/pages/admin/FarmsAdmin'));
 const Harvests = lazy(() => import('@/pages/admin/Harvests'));
 const FarmDailyActivities = lazy(() => import('@/pages/admin/FarmDailyActivities'));
+const DailyRoutineCheck = lazy(() => import('@/pages/admin/DailyRoutineCheck'));
+const ProductionCalendar = lazy(() => import('@/pages/admin/ProductionCalendar'));
 const Logistics = lazy(() => import('@/pages/admin/Logistics'));
 const Procurement = lazy(() => import('@/pages/admin/Procurement'));
 const Finance = lazy(() => import('@/pages/admin/Finance'));
@@ -128,6 +135,9 @@ const AuthenticatedApp = () => {
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
         <Route path="/products" element={<Products />} />
+        <Route path="/cart" element={<Cart />} />
+        <Route path="/checkout" element={<Checkout />} />
+        <Route path="/my-orders" element={<MyOrders />} />
         <Route path="/farms" element={<Farms />} />
         <Route path="/farms/:slug" element={<FarmDetail />} />
         <Route path="/sustainability" element={<Sustainability />} />
@@ -153,6 +163,7 @@ const AuthenticatedApp = () => {
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<AdminDashboard />} />
           <Route path="crm" element={<CRM />} />
+          <Route path="inquiries" element={<Inquiries />} />
           <Route path="sales" element={<Sales />} />
           <Route path="orders" element={<Orders />} />
           <Route path="inventory" element={<Inventory />} />
@@ -160,6 +171,8 @@ const AuthenticatedApp = () => {
           <Route path="harvests" element={<Harvests />} />
           <Route path="farm-daily-activities" element={<FarmDailyActivities />} />
           <Route path="farm-daily-activities/*" element={<FarmDailyActivities />} />
+          <Route path="daily-routine-check" element={<DailyRoutineCheck />} />
+          <Route path="calendar" element={<ProductionCalendar />} />
           <Route path="logistics" element={<Logistics />} />
           <Route path="procurement" element={<Procurement />} />
           <Route path="finance" element={<Finance />} />
@@ -194,14 +207,16 @@ function App() {
 
   return (
     <AuthProvider>
-      <QueryClientProvider client={queryClientInstance}>
-        <Router>
-          <ScrollToTop />
-          <SeoManager />
-          <AuthenticatedApp />
-        </Router>
-        <Toaster />
-      </QueryClientProvider>
+      <CartProvider>
+        <QueryClientProvider client={queryClientInstance}>
+          <Router>
+            <ScrollToTop />
+            <SeoManager />
+            <AuthenticatedApp />
+          </Router>
+          <Toaster />
+        </QueryClientProvider>
+      </CartProvider>
     </AuthProvider>
   )
 }

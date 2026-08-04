@@ -9,6 +9,8 @@ import {
   WheatOff,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useCart } from '@/lib/CartContext';
+import { formatProductPrice } from '@/data/productCatalog';
 
 const categories = [
   { id: 'all', label: 'All Products' },
@@ -21,87 +23,99 @@ const categories = [
 
 const products = [
   {
+    id: 'dried-mango',
     name: 'Dried Mango',
     category: 'dried',
     description: '100% natural sun-dried mango slices with no sugar added.',
-    price: 'GHS 25.00',
+    price: 25,
     image: '/products/catalog-dried-mango.webp',
   },
   {
+    id: 'mango-juice',
     name: 'Mango Juice',
     category: 'drinks',
     description: 'Pure mango juice made from fresh, ripe mangoes.',
-    price: 'GHS 20.00',
+    price: 20,
     image: '/products/catalog-mango-juice.webp',
   },
   {
+    id: 'wild-mango-wine',
     name: 'Wild Mango Wine',
     category: 'drinks',
     description: 'Premium wild mango wine crafted naturally.',
-    price: 'GHS 85.00',
+    price: 85,
     image: '/products/catalog-wild-mango-wine.webp',
   },
   {
+    id: 'mango-jam',
     name: 'Mango Jam',
     category: 'preserves',
     description: 'Rich and fruity mango jam perfect for every meal.',
-    price: 'GHS 25.00',
+    price: 25,
     image: '/products/catalog-mango-jam.webp',
   },
   {
+    id: 'mango-pickle',
     name: 'Mango Pickle',
     category: 'preserves',
     description: 'Tangy and spicy mango pickle made with natural ingredients.',
-    price: 'GHS 22.00',
+    price: 22,
     image: '/products/catalog-mango-pickle.webp',
   },
   {
+    id: 'dehydrated-mango',
     name: 'Dehydrated Mango',
     category: 'dried',
     description: 'Naturally sweet dried mango with no preservatives.',
-    price: 'GHS 30.00',
+    price: 30,
     image: '/products/catalog-dehydrated-mango.webp',
   },
   {
+    id: 'gift-pack-small',
     name: 'Gift Pack (Small)',
     category: 'gifts',
     description: 'A perfect gift of nature\'s goodness.',
-    price: 'GHS 95.00',
+    price: 95,
     image: '/products/catalog-gift-small.webp',
   },
   {
+    id: 'gift-pack-large',
     name: 'Gift Pack (Large)',
     category: 'gifts',
     description: 'A premium selection for special moments.',
-    price: 'GHS 160.00',
+    price: 160,
     image: '/products/catalog-gift-large.webp',
   },
   {
+    id: 'fresh-mango-export-box',
     name: 'Fresh Mango Export Box',
     category: 'export',
     description: '4kg export-grade carton for fresh mangoes and cold-chain delivery.',
-    price: 'GHS 120.00',
+    price: 120,
     image: '/products/box-package.webp',
   },
   {
+    id: 'dried-mango-pouch',
     name: 'Dried Mango Pouch',
     category: 'export',
     description: '250g retail pouch of naturally dried mango slices.',
-    price: 'GHS 25.00',
+    price: 25,
     image: '/products/dried-mango.webp',
   },
   {
+    id: 'dehydrated-mango-jar',
     name: 'Dehydrated Mango Jar',
     category: 'export',
     description: '180g premium dehydrated mango jar for gift and retail shelves.',
-    price: 'GHS 32.00',
+    price: 32,
     image: '/products/dried-mango-jar.webp',
   },
   {
+    id: 'mango-pudding-pouch',
     name: 'Mango Pudding Pouch',
     category: 'export',
     description: '150g ready-to-eat mango pudding with milk.',
-    price: 'GHS 18.00',
+    price: 18,
     image: '/products/mango-pudding.webp',
   },
 ];
@@ -116,6 +130,7 @@ const heroPromises = [
 const serif = { fontFamily: 'Georgia, Cambria, "Times New Roman", serif' };
 
 function ProductCard({ product, reveal }) {
+  const { addItem } = useCart();
   return (
     <motion.article
       {...reveal}
@@ -134,14 +149,16 @@ function ProductCard({ product, reveal }) {
         <h3 style={serif} className="text-xl font-normal leading-tight text-[#0b432f]">{product.name}</h3>
         <p className="mt-2 text-xs leading-5 text-[#5b685f]">{product.description}</p>
         <div className="mt-auto flex items-center justify-between pt-5">
-          <span className="text-sm font-bold text-[#102f23]">{product.price}</span>
-          <Link
-            to="/contact"
-            aria-label={`Enquire about ${product.name}`}
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-[#cf9020] text-[#bd7b0c] transition-colors hover:bg-[#cf9020] hover:text-white"
+          <span className="text-sm font-bold text-[#102f23]">{formatProductPrice(product.price)}</span>
+          <button
+            type="button"
+            onClick={() => addItem(product.id)}
+            aria-label={`Add ${product.name} to basket`}
+            className="flex h-9 items-center justify-center gap-2 rounded-full border border-[#cf9020] px-3 text-[11px] font-bold text-[#bd7b0c] transition-colors hover:bg-[#cf9020] hover:text-white"
           >
             <Plus className="h-4 w-4" />
-          </Link>
+            Add
+          </button>
         </div>
       </div>
     </motion.article>

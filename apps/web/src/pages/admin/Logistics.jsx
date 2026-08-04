@@ -7,6 +7,7 @@ import DataTable from '@/components/shared/DataTable';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AdminCreateDialog from '@/components/admin/AdminCreateDialog';
 import { base44 } from '@/api/base44Client';
+import { subscribeToDataChanges } from '@/lib/data-sync';
 
 const deliveryFields = [
   { name: 'order_number', label: 'Order #', required: true },
@@ -44,7 +45,15 @@ export default function Logistics() {
     }).catch(() => setLoading(false));
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    let timer;
+    const unsubscribe = subscribeToDataChanges(() => {
+      clearTimeout(timer);
+      timer = setTimeout(load, 120);
+    }, ['Delivery', 'Vehicle', 'Order']);
+    return () => { clearTimeout(timer); unsubscribe(); };
+  }, []);
 
   const createDelivery = (payload) => base44.entities.Delivery.create({
     ...payload,

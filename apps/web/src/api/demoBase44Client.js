@@ -1,3 +1,6 @@
+import { PRODUCT_BY_ID } from '../data/productCatalog';
+import { publishDataChange } from '../lib/data-sync';
+
 const STORAGE_PREFIX = 'jba_greengold_preview';
 const USERS_KEY = `${STORAGE_PREFIX}:users`;
 const SESSION_KEY = `${STORAGE_PREFIX}:session`;
@@ -118,21 +121,47 @@ const createEntityApi = (entityName) => ({
   },
   async create(payload) {
     const data = readData();
-    const record = { id: createId(entityName.toLowerCase()), created_date: nowIso(), updated_date: nowIso(), ...payload };
+    const normalizedPayload = entityName === 'Inquiry'
+      ? { status: 'new', source_page: 'contact', ...payload }
+      : payload;
+    const record = { id: createId(entityName.toLowerCase()), created_date: nowIso(), updated_date: nowIso(), ...normalizedPayload };
     data[entityName] = [record, ...(data[entityName] || [])];
+    if (entityName === 'Inquiry') {
+      const notification = {
+        id: createId('notification'),
+        created_date: nowIso(),
+        updated_date: nowIso(),
+        title: 'New client inquiry',
+        message: `${record.name || 'Website visitor'}: ${record.subject || 'New client inquiry'}`,
+        type: 'inquiry',
+        notification_type: 'inquiry',
+        channel: 'Admin',
+        status: 'new',
+        inquiry_id: record.id,
+        record_id: record.id,
+        entity_name: 'Inquiry',
+        destination: `/admin/inquiries?inquiry=${record.id}`,
+      };
+      data.Notification = [notification, ...(data.Notification || [])];
+    }
     writeJson(DATA_KEY, data);
+    publishDataChange(entityName, 'create', record.id);
+    if (entityName === 'Inquiry') publishDataChange('Notification', 'create', record.id);
     return record;
   },
   async update(id, payload) {
     const data = readData();
     data[entityName] = (data[entityName] || []).map((item) => item.id === id ? { ...item, ...payload, updated_date: nowIso() } : item);
     writeJson(DATA_KEY, data);
-    return data[entityName].find((item) => item.id === id) || null;
+    const record = data[entityName].find((item) => item.id === id) || null;
+    publishDataChange(entityName, 'update', id);
+    return record;
   },
   async delete(id) {
     const data = readData();
     data[entityName] = (data[entityName] || []).filter((item) => item.id !== id);
     writeJson(DATA_KEY, data);
+    publishDataChange(entityName, 'delete', id);
     return { success: true };
   },
 });
@@ -158,7 +187,7 @@ const auth = {
     }
     const users = readJson(USERS_KEY, []);
     if (users.some((user) => user.email === normalizedEmail)) throw new Error('An account with this email already exists');
-    const user = { id: createId('preview_user'), email: normalizedEmail, full_name: normalizedEmail.split('@')[0], role: 'super_admin', status: 'active' };
+    const user = { id: createId('preview_user'), email: normalizedEmail, full_name: normalizedEmail.split('@')[0], role: 'customer', status: 'active' };
     users.push({ ...user, password_hash: await hashPassword(password) });
     writeJson(USERS_KEY, users);
     setSessionUser(user);
@@ -203,9 +232,129 @@ const entities = new Proxy({}, {
   },
 });
 
+const commerce = {
+  async checkoutOrder(payload) {
+    const user = getSessionUser();
+    if (!user) {
+      const error = new Error('Authentication required');
+      error.status = 401;
+      throw error;
+    }
+    const lines = (payload.items || []).map((item) => {
+      const product = PRODUCT_BY_ID[item.product_id];
+      if (!product) throw new Error('Your basket contains an unavailable product');
+      const quantity = Math.max(1, Math.min(99, Math.floor(Number(item.quantity) || 1)));
+      return {
+        product_id: product.id,
+        product_name: product.name,
+        product_image: product.image,
+        quantity,
+        unit_price: product.price,
+        line_total: product.price * quantity,
+      };
+    });
+    if (!lines.length) throw new Error('Your basket is empty');
+    const subtotal = lines.reduce((sum, line) => sum + line.line_total, 0);
+    const deliveryFee = subtotal >= 250 ? 0 : 25;
+    const now = nowIso();
+    const orderNumber = `JBA-${now.slice(0, 10).replaceAll('-', '')}-${createId('').slice(-6).toUpperCase()}`;
+    const invoiceNumber = `INV-${orderNumber.replace('JBA-', '')}`;
+    const total = subtotal + deliveryFee;
+    const order = await entities.Order.create({
+      order_number: orderNumber,
+      owner_user_id: user.id,
+      customer_id: user.id,
+      customer_name: payload.shipping.full_name,
+      customer_email: user.email,
+      contact_email: payload.shipping.email,
+      contact_phone: payload.shipping.phone,
+      order_date: now,
+      source: 'website',
+      currency: 'GHS',
+      items: lines,
+      item_count: lines.reduce((sum, line) => sum + line.quantity, 0),
+      subtotal_amount: subtotal,
+      delivery_fee: deliveryFee,
+      total_amount: total,
+      shipping_address: payload.shipping,
+      delivery_notes: payload.notes || '',
+      payment_method: payload.payment_method,
+      payment_status: 'pending',
+      status: 'confirmed',
+      status_history: [{
+        status: 'confirmed',
+        label: 'Order received',
+        timestamp: now,
+        note: 'Your order has been received and is waiting for fulfillment.',
+      }],
+      estimated_delivery: null,
+    });
+
+    const existingCustomers = await entities.Customer.filter({ email: payload.shipping.email }, '-created_date', 1);
+    if (!existingCustomers.length) {
+      await entities.Customer.create({
+        customer_code: `WEB-${user.id.slice(0, 8).toUpperCase()}`,
+        company_name: payload.shipping.full_name,
+        contact_name: payload.shipping.full_name,
+        email: payload.shipping.email,
+        phone: payload.shipping.phone,
+        address: payload.shipping.address,
+        city: payload.shipping.city,
+        region: payload.shipping.region,
+        source: 'website',
+        status: 'active',
+      });
+    }
+
+    await entities.Invoice.create({
+      invoice_number: invoiceNumber,
+      order_id: order.id,
+      order_number: orderNumber,
+      owner_user_id: user.id,
+      customer_id: user.id,
+      customer_name: payload.shipping.full_name,
+      customer_email: payload.shipping.email,
+      invoice_date: now,
+      due_date: new Date(Date.parse(now) + 7 * 86400000).toISOString(),
+      source: 'website',
+      currency: 'GHS',
+      items: lines,
+      subtotal_amount: subtotal,
+      delivery_fee: deliveryFee,
+      total_amount: total,
+      amount_paid: 0,
+      balance_due: total,
+      payment_method: payload.payment_method,
+      status: 'unpaid',
+    });
+    await entities.Notification.create({
+      title: 'New website sale',
+      message: `${orderNumber} from ${payload.shipping.full_name} is ready for sales and fulfillment.`,
+      type: 'order',
+      notification_type: 'order',
+      channel: 'Admin',
+      status: 'new',
+      order_id: order.id,
+      order_number: orderNumber,
+      invoice_number: invoiceNumber,
+    });
+    return { ...order, invoice_number: invoiceNumber };
+  },
+  async myOrders() {
+    const user = getSessionUser();
+    if (!user) {
+      const error = new Error('Authentication required');
+      error.status = 401;
+      throw error;
+    }
+    return entities.Order.filter({ owner_user_id: user.id }, '-order_date', 250);
+  },
+};
+
 export const demoBase44 = {
   auth,
   entities,
+  commerce,
   applications: {
     submit(formData) {
       return entities.JobApplication.create(Object.fromEntries(formData.entries()));

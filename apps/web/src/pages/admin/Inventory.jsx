@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AdminCreateDialog from '@/components/admin/AdminCreateDialog';
 import { base44 } from '@/api/base44Client';
+import { subscribeToDataChanges } from '@/lib/data-sync';
 
 const stockFields = [
   { name: 'product_name', label: 'Product Name', required: true },
@@ -57,17 +58,33 @@ export default function Inventory() {
     }).catch(() => setLoading(false));
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    let timer;
+    const unsubscribe = subscribeToDataChanges(() => {
+      clearTimeout(timer);
+      timer = setTimeout(load, 120);
+    }, ['StockItem', 'StockMovement', 'Warehouse', 'Harvest']);
+    return () => { clearTimeout(timer); unsubscribe(); };
+  }, []);
 
   const createStock = (payload) => base44.entities.StockItem.create({
     ...payload,
     quantity_reserved: 0,
   });
 
-  const createMovement = (payload) => base44.entities.StockMovement.create({
-    ...payload,
-    movement_code: `MOV-${Date.now().toString().slice(-6)}`,
-  });
+  const createMovement = async (payload) => {
+    const matches = await base44.entities.StockItem.filter({ product_name: payload.product_name, warehouse_name: payload.warehouse_name }, '-created_date', 1);
+    const current = matches[0];
+    const quantity = Number(payload.quantity || 0);
+    if (!current && payload.movement_type !== 'in') throw new Error('Add this stock item before recording an outbound or adjustment movement.');
+    const onHand = Number(current?.quantity_on_hand || 0);
+    const nextQuantity = payload.movement_type === 'in' ? onHand + quantity : payload.movement_type === 'out' ? onHand - quantity : quantity;
+    if (nextQuantity < 0) throw new Error(`Only ${formatNumber(onHand)} units are available.`);
+    if (current) await base44.entities.StockItem.update(current.id, { quantity_on_hand: nextQuantity, last_movement_date: payload.movement_date || new Date().toISOString() });
+    else await base44.entities.StockItem.create({ product_name: payload.product_name, warehouse_name: payload.warehouse_name, quantity_on_hand: nextQuantity, quantity_reserved: 0, reorder_level: 0, unit_of_measure: 'kg' });
+    return base44.entities.StockMovement.create({ ...payload, movement_code: `MOV-${Date.now().toString().slice(-6)}`, balance_after: nextQuantity });
+  };
 
   const filteredStock = stockItems.filter((s) => !search || s.product_name?.toLowerCase().includes(search.toLowerCase()) || s.sku?.toLowerCase().includes(search.toLowerCase()));
   const lowStockItems = stockItems.filter((s) => s.quantity_on_hand <= s.reorder_level);

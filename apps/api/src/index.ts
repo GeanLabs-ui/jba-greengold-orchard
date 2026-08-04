@@ -7,6 +7,9 @@ import authRouter from './modules/auth.js';
 import entitiesRouter from './modules/entities.js';
 import applicationsRouter from './modules/applications.js';
 import filesRouter from './modules/files.js';
+import commerceRouter from './modules/commerce.js';
+import calendarRouter from './modules/calendar.js';
+import { runCalendarReminders } from './calendar-reminders.js';
 
 const app = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 
@@ -55,6 +58,8 @@ api.route('/auth', authRouter);
 api.route('/entities', entitiesRouter);
 api.route('/applications', applicationsRouter);
 api.route('/files', filesRouter);
+api.route('/commerce', commerceRouter);
+api.route('/calendar', calendarRouter);
 
 api.get('/health', (c) => c.json({ status: 'ok', release: c.env.CF_VERSION_METADATA?.id || 'local', timestamp: new Date().toISOString(), requestId: c.get('requestId') }));
 api.get('/ready', async (c) => {
@@ -75,4 +80,11 @@ app.onError((error, c) => {
   return c.json({ error: { code: 'INTERNAL_ERROR', message: 'An unexpected error occurred' }, requestId: c.get('requestId') }, 500);
 });
 
-export default app;
+const worker: ExportedHandler<Env> = {
+  fetch: (request, env, context) => app.fetch(request, env, context),
+  scheduled: (controller, env, context) => {
+    context.waitUntil(runCalendarReminders(env, new Date(controller.scheduledTime)));
+  },
+};
+
+export default worker;
