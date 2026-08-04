@@ -5,7 +5,6 @@
   "compatibility_date": "2026-07-22",
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": true,
-  "triggers": { "crons": ["*/5 * * * *"] },
   "vars": {
     "APP_ENV": "local",
     "ALLOWED_ORIGINS": "http://localhost:5173,http://localhost:8788",
@@ -34,7 +33,6 @@
     "staging": {
       "name": "mango-farm-api-staging",
       "workers_dev": false,
-      "triggers": { "crons": ["*/5 * * * *"] },
       "version_metadata": { "binding": "CF_VERSION_METADATA" },
       "vars": {
         "APP_ENV": "staging",
@@ -53,7 +51,6 @@
     "production": {
       "name": "mango-farm-api-production",
       "workers_dev": false,
-      "triggers": { "crons": ["*/5 * * * *"] },
       "version_metadata": { "binding": "CF_VERSION_METADATA" },
       "vars": {
         "APP_ENV": "production",

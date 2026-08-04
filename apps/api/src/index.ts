@@ -52,6 +52,14 @@ app.use('*', async (c, next) => {
 });
 
 app.use('/api/v1/*', loadSession());
+app.use('/api/v1/entities/Notification', async (c, next) => {
+  if (c.req.method === 'GET' && c.get('user')) {
+    await runCalendarReminders(c.env).catch((error) => {
+      console.error(JSON.stringify({ event: 'calendar_reminder_poll_failed', requestId: c.get('requestId'), error: error instanceof Error ? error.message : 'Unknown error' }));
+    });
+  }
+  await next();
+});
 
 const api = app.basePath('/api/v1');
 api.route('/auth', authRouter);
