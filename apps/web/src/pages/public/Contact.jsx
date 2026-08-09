@@ -119,12 +119,14 @@ export default function Contact() {
 
               <div className="mt-6 overflow-hidden rounded-2xl border border-border">
                 <iframe
-                  title="Office Location"
-                  width="100%"
-                  height="280"
-                  loading="lazy"
-                  src="https://www.openstreetmap.org/export/embed.html?bbox=32.5%2C0.25%2C32.65%2C0.35&layer=mapnik"
-                />
+                    title="Office Location"
+                    width="100%"
+                    height="280"
+                    loading="lazy"
+                    src="https://www.openstreetmap.org/export/embed.html?bbox=32.5%2C0.25%2C32.65%2C0.35&layer=mapnik"
+                    sandbox="allow-scripts allow-same-origin"
+                    referrerPolicy="no-referrer"
+                  />
               </div>
             </div>
           </div>

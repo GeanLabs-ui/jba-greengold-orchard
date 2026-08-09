@@ -17,10 +17,10 @@ import {
 } from 'recharts';
 
 const emptyData = {
-  customers: [], orders: [], invoices: [], payments: [], expenses: [], stock: [], products: [], farms: [],
-  harvests: [], harvestGrades: [], deliveries: [], employees: [], purchaseOrders: [], applications: [], inquiries: [], calendarEvents: [],
+  customers: [], orders: [], invoices: [], payments: [], expenses: [], farmExpenses: [], stock: [], products: [], farms: [],
+  harvests: [], harvestBatches: [], harvestGrades: [], deliveries: [], employees: [], purchaseOrders: [], applications: [], inquiries: [], calendarEvents: [],
 };
-const watchedEntities = ['Customer', 'Order', 'Invoice', 'Payment', 'Expense', 'StockItem', 'Product', 'Farm', 'Harvest', 'HarvestGrade', 'Delivery', 'Employee', 'PurchaseOrder', 'JobApplication', 'Inquiry', 'CalendarEvent'];
+const watchedEntities = ['Customer', 'Order', 'Invoice', 'Payment', 'Expense', 'FarmExpense', 'StockItem', 'Product', 'Farm', 'Harvest', 'HarvestBatch', 'HarvestGrade', 'Delivery', 'Employee', 'PurchaseOrder', 'JobApplication', 'Inquiry', 'CalendarEvent'];
 const isOpenOrder = (order) => !['delivered', 'cancelled', 'draft'].includes(order.status);
 const isSuccessfulOrder = (order) => !['cancelled', 'draft'].includes(order.status);
 const asAmount = (value) => Number(value || 0);
@@ -69,9 +69,12 @@ export default function AdminDashboard() {
     const monthOrders = successfulOrders.filter((order) => isCurrentMonth(dateValue(order, 'order_date')));
     const completedPayments = data.payments.filter((payment) => !['failed', 'cancelled'].includes(payment.status));
     const monthPayments = completedPayments.filter((payment) => isCurrentMonth(dateValue(payment, 'payment_date')));
-    const monthExpenses = data.expenses.filter((expense) => isCurrentMonth(dateValue(expense, 'expense_date')));
+    const monthExpenses = [...data.expenses, ...data.farmExpenses].filter((expense) => isCurrentMonth(dateValue(expense, 'expense_date')));
     const pendingInvoices = data.invoices.filter((invoice) => invoice.status !== 'paid');
     const lowStock = data.stock.filter((item) => asAmount(item.quantity_on_hand) <= asAmount(item.reorder_level));
+    const upcomingHarvests = data.calendarEvents
+      .filter((item) => item.harvest_period_id && new Date(item.start_at) >= new Date() && !['completed', 'cancelled'].includes(item.status))
+      .sort((left, right) => new Date(left.start_at) - new Date(right.start_at));
     return {
       successfulOrders,
       salesMtd: monthOrders.reduce((sum, order) => sum + asAmount(order.total_amount), 0),
@@ -80,6 +83,8 @@ export default function AdminDashboard() {
       outstanding: pendingInvoices.reduce((sum, invoice) => sum + asAmount(invoice.balance_due ?? invoice.total_amount), 0),
       openOrders: data.orders.filter(isOpenOrder), pendingInvoices, lowStock,
       activeDeliveries: data.deliveries.filter((delivery) => ['scheduled', 'in_transit', 'dispatched'].includes(delivery.status)),
+      upcomingHarvests,
+      nextHarvest: upcomingHarvests[0] || null,
     };
   }, [data]);
 
@@ -94,6 +99,7 @@ export default function AdminDashboard() {
       ['Sales value this month', formatCurrency(metrics.salesMtd)], ['Payments this month', formatCurrency(metrics.paidMtd)],
       ['Outstanding invoices', formatCurrency(metrics.outstanding)], ['Expenses this month', formatCurrency(metrics.expensesMtd)],
       ['Orders in progress', metrics.openOrders.length], ['Active deliveries', metrics.activeDeliveries.length],
+      ['Upcoming harvest schedules', metrics.upcomingHarvests.length],
       ['Customers', data.customers.length], ['Products', data.products.length], ['Active farms', data.farms.filter((farm) => farm.status !== 'inactive').length],
       ['Staff', data.employees.length], ['Low stock items', metrics.lowStock.length], ['Pending applications', data.applications.filter((item) => !['hired', 'rejected'].includes(item.status)).length],
     ];
@@ -138,7 +144,7 @@ export default function AdminDashboard() {
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <SmallMetric label="Customers" value={data.customers.length} icon={Users} path="/admin/crm" />
         <SmallMetric label="Products" value={data.products.length} icon={Package} path="/admin/content" />
-        <SmallMetric label="Active farms" value={data.farms.filter((farm) => farm.status !== 'inactive').length} icon={Sprout} path="/admin/farms" />
+        <SmallMetric label="Active farms" value={data.farms.filter((farm) => farm.status !== 'inactive').length} icon={Sprout} path="/admin/harvests" />
         <SmallMetric label="Staff" value={data.employees.length} icon={Activity} path="/admin/hr" />
         <SmallMetric label="Active deliveries" value={metrics.activeDeliveries.length} icon={Truck} path="/admin/logistics" />
         <SmallMetric label="Low stock" value={metrics.lowStock.length} icon={Boxes} path="/admin/inventory" alert={metrics.lowStock.length > 0} />
@@ -159,7 +165,9 @@ export default function AdminDashboard() {
           <div className="mt-4 grid gap-x-6 gap-y-4 sm:grid-cols-2">
             <OperatingStat label="Expenses this month" value={formatCurrency(metrics.expensesMtd)} icon={CircleDollarSign} path="/admin/finance" />
             <OperatingStat label="Purchase orders" value={data.purchaseOrders.length} icon={BriefcaseBusiness} path="/admin/procurement" />
-            <OperatingStat label="Harvest records" value={data.harvests.length} icon={Sprout} path="/admin/harvests" />
+            <OperatingStat label="Harvest records" value={data.harvests.length + data.harvestBatches.length} icon={Sprout} path="/admin/harvests" />
+            <OperatingStat label="Upcoming harvests" value={metrics.upcomingHarvests.length} icon={CalendarDays} path="/admin/farm-daily-activities/harvests/season-planner" />
+            <OperatingStat label="Next harvest" value={metrics.nextHarvest ? new Date(metrics.nextHarvest.start_at).toLocaleDateString('en-GH', { day: 'numeric', month: 'short' }) : 'Not scheduled'} icon={Clock3} path="/admin/farm-daily-activities/harvests/season-planner" />
             <OperatingStat label="Open applications" value={data.applications.filter((item) => !['hired', 'rejected'].includes(item.status)).length} icon={Users} path="/admin/applications" />
             <OperatingStat label="New client inquiries" value={data.inquiries.filter((item) => item.status === 'new' || !item.status).length} icon={MessageSquareText} path="/admin/inquiries" />
             <OperatingStat label="Upcoming activities" value={data.calendarEvents.filter((item) => new Date(item.start_at) >= new Date() && !['completed', 'cancelled'].includes(item.status)).length} icon={CalendarDays} path="/admin/calendar" />

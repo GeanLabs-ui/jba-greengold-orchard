@@ -1,23 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
-  AlertTriangle,
   CheckCircle2,
-  CircleDollarSign,
-  ClipboardCheck,
   CloudSun,
-  CalendarDays,
   Loader2,
   Plus,
   RefreshCw,
-  Search,
-  Sprout,
-  Target,
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { subscribeToDataChanges } from '@/lib/data-sync';
 import { taskStatusToCalendar } from '@/lib/production-calendar';
 import { useToast } from '@/components/ui/use-toast';
+import MasterScheduleView from '@/components/farm/MasterScheduleView';
+import ProgrammeOverviewView from '@/components/farm/ProgrammeOverviewView';
+import BudgetHarvestView, { summarizeBudgetHarvest } from '@/components/farm/BudgetHarvestView';
 import {
   BUDGET_BLUEPRINTS,
   MILESTONE_BLUEPRINTS,
@@ -31,8 +27,7 @@ import './DailyRoutineCheck.css';
 
 const VIEWS = [
   { id: 'dashboard', label: 'Overview', group: 'Management' },
-  { id: 'schedule', label: 'Master schedule' },
-  { id: 'milestones', label: 'Milestones' },
+  { id: 'milestones', label: 'Master Schedule' },
   { id: 'blocks', label: 'Farm blocks' },
   { id: 'logs', label: 'Field logs', group: 'Operations' },
   { id: 'finance', label: 'Budget & harvest' },
@@ -51,6 +46,20 @@ const STATUSES = Object.keys(STATUS_LABELS);
 const LOG_TYPES = ['Nutrition', 'Irrigation', 'Pest & Disease', 'Weather', 'Lesson Learned'];
 const TODAY = new Date().toISOString().slice(0, 10);
 const PROGRAMME_TODAY = new Date();
+const FARM_LAND_BLUEPRINTS = [
+  { code: 'A', name: 'Farm Land A' },
+  { code: 'B', name: 'Farm Land B' },
+];
+const FARM_BLOCK_BLUEPRINTS = FARM_LAND_BLUEPRINTS.flatMap((farmLand, landIndex) => (
+  Array.from({ length: 5 }, (_, sectionIndex) => ({
+    blockCode: `${farmLand.code}${sectionIndex + 1}`,
+    farmLand: farmLand.name,
+    variety: landIndex === 0
+      ? sectionIndex < 3 ? 'Kent' : 'Keitt'
+      : sectionIndex < 2 ? 'Keitt' : 'Black Pearl',
+    earlyHarvest: landIndex === 0 && sectionIndex < 3,
+  }))
+));
 
 const entityLists = [
   ['farms', 'Farm', '-created_date'],
@@ -62,6 +71,7 @@ const entityLists = [
   ['harvests', 'HarvestBatch', '-harvest_date'],
   ['risks', 'FarmComplianceRecord', 'record_code'],
   ['activities', 'DailyActivity', '-activity_date'],
+  ['notes', 'FarmNote', '-created_date'],
 ];
 
 const date = (value) => {
@@ -71,12 +81,39 @@ const date = (value) => {
     ? String(value)
     : parsed.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 };
-const money = (value) => `GHS ${Number(value || 0).toLocaleString('en-GH', { maximumFractionDigits: 0 })}`;
 const code = (prefix) => `${prefix}-${Date.now().toString().slice(-8)}`;
 const normalizedStatus = (value) => {
   const next = String(value || 'not_started').trim().toLowerCase().replaceAll(' ', '_');
   return STATUS_LABELS[next] ? next : 'not_started';
 };
+const scheduleDueAt = (item) => item.completion_due_at || item.due_date;
+const isOverdue = (item) => {
+  const dueAt = scheduleDueAt(item);
+  return Boolean(dueAt) && new Date(dueAt) < new Date() && !['completed', 'deferred'].includes(normalizedStatus(item.status));
+};
+const summarizeScheduleProjects = (projects, subtasks) => projects.map((project) => {
+  const children = subtasks.filter((item) => item.parent_project_id === project.id);
+  if (!children.length) return { ...project, subtask_count: 0, completed_subtask_count: 0 };
+  const completed = children.filter((item) => normalizedStatus(item.status) === 'completed').length;
+  const progress = Math.round(children.reduce((sum, item) => sum + Number(item.progress_percent || 0), 0) / children.length);
+  const status = completed === children.length
+    ? 'completed'
+    : children.some((item) => normalizedStatus(item.status) === 'blocked')
+      ? 'blocked'
+      : children.some((item) => normalizedStatus(item.status) === 'in_progress')
+        ? 'in_progress'
+        : 'not_started';
+  const overdue = isOverdue(project) || children.some(isOverdue);
+  return {
+    ...project,
+    status,
+    progress_percent: progress,
+    rag: status === 'completed' ? 'GREEN' : status === 'blocked' ? 'RED' : 'AMBER',
+    subtask_count: children.length,
+    completed_subtask_count: completed,
+    overdue,
+  };
+});
 const statusForActivity = (value) => ({
   not_started: 'Planned',
   in_progress: 'In Progress',
@@ -165,15 +202,34 @@ async function seedProgramme(shared, onProgress) {
     }),
   );
 
-  const knownBlocks = new Set(shared.blocks.filter((item) => item.programme_code === PROGRAMME_CODE).map((item) => item.block_code));
+  const programmeBlocks = shared.blocks.filter((item) => item.programme_code === PROGRAMME_CODE);
+  const legacyBlockCodes = new Map(Array.from({ length: 10 }, (_, index) => [
+    `B${index + 1}`,
+    FARM_BLOCK_BLUEPRINTS[index].blockCode,
+  ]));
+  const hasLegacyBlockLayout = programmeBlocks.some((item) => /^B(?:[6-9]|10)$/.test(item.block_code));
+  const legacyBlocks = hasLegacyBlockLayout
+    ? programmeBlocks.filter((item) => legacyBlockCodes.has(item.block_code))
+    : [];
+  await Promise.all(legacyBlocks.map((block) => {
+    const blockCode = legacyBlockCodes.get(block.block_code);
+    const blueprint = FARM_BLOCK_BLUEPRINTS.find((item) => item.blockCode === blockCode);
+    return base44.entities.FarmBlock.update(block.id, {
+      block_code: blockCode,
+      code: blockCode,
+      name: `Block ${blockCode}`,
+      farm_name: blueprint.farmLand,
+    });
+  }));
+  const knownBlocks = new Set([
+    ...programmeBlocks.filter((item) => !legacyBlocks.includes(item)).map((item) => item.block_code),
+    ...legacyBlocks.map((item) => legacyBlockCodes.get(item.block_code)),
+  ]);
   await runBatches(
-    Array.from({ length: 10 }, (_, index) => ({
-      blockCode: `B${index + 1}`,
-      variety: index < 4 ? 'Kent' : index < 7 ? 'Keitt' : 'Black Pearl',
-      earlyHarvest: index < 3,
-    })).filter((item) => !knownBlocks.has(item.blockCode)),
+    FARM_BLOCK_BLUEPRINTS.filter((item) => !knownBlocks.has(item.blockCode)),
     (item) => base44.entities.FarmBlock.create({
       ...farmFields,
+      farm_name: item.farmLand,
       block_code: item.blockCode,
       code: item.blockCode,
       name: `Block ${item.blockCode}`,
@@ -228,38 +284,23 @@ async function seedProgramme(shared, onProgress) {
   return created > 0
     || missingTasks.length > 0
     || shared.projects.filter((item) => item.programme_code === PROGRAMME_CODE).length < MILESTONE_BLUEPRINTS.length
-    || shared.blocks.filter((item) => item.programme_code === PROGRAMME_CODE).length < 10;
+    || programmeBlocks.length < FARM_BLOCK_BLUEPRINTS.length;
 }
 
 function mergeBlueprints(shared) {
-  const storedTasks = new Map(shared.tasks.filter((item) => item.programme_code === PROGRAMME_CODE).map((item) => [item.task_code, item]));
-  const programmeTasks = ROUTINE_TASK_BLUEPRINTS.map((blueprint) => {
-    const taskCode = `DRC-${String(blueprint.wbs).padStart(3, '0')}`;
-    return {
-      ...blueprint,
-      task_code: taskCode,
-      phase_name: blueprint.phase,
-      title: blueprint.activity,
-      assigned_to_name: blueprint.owner,
-      planned_start: blueprint.plannedStart,
-      due_date: blueprint.plannedFinish,
-      status: 'not_started',
-      progress_percent: 0,
-      ...(storedTasks.get(taskCode) || {}),
-    };
-  });
   const scheduledTasks = shared.tasks
-    .filter((item) => item.calendar_event_id || item.source === 'Production Calendar')
+    .filter((item) => (item.calendar_event_id || item.source === 'Production Calendar') && !item.parent_project_id && !item.archived_at)
     .sort((left, right) => String(left.planned_start || left.due_date).localeCompare(String(right.planned_start || right.due_date)));
   return {
     ...shared,
-    tasks: [...programmeTasks, ...scheduledTasks],
+    tasks: scheduledTasks,
+    scheduleSubtasks: shared.tasks.filter((item) => item.parent_project_id && !item.archived_at),
     projects: shared.projects
       .filter((item) => item.programme_code === PROGRAMME_CODE)
       .sort((left, right) => String(left.milestone_code).localeCompare(String(right.milestone_code))),
     blocks: shared.blocks
       .filter((item) => item.programme_code === PROGRAMME_CODE)
-      .sort((left, right) => Number(String(left.block_code).replace(/\D/g, '')) - Number(String(right.block_code).replace(/\D/g, ''))),
+      .sort((left, right) => String(left.block_code).localeCompare(String(right.block_code), undefined, { numeric: true })),
     logs: shared.logs.filter((item) => item.programme_code === PROGRAMME_CODE),
     financeRecords: shared.financeRecords.filter((item) => item.programme_code === PROGRAMME_CODE && item.record_type === 'programme_budget'),
     harvests: shared.harvests.filter((item) => item.programme_code === PROGRAMME_CODE),
@@ -269,18 +310,21 @@ function mergeBlueprints(shared) {
 
 export default function DailyRoutineCheck() {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const fieldDialog = useRef(null);
   const harvestDialog = useRef(null);
   const initialized = useRef(false);
   const [view, setView] = useState('dashboard');
   const [shared, setShared] = useState(() => mergeBlueprints(Object.fromEntries(entityLists.map(([key]) => [key, []]))));
-  const [query, setQuery] = useState('');
-  const [phaseFilter, setPhaseFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
   const [logType, setLogType] = useState('Nutrition');
   const [loading, setLoading] = useState(true);
   const [syncStatus, setSyncStatus] = useState('Connecting to farm operations');
   const [busyKey, setBusyKey] = useState('');
+  const [showNewMasterTask, setShowNewMasterTask] = useState(false);
+  const [newMasterTask, setNewMasterTask] = useState({ title: '', owner_name: '', start_date: TODAY, due_date: '', priority: 'Medium', success_criteria: '' });
+  const [showNewFarmLand, setShowNewFarmLand] = useState(false);
+  const [newFarmLand, setNewFarmLand] = useState({ name: 'Farm Land C', code: 'C', variety: 'Kent' });
+  const [scheduleFilter, setScheduleFilter] = useState({ period: 'all', status: 'all', search: '', start: '', end: '' });
 
   const reload = useCallback(async ({ seed = false, silent = false } = {}) => {
     if (!silent) setLoading(true);
@@ -288,7 +332,7 @@ export default function DailyRoutineCheck() {
     try {
       let data = await loadSharedData();
       if (seed) {
-        setSyncStatus('Checking the 93-activity client programme');
+        setSyncStatus('Setting up farm lands and programme records');
         await seedProgramme(data, setSyncStatus);
         data = await loadSharedData();
       }
@@ -318,29 +362,50 @@ export default function DailyRoutineCheck() {
     const unsubscribe = subscribeToDataChanges(() => {
       clearTimeout(timer);
       timer = window.setTimeout(() => reload({ silent: true }), 160);
-    }, ['CalendarEvent', 'FarmTask', 'DailyActivity']);
+    }, ['CalendarEvent', 'FarmProject', 'FarmTask', 'DailyActivity', 'FarmProcessLog', 'WeatherLog']);
     return () => { clearTimeout(timer); unsubscribe(); };
   }, [reload]);
 
   const phases = useMemo(() => [...new Set(shared.tasks.map((item) => item.phase_name).filter(Boolean))], [shared.tasks]);
-  const filteredTasks = useMemo(() => shared.tasks.filter((task) => {
-    const text = [task.title, task.description, task.assigned_to_name, task.phase_name].join(' ').toLowerCase();
-    return (!query || text.includes(query.toLowerCase()))
-      && (!phaseFilter || task.phase_name === phaseFilter)
-      && (!statusFilter || normalizedStatus(task.status) === statusFilter);
-  }), [phaseFilter, query, shared.tasks, statusFilter]);
+
+  const allScheduleProjects = useMemo(() => summarizeScheduleProjects(shared.projects, shared.scheduleSubtasks || []), [shared.projects, shared.scheduleSubtasks]);
+  const scheduleProjects = useMemo(() => allScheduleProjects.filter((item) => item.is_enabled !== false), [allScheduleProjects]);
+  const filterRange = useMemo(() => {
+    if (scheduleFilter.period === 'custom') return { start: scheduleFilter.start ? new Date(`${scheduleFilter.start}T00:00:00`) : null, end: scheduleFilter.end ? new Date(`${scheduleFilter.end}T23:59:59`) : null };
+    if (scheduleFilter.period === 'all') return { start: null, end: null };
+    const start = new Date();
+    const end = new Date(start);
+    if (scheduleFilter.period === 'daily') end.setDate(end.getDate() + 1);
+    if (scheduleFilter.period === 'weekly') end.setDate(end.getDate() + 7);
+    if (scheduleFilter.period === 'monthly') end.setMonth(end.getMonth() + 1);
+    if (scheduleFilter.period === 'yearly') end.setFullYear(end.getFullYear() + 1);
+    return { start, end };
+  }, [scheduleFilter]);
+  const filteredScheduleProjects = useMemo(() => allScheduleProjects.filter((project) => {
+    const search = scheduleFilter.search.trim().toLowerCase();
+    if (search && !`${project.title} ${project.owner_name} ${project.milestone_code}`.toLowerCase().includes(search)) return false;
+    if (scheduleFilter.status !== 'all' && normalizedStatus(project.status) !== scheduleFilter.status) return false;
+    const linked = (shared.scheduleSubtasks || []).filter((item) => item.parent_project_id === project.id);
+    const dates = [project.start_date, project.due_date, ...linked.flatMap((item) => [item.planned_start_at || item.planned_start, item.completion_due_at || item.due_date])].filter(Boolean).map((value) => new Date(value));
+    if (filterRange.start && dates.length && !dates.some((value) => value >= filterRange.start && value <= filterRange.end)) return false;
+    return !(filterRange.end && dates.length && !dates.some((value) => value <= filterRange.end));
+  }), [allScheduleProjects, filterRange, scheduleFilter, shared.scheduleSubtasks]);
+  const filteredSummary = useMemo(() => ({
+    total: filteredScheduleProjects.length,
+    active: filteredScheduleProjects.filter((item) => normalizedStatus(item.status) === 'in_progress').length,
+    completed: filteredScheduleProjects.filter((item) => normalizedStatus(item.status) === 'completed').length,
+    overdue: filteredScheduleProjects.filter((item) => item.overdue || isOverdue(item)).length,
+    progress: Math.round(filteredScheduleProjects.reduce((sum, item) => sum + Number(item.progress_percent || 0), 0) / (filteredScheduleProjects.length || 1)),
+  }), [filteredScheduleProjects]);
 
   const metrics = useMemo(() => {
-    const total = shared.tasks.length;
-    const completed = shared.tasks.filter((item) => normalizedStatus(item.status) === 'completed').length;
-    const active = shared.tasks.filter((item) => normalizedStatus(item.status) === 'in_progress').length;
-    const overdue = shared.tasks.filter((item) => (
-      new Date(item.due_date) < PROGRAMME_TODAY
-      && !['completed', 'deferred'].includes(normalizedStatus(item.status))
-    )).length;
-    const progress = Math.round(shared.tasks.reduce((sum, item) => sum + Number(item.progress_percent || 0), 0) / (total || 1));
-    return { total, completed, active, overdue, progress };
-  }, [shared.tasks]);
+    const total = scheduleProjects.length;
+    const completed = scheduleProjects.filter((item) => normalizedStatus(item.status) === 'completed').length;
+    const active = scheduleProjects.filter((item) => normalizedStatus(item.status) === 'in_progress').length;
+    const overdue = scheduleProjects.filter((item) => item.overdue || isOverdue(item)).length;
+    const progress = Math.round(scheduleProjects.reduce((sum, item) => sum + Number(item.progress_percent || 0), 0) / (total || 1));
+    return { total, completed, active, overdue, progress, subtasks: (shared.scheduleSubtasks || []).length, disabled: allScheduleProjects.length - total };
+  }, [scheduleProjects, shared.scheduleSubtasks, allScheduleProjects.length]);
 
   const phaseProgress = useMemo(() => phases.map((name) => {
     const tasks = shared.tasks.filter((item) => item.phase_name === name);
@@ -351,14 +416,18 @@ export default function DailyRoutineCheck() {
     };
   }), [phases, shared.tasks]);
 
-  const finance = useMemo(() => {
-    const planned = shared.financeRecords.reduce((sum, item) => sum + Number(item.planned_amount || item.amount || 0), 0);
-    const actual = shared.financeRecords.reduce((sum, item) => sum + Number(item.actual_amount || 0), 0);
-    const kg = shared.harvests.reduce((sum, item) => sum + Number(item.quantity_harvested_kg || 0), 0);
-    const gradeA = shared.harvests.reduce((sum, item) => sum + Number(item.grade_a_kg || 0), 0);
-    const revenue = shared.harvests.reduce((sum, item) => sum + Number(item.quantity_harvested_kg || 0) * Number(item.price_per_kg || 0), 0);
-    return { planned, actual, kg, gradePct: kg ? Math.round((gradeA / kg) * 100) : 0, revenue };
-  }, [shared.financeRecords, shared.harvests]);
+  const finance = useMemo(() => summarizeBudgetHarvest(shared.financeRecords, shared.harvests), [shared.financeRecords, shared.harvests]);
+
+  const farmLands = useMemo(() => {
+    const lands = new Map(FARM_LAND_BLUEPRINTS.map((land) => [land.code, land]));
+    shared.blocks.forEach((block) => {
+      const code = String(block.block_code || '').match(/^([A-Z]+)/i)?.[1]?.toUpperCase();
+      if (!code) return;
+      const defaultLand = lands.get(code)?.name || `Farm Land ${code}`;
+      lands.set(code, { code, name: block.farm_name || defaultLand });
+    });
+    return [...lands.values()].sort((left, right) => left.code.localeCompare(right.code));
+  }, [shared.blocks]);
 
   const setTaskLocally = (next) => {
     setShared((current) => ({
@@ -516,6 +585,59 @@ export default function DailyRoutineCheck() {
     }
   };
 
+  const toggleProjectEnabled = async (project) => {
+    const isEnabled = project.is_enabled === false;
+    setBusyKey(project.id);
+    try {
+      const updated = await base44.entities.FarmProject.update(project.id, {
+        is_enabled: isEnabled,
+        updated_from: 'Master Schedule seasonal activation',
+      });
+      setShared((current) => ({ ...current, projects: current.projects.map((item) => item.id === updated.id ? updated : item) }));
+      toast({ title: isEnabled ? 'Task enabled' : 'Task turned off', description: isEnabled ? 'It is now included in live dashboard tracking.' : 'It remains in the schedule but is excluded from live dashboard tracking.' });
+    } catch (error) {
+      toast({ title: 'Task activation could not be updated', description: error.message, variant: 'destructive' });
+    } finally {
+      setBusyKey('');
+    }
+  };
+
+  const createMasterTask = async (event) => {
+    event.preventDefault();
+    const title = newMasterTask.title.trim();
+    if (!title) return;
+    setBusyKey('new-master-task');
+    try {
+      const taskCode = `MS-${Date.now().toString().slice(-8)}`;
+      const created = await base44.entities.FarmProject.create({
+        programme_code: PROGRAMME_CODE,
+        project_code: taskCode,
+        milestone_code: taskCode,
+        project_type: 'master_schedule_task',
+        title,
+        owner_name: newMasterTask.owner_name.trim(),
+        start_date: newMasterTask.start_date,
+        due_date: newMasterTask.due_date,
+        priority: newMasterTask.priority,
+        success_criteria: newMasterTask.success_criteria.trim(),
+        status: 'not_started',
+        progress_percent: 0,
+        rag: 'AMBER',
+        is_enabled: true,
+        source: 'Master Schedule',
+      });
+      setShared((current) => ({ ...current, projects: [...current.projects, created] }));
+      setShowNewMasterTask(false);
+      setNewMasterTask({ title: '', owner_name: '', start_date: TODAY, due_date: '', priority: 'Medium', success_criteria: '' });
+      toast({ title: 'Master task created', description: 'Add its checklist and field updates from the task workspace.' });
+      navigate(`/admin/daily-routine-check/master-schedule/${encodeURIComponent(created.id)}`);
+    } catch (error) {
+      toast({ title: 'Master task could not be created', description: error.message, variant: 'destructive' });
+    } finally {
+      setBusyKey('');
+    }
+  };
+
   const updateBlock = async (block, changes) => {
     setBusyKey(block.block_code);
     try {
@@ -524,6 +646,82 @@ export default function DailyRoutineCheck() {
       toast({ title: `${block.block_code} synchronized` });
     } catch (error) {
       toast({ title: 'Block update failed', description: error.message, variant: 'destructive' });
+    } finally {
+      setBusyKey('');
+    }
+  };
+
+  const createFarmLand = async (event) => {
+    event.preventDefault();
+    const code = newFarmLand.code.trim().toUpperCase();
+    const name = newFarmLand.name.trim();
+    if (!/^[A-Z]+$/.test(code) || !name) {
+      toast({ title: 'Enter a land name and letters for its section prefix', variant: 'destructive' });
+      return;
+    }
+    if (farmLands.some((land) => land.code === code || land.name.toLowerCase() === name.toLowerCase())) {
+      toast({ title: 'This farm land already exists', variant: 'destructive' });
+      return;
+    }
+    setBusyKey('new-farm-land');
+    try {
+      const farm = shared.farms[0];
+      const created = await base44.entities.FarmBlock.create({
+        farm_id: farm?.id || '',
+        farm_name: name,
+        programme_code: PROGRAMME_CODE,
+        source: 'Daily Routine Check',
+        block_code: `${code}1`,
+        code: `${code}1`,
+        name: `Block ${code}1`,
+        variety: newFarmLand.variety,
+        early_harvest: false,
+        shoot_maturity: 0,
+        forecast_yield_kg: 0,
+        fruit_fly_pressure: 'Low',
+        disease_rating: 'Low',
+        status: 'active',
+      });
+      setShared((current) => ({ ...current, blocks: [...current.blocks, created] }));
+      setShowNewFarmLand(false);
+      setNewFarmLand({ name: `Farm Land ${String.fromCharCode(code.charCodeAt(0) + 1)}`, code: String.fromCharCode(code.charCodeAt(0) + 1), variety: 'Kent' });
+      toast({ title: `${name} created`, description: `${code}1 is ready for field records.` });
+    } catch (error) {
+      toast({ title: 'Farm land could not be created', description: error.message, variant: 'destructive' });
+    } finally {
+      setBusyKey('');
+    }
+  };
+
+  const createBlock = async (land) => {
+    const blockNumbers = shared.blocks
+      .map((block) => String(block.block_code || '').match(new RegExp(`^${land.code}(\\d+)$`, 'i'))?.[1])
+      .filter(Boolean)
+      .map(Number);
+    const blockCode = `${land.code}${Math.max(0, ...blockNumbers) + 1}`;
+    setBusyKey(`new-block-${land.code}`);
+    try {
+      const farm = shared.farms[0];
+      const created = await base44.entities.FarmBlock.create({
+        farm_id: farm?.id || '',
+        farm_name: land.name,
+        programme_code: PROGRAMME_CODE,
+        source: 'Daily Routine Check',
+        block_code: blockCode,
+        code: blockCode,
+        name: `Block ${blockCode}`,
+        variety: 'Kent',
+        early_harvest: false,
+        shoot_maturity: 0,
+        forecast_yield_kg: 0,
+        fruit_fly_pressure: 'Low',
+        disease_rating: 'Low',
+        status: 'active',
+      });
+      setShared((current) => ({ ...current, blocks: [...current.blocks, created] }));
+      toast({ title: `${blockCode} added to ${land.name}` });
+    } catch (error) {
+      toast({ title: 'Block could not be created', description: error.message, variant: 'destructive' });
     } finally {
       setBusyKey('');
     }
@@ -724,7 +922,7 @@ export default function DailyRoutineCheck() {
         <div className="drc-sync-state">
           {loading ? <Loader2 className="drc-spin" /> : <CheckCircle2 />}
           <span>{syncStatus}</span>
-          <button type="button" onClick={() => reload({ seed: true })} disabled={loading} aria-label="Refresh programme">
+          <button type="button" onClick={() => reload()} disabled={loading} aria-label="Refresh programme">
             <RefreshCw />
           </button>
         </div>
@@ -741,133 +939,22 @@ export default function DailyRoutineCheck() {
         ))}
       </nav>
 
-      <section className={`drc-view ${view === 'dashboard' ? 'active' : ''}`}>
-        <PageHead
-          eyebrow="Executive overview"
-          title="Early harvest control room"
-          copy="One operating view for the agronomic, field and commercial work behind the April–May 2027 mango harvest."
-          right={<div className="drc-date-chip"><b>20 Jul 2026 — 31 May 2027</b><span>Kent · Keitt · Black Pearl</span></div>}
-        />
-        <div className="drc-metrics">
-          <Metric label="Total activities" value={metrics.total} note="Across 9 phases" icon={ClipboardCheck} />
-          <Metric label="Completed" value={metrics.completed} note={`${Math.round((metrics.completed / (metrics.total || 1)) * 100)}% of programme`} icon={CheckCircle2} />
-          <Metric label="In progress" value={metrics.active} note="Active field work" icon={Sprout} />
-          <Metric label="Overdue" value={metrics.overdue} note="Incomplete past due date" icon={AlertTriangle} alert />
-        </div>
-        <div className="drc-dashboard-grid">
-          <div className="drc-panel">
-            <div className="drc-overall">
-              <div><span>Overall project progress</span><strong>{metrics.progress}%</strong></div>
-              <Progress value={metrics.progress} dark />
-            </div>
-            <PanelHead title="Progress by phase" copy="Weighted from activity completion values" action={<button type="button" className="drc-btn" onClick={() => go('schedule')}>View schedule</button>} />
-            <div className="drc-panel-body drc-phase-list">
-              {phaseProgress.map((phase) => (
-                <div key={phase.name}>
-                  <div className="drc-phase-meta"><b>{phase.name.replace(/^\d+\.\s*/, '')}</b><span>{phase.progress}% · {phase.count} tasks</span></div>
-                  <Progress value={phase.progress} />
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="drc-panel">
-            <PanelHead title="Executive milestones" copy="Next programme control points" action={<button type="button" className="drc-btn" onClick={() => go('milestones')}>All 17</button>} />
-            <div className="drc-panel-body drc-milestone-list">
-              {shared.projects.slice(0, 6).map((milestone) => (
-                <div className="drc-milestone" key={milestone.id}>
-                  <i className={`drc-dot ${milestone.rag || 'RED'}`} />
-                  <div><b>{milestone.title}</b><small>{date(milestone.due_date)} · {milestone.owner_name}</small></div>
-                  <Pill value={normalizedStatus(milestone.status)} />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-        <div className="drc-focus">
-          <div>
-            <h3>Management focus: close harvest, restore canopy health</h3>
-            <p>Complete final picking and sanitation, confirm early-harvest blocks, then protect mature terminals while recovery nutrition and irrigation servicing begin.</p>
-          </div>
-          <div><strong>{shared.tasks.filter((item) => item.priority === 'Critical' && normalizedStatus(item.status) !== 'completed').length}</strong><span>critical tasks</span></div>
-        </div>
-      </section>
+      {view === 'dashboard' ? <ProgrammeOverviewView metrics={metrics} onOpenSchedule={() => go('milestones')} scheduleProjects={scheduleProjects} /> : null}
 
-      <section className={`drc-view ${view === 'schedule' ? 'active' : ''}`}>
-        <PageHead eyebrow="Master project schedule" title="Programme and scheduled activities" copy="Search, filter and update field execution. Calendar activities stay synchronized with Farm Daily Activities and the wider platform." right={<Link className="drc-primary" to="/admin/calendar"><CalendarDays />Open calendar</Link>} />
-        <div className="drc-toolbar">
-          <label className="drc-search"><Search /><input placeholder="Search activity, phase or owner" value={query} onChange={(event) => setQuery(event.target.value)} /></label>
-          <select value={phaseFilter} onChange={(event) => setPhaseFilter(event.target.value)}>
-            <option value="">All phases</option>
-            {phases.map((phase) => <option key={phase} value={phase}>{phase}</option>)}
-          </select>
-          <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
-            <option value="">All statuses</option>
-            {STATUSES.map((status) => <option key={status} value={status}>{STATUS_LABELS[status]}</option>)}
-          </select>
-        </div>
-        <div className="drc-table-shell">
-          <table className="drc-table">
-            <thead><tr><th>WBS</th><th>Activity</th><th>Dates</th><th>Owner</th><th>Priority</th><th>Status</th><th>Complete</th></tr></thead>
-            <tbody>
-              {filteredTasks.map((task) => (
-                <tr key={task.task_code} className={new Date(task.due_date) < PROGRAMME_TODAY && !['completed', 'deferred'].includes(normalizedStatus(task.status)) ? 'overdue' : ''}>
-                  <td>{task.wbs}</td>
-                  <td className="drc-task-name"><b>{task.title}</b><small>{task.description}</small></td>
-                  <td>{date(task.planned_start)}<br /><span>to {date(task.due_date)}</span></td>
-                  <td>{task.assigned_to_name}</td>
-                  <td><Pill value={task.priority === 'Critical' ? 'RED' : 'AMBER'} label={task.priority} /></td>
-                  <td>
-                    <select
-                      className="drc-inline"
-                      value={normalizedStatus(task.status)}
-                      onChange={(event) => updateTask(task, { status: event.target.value })}
-                      disabled={busyKey === task.task_code}
-                    >
-                      {STATUSES.map((status) => <option key={status} value={status}>{STATUS_LABELS[status]}</option>)}
-                    </select>
-                  </td>
-                  <td className="drc-progress-cell">
-                    <input
-                      className="drc-inline"
-                      type="number"
-                      min="0"
-                      max="100"
-                      defaultValue={Number(task.progress_percent || 0)}
-                      onBlur={(event) => Number(event.target.value) !== Number(task.progress_percent || 0) && updateTask(task, { progress_percent: Number(event.target.value) })}
-                      disabled={busyKey === task.task_code}
-                    />%
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <div className="drc-count-note"><span>Showing {filteredTasks.length} of {shared.tasks.length} activities</span><span>Changes are synchronized and audited</span></div>
-      </section>
-
-      <section className={`drc-view ${view === 'milestones' ? 'active' : ''}`}>
-        <PageHead eyebrow="Executive milestones" title="Decision gates and outcomes" copy="Review dates, ownership and acceptance criteria at the weekly management meeting." />
-        <div className="drc-table-shell">
-          <table className="drc-table">
-            <thead><tr><th>ID</th><th>Milestone</th><th>Window</th><th>Owner</th><th>Success criteria</th><th>Status</th><th>Complete</th></tr></thead>
-            <tbody>{shared.projects.map((milestone) => (
-              <tr key={milestone.id}>
-                <td>{milestone.milestone_code}</td>
-                <td className="drc-task-name"><b>{milestone.title}</b></td>
-                <td>{date(milestone.start_date)}<br />to {date(milestone.due_date)}</td>
-                <td>{milestone.owner_name}</td>
-                <td>{milestone.success_criteria}</td>
-                <td><select className="drc-inline" value={normalizedStatus(milestone.status)} onChange={(event) => updateProject(milestone, { status: event.target.value })}>{STATUSES.map((status) => <option key={status} value={status}>{STATUS_LABELS[status]}</option>)}</select></td>
-                <td className="drc-progress-cell"><input className="drc-inline" type="number" min="0" max="100" defaultValue={Number(milestone.progress_percent || 0)} onBlur={(event) => Number(event.target.value) !== Number(milestone.progress_percent || 0) && updateProject(milestone, { progress_percent: Number(event.target.value) })} />%</td>
-              </tr>
-            ))}</tbody>
-          </table>
-        </div>
-      </section>
+      {view === 'milestones' ? <MasterScheduleView busyKey={busyKey} createMasterTask={createMasterTask} filteredScheduleProjects={filteredScheduleProjects} filteredSummary={filteredSummary} newMasterTask={newMasterTask} scheduleFilter={scheduleFilter} setNewMasterTask={setNewMasterTask} setScheduleFilter={setScheduleFilter} setShowNewMasterTask={setShowNewMasterTask} showNewMasterTask={showNewMasterTask} toggleProjectEnabled={toggleProjectEnabled} /> : null}
 
       <section className={`drc-view ${view === 'blocks' ? 'active' : ''}`}>
-        <PageHead eyebrow="Block management" title="Variety performance by block" copy="Ten working blocks for Kent, Keitt and Black Pearl, with maturity and crop forecast controls." />
-        <div className="drc-blocks">{shared.blocks.map((block) => (
+        <PageHead eyebrow="Block management" title="Farm land sections" copy="Two farm lands in the same geographical area, each divided into five working sections with maturity and crop forecast controls." right={<button type="button" className="drc-primary gold" onClick={() => setShowNewFarmLand((current) => !current)}><Plus /> Add farm land</button>} />
+        {showNewFarmLand && <form className="drc-farm-land-form" onSubmit={createFarmLand}>
+          <label><span>Farm land name</span><input value={newFarmLand.name} onChange={(event) => setNewFarmLand((current) => ({ ...current, name: event.target.value }))} maxLength="100" required /></label>
+          <label><span>Section prefix</span><input value={newFarmLand.code} onChange={(event) => setNewFarmLand((current) => ({ ...current, code: event.target.value.toUpperCase().replace(/[^A-Z]/g, '') }))} maxLength="3" required /></label>
+          <label><span>First-block variety</span><select value={newFarmLand.variety} onChange={(event) => setNewFarmLand((current) => ({ ...current, variety: event.target.value }))}><option>Kent</option><option>Keitt</option><option>Black Pearl</option></select></label>
+          <div className="drc-form-actions"><button type="button" className="drc-btn" onClick={() => setShowNewFarmLand(false)}>Cancel</button><button className="drc-primary" disabled={busyKey === 'new-farm-land'}>{busyKey === 'new-farm-land' ? <Loader2 className="drc-spin" /> : <Plus />} Create land and first block</button></div>
+        </form>}
+        <div className="drc-farm-lands">{farmLands.map((farmLand) => (
+          <section className="drc-farm-land" key={farmLand.code}>
+            <header><div><span>{farmLand.name}</span></div><button type="button" className="drc-btn drc-add-block" onClick={() => createBlock(farmLand)} disabled={busyKey === `new-block-${farmLand.code}`}>{busyKey === `new-block-${farmLand.code}` ? <Loader2 className="drc-spin" /> : <Plus />} Add block</button></header>
+            <div className="drc-blocks">{shared.blocks.filter((block) => block.block_code?.startsWith(farmLand.code)).map((block) => (
           <article className="drc-block" key={block.id}>
             <div className="drc-block-top"><div>{block.block_code}</div><Pill value="GREEN" label={block.variety} /></div>
             <dl>
@@ -879,6 +966,8 @@ export default function DailyRoutineCheck() {
             <Progress value={Number(block.shoot_maturity || 0)} />
             <div className="drc-block-foot"><span>Fruit fly: {block.fruit_fly_pressure || 'Low'}</span><span>Disease: {block.disease_rating || 'Low'}</span></div>
           </article>
+            ))}</div>
+          </section>
         ))}</div>
       </section>
 
@@ -897,42 +986,7 @@ export default function DailyRoutineCheck() {
         </div>
       </section>
 
-      <section className={`drc-view ${view === 'finance' ? 'active' : ''}`}>
-        <PageHead eyebrow="Commercial control" title="Budget and harvest returns" copy="Track planned versus actual spend, then calculate Grade A yield and sales revenue automatically." right={<button type="button" className="drc-primary gold" onClick={() => harvestDialog.current?.showModal()}><Plus /> Record harvest</button>} />
-        <div className="drc-finance-grid">
-          <div className="drc-table-shell">
-            <table className="drc-table">
-              <thead><tr><th>Cost category</th><th>Planned</th><th>Actual</th><th>Variance</th></tr></thead>
-              <tbody>{shared.financeRecords.map((record) => {
-                const planned = Number(record.planned_amount || record.amount || 0);
-                const actual = Number(record.actual_amount || 0);
-                return <tr key={record.id}><td><b>{record.category}</b></td><td>{money(planned)}</td><td><input className="drc-inline drc-money" type="number" min="0" defaultValue={actual} onBlur={(event) => Number(event.target.value) !== actual && updateBudget(record, event.target.value)} /></td><td className={planned - actual < 0 ? 'negative' : 'positive'}>{money(planned - actual)}</td></tr>;
-              })}</tbody>
-            </table>
-          </div>
-          <aside className="drc-finance-summary">
-            <span>Remaining budget</span><strong>{money(finance.planned - finance.actual)}</strong>
-            <FinanceRow label="Planned" value={money(finance.planned)} icon={Target} />
-            <FinanceRow label="Actual" value={money(finance.actual)} icon={CircleDollarSign} />
-            <FinanceRow label="Harvested" value={`${finance.kg.toLocaleString()} kg`} icon={Sprout} />
-            <FinanceRow label="Grade A" value={`${finance.gradePct}%`} icon={CheckCircle2} />
-            <FinanceRow label="Revenue" value={money(finance.revenue)} icon={CircleDollarSign} />
-          </aside>
-        </div>
-        <div className="drc-panel drc-harvest-panel">
-          <PanelHead title="Harvest & packhouse log" copy="Grade percentage and revenue are calculated from each lot" />
-          <div className="drc-table-shell flat">{shared.harvests.length ? (
-            <table className="drc-table">
-              <thead><tr><th>Date</th><th>Lot</th><th>Block</th><th>Variety</th><th>Harvested</th><th>Grade A</th><th>Grade A %</th><th>Buyer</th><th>Revenue</th></tr></thead>
-              <tbody>{shared.harvests.map((harvest) => {
-                const harvested = Number(harvest.quantity_harvested_kg || 0);
-                const gradeA = Number(harvest.grade_a_kg || 0);
-                return <tr key={harvest.id}><td>{date(harvest.harvest_date)}</td><td>{harvest.lot_code || harvest.batch_number}</td><td>{harvest.block_name}</td><td>{harvest.variety || harvest.mango_variety}</td><td>{harvested} kg</td><td>{gradeA} kg</td><td>{harvested ? Math.round((gradeA / harvested) * 100) : 0}%</td><td>{harvest.buyer}</td><td>{money(harvested * Number(harvest.price_per_kg || 0))}</td></tr>;
-              })}</tbody>
-            </table>
-          ) : <Empty title="No harvest lots recorded" copy="Grade A performance and revenue will appear here." />}</div>
-        </div>
-      </section>
+      {view === 'finance' ? <BudgetHarvestView blocks={shared.blocks} busyKey={busyKey} finance={finance} financeRecords={shared.financeRecords} harvestDialog={harvestDialog} harvests={shared.harvests} onAddHarvest={addHarvest} onUpdateBudget={updateBudget} today={TODAY} /> : null}
 
       <section className={`drc-view ${view === 'risks' ? 'active' : ''}`}>
         <PageHead eyebrow="Risk register" title="Keep the early crop protected" copy="Prioritized agronomic, operational, compliance, weather and commercial threats." />
@@ -968,20 +1022,6 @@ export default function DailyRoutineCheck() {
         </form>
       </dialog>
 
-      <dialog className="drc-dialog" ref={harvestDialog}>
-        <div className="drc-modal-head"><div><span className="drc-eyebrow">Commercial control</span><h2>Record harvest lot</h2></div><button type="button" onClick={() => harvestDialog.current?.close()}>×</button></div>
-        <form className="drc-form-grid" onSubmit={addHarvest}>
-          <Field label="Harvest date"><input name="harvest_date" type="date" required defaultValue={TODAY} /></Field>
-          <Field label="Block"><select name="block_id" required>{shared.blocks.map((block) => <option key={block.id} value={block.id}>{block.block_code} · {block.variety}</option>)}</select></Field>
-          <Field label="Variety"><select name="variety"><option>Kent</option><option>Keitt</option><option>Black Pearl</option></select></Field>
-          <Field label="Lot code"><input name="lot_code" required maxLength="80" /></Field>
-          <Field label="Harvested kg"><input name="harvested_kg" type="number" min="0.01" step="0.01" required /></Field>
-          <Field label="Grade A kg"><input name="grade_a_kg" type="number" min="0" step="0.01" required /></Field>
-          <Field label="Price per kg (GHS)"><input name="price_per_kg" type="number" min="0" step="0.01" required /></Field>
-          <Field label="Buyer"><input name="buyer" required maxLength="180" /></Field>
-          <div className="drc-form-actions"><button type="button" className="drc-btn" onClick={() => harvestDialog.current?.close()}>Cancel</button><button className="drc-primary" disabled={busyKey === 'harvest'}>{busyKey === 'harvest' ? <Loader2 className="drc-spin" /> : null} Save harvest</button></div>
-        </form>
-      </dialog>
     </div>
   );
 }
@@ -990,24 +1030,12 @@ function PageHead({ eyebrow, title, copy, right }) {
   return <div className="drc-page-head"><div><span className="drc-eyebrow">{eyebrow}</span><h1>{title}</h1><p>{copy}</p></div>{right}</div>;
 }
 
-function Metric({ label, value, note, icon: Icon, alert = false }) {
-  return <div className={`drc-metric ${alert ? 'alert' : ''}`}><div><span>{label}</span><Icon /></div><strong>{value}</strong><small>{note}</small></div>;
-}
-
-function PanelHead({ title, copy, action }) {
-  return <div className="drc-panel-head"><div><h2>{title}</h2><p>{copy}</p></div>{action}</div>;
-}
-
 function Progress({ value, dark = false }) {
   return <div className={`drc-track ${dark ? 'dark' : ''}`}><div style={{ width: `${Math.max(0, Math.min(100, Number(value || 0)))}%` }} /></div>;
 }
 
 function Pill({ value, label }) {
   return <span className={`drc-pill ${value || ''}`}>{label || STATUS_LABELS[value] || value || '—'}</span>;
-}
-
-function FinanceRow({ label, value, icon: Icon }) {
-  return <div className="drc-finance-row"><Icon /><span>{label}</span><b>{value}</b></div>;
 }
 
 function Empty({ title, copy, action }) {

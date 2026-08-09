@@ -21,6 +21,18 @@
   font-family: Inter, ui-sans-serif, system-ui, sans-serif;
 }
 
+.drc-page.drc-embedded-schedule {
+  min-height: auto;
+  margin: 0;
+  padding: 0.25rem 0 2rem;
+  overflow: visible;
+  background: transparent;
+}
+
+.drc-embedded-schedule .drc-embedded-view {
+  max-width: none;
+}
+
 .drc-page button,
 .drc-page input,
 .drc-page select,
@@ -182,6 +194,139 @@
   color: var(--drc-muted);
   font-size: 0.75rem;
   line-height: 1.55;
+}
+
+.drc-master-task-form {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.9rem;
+  margin: 0 0 1.25rem;
+  padding: 1.1rem;
+  border: 1px solid var(--drc-line);
+  border-radius: 0.65rem;
+  background: var(--drc-surface);
+}
+
+.drc-master-task-form label {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--drc-muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.drc-master-task-form label.wide,
+.drc-master-task-actions {
+  grid-column: span 3;
+}
+
+.drc-master-task-form input,
+.drc-master-task-form select {
+  min-width: 0;
+  height: 2.35rem;
+  border: 1px solid var(--drc-line);
+  border-radius: 0.45rem;
+  background: var(--drc-paper);
+  color: var(--drc-ink);
+  padding: 0 0.65rem;
+  font-size: 0.76rem;
+}
+
+.drc-master-task-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+}
+
+.drc-task-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 4.4rem;
+  justify-content: center;
+  border: 1px solid var(--drc-line);
+  border-radius: 999px;
+  background: var(--drc-paper);
+  color: var(--drc-muted);
+  padding: 0.36rem 0.55rem;
+  font-size: 0.66rem;
+  font-weight: 800;
+}
+
+.drc-task-toggle svg {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+.drc-task-toggle.on {
+  border-color: #b9d4b0;
+  background: #edf6e9;
+  color: #356d35;
+}
+
+.drc-task-disabled {
+  opacity: 0.58;
+}
+
+.drc-schedule-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin: 0 0 0.85rem;
+  padding: 0.85rem;
+  border: 1px solid var(--drc-line);
+  border-radius: 0.65rem;
+  background: var(--drc-surface);
+}
+
+.drc-schedule-filter input,
+.drc-schedule-filter select {
+  min-width: 9rem;
+  height: 2.25rem;
+  border: 1px solid var(--drc-line);
+  border-radius: 0.45rem;
+  background: var(--drc-paper);
+  padding: 0 0.6rem;
+  color: var(--drc-ink);
+  font-size: 0.72rem;
+}
+
+.drc-schedule-filter input:first-child {
+  min-width: 15rem;
+  flex: 1;
+}
+
+.drc-schedule-analysis {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  margin-bottom: 0.85rem;
+  border: 1px solid var(--drc-line);
+  border-radius: 0.65rem;
+  background: var(--drc-surface);
+}
+
+.drc-schedule-analysis > div {
+  padding: 0.8rem 1rem;
+}
+
+.drc-schedule-analysis > div + div {
+  border-left: 1px solid var(--drc-line);
+}
+
+.drc-schedule-analysis span,
+.drc-schedule-analysis strong {
+  display: block;
+}
+
+.drc-schedule-analysis span,
+.drc-task-analysis small {
+  color: var(--drc-muted);
+  font-size: 0.6rem;
+}
+
+.drc-schedule-analysis strong {
+  margin-top: 0.2rem;
+  font-size: 1.25rem;
 }
 
 .drc-date-chip {
@@ -669,9 +814,96 @@
   font-size: 0.57rem;
 }
 
+.drc-farm-lands {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.drc-farm-land {
+  padding-top: 0.15rem;
+}
+
+.drc-farm-land > header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.drc-farm-land > header > div {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.drc-farm-land > header span {
+  font-size: 0.8rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.drc-farm-land > header small {
+  color: var(--drc-muted);
+  font-size: 0.58rem;
+  font-weight: 700;
+}
+
+.drc-add-block {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex: none;
+}
+
+.drc-add-block svg {
+  width: 0.85rem;
+  height: 0.85rem;
+}
+
+.drc-farm-land-form {
+  display: grid;
+  grid-template-columns: minmax(12rem, 1.6fr) minmax(7rem, 0.6fr) minmax(9rem, 0.8fr) auto;
+  align-items: end;
+  gap: 0.75rem;
+  margin: 0 0 1.25rem;
+  padding: 1rem;
+  border: 1px solid var(--drc-line);
+  border-radius: 0.65rem;
+  background: white;
+}
+
+.drc-farm-land-form label {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.drc-farm-land-form label span {
+  color: var(--drc-muted);
+  font-size: 0.55rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.drc-farm-land-form input,
+.drc-farm-land-form select {
+  min-height: 2.25rem;
+  border: 1px solid var(--drc-line);
+  border-radius: 0.4rem;
+  background: white;
+  padding: 0.45rem 0.55rem;
+  font: inherit;
+}
+
+.drc-farm-land-form .drc-form-actions {
+  margin: 0;
+  justify-content: flex-end;
+}
+
 .drc-blocks {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 0.85rem;
 }
 
@@ -1040,6 +1272,14 @@
     padding-left: 0.7rem;
   }
 
+  .drc-farm-land-form {
+    grid-template-columns: 1fr;
+  }
+
+  .drc-farm-land-form .drc-form-actions {
+    justify-content: flex-start;
+  }
+
   .drc-metric:nth-child(3) {
     border-top: 1px solid var(--drc-line);
     border-left: 0;
@@ -1069,4 +1309,3 @@
     align-items: start;
   }
 }
-

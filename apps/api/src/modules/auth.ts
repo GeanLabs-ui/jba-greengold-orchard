@@ -3,7 +3,22 @@ import { z } from 'zod';
 import { closeDatabase, createDatabase } from '../db.js';
 import type { AppVariables } from '../middleware/auth.js';
 import { checkRateLimit, requestIp } from '../rate-limit.js';
-import { clearSessionCookie, randomToken, sessionCookie, sha256 } from '../security.js';
+import { clearSessionCookie, randomToken, sessionCookie, sha256, timingSafeEqual } from '../security.js';
+
+function sendVerificationEmail(env: Env, ctx: { waitUntil(p: Promise<unknown>): void }, email: string, token: string): void {
+  if (!env.RESEND_API_KEY) return;
+  const verifyUrl = `${env.PASSWORD_RESET_URL.replace('/reset-password', '/verify-email')}?token=${encodeURIComponent(token)}`;
+  ctx.waitUntil(fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      from: env.EMAIL_FROM,
+      to: [email],
+      subject: 'Verify your JBA GreenGold Orchard email address',
+      html: `<p>Thank you for registering with JBA GreenGold Orchard.</p><p><a href="${verifyUrl}">Verify your email address</a></p><p>This link expires in 24 hours. If you did not create an account, you can safely ignore this email.</p>`,
+    }),
+  }));
+}
 
 const router = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 const credentialsSchema = z.object({
@@ -66,6 +81,14 @@ router.post('/register', async (c) => {
       INSERT INTO users (id, email, password_hash, password_salt, full_name, role, status)
       VALUES (${userId}, ${parsed.data.email}, crypt(${parsed.data.password}, gen_salt('bf', 12)), NULL, ${parsed.data.email.split('@')[0]}, 'customer', 'active')
     `;
+    // Issue a verification token and send the verification email (fire-and-forget)
+    const verifyToken = randomToken();
+    const verifyTokenHash = await sha256(verifyToken);
+    await sql`
+      INSERT INTO email_verification_tokens (id, user_id, token_hash, expires_at)
+      VALUES (${crypto.randomUUID()}, ${userId}, ${verifyTokenHash}, ${new Date(Date.now() + 24 * 60 * 60 * 1000)})
+    `;
+    sendVerificationEmail(c.env, c.executionCtx, parsed.data.email, verifyToken);
     const csrfToken = await createSession(c, userId);
     return c.json({ data: { user: { id: userId, email: parsed.data.email, role: 'customer' }, csrf_token: csrfToken }, requestId: c.get('requestId') }, 201);
   } finally {
@@ -103,7 +126,7 @@ router.post('/login', async (c) => {
 
 router.post('/logout', async (c) => {
   const session = c.get('session');
-  if (session && c.req.header('X-CSRF-Token') !== session.csrfToken) return c.json({ error: { code: 'CSRF_INVALID', message: 'Security token is missing or invalid' }, requestId: c.get('requestId') }, 403);
+  if (session && !timingSafeEqual(c.req.header('X-CSRF-Token'), session.csrfToken)) return c.json({ error: { code: 'CSRF_INVALID', message: 'Security token is missing or invalid' }, requestId: c.get('requestId') }, 403);
   if (session) {
     const sql = createDatabase(c.env);
     try { await sql`DELETE FROM sessions WHERE id = ${session.id}`; } finally { await closeDatabase(sql); }
@@ -154,6 +177,59 @@ router.post('/password-reset/confirm', async (c) => {
       await transaction`UPDATE password_reset_tokens SET used_at = now() WHERE id = ${token.id}`;
       await transaction`DELETE FROM sessions WHERE user_id = ${token.user_id}`;
     });
+    return c.json({ data: { success: true }, requestId: c.get('requestId') });
+  } finally {
+    await closeDatabase(sql);
+  }
+});
+
+router.post('/verify-email', async (c) => {
+  const input = z.object({ token: z.string().min(32).max(256) }).safeParse(await c.req.json().catch(() => null));
+  if (!input.success) return c.json({ error: { code: 'INVALID_TOKEN', message: 'Verification link is invalid or expired' }, requestId: c.get('requestId') }, 422);
+  const sql = createDatabase(c.env);
+  try {
+    const tokenHash = await sha256(input.data.token);
+    const tokens = await sql<{ id: string; user_id: string }[]>`
+      SELECT id, user_id FROM email_verification_tokens
+      WHERE token_hash = ${tokenHash} AND used_at IS NULL AND expires_at > now()
+      LIMIT 1
+    `;
+    const token = tokens[0];
+    if (!token) return c.json({ error: { code: 'INVALID_TOKEN', message: 'Verification link is invalid or expired' }, requestId: c.get('requestId') }, 422);
+    await sql.begin(async (transaction) => {
+      await transaction`UPDATE users SET email_verified_at = now(), updated_at = now() WHERE id = ${token.user_id}`;
+      await transaction`UPDATE email_verification_tokens SET used_at = now() WHERE id = ${token.id}`;
+    });
+    return c.json({ data: { success: true }, requestId: c.get('requestId') });
+  } finally {
+    await closeDatabase(sql);
+  }
+});
+
+// Resend verification email for the currently-authenticated user (if not yet verified)
+router.post('/verify-email/resend', async (c) => {
+  const user = c.get('user');
+  if (!user) return c.json({ error: { code: 'UNAUTHORIZED', message: 'Authentication required' }, requestId: c.get('requestId') }, 401);
+  const sql = createDatabase(c.env);
+  try {
+    const users = await sql<{ email_verified_at: Date | null }[]>`
+      SELECT email_verified_at FROM users WHERE id = ${user.id} LIMIT 1
+    `;
+    if (users[0]?.email_verified_at) return c.json({ data: { success: true }, requestId: c.get('requestId') });
+    const limit = await checkRateLimit(sql, 'verify-email-resend', user.id, 3, 3600);
+    if (!limit.allowed) {
+      c.header('Retry-After', String(limit.retryAfter));
+      return c.json({ error: { code: 'RATE_LIMITED', message: 'Too many resend attempts' }, requestId: c.get('requestId') }, 429);
+    }
+    // Invalidate old tokens
+    await sql`DELETE FROM email_verification_tokens WHERE user_id = ${user.id} AND used_at IS NULL`;
+    const verifyToken = randomToken();
+    const verifyTokenHash = await sha256(verifyToken);
+    await sql`
+      INSERT INTO email_verification_tokens (id, user_id, token_hash, expires_at)
+      VALUES (${crypto.randomUUID()}, ${user.id}, ${verifyTokenHash}, ${new Date(Date.now() + 24 * 60 * 60 * 1000)})
+    `;
+    sendVerificationEmail(c.env, c.executionCtx, user.email, verifyToken);
     return c.json({ data: { success: true }, requestId: c.get('requestId') });
   } finally {
     await closeDatabase(sql);

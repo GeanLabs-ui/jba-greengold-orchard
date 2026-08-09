@@ -2,7 +2,7 @@ import type { MiddlewareHandler } from 'hono';
 import type { Role, Permission } from 'mango-farm-authorization';
 import { hasPermission } from 'mango-farm-authorization';
 import { closeDatabase, createDatabase } from '../db.js';
-import { LOCAL_SESSION_COOKIE, parseCookies, SESSION_COOKIE, sha256 } from '../security.js';
+import { LOCAL_SESSION_COOKIE, parseCookies, SESSION_COOKIE, sha256, timingSafeEqual } from '../security.js';
 
 export interface AuthUser {
   id: string;
@@ -81,7 +81,7 @@ export const requireCsrf = (): MiddlewareHandler<{ Bindings: Env; Variables: App
   if (['GET', 'HEAD', 'OPTIONS'].includes(c.req.method)) return next();
   const session = c.get('session');
   const supplied = c.req.header('X-CSRF-Token');
-  if (!session || !supplied || supplied !== session.csrfToken) {
+  if (!session || !timingSafeEqual(supplied, session.csrfToken)) {
     return c.json({ error: { code: 'CSRF_INVALID', message: 'Security token is missing or invalid' }, requestId: c.get('requestId') }, 403);
   }
   return next();

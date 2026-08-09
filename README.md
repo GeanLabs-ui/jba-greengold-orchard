@@ -12,9 +12,9 @@ Production monorepo for the public website, customer portal, staff workspace, an
 
 ## Local development
 
-1. Copy `.env.example` to `.env` and set a Neon development `DATABASE_URL`.
-2. Put Worker-only local values in `apps/api/.dev.vars`.
-3. Run `npm ci`, `npm run db:migrate`, and then run `npm run dev:web` and `npm run dev:api` in separate terminals.
+1. Copy `.env.example` to `.env`.
+2. Start the local PostgreSQL database with `docker compose up -d --wait`.
+3. Run `npm ci`, `npm run db:migrate`, and `npm run dev`. The last command starts both the web app and API; running only `dev:web` leaves database-backed screens offline.
 4. Open `http://localhost:5173`.
 
 Run the full release gate with:
@@ -23,7 +23,7 @@ Run the full release gate with:
 npm run check
 ```
 
-The first administrator is created by registering normally and then running:
+The first local administrator is created by registering normally and then running:
 
 ```bash
 npm run admin:promote -- --email=admin@example.com
@@ -32,5 +32,7 @@ npm run admin:promote -- --email=admin@example.com
 Deployment and branch setup are documented in `docs/DEPLOYMENT.md` and `docs/BRANCHING.md`.
 
 Database changes are committed as ordered SQL files in `packages/database/migrations`. Applied files are checksum-locked and must never be edited; add a new migration instead.
+
+`farms` and `farm_blocks` are the only active Farm/FarmBlock source of truth. The legacy `/entities/Farm` and `/entities/FarmBlock` interface is a compatibility layer over those relational tables, not a second database. See `docs/DATABASE.md`.
 
 Set `DATABASE_URL` and run `npm run db:inspect` to print the live database's tables and columns without changing data.

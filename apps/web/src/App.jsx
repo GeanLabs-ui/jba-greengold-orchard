@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect } from 'react';
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Navigate, Route, Routes, Link } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
@@ -16,6 +16,7 @@ import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
+import VerifyEmail from '@/pages/VerifyEmail';
 // Public layout
 import PublicLayout from '@/components/public/PublicLayout';
 // Admin layout
@@ -39,6 +40,8 @@ const News = lazy(() => import('@/pages/public/News'));
 const NewsDetail = lazy(() => import('@/pages/public/NewsDetail'));
 const Careers = lazy(() => import('@/pages/public/Careers'));
 const Contact = lazy(() => import('@/pages/public/Contact'));
+const Privacy = lazy(() => import('@/pages/public/Privacy'));
+const Terms = lazy(() => import('@/pages/public/Terms'));
 // Admin pages
 const AdminDashboard = lazy(() => import('@/pages/admin/AdminDashboard'));
 const CRM = lazy(() => import('@/pages/admin/CRM'));
@@ -46,10 +49,13 @@ const Inquiries = lazy(() => import('@/pages/admin/Inquiries'));
 const Sales = lazy(() => import('@/pages/admin/Sales'));
 const Orders = lazy(() => import('@/pages/admin/Orders'));
 const Inventory = lazy(() => import('@/pages/admin/Inventory'));
-const FarmsAdmin = lazy(() => import('@/pages/admin/FarmsAdmin'));
 const Harvests = lazy(() => import('@/pages/admin/Harvests'));
+const FarmsAdmin = lazy(() => import('@/pages/admin/FarmsAdmin'));
+const FarmProfileAdmin = lazy(() => import('@/pages/admin/FarmProfileAdmin'));
+const BlockProfileAdmin = lazy(() => import('@/pages/admin/BlockProfileAdmin'));
 const FarmDailyActivities = lazy(() => import('@/pages/admin/FarmDailyActivities'));
 const DailyRoutineCheck = lazy(() => import('@/pages/admin/DailyRoutineCheck'));
+const MasterScheduleTask = lazy(() => import('@/pages/admin/MasterScheduleTask'));
 const ProductionCalendar = lazy(() => import('@/pages/admin/ProductionCalendar'));
 const Logistics = lazy(() => import('@/pages/admin/Logistics'));
 const Procurement = lazy(() => import('@/pages/admin/Procurement'));
@@ -129,6 +135,7 @@ const AuthenticatedApp = () => {
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/verify-email" element={<VerifyEmail />} />
 
       {/* Public website */}
       <Route element={<PublicLayout />}>
@@ -148,6 +155,8 @@ const AuthenticatedApp = () => {
         <Route path="/news/:slug" element={<NewsDetail />} />
         <Route path="/careers" element={<Careers />} />
         <Route path="/contact" element={<Contact />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/terms" element={<Terms />} />
       </Route>
 
       {/* Staff/admin workspace */}
@@ -168,10 +177,15 @@ const AuthenticatedApp = () => {
           <Route path="orders" element={<Orders />} />
           <Route path="inventory" element={<Inventory />} />
           <Route path="farms" element={<FarmsAdmin />} />
+          <Route path="farms/:farmId" element={<FarmProfileAdmin />} />
+          <Route path="farms/:farmId/blocks/:blockId" element={<BlockProfileAdmin />} />
           <Route path="harvests" element={<Harvests />} />
           <Route path="farm-daily-activities" element={<FarmDailyActivities />} />
+          <Route path="farm-daily-activities/activities/master-schedule/:taskId" element={<MasterScheduleTask />} />
           <Route path="farm-daily-activities/*" element={<FarmDailyActivities />} />
           <Route path="daily-routine-check" element={<DailyRoutineCheck />} />
+          <Route path="daily-routine-check/blocks/:blockId" element={<DailyRoutineCheck />} />
+          <Route path="daily-routine-check/master-schedule/:taskId" element={<MasterScheduleTask />} />
           <Route path="calendar" element={<ProductionCalendar />} />
           <Route path="logistics" element={<Logistics />} />
           <Route path="procurement" element={<Procurement />} />

@@ -6,7 +6,8 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "npm run dev:web",
+    "dev": "npm run dev:all",
+    "dev:all": "concurrently --kill-others-on-fail --names web,api --prefix-colors cyan,green \"npm run dev:web\" \"npm run dev:api\"",
     "dev:web": "npm run dev -w apps/web",
     "build": "npm run build:web && npm run typecheck:api",
     "build:web": "npm run build -w apps/web",
@@ -19,9 +20,11 @@
     "test": "vitest run",
     "check": "npm run lint && npm run typecheck && npm run test && npm run build:web",
     "dev:api": "npm run dev -w apps/api",
-    "db:migrate": "npm run migrate -w packages/database",
-    "db:inspect": "node scripts/inspect-database.mjs",
-    "admin:promote": "node scripts/promote-admin.mjs",
+    "db:migrate": "node --env-file=.env packages/database/scripts/migrate.mjs",
+    "db:inspect": "node --env-file=.env scripts/inspect-database.mjs",
+    "db:consolidate:local": "node --env-file=.env scripts/consolidate-local-databases.mjs",
+    "deploy:verify": "node scripts/verify-deployment-config.mjs",
+    "admin:promote": "node --env-file=.env scripts/promote-admin.mjs",
     "deploy:api:staging": "npm run deploy:staging -w apps/api",
     "deploy:api:production": "npm run deploy:production -w apps/api",
     "deploy:pages:staging": "wrangler pages deploy apps/web/dist --project-name=jba-greengold-orchard --branch=staging",
@@ -29,6 +32,7 @@
     "assets:optimize": "node scripts/optimize-images.mjs"
   },
   "devDependencies": {
+    "concurrently": "^9.2.1",
     "drizzle-orm": "^0.45.2",
     "esbuild": "0.25.12",
     "sharp": "^0.35.3",

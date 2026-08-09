@@ -18,6 +18,10 @@ dist
 dist-ssr
 *.local
 .wrangler/
+.npm-cache/
+.tmp/
+base44-app/
+~$*.xlsx
 coverage/
 playwright-report/
 test-results/

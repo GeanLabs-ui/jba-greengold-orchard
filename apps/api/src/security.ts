@@ -45,6 +45,20 @@ export async function verifyPassword(password: string, salt: string, expectedHas
   return difference === 0;
 }
 
+export function timingSafeEqual(a: string | undefined | null, b: string | undefined | null): boolean {
+  if (!a || !b) return false;
+  const left = encoder.encode(a);
+  const right = encoder.encode(b);
+  // Compare a fixed, max-length window so the loop length itself doesn't leak the
+  // supplied token's length, then fold in a length check via XOR of the byte lengths.
+  const maxLength = Math.max(left.length, right.length);
+  let difference = left.length ^ right.length;
+  for (let index = 0; index < maxLength; index += 1) {
+    difference |= (left[index] ?? 0) ^ (right[index] ?? 0);
+  }
+  return difference === 0;
+}
+
 export function parseCookies(header: string | undefined): Map<string, string> {
   const cookies = new Map<string, string>();
   for (const part of (header || '').split(';')) {

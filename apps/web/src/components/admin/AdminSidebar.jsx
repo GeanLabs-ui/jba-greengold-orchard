@@ -4,8 +4,8 @@ import BrandLogo from '@/components/shared/BrandLogo';
 import { farmDailyActivitiesNavigation } from '@/lib/farm-navigation';
 import {
   LayoutDashboard, Users, ShoppingCart, Package, Warehouse, Truck,
-  Sprout, Scissors, UserCog, FileText, Banknote, Ship, BarChart3,
-  FolderOpen, Newspaper, Leaf, Settings, ChevronRight, FileCheck2,
+  Scissors, UserCog, FileText, Banknote, Ship, BarChart3,
+  FolderOpen, Newspaper, Leaf, Settings, ChevronRight, FileCheck2, Sprout,
   PanelLeftClose, PanelLeftOpen, ClipboardList, MessageSquareText, CalendarDays
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';

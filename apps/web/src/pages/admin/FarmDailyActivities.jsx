@@ -48,6 +48,10 @@ import MetricCard from '@/components/shared/MetricCard';
 import StatusBadge from '@/components/shared/StatusBadge';
 import DataTable from '@/components/shared/DataTable';
 import AdminCreateDialog from '@/components/admin/AdminCreateDialog';
+import FarmDailyOverview from '@/pages/admin/FarmDailyOverview';
+import FarmDailyMasterSchedule from '@/pages/admin/FarmDailyMasterSchedule';
+import FarmDailyBudgetHarvest from '@/pages/admin/FarmDailyBudgetHarvest';
+import HarvestSeasonPlanner from '@/pages/admin/HarvestSeasonPlanner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
@@ -67,7 +71,7 @@ const pageMap = [
   {
     name: 'Daily Activities',
     icon: ClipboardList,
-    screens: ['Activities List', 'Create Activity', 'Activity Details', 'Edit Activity', 'Activity Calendar View', 'Activity Timeline View', 'Activity Approval Queue'],
+    screens: ['Activities List', 'Create Activity', 'Activity Details', 'Edit Activity', 'Activity Calendar View', 'Activity Timeline View', 'Activity Approval Queue', 'Programme Overview', 'Master Schedule'],
   },
   {
     name: 'Work Orders',
@@ -77,7 +81,7 @@ const pageMap = [
   {
     name: 'Harvest Operations',
     icon: Scissors,
-    screens: ['Harvest Dashboard', 'Daily Harvest Log', 'Create Harvest Entry', 'Harvest Entry Details', 'Harvest by Farm', 'Harvest by Block', 'Harvest by Worker', 'Harvest Batch Details', 'Crate Tracking', 'Truck Loading'],
+    screens: ['Harvest Dashboard', 'Daily Harvest Log', 'Create Harvest Entry', 'Harvest Entry Details', 'Harvest by Farm', 'Harvest by Block', 'Harvest by Worker', 'Harvest Batch Details', 'Crate Tracking', 'Truck Loading', 'Budget & Harvest', 'Harvest Seasons'],
   },
   {
     name: 'Labour Management',
@@ -2050,6 +2054,10 @@ export default function FarmDailyActivities() {
         ]);
       case 'Activity Approval Queue':
         return renderApprovalQueue('Activity Approval Queue', approvals.filter((item) => item.module === 'Daily Activity' && !['Approved', 'Rejected'].includes(item.status)));
+      case 'Programme Overview':
+        return <FarmDailyOverview />;
+      case 'Master Schedule':
+        return <FarmDailyMasterSchedule />;
       case 'Work Orders List':
       case 'Scheduled Work Orders':
         return <ListPanel title={activeScreen} items={workOrders.filter((item) => activeScreen === 'Scheduled Work Orders' ? item.status === 'Scheduled' : true)} columns={workOrderColumns} />;
@@ -2071,6 +2079,10 @@ export default function FarmDailyActivities() {
         return <Panel title="Convert Work Order to Activity" action={<Button onClick={convertCompletedWorkOrders} className="gradient-mango text-white"><RefreshCw className="mr-2 h-4 w-4" />Convert Completed</Button>}><DataTable items={workOrders.filter((item) => item.status === 'Completed')} columns={workOrderColumns} /></Panel>;
       case 'Harvest Dashboard':
         return <div className="space-y-6">{renderDashboard()} {renderChartPanel('Harvest Quality Grades', gradePie, 'pie')}</div>;
+      case 'Budget & Harvest':
+        return <FarmDailyBudgetHarvest />;
+      case 'Harvest Seasons':
+        return <HarvestSeasonPlanner />;
       case 'Daily Harvest Log':
       case 'Harvest Entry Details':
       case 'Harvest Batch Details':
@@ -2306,6 +2318,10 @@ export default function FarmDailyActivities() {
   };
 
   const getPageInfo = () => {
+    if (activeScreen === 'Programme Overview' || activeScreen === 'Master Schedule' || activeScreen === 'Budget & Harvest' || activeScreen === 'Harvest Seasons') {
+      return { placeholder: '', action: null, hideSearch: true };
+    }
+
     switch (activePage) {
       case 'Farm Operations Dashboard':
         return {
@@ -2375,12 +2391,14 @@ export default function FarmDailyActivities() {
             <h1 className="truncate font-heading text-xl font-bold">{activePage}</h1>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Input
-              className="w-full sm:w-64"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder={pageInfo.placeholder}
-            />
+            {!pageInfo.hideSearch ? (
+              <Input
+                className="w-full sm:w-64"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder={pageInfo.placeholder}
+              />
+            ) : null}
             {pageInfo.action}
             <Button variant="outline" size="sm" onClick={load} className="h-10">
               <RefreshCw className="mr-2 h-4 w-4" />

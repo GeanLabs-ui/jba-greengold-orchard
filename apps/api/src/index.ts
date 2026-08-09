@@ -9,12 +9,15 @@ import applicationsRouter from './modules/applications.js';
 import filesRouter from './modules/files.js';
 import commerceRouter from './modules/commerce.js';
 import calendarRouter from './modules/calendar.js';
+import farmsRouter from './modules/farms.js';
 import { runCalendarReminders } from './calendar-reminders.js';
+import { purgeExpiredRateLimitWindows, purgeExpiredVerificationTokens } from './maintenance.js';
 
 const app = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 
 app.use('*', async (c, next) => {
-  const requestId = c.req.header('X-Request-ID') || crypto.randomUUID();
+  const supplied = c.req.header('X-Request-ID') || '';
+  const requestId = /^[\w-]{1,64}$/.test(supplied) ? supplied : crypto.randomUUID();
   const startedAt = Date.now();
   c.set('requestId', requestId);
   c.header('X-Request-ID', requestId);
@@ -45,8 +48,18 @@ app.use('*', secureHeaders({
 }));
 
 app.use('*', async (c, next) => {
-  const contentLength = Number(c.req.header('Content-Length') || 0);
-  const maxBytes = c.req.path === '/api/v1/applications' ? 7 * 1024 * 1024 : 256 * 1024;
+  // A request that carries a body via chunked Transfer-Encoding omits Content-Length,
+  // which would otherwise let it skip the size cap below entirely. Reject that case
+  // outright — none of our clients need chunked request bodies — instead of trusting
+  // a client-supplied length. Requests with no body at all (e.g. GET, or a bodyless
+  // POST/DELETE) send neither header and are unaffected.
+  const transferEncoding = c.req.header('Transfer-Encoding') || '';
+  const contentLengthHeader = c.req.header('Content-Length');
+  if (contentLengthHeader == null && /chunked/i.test(transferEncoding)) {
+    return c.json({ error: { code: 'LENGTH_REQUIRED', message: 'Chunked request bodies are not supported' }, requestId: c.get('requestId') }, 411);
+  }
+  const contentLength = Number(contentLengthHeader || 0);
+  const maxBytes = ['/api/v1/applications', '/api/v1/files'].includes(c.req.path) ? 7 * 1024 * 1024 : 256 * 1024;
   if (contentLength > maxBytes) return c.json({ error: { code: 'PAYLOAD_TOO_LARGE', message: 'Request body is too large' }, requestId: c.get('requestId') }, 413);
   await next();
 });
@@ -69,6 +82,8 @@ api.route('/files', filesRouter);
 api.route('/commerce', commerceRouter);
 api.route('/calendar', calendarRouter);
 
+// Public deployment probes must be registered before the authenticated farms router,
+// which is mounted at the API root and otherwise intercepts every remaining path.
 api.get('/health', (c) => c.json({ status: 'ok', release: c.env.CF_VERSION_METADATA?.id || 'local', timestamp: new Date().toISOString(), requestId: c.get('requestId') }));
 api.get('/ready', async (c) => {
   const sql = createDatabase(c.env);
@@ -81,6 +96,7 @@ api.get('/ready', async (c) => {
     await closeDatabase(sql);
   }
 });
+api.route('/', farmsRouter);
 
 app.notFound((c) => c.json({ error: { code: 'NOT_FOUND', message: 'Resource not found' }, requestId: c.get('requestId') }, 404));
 app.onError((error, c) => {
@@ -91,7 +107,14 @@ app.onError((error, c) => {
 const worker: ExportedHandler<Env> = {
   fetch: (request, env, context) => app.fetch(request, env, context),
   scheduled: (controller, env, context) => {
-    context.waitUntil(runCalendarReminders(env, new Date(controller.scheduledTime)));
+    const now = new Date(controller.scheduledTime);
+    context.waitUntil(
+      Promise.all([
+        runCalendarReminders(env, now),
+        purgeExpiredRateLimitWindows(env),
+        purgeExpiredVerificationTokens(env),
+      ])
+    );
   },
 };
 

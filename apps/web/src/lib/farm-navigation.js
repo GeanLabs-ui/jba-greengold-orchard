@@ -34,7 +34,9 @@ export const farmDailyActivitiesNavigation = [
       { title: "Pending Activities", path: "/admin/farm-daily-activities/activities/pending", screen: "Activities List", filter: { status: "Pending" } },
       { title: "Completed Activities", path: "/admin/farm-daily-activities/activities/completed", screen: "Activities List", filter: { status: "Completed" } },
       { title: "Activity Calendar", path: "/admin/farm-daily-activities/activities/calendar", screen: "Activity Calendar View" },
-      { title: "Approvals", path: "/admin/farm-daily-activities/activities/approvals", screen: "Activity Approval Queue" }
+      { title: "Approvals", path: "/admin/farm-daily-activities/activities/approvals", screen: "Activity Approval Queue" },
+      { title: "Overview", path: "/admin/farm-daily-activities/activities/overview", screen: "Programme Overview" },
+      { title: "Master Schedule", path: "/admin/farm-daily-activities/activities/master-schedule", screen: "Master Schedule" }
     ]
   },
   {
@@ -62,7 +64,9 @@ export const farmDailyActivitiesNavigation = [
       { title: "Rejected Fruit", path: "/admin/farm-daily-activities/harvests/rejected", screen: "Daily Harvest Log", filter: { rejectedOnly: true } },
       { title: "Warehouse Transfers", path: "/admin/farm-daily-activities/harvests/transfers", screen: "Crate Tracking" },
       { title: "Truck Loading", path: "/admin/farm-daily-activities/harvests/loading", screen: "Truck Loading" },
-      { title: "Harvest Reports", path: "/admin/farm-daily-activities/harvests/reports", screen: "Daily Harvest Log" }
+      { title: "Harvest Reports", path: "/admin/farm-daily-activities/harvests/reports", screen: "Daily Harvest Log" },
+      { title: "Budget & Harvest", path: "/admin/farm-daily-activities/harvests/budget-harvest", screen: "Budget & Harvest" },
+      { title: "Harvest Seasons", path: "/admin/farm-daily-activities/harvests/season-planner", screen: "Harvest Seasons" }
     ]
   },
   {

@@ -13,7 +13,7 @@ const adminDestinations = [
   ['Client inquiries', '/admin/inquiries', 'website messages leads contact support partnership'],
   ['Sales', '/admin/sales', 'invoice payment quotation return'], ['Orders', '/admin/orders', 'website fulfillment'],
   ['Inventory', '/admin/inventory', 'stock warehouse movement'], ['Logistics', '/admin/logistics', 'delivery vehicle dispatch'],
-  ['Farms', '/admin/farms', 'orchard production'], ['Harvests', '/admin/harvests', 'grade yield'],
+  ['Harvests', '/admin/harvests', 'grade yield'],
   ['Production calendar', '/admin/calendar', 'schedule task reminder activity google outlook business calendar'],
   ['Daily activities', '/admin/farm-daily-activities/dashboard', 'routine worker farm report'], ['Finance', '/admin/finance', 'expense revenue profit'],
   ['Procurement', '/admin/procurement', 'supplier purchase order'], ['Export operations', '/admin/export-ops', 'shipment export'],

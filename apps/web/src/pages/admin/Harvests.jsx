@@ -332,16 +332,26 @@ export default function Harvests({ embedded = false }) {
       base44.entities.Farm.list('-created_date').catch(() => []),
       base44.entities.FarmBlock.list('-created_date').catch(() => []),
       base44.entities.Harvest.list('-harvest_date').catch(() => []),
+      base44.entities.HarvestBatch.list('-harvest_date').catch(() => []),
       base44.entities.FarmProcessLog.list('-created_date').catch(() => []),
       base44.entities.FarmTask.list('-due_date').catch(() => []),
       base44.entities.CropPlan.list('-created_date').catch(() => []),
       base44.entities.FarmProject.list('-due_date').catch(() => []),
       base44.auth.me().catch(() => null),
     ])
-      .then(([farmData, blockData, harvestData, logData, taskData, cropPlanData, projectData, user]) => {
+      .then(([farmData, blockData, harvestData, batchData, logData, taskData, cropPlanData, projectData, user]) => {
         setFarms(farmData || []);
         setBlocks(blockData || []);
-        setHarvests(harvestData || []);
+        setHarvests([
+          ...(harvestData || []),
+          ...(batchData || []).map((batch) => ({
+            ...batch,
+            total_quantity: batch.total_quantity ?? batch.quantity_harvested_kg,
+            quality_grade: batch.quality_grade || 'Processed ledger',
+            team_lead: batch.team_lead || batch.supervisor || batch.team,
+            harvest_season: batch.harvest_season || (batch.harvest_date ? `${String(batch.harvest_date).slice(0, 4)} harvest` : ''),
+          })),
+        ]);
         setLogs(logData || []);
         setTasks(taskData || []);
         setCropPlans(cropPlanData || []);

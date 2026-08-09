@@ -35,6 +35,7 @@ const statusConfig = {
   // General
   active: { label: 'Active', class: 'bg-emerald-100 text-emerald-700' },
   inactive: { label: 'Inactive', class: 'bg-slate-100 text-slate-600' },
+  merged: { label: 'Merged', class: 'bg-blue-100 text-blue-700' },
   // Customer types
   local: { label: 'Local', class: 'bg-emerald-100 text-emerald-700' },
   corporate: { label: 'Corporate', class: 'bg-blue-100 text-blue-700' },

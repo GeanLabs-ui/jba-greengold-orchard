@@ -48,7 +48,7 @@ export default function Login() {
         </>
       }
     >
-      {isDemoMode && (
+      {import.meta.env.DEV && isDemoMode && (
         <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">
           <p className="font-semibold">Client preview administrator</p>
           <p className="mt-1 break-all">Email: admin@jbagreengoldorchard.com</p>

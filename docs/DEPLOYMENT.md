@@ -30,6 +30,8 @@ Required reviewers and protected branches for a private repository require a pai
 
 ## First release
 
+> ⚠️ **Production blocker**: The production Hyperdrive binding in `apps/api/wrangler.jsonc` env `production` still has the zero-placeholder ID (`00000000000000000000000000000000`). Replace it with the real Hyperdrive configuration ID **before any production deploy**. Deploying with the placeholder will cause a database connection error on every API request.
+
 1. Replace all placeholder Hyperdrive binding IDs.
 2. Push the repository to GitHub and create the protected `staging` branch from `main`.
 3. Merge a feature into `staging`, confirm the migration/deploy workflow succeeds, and exercise registration, login/logout, inquiry, job application upload, staff authorization, and password reset.

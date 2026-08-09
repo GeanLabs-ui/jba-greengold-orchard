@@ -5,6 +5,9 @@
   "compatibility_date": "2026-07-22",
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": true,
+  "triggers": {
+    "crons": ["0 * * * *"]
+  },
   "vars": {
     "APP_ENV": "local",
     "ALLOWED_ORIGINS": "http://localhost:5173,http://localhost:8788",
@@ -14,7 +17,8 @@
   "hyperdrive": [
     {
       "binding": "HYPERDRIVE",
-      "id": "00000000000000000000000000000000"
+      "id": "00000000000000000000000000000000",
+      "localConnectionString": "postgresql://mango_farm:mango_farm_local_only@127.0.0.1:54329/mango_farm"
     }
   ],
   "r2_buckets": [
@@ -46,7 +50,12 @@
           "id": "4a3cc15fe9c94e9a997649bb00eecf5a"
         }
       ],
-      "r2_buckets": []
+      "r2_buckets": [
+        {
+          "binding": "PRIVATE_FILES",
+          "bucket_name": "jba-greengold-files-staging"
+        }
+      ]
     },
     "production": {
       "name": "mango-farm-api-production",

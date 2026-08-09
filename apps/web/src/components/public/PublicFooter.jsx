@@ -88,15 +88,13 @@ export default function PublicFooter() {
           </div>
         </div>
 
-        <div className={`mt-10 flex flex-col gap-4 border-t border-[#d39a27]/45 pt-6 text-xs text-white/50 ${hasDetailedFooter ? 'sm:flex-row sm:items-center sm:justify-between' : 'text-center sm:block'}`}>
+        <div className="mt-10 flex flex-col gap-4 border-t border-[#d39a27]/45 pt-6 text-xs text-white/50 sm:flex-row sm:items-center sm:justify-between">
           <p>© {new Date().getFullYear()} JBA GreenGold Orchard. All rights reserved.</p>
-          {hasDetailedFooter && (
-            <div className="flex items-center gap-5">
-              <Link to="/privacy" className="hover:text-white">Privacy Policy</Link>
-              <span aria-hidden="true">|</span>
-              <Link to="/terms" className="hover:text-white">Terms & Conditions</Link>
-            </div>
-          )}
+          <div className="flex items-center gap-5">
+            <Link to="/privacy" className="hover:text-white">Privacy Policy</Link>
+            <span aria-hidden="true">|</span>
+            <Link to="/terms" className="hover:text-white">Terms &amp; Conditions</Link>
+          </div>
         </div>
       </div>
     </footer>

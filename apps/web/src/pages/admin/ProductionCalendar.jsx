@@ -28,6 +28,7 @@ const STATUS_STYLES = {
   blocked: 'border-red-200 bg-red-50 text-red-700',
   cancelled: 'border-slate-200 bg-slate-100 text-slate-600',
 };
+const harvestStatusFromCalendar = (status) => ({ scheduled: 'planned', in_progress: 'active', completed: 'completed', cancelled: 'cancelled' })[status] || 'planned';
 const PRIORITIES = ['Low', 'Medium', 'High', 'Critical'];
 const REMINDERS = [
   { value: 0, label: 'At start time' },
@@ -226,6 +227,9 @@ export default function ProductionCalendar() {
           destination: `/admin/calendar?event=${saved.id}`,
         });
       }
+      if (saved.harvest_period_id) {
+        await base44.farms.updateHarvestPeriod(saved.harvest_period_id, { status: harvestStatusFromCalendar(saved.status) });
+      }
       setEvents((current) => editing ? current.map((item) => item.id === saved.id ? saved : item) : [...current, saved]);
       setSelectedDate(dateKey(saved.start_at));
       setShowEditor(false);
@@ -243,6 +247,15 @@ export default function ProductionCalendar() {
     try {
       const updated = await base44.entities.CalendarEvent.update(event.id, { status, progress_percent: progress });
       await syncRelatedRecords(updated);
+      if (updated.harvest_period_id) {
+        const today = new Date().toISOString().slice(0, 10);
+        const harvestStatus = harvestStatusFromCalendar(status);
+        await base44.farms.updateHarvestPeriod(updated.harvest_period_id, {
+          status: harvestStatus,
+          ...(harvestStatus === 'active' ? { actual_start_date: today } : {}),
+          ...(harvestStatus === 'completed' ? { actual_end_date: today } : {}),
+        });
+      }
       setEvents((current) => current.map((item) => item.id === updated.id ? updated : item));
       if (['completed', 'blocked'].includes(status)) {
         await base44.entities.Notification.create({
