@@ -159,14 +159,18 @@ router.post('/google', async (c) => {
       return c.json({ error: { code: 'INVALID_GOOGLE_CREDENTIAL', message: 'Google sign-in could not be verified' }, requestId: c.get('requestId') }, 401);
     }
 
-    const users = await sql<{ id: string; email: string; role: string; status: string; google_subject: string | null }[]>`
-      SELECT id, email, role, status, google_subject
-      FROM users
-      WHERE google_subject = ${claims.sub} OR email = ${claims.email}
-      ORDER BY CASE WHEN google_subject = ${claims.sub} THEN 0 ELSE 1 END
-      LIMIT 1
-    `;
-    let user = users[0];
+    type GoogleUser = { id: string; email: string; role: string; status: string; google_subject: string | null };
+    const findGoogleUser = async (): Promise<GoogleUser | undefined> => {
+      const users = await sql<GoogleUser[]>`
+        SELECT id, email, role, status, google_subject
+        FROM users
+        WHERE google_subject = ${claims.sub} OR email = ${claims.email}
+        ORDER BY CASE WHEN google_subject = ${claims.sub} THEN 0 ELSE 1 END
+        LIMIT 1
+      `;
+      return users[0];
+    };
+    let user = await findGoogleUser();
 
     if (user && user.google_subject !== claims.sub) {
       return c.json({
@@ -180,16 +184,20 @@ router.post('/google', async (c) => {
 
     if (!user) {
       const userId = crypto.randomUUID();
-      const inserted = await sql<{ id: string; email: string; role: string; status: string; google_subject: string }[]>`
+      const inserted = await sql<GoogleUser[]>`
         INSERT INTO users (id, email, google_subject, full_name, role, status, email_verified_at, last_login_at)
         VALUES (${userId}, ${claims.email}, ${claims.sub}, ${claims.name || claims.email.split('@')[0]}, 'customer', 'active', now(), now())
         ON CONFLICT DO NOTHING
         RETURNING id, email, role, status, google_subject
       `;
-      user = inserted[0];
+      user = inserted[0] || await findGoogleUser();
       if (!user) {
         return c.json({ error: { code: 'ACCOUNT_EXISTS', message: 'An account already exists for this Google identity' }, requestId: c.get('requestId') }, 409);
       }
+    }
+
+    if (user.google_subject !== claims.sub) {
+      return c.json({ error: { code: 'ACCOUNT_EXISTS', message: 'An account already exists for this email. Sign in with your password instead.' }, requestId: c.get('requestId') }, 409);
     }
 
     if (user.status !== 'active') {
