@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
-    "hono": "^4.0.0",
+    "hono": "^4.12.34",
     "mango-farm-authorization": "*",
     "mango-farm-database": "*",
     "zod": "^3.24.2"
