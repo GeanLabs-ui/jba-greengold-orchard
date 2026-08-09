@@ -1,19 +1,22 @@
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Navigate, Route, Routes, Link } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ScrollToTop from './components/ScrollToTop';
+import SeoManager from './components/SeoManager';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { hasAdminAccess } from '@/lib/access-control';
+import { CartProvider } from '@/lib/CartContext';
 import { Button } from '@/components/ui/button';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
+import VerifyEmail from '@/pages/VerifyEmail';
 // Public layout
 import PublicLayout from '@/components/public/PublicLayout';
 // Admin layout
@@ -21,42 +24,54 @@ import AdminLayout from '@/components/admin/AdminLayout';
 // Portal layout
 import PortalLayout from '@/components/portal/PortalLayout';
 // Public pages
-import Home from '@/pages/public/Home';
-import About from '@/pages/public/About';
-import Products from '@/pages/public/Products';
-import Farms from '@/pages/public/Farms';
-import Sustainability from '@/pages/public/Sustainability';
-import ExportPage from '@/pages/public/Export';
-import LocalSupply from '@/pages/public/LocalSupply';
-import Media from '@/pages/public/Media';
-import News from '@/pages/public/News';
-import NewsDetail from '@/pages/public/NewsDetail';
-import Careers from '@/pages/public/Careers';
-import Contact from '@/pages/public/Contact';
+const Home = lazy(() => import('@/pages/public/Home'));
+const About = lazy(() => import('@/pages/public/About'));
+const Products = lazy(() => import('@/pages/public/Products'));
+const Cart = lazy(() => import('@/pages/public/Cart'));
+const Checkout = lazy(() => import('@/pages/public/Checkout'));
+const MyOrders = lazy(() => import('@/pages/public/MyOrders'));
+const Farms = lazy(() => import('@/pages/public/Farms'));
+const FarmDetail = lazy(() => import('@/pages/public/FarmDetail'));
+const Sustainability = lazy(() => import('@/pages/public/Sustainability'));
+const ExportPage = lazy(() => import('@/pages/public/Export'));
+const LocalSupply = lazy(() => import('@/pages/public/LocalSupply'));
+const Media = lazy(() => import('@/pages/public/Media'));
+const News = lazy(() => import('@/pages/public/News'));
+const NewsDetail = lazy(() => import('@/pages/public/NewsDetail'));
+const Careers = lazy(() => import('@/pages/public/Careers'));
+const Contact = lazy(() => import('@/pages/public/Contact'));
+const Privacy = lazy(() => import('@/pages/public/Privacy'));
+const Terms = lazy(() => import('@/pages/public/Terms'));
 // Admin pages
-import AdminDashboard from '@/pages/admin/AdminDashboard';
-import CRM from '@/pages/admin/CRM';
-import Sales from '@/pages/admin/Sales';
-import Orders from '@/pages/admin/Orders';
-import Inventory from '@/pages/admin/Inventory';
-import FarmsAdmin from '@/pages/admin/FarmsAdmin';
-import Harvests from '@/pages/admin/Harvests';
-import FarmDailyActivities from '@/pages/admin/FarmDailyActivities';
-import Logistics from '@/pages/admin/Logistics';
-import Procurement from '@/pages/admin/Procurement';
-import Finance from '@/pages/admin/Finance';
-import ExportOps from '@/pages/admin/ExportOps';
-import HR from '@/pages/admin/HR';
-import Applications from '@/pages/admin/Applications';
-import Content from '@/pages/admin/Content';
-import Documents from '@/pages/admin/Documents';
-import Reports from '@/pages/admin/Reports';
-import SettingsPage from '@/pages/admin/SettingsPage';
+const AdminDashboard = lazy(() => import('@/pages/admin/AdminDashboard'));
+const CRM = lazy(() => import('@/pages/admin/CRM'));
+const Inquiries = lazy(() => import('@/pages/admin/Inquiries'));
+const Sales = lazy(() => import('@/pages/admin/Sales'));
+const Orders = lazy(() => import('@/pages/admin/Orders'));
+const Inventory = lazy(() => import('@/pages/admin/Inventory'));
+const Harvests = lazy(() => import('@/pages/admin/Harvests'));
+const FarmsAdmin = lazy(() => import('@/pages/admin/FarmsAdmin'));
+const FarmProfileAdmin = lazy(() => import('@/pages/admin/FarmProfileAdmin'));
+const BlockProfileAdmin = lazy(() => import('@/pages/admin/BlockProfileAdmin'));
+const FarmDailyActivities = lazy(() => import('@/pages/admin/FarmDailyActivities'));
+const DailyRoutineCheck = lazy(() => import('@/pages/admin/DailyRoutineCheck'));
+const MasterScheduleTask = lazy(() => import('@/pages/admin/MasterScheduleTask'));
+const ProductionCalendar = lazy(() => import('@/pages/admin/ProductionCalendar'));
+const Logistics = lazy(() => import('@/pages/admin/Logistics'));
+const Procurement = lazy(() => import('@/pages/admin/Procurement'));
+const Finance = lazy(() => import('@/pages/admin/Finance'));
+const ExportOps = lazy(() => import('@/pages/admin/ExportOps'));
+const HR = lazy(() => import('@/pages/admin/HR'));
+const Applications = lazy(() => import('@/pages/admin/Applications'));
+const Content = lazy(() => import('@/pages/admin/Content'));
+const Documents = lazy(() => import('@/pages/admin/Documents'));
+const Reports = lazy(() => import('@/pages/admin/Reports'));
+const SettingsPage = lazy(() => import('@/pages/admin/SettingsPage'));
 // Portal pages
-import PortalDashboard from '@/pages/portal/PortalDashboard';
-import PortalOrders from '@/pages/portal/PortalOrders';
-import PortalPayments from '@/pages/portal/PortalPayments';
-import PortalDocuments from '@/pages/portal/PortalDocuments';
+const PortalDashboard = lazy(() => import('@/pages/portal/PortalDashboard'));
+const PortalOrders = lazy(() => import('@/pages/portal/PortalOrders'));
+const PortalPayments = lazy(() => import('@/pages/portal/PortalPayments'));
+const PortalDocuments = lazy(() => import('@/pages/portal/PortalDocuments'));
 
 const AdminSignInRedirect = () => {
   const { navigateToLogin } = useAuth();
@@ -113,19 +128,25 @@ const AuthenticatedApp = () => {
 
   // Render the main app
   return (
+    <Suspense fallback={<div className="fixed inset-0 flex items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-emerald-800" /></div>}>
     <Routes>
       {/* Authentication */}
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/verify-email" element={<VerifyEmail />} />
 
       {/* Public website */}
       <Route element={<PublicLayout />}>
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
         <Route path="/products" element={<Products />} />
+        <Route path="/cart" element={<Cart />} />
+        <Route path="/checkout" element={<Checkout />} />
+        <Route path="/my-orders" element={<MyOrders />} />
         <Route path="/farms" element={<Farms />} />
+        <Route path="/farms/:slug" element={<FarmDetail />} />
         <Route path="/sustainability" element={<Sustainability />} />
         <Route path="/export" element={<ExportPage />} />
         <Route path="/local-supply" element={<LocalSupply />} />
@@ -134,6 +155,8 @@ const AuthenticatedApp = () => {
         <Route path="/news/:slug" element={<NewsDetail />} />
         <Route path="/careers" element={<Careers />} />
         <Route path="/contact" element={<Contact />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/terms" element={<Terms />} />
       </Route>
 
       {/* Staff/admin workspace */}
@@ -149,13 +172,21 @@ const AuthenticatedApp = () => {
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<AdminDashboard />} />
           <Route path="crm" element={<CRM />} />
+          <Route path="inquiries" element={<Inquiries />} />
           <Route path="sales" element={<Sales />} />
           <Route path="orders" element={<Orders />} />
           <Route path="inventory" element={<Inventory />} />
           <Route path="farms" element={<FarmsAdmin />} />
+          <Route path="farms/:farmId" element={<FarmProfileAdmin />} />
+          <Route path="farms/:farmId/blocks/:blockId" element={<BlockProfileAdmin />} />
           <Route path="harvests" element={<Harvests />} />
           <Route path="farm-daily-activities" element={<FarmDailyActivities />} />
+          <Route path="farm-daily-activities/activities/master-schedule/:taskId" element={<MasterScheduleTask />} />
           <Route path="farm-daily-activities/*" element={<FarmDailyActivities />} />
+          <Route path="daily-routine-check" element={<DailyRoutineCheck />} />
+          <Route path="daily-routine-check/blocks/:blockId" element={<DailyRoutineCheck />} />
+          <Route path="daily-routine-check/master-schedule/:taskId" element={<MasterScheduleTask />} />
+          <Route path="calendar" element={<ProductionCalendar />} />
           <Route path="logistics" element={<Logistics />} />
           <Route path="procurement" element={<Procurement />} />
           <Route path="finance" element={<Finance />} />
@@ -170,15 +201,18 @@ const AuthenticatedApp = () => {
       </Route>
 
       {/* Customer portal */}
-      <Route path="/portal" element={<PortalLayout />}>
-        <Route index element={<PortalDashboard />} />
-        <Route path="orders" element={<PortalOrders />} />
-        <Route path="payments" element={<PortalPayments />} />
-        <Route path="documents" element={<PortalDocuments />} />
+      <Route element={<ProtectedRoute unauthenticatedElement={<AdminSignInRedirect />} unauthorizedElement={<AdminAccessDenied />} />}>
+        <Route path="/portal" element={<PortalLayout />}>
+          <Route index element={<PortalDashboard />} />
+          <Route path="orders" element={<PortalOrders />} />
+          <Route path="payments" element={<PortalPayments />} />
+          <Route path="documents" element={<PortalDocuments />} />
+        </Route>
       </Route>
 
       <Route path="*" element={<PageNotFound />} />
     </Routes>
+    </Suspense>
   );
 };
 
@@ -187,13 +221,16 @@ function App() {
 
   return (
     <AuthProvider>
-      <QueryClientProvider client={queryClientInstance}>
-        <Router>
-          <ScrollToTop />
-          <AuthenticatedApp />
-        </Router>
-        <Toaster />
-      </QueryClientProvider>
+      <CartProvider>
+        <QueryClientProvider client={queryClientInstance}>
+          <Router>
+            <ScrollToTop />
+            <SeoManager />
+            <AuthenticatedApp />
+          </Router>
+          <Toaster />
+        </QueryClientProvider>
+      </CartProvider>
     </AuthProvider>
   )
 }

@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "lib": ["ES2022", "WebWorker"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "types": []
+  },
+  "include": ["./**/*.ts", "./types.d.ts"]
+}

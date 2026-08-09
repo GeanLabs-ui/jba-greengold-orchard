@@ -1,0 +1,24 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "jba-greengold-orchard",
+  "pages_build_output_dir": "./dist",
+  "compatibility_date": "2026-07-22",
+  "compatibility_flags": ["nodejs_compat"],
+  "services": [
+    { "binding": "API", "service": "mango-farm-api-staging" }
+  ],
+  "env": {
+    "preview": {
+      "services": [
+        { "binding": "API", "service": "mango-farm-api-staging" }
+      ],
+      "vars": { "APP_ENV": "staging" }
+    },
+    "production": {
+      "services": [
+        { "binding": "API", "service": "mango-farm-api-production" }
+      ],
+      "vars": { "APP_ENV": "production" }
+    }
+  }
+}

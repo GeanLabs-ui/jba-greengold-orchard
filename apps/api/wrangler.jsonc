@@ -1,0 +1,84 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "mango-farm-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-07-22",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "triggers": {
+    "crons": ["0 * * * *"]
+  },
+  "vars": {
+    "APP_ENV": "local",
+    "ALLOWED_ORIGINS": "http://localhost:5173,http://localhost:8788",
+    "PASSWORD_RESET_URL": "http://localhost:5173/reset-password",
+    "EMAIL_FROM": "JBA GreenGold Orchard <noreply@jbagreengoldorchard.farm>"
+  },
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "00000000000000000000000000000000",
+      "localConnectionString": "postgresql://mango_farm:mango_farm_local_only@127.0.0.1:54329/mango_farm"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "PRIVATE_FILES",
+      "bucket_name": "jba-greengold-files-dev"
+    }
+  ],
+  "version_metadata": { "binding": "CF_VERSION_METADATA" },
+  "observability": {
+    "enabled": true,
+    "logs": { "head_sampling_rate": 1 },
+    "traces": { "enabled": true, "head_sampling_rate": 1 }
+  },
+  "env": {
+    "staging": {
+      "name": "mango-farm-api-staging",
+      "workers_dev": false,
+      "version_metadata": { "binding": "CF_VERSION_METADATA" },
+      "vars": {
+        "APP_ENV": "staging",
+        "ALLOWED_ORIGINS": "https://feature-production-readiness.jba-greengold-orchard.pages.dev,https://staging.jbagreengoldorchard.farm",
+        "PASSWORD_RESET_URL": "https://feature-production-readiness.jba-greengold-orchard.pages.dev/reset-password",
+        "EMAIL_FROM": "JBA GreenGold Orchard <noreply@jbagreengoldorchard.farm>"
+      },
+      "hyperdrive": [
+        {
+          "binding": "HYPERDRIVE",
+          "id": "4a3cc15fe9c94e9a997649bb00eecf5a"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "PRIVATE_FILES",
+          "bucket_name": "jba-greengold-files-staging"
+        }
+      ]
+    },
+    "production": {
+      "name": "mango-farm-api-production",
+      "workers_dev": false,
+      "version_metadata": { "binding": "CF_VERSION_METADATA" },
+      "vars": {
+        "APP_ENV": "production",
+        "ALLOWED_ORIGINS": "https://jbagreengoldorchard.farm,https://www.jbagreengoldorchard.farm",
+        "PASSWORD_RESET_URL": "https://jbagreengoldorchard.farm/reset-password",
+        "EMAIL_FROM": "JBA GreenGold Orchard <noreply@jbagreengoldorchard.farm>"
+      },
+      "hyperdrive": [
+        {
+          "binding": "HYPERDRIVE",
+          "id": "00000000000000000000000000000000"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "PRIVATE_FILES",
+          "bucket_name": "jba-greengold-files-production"
+        }
+      ]
+    }
+  }
+}

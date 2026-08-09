@@ -1,6 +1,8 @@
 #env
 .env
 .env.*
+.dev.vars
+.dev.vars.*
 
 # Logs
 /logs
@@ -15,6 +17,16 @@ node_modules
 dist
 dist-ssr
 *.local
+.wrangler/
+.npm-cache/
+.tmp/
+base44-app/
+~$*.xlsx
+coverage/
+playwright-report/
+test-results/
+.playwright-cli/
+/output/playwright/
 
 # Editor directories and files
 .vscode/*

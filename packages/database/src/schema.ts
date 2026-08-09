@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, integer, boolean, real, jsonb } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, integer, boolean, real, jsonb, index, primaryKey } from 'drizzle-orm/pg-core';
 
 // --- IAM Domain ---
 export const users = pgTable('users', {
@@ -9,9 +9,90 @@ export const users = pgTable('users', {
   fullName: text('full_name'),
   role: text('role').default('user'),
   status: text('status').default('active'),
+  emailVerifiedAt: timestamp('email_verified_at', { withTimezone: true }),
+  lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
+
+export const organizations = pgTable('organizations', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  slug: text('slug').unique().notNull(),
+  status: text('status').default('active').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const organizationMembers = pgTable('organization_members', {
+  organizationId: text('organization_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  role: text('role').default('customer').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  primaryKey({ columns: [table.organizationId, table.userId] }),
+  index('organization_members_user_idx').on(table.userId),
+]);
+
+export const sessions = pgTable('sessions', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  tokenHash: text('token_hash').unique().notNull(),
+  csrfToken: text('csrf_token').notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  lastSeenAt: timestamp('last_seen_at', { withTimezone: true }).defaultNow().notNull(),
+  userAgent: text('user_agent'),
+  ipAddress: text('ip_address'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [index('sessions_user_idx').on(table.userId), index('sessions_expiry_idx').on(table.expiresAt)]);
+
+export const passwordResetTokens = pgTable('password_reset_tokens', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  tokenHash: text('token_hash').unique().notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  usedAt: timestamp('used_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [index('password_reset_user_idx').on(table.userId)]);
+
+export const entityRecords = pgTable('entity_records', {
+  id: text('id').primaryKey(),
+  entityName: text('entity_name').notNull(),
+  organizationId: text('organization_id').references(() => organizations.id, { onDelete: 'cascade' }),
+  ownerUserId: text('owner_user_id').references(() => users.id, { onDelete: 'set null' }),
+  data: jsonb('data').notNull(),
+  createdBy: text('created_by').references(() => users.id, { onDelete: 'set null' }),
+  updatedBy: text('updated_by').references(() => users.id, { onDelete: 'set null' }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  index('entity_records_entity_created_idx').on(table.entityName, table.createdAt),
+  index('entity_records_owner_idx').on(table.ownerUserId, table.entityName),
+  index('entity_records_org_idx').on(table.organizationId, table.entityName),
+]);
+
+export const fileObjects = pgTable('file_objects', {
+  id: text('id').primaryKey(),
+  objectKey: text('object_key').unique().notNull(),
+  originalName: text('original_name').notNull(),
+  contentType: text('content_type').notNull(),
+  sizeBytes: integer('size_bytes').notNull(),
+  ownerUserId: text('owner_user_id').references(() => users.id, { onDelete: 'set null' }),
+  recordId: text('record_id'),
+  status: text('status').default('quarantined').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [index('file_objects_record_idx').on(table.recordId)]);
+
+export const rateLimitWindows = pgTable('rate_limit_windows', {
+  keyHash: text('key_hash').notNull(),
+  action: text('action').notNull(),
+  windowStart: timestamp('window_start', { withTimezone: true }).notNull(),
+  count: integer('count').default(1).notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+}, (table) => [
+  primaryKey({ columns: [table.keyHash, table.action, table.windowStart] }),
+  index('rate_limit_expiry_idx').on(table.expiresAt),
+]);
 
 // --- Farm Operations Domain ---
 export const farms = pgTable('farms', {
@@ -23,30 +104,217 @@ export const farms = pgTable('farms', {
   country: text('country').default('Ghana'),
   latitude: real('latitude'),
   longitude: real('longitude'),
+  soilType: text('soil_type'),
+  soilPh: real('soil_ph'),
+  soilNotes: text('soil_notes'),
   sizeAcres: real('size_acres'),
   ownerName: text('owner_name'),
   treeCount: integer('tree_count').default(0),
   productionCapacityKg: integer('production_capacity_kg').default(0),
-  status: text('status').default('active'),
+  status: text('status').default('active'), // 'active' | 'inactive' | 'archived'
   imageUrl: text('image_url'),
   description: text('description'),
   notes: text('notes'),
+  organizationId: text('organization_id').references(() => organizations.id, { onDelete: 'cascade' }),
+  operationsStartedOn: text('operations_started_on'),
+  plantingStartedOn: text('planting_started_on'),
+  createdBy: text('created_by').references(() => users.id, { onDelete: 'set null' }),
+  updatedBy: text('updated_by').references(() => users.id, { onDelete: 'set null' }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  index('farms_status_idx').on(table.status),
+  index('farms_organization_idx').on(table.organizationId),
+]);
+
+export const farmBlocks = pgTable('farm_blocks', {
+  id: text('id').primaryKey(),
+  farmId: text('farm_id').notNull().references(() => farms.id, { onDelete: 'cascade' }),
+  blockCode: text('block_code').notNull(),
+  name: text('name').notNull(),
+  sizeAcres: real('size_acres'),
+  latitude: real('latitude'),
+  longitude: real('longitude'),
+  soilType: text('soil_type'),
+  soilPh: real('soil_ph'),
+  soilNotes: text('soil_notes'),
+  description: text('description'),
+  earlyBlockClassification: text('early_block_classification'),
+  yearPlanted: integer('year_planted'),
+  variety: text('variety'), // legacy single-variety field, superseded by blockCropInventories; kept read-only for old data
+  treeCount: integer('tree_count').default(0),
+  status: text('status').default('active'), // 'active' | 'inactive' | 'merged' | 'archived'
+  organizationId: text('organization_id').references(() => organizations.id, { onDelete: 'cascade' }),
+  programmeCode: text('programme_code'),
+  source: text('source'),
+  earlyHarvest: boolean('early_harvest').default(false).notNull(),
+  shootMaturity: real('shoot_maturity').default(0).notNull(),
+  forecastYieldKg: real('forecast_yield_kg'),
+  fruitFlyPressure: text('fruit_fly_pressure'),
+  diseaseRating: text('disease_rating'),
+  operationsStartedOn: text('operations_started_on'),
+  plantingStartedOn: text('planting_started_on'),
+  mergedIntoBlockId: text('merged_into_block_id'),
+  mergeEffectiveDate: text('merge_effective_date'),
+  createdBy: text('created_by').references(() => users.id, { onDelete: 'set null' }),
+  updatedBy: text('updated_by').references(() => users.id, { onDelete: 'set null' }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  index('farm_blocks_farm_id_idx').on(table.farmId),
+  index('farm_blocks_status_idx').on(table.status),
+  index('farm_blocks_programme_code_idx').on(table.programmeCode),
+]);
+
+export const cropVarieties = pgTable('crop_varieties', {
+  id: text('id').primaryKey(),
+  organizationId: text('organization_id').references(() => organizations.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  code: text('code'),
+  isActive: boolean('is_active').default(true).notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
-export const farmBlocks = pgTable('farm_blocks', {
+export const blockCropInventories = pgTable('block_crop_inventories', {
   id: text('id').primaryKey(),
-  farmId: text('farm_id').references(() => farms.id, { onDelete: 'cascade' }),
-  blockCode: text('block_code').notNull(),
-  name: text('name').notNull(),
-  sizeAcres: real('size_acres'),
-  variety: text('variety'),
-  treeCount: integer('tree_count').default(0),
-  status: text('status').default('active'),
+  blockId: text('block_id').notNull().references(() => farmBlocks.id, { onDelete: 'cascade' }),
+  cropVarietyId: text('crop_variety_id').notNull().references(() => cropVarieties.id),
+  totalTrees: integer('total_trees').default(0).notNull(),
+  productiveTrees: integer('productive_trees').default(0).notNull(),
+  nonProductiveTrees: integer('non_productive_trees').default(0).notNull(),
+  deadTrees: integer('dead_trees').default(0).notNull(),
+  plantingDate: text('planting_date'),
+  effectiveFrom: text('effective_from').notNull(),
+  effectiveTo: text('effective_to'),
+  notes: text('notes'),
+  createdBy: text('created_by').references(() => users.id, { onDelete: 'set null' }),
+  updatedBy: text('updated_by').references(() => users.id, { onDelete: 'set null' }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
-});
+}, (table) => [index('block_crop_inventories_block_idx').on(table.blockId, table.effectiveFrom)]);
+
+export const farmStatusHistory = pgTable('farm_status_history', {
+  id: text('id').primaryKey(),
+  farmId: text('farm_id').notNull().references(() => farms.id, { onDelete: 'cascade' }),
+  action: text('action').notNull(), // 'deactivated' | 'reactivated' | 'archived'
+  previousStatus: text('previous_status'),
+  newStatus: text('new_status').notNull(),
+  reason: text('reason'),
+  effectiveDate: text('effective_date'),
+  performedBy: text('performed_by').references(() => users.id, { onDelete: 'set null' }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [index('farm_status_history_farm_idx').on(table.farmId, table.createdAt)]);
+
+export const blockStatusHistory = pgTable('block_status_history', {
+  id: text('id').primaryKey(),
+  blockId: text('block_id').notNull().references(() => farmBlocks.id, { onDelete: 'cascade' }),
+  action: text('action').notNull(),
+  previousStatus: text('previous_status'),
+  newStatus: text('new_status').notNull(),
+  reason: text('reason'),
+  effectiveDate: text('effective_date'),
+  performedBy: text('performed_by').references(() => users.id, { onDelete: 'set null' }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [index('block_status_history_block_idx').on(table.blockId, table.createdAt)]);
+
+export const harvestPeriods = pgTable('harvest_periods', {
+  id: text('id').primaryKey(),
+  organizationId: text('organization_id').references(() => organizations.id, { onDelete: 'cascade' }),
+  farmId: text('farm_id').notNull().references(() => farms.id, { onDelete: 'cascade' }),
+  blockId: text('block_id').references(() => farmBlocks.id),
+  cropVarietyId: text('crop_variety_id').references(() => cropVarieties.id),
+  harvestType: text('harvest_type').notNull(), // 'early_harvest' | 'major_harvest' | 'late_harvest' | 'off_season_harvest'
+  status: text('status').default('planned').notNull(), // 'planned' | 'active' | 'completed' | 'cancelled'
+  seasonYear: integer('season_year'),
+  expectedStartDate: text('expected_start_date'),
+  expectedEndDate: text('expected_end_date'),
+  actualStartDate: text('actual_start_date'),
+  actualEndDate: text('actual_end_date'),
+  expectedYieldKg: real('expected_yield_kg').default(0),
+  actualYieldKg: real('actual_yield_kg').default(0),
+  notes: text('notes'),
+  createdBy: text('created_by').references(() => users.id, { onDelete: 'set null' }),
+  updatedBy: text('updated_by').references(() => users.id, { onDelete: 'set null' }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  index('harvest_periods_block_type_idx').on(table.blockId, table.harvestType),
+  index('harvest_periods_farm_date_idx').on(table.farmId, table.expectedStartDate),
+  index('harvest_periods_status_idx').on(table.status),
+]);
+
+export const yieldRecords = pgTable('yield_records', {
+  id: text('id').primaryKey(),
+  organizationId: text('organization_id').references(() => organizations.id, { onDelete: 'cascade' }),
+  farmId: text('farm_id').notNull().references(() => farms.id, { onDelete: 'cascade' }),
+  blockId: text('block_id').notNull().references(() => farmBlocks.id),
+  harvestPeriodId: text('harvest_period_id').references(() => harvestPeriods.id),
+  cropVarietyId: text('crop_variety_id').references(() => cropVarieties.id),
+  recordDate: text('record_date').notNull(),
+  harvestType: text('harvest_type'),
+  actualYieldKg: real('actual_yield_kg').default(0).notNull(),
+  forecastYieldKg: real('forecast_yield_kg').default(0),
+  notes: text('notes'),
+  createdBy: text('created_by').references(() => users.id, { onDelete: 'set null' }),
+  updatedBy: text('updated_by').references(() => users.id, { onDelete: 'set null' }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  index('yield_records_block_date_idx').on(table.blockId, table.recordDate),
+  index('yield_records_farm_date_idx').on(table.farmId, table.recordDate),
+]);
+
+export const farmActivityPeriods = pgTable('farm_activity_periods', {
+  id: text('id').primaryKey(),
+  organizationId: text('organization_id').references(() => organizations.id, { onDelete: 'cascade' }),
+  farmId: text('farm_id').notNull().references(() => farms.id, { onDelete: 'cascade' }),
+  blockId: text('block_id').references(() => farmBlocks.id),
+  activityType: text('activity_type').notNull(), // extensible: see apps/api/src/modules/farm-activity-types.ts
+  status: text('status').default('planned').notNull(), // 'planned' | 'in_progress' | 'completed' | 'delayed' | 'cancelled'
+  seasonYear: integer('season_year'),
+  plannedStartDate: text('planned_start_date'),
+  plannedEndDate: text('planned_end_date'),
+  actualStartDate: text('actual_start_date'),
+  actualEndDate: text('actual_end_date'),
+  completionPercent: integer('completion_percent').default(0).notNull(),
+  assignedTo: text('assigned_to').references(() => users.id, { onDelete: 'set null' }),
+  notes: text('notes'),
+  createdBy: text('created_by').references(() => users.id, { onDelete: 'set null' }),
+  updatedBy: text('updated_by').references(() => users.id, { onDelete: 'set null' }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  index('farm_activity_periods_block_date_idx').on(table.blockId, table.plannedStartDate),
+  index('farm_activity_periods_farm_date_idx').on(table.farmId, table.plannedStartDate),
+  index('farm_activity_periods_status_idx').on(table.status),
+]);
+
+export const blockMerges = pgTable('block_merges', {
+  id: text('id').primaryKey(),
+  organizationId: text('organization_id').references(() => organizations.id, { onDelete: 'cascade' }),
+  farmId: text('farm_id').notNull().references(() => farms.id, { onDelete: 'cascade' }),
+  destinationBlockId: text('destination_block_id').notNull().references(() => farmBlocks.id),
+  effectiveDate: text('effective_date').notNull(),
+  reason: text('reason').notNull(),
+  idempotencyKey: text('idempotency_key').notNull(),
+  status: text('status').default('completed').notNull(),
+  impactSnapshot: jsonb('impact_snapshot').notNull(),
+  createdBy: text('created_by').references(() => users.id, { onDelete: 'set null' }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  index('block_merges_farm_idx').on(table.farmId),
+  index('block_merges_destination_idx').on(table.destinationBlockId),
+]);
+
+export const blockMergeSources = pgTable('block_merge_sources', {
+  id: text('id').primaryKey(),
+  blockMergeId: text('block_merge_id').notNull().references(() => blockMerges.id, { onDelete: 'cascade' }),
+  sourceBlockId: text('source_block_id').notNull().references(() => farmBlocks.id),
+  preMergeStatus: text('pre_merge_status').notNull(),
+  preMergeSnapshot: jsonb('pre_merge_snapshot').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [index('block_merge_sources_source_idx').on(table.sourceBlockId)]);
 
 export const cropPlans = pgTable('crop_plans', {
   id: text('id').primaryKey(),

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
+import TurnstileWidget from '@/components/TurnstileWidget';
 import { Send, MapPin, Phone, Mail, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,13 +12,14 @@ import { useToast } from '@/components/ui/use-toast';
 export default function Contact() {
   const { toast } = useToast();
   const [submitting, setSubmitting] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState('');
   const [form, setForm] = useState({ name: '', email: '', phone: '', company: '', subject: '', message: '', inquiry_type: 'general' });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
     try {
-      await base44.entities.Inquiry.create(form);
+      await base44.entities.Inquiry.create({ ...form, turnstile_token: turnstileToken });
       toast({ title: 'Message sent!', description: 'We\'ll get back to you within 24 hours.' });
       setForm({ name: '', email: '', phone: '', company: '', subject: '', message: '', inquiry_type: 'general' });
     } catch {
@@ -86,7 +88,8 @@ export default function Contact() {
                   <Label htmlFor="message">Message *</Label>
                   <Textarea id="message" required rows={5} value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} placeholder="Tell us more..." />
                 </div>
-                <Button type="submit" disabled={submitting} className="w-full gradient-mango text-white">
+                <TurnstileWidget onToken={setTurnstileToken} />
+                <Button type="submit" disabled={submitting || !turnstileToken} className="w-full gradient-mango text-white">
                   {submitting ? 'Sending...' : 'Send Message'} <Send className="ml-2 h-4 w-4" />
                 </Button>
               </form>
@@ -116,12 +119,14 @@ export default function Contact() {
 
               <div className="mt-6 overflow-hidden rounded-2xl border border-border">
                 <iframe
-                  title="Office Location"
-                  width="100%"
-                  height="280"
-                  loading="lazy"
-                  src="https://www.openstreetmap.org/export/embed.html?bbox=32.5%2C0.25%2C32.65%2C0.35&layer=mapnik"
-                />
+                    title="Office Location"
+                    width="100%"
+                    height="280"
+                    loading="lazy"
+                    src="https://www.openstreetmap.org/export/embed.html?bbox=32.5%2C0.25%2C32.65%2C0.35&layer=mapnik"
+                    sandbox="allow-scripts allow-same-origin"
+                    referrerPolicy="no-referrer"
+                  />
               </div>
             </div>
           </div>

@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /portal
+Disallow: /login
+Disallow: /register
+Disallow: /api/
+
+Sitemap: https://jbagreengoldorchard.farm/sitemap.xml

@@ -39,10 +39,10 @@ export const AuthProvider = ({ children }) => {
     checkAppState();
   }, [checkAppState]);
 
-  const logout = (shouldRedirect = true) => {
+  const logout = async (shouldRedirect = true) => {
     setUser(null);
     setIsAuthenticated(false);
-    base44.auth.logout(shouldRedirect ? window.location.href : undefined);
+    await base44.auth.logout(shouldRedirect ? window.location.href : undefined);
   };
 
   const navigateToLogin = () => {

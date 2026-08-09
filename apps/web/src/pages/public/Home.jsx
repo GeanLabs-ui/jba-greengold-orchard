@@ -10,28 +10,28 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
 
   const featuredImageByName = {
-    'Dried Mango Slices': '/products/dried-mango.png',
-    'Premium Kent Mango': '/products/box-package.png',
+    'Dried Mango Slices': '/products/dried-mango.webp',
+    'Premium Kent Mango': '/products/box-package.webp',
   };
 
   const packagingShowcase = [
     {
-      src: '/products/box-package.png',
+      src: '/products/box-package.webp',
       alt: 'JBA GreenGold Orchard fresh mango export box package',
       title: 'Fresh Mango Export Box',
     },
     {
-      src: '/products/dried-mango.png',
+      src: '/products/dried-mango.webp',
       alt: 'JBA GreenGold Orchard dried mango retail pouch front and back',
       title: 'Dried Mango Pouch',
     },
     {
-      src: '/products/dried-mango-jar.png',
+      src: '/products/dried-mango-jar.webp',
       alt: 'JBA GreenGold Orchard dehydrated mango jar',
       title: 'Dehydrated Mango Jar',
     },
     {
-      src: '/products/mango-pudding.png',
+      src: '/products/mango-pudding.webp',
       alt: 'JBA GreenGold Orchard mango pudding with milk pouch',
       title: 'Mango Pudding Pouch',
     },
@@ -53,13 +53,13 @@ export default function Home() {
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-br from-emerald-900 via-emerald-800 to-amber-800">
         <div className="absolute inset-0 overflow-hidden">
-          <iframe
-            src="https://www.youtube-nocookie.com/embed/Qe-JH3_3yNw?autoplay=1&mute=1&loop=1&playlist=Qe-JH3_3yNw&controls=0&showinfo=0&modestbranding=1&rel=0&playsinline=1&iv_load_policy=3&disablekb=1&fs=0&cc_load_policy=0"
-            title="Mango farm background video"
-            allow="autoplay; encrypted-media; picture-in-picture"
-            className="pointer-events-none absolute left-1/2 top-1/2 h-[56.25vw] w-[100vw] min-h-full min-w-full -translate-x-1/2 -translate-y-1/2 opacity-40"
-            frameBorder="0"
-            allowFullScreen={false}
+          <img
+            src="/pages/local-supply-header.webp"
+            alt=""
+            aria-hidden="true"
+            fetchPriority="high"
+            decoding="async"
+            className="h-full w-full object-cover opacity-45"
           />
           <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/60 via-emerald-800/50 to-amber-800/60" />
         </div>
@@ -137,6 +137,8 @@ export default function Home() {
                       <img
                         src={featuredImageByName[product.name] || product.image_url}
                         alt={product.name}
+                        loading="lazy"
+                        decoding="async"
                         className="h-full w-full object-cover transition-transform group-hover:scale-105"
                       />
                     ) : (
@@ -184,6 +186,8 @@ export default function Home() {
                     <img
                       src={item.src}
                       alt={item.alt}
+                      loading="lazy"
+                      decoding="async"
                       className="h-full w-full object-contain p-3 transition-transform duration-300 group-hover:scale-105"
                     />
                   </div>
@@ -227,7 +231,7 @@ export default function Home() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid items-center gap-12 lg:grid-cols-2">
             <div className="relative">
-              <img src="https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&q=80" alt="Sustainable farming" className="rounded-2xl shadow-xl" />
+              <img src="https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&q=80" alt="Sustainable farming" className="rounded-2xl shadow-xl" loading="lazy" decoding="async" />
               <div className="absolute -bottom-6 -right-6 hidden rounded-2xl border border-border bg-card p-6 shadow-lg md:block">
                 <ShieldCheck className="h-8 w-8 text-emerald-600" />
                 <p className="mt-2 font-heading text-lg font-bold">Global GAP Certified</p>
@@ -273,7 +277,7 @@ export default function Home() {
               {newsPosts.map((post) => (
                 <Link key={post.id} to={`/news/${post.slug}`} className="group overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-shadow hover:shadow-lg">
                   <div className="aspect-video overflow-hidden bg-muted">
-                    {post.featured_image && <img src={post.featured_image} alt={post.title} className="h-full w-full object-cover transition-transform group-hover:scale-105" />}
+                    {post.featured_image && <img src={post.featured_image} alt={post.title} className="h-full w-full object-cover transition-transform group-hover:scale-105" loading="lazy" decoding="async" />}
                   </div>
                   <div className="p-5">
                     <span className="text-xs font-semibold uppercase text-primary">{post.category?.replace('_', ' ')}</span>

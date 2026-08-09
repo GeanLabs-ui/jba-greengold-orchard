@@ -1,0 +1,27 @@
+{
+  "name": "FarmSeasonChecklist",
+  "description": "Seasonal operating checklist windows for a farm or one of its subblocks.",
+  "type": "object",
+  "properties": {
+    "farm_id": { "type": "string" },
+    "farm_name": { "type": "string" },
+    "block_id": { "type": "string" },
+    "block_name": { "type": "string" },
+    "block_code": { "type": "string" },
+    "season_year": { "type": "number" },
+    "stage": {
+      "type": "string",
+      "enum": ["fertilizer_paklo", "flower_induction", "harvest"],
+    },
+    "stage_label": { "type": "string" },
+    "window_code": { "type": "string" },
+    "window_label": { "type": "string" },
+    "start_date": { "type": "string", "format": "date" },
+    "end_date": { "type": "string", "format": "date" },
+    "completed": { "type": "boolean", "default": false },
+    "completed_at": { "type": "string" },
+    "status": { "type": "string", "enum": ["planned", "completed"] },
+    "source": { "type": "string" },
+  },
+  "required": ["farm_id", "season_year", "stage", "start_date", "end_date"],
+}

@@ -9,6 +9,7 @@ import { LogIn, Mail, Lock, Loader2 } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 
 export default function Login() {
+  const isDemoMode = import.meta.env.VITE_DEMO_MODE === 'true';
   const [searchParams] = useSearchParams();
   const fromUrl = getSafeRedirectTarget(searchParams.get("from_url"));
   const [email, setEmail] = useState("");
@@ -47,6 +48,13 @@ export default function Login() {
         </>
       }
     >
+      {import.meta.env.DEV && isDemoMode && (
+        <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">
+          <p className="font-semibold">Client preview administrator</p>
+          <p className="mt-1 break-all">Email: admin@jbagreengoldorchard.com</p>
+          <p className="break-all">Password: OrchardPreview#2026</p>
+        </div>
+      )}
       {error && (
         <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
           {error}

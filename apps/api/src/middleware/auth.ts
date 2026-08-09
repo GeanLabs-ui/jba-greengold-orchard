@@ -1,72 +1,102 @@
-import { MiddlewareHandler } from 'hono';
-import { Role, Permission, hasPermission } from 'mango-farm-authorization';
+import type { MiddlewareHandler } from 'hono';
+import type { Role, Permission } from 'mango-farm-authorization';
+import { hasPermission } from 'mango-farm-authorization';
+import { closeDatabase, createDatabase } from '../db.js';
+import { LOCAL_SESSION_COOKIE, parseCookies, SESSION_COOKIE, sha256, timingSafeEqual } from '../security.js';
 
 export interface AuthUser {
   id: string;
   email: string;
   role: Role;
+  status: string;
+  organizationId: string | null;
 }
 
-export const authMiddleware = (): MiddlewareHandler => {
-  return async (c, next) => {
-    const authHeader = c.req.header('Authorization');
-    
-    if (!authHeader) {
-      return c.json({
-        error: {
-          code: 'UNAUTHORIZED',
-          message: 'Authentication required'
-        },
-        requestId: c.get('requestId')
-      }, 401);
-    }
+export interface AuthSession {
+  id: string;
+  csrfToken: string;
+  expiresAt: Date;
+}
 
-    const token = authHeader.replace('Bearer ', '');
-    
-    // Dev session extraction
-    let user: AuthUser;
-    if (token.startsWith('user_') || token === 'local_token') {
-      user = {
-        id: token === 'local_token' ? 'user_001' : token,
-        email: 'admin@mangofarm.com',
-        role: 'admin',
-      };
-    } else {
-      user = {
-        id: 'user_001',
-        email: 'user@mangofarm.com',
-        role: 'user',
-      };
-    }
-
-    c.set('user', user);
-    await next();
-  };
+export type AppVariables = {
+  requestId: string;
+  user: AuthUser | null;
+  session: AuthSession | null;
 };
 
-export const requirePermission = (permission: Permission): MiddlewareHandler => {
-  return async (c, next) => {
-    const user = c.get('user') as AuthUser | undefined;
-    if (!user) {
-      return c.json({
-        error: {
-          code: 'UNAUTHORIZED',
-          message: 'Authentication required'
-        },
-        requestId: c.get('requestId')
-      }, 401);
-    }
+export const loadSession = (): MiddlewareHandler<{ Bindings: Env; Variables: AppVariables }> => async (c, next) => {
+  c.set('user', null);
+  c.set('session', null);
+  const cookies = parseCookies(c.req.header('Cookie'));
+  const rawToken = cookies.get(SESSION_COOKIE) || cookies.get(LOCAL_SESSION_COOKIE);
+  if (!rawToken) return next();
 
-    if (!hasPermission(user.role, permission)) {
-      return c.json({
-        error: {
-          code: 'FORBIDDEN',
-          message: 'Access denied: insufficient permissions'
-        },
-        requestId: c.get('requestId')
-      }, 403);
+  const sql = createDatabase(c.env);
+  try {
+    const tokenHash = await sha256(rawToken);
+    const rows = await sql<{
+      session_id: string;
+      csrf_token: string;
+      expires_at: Date;
+      user_id: string;
+      email: string;
+      role: Role;
+      status: string;
+      organization_id: string | null;
+    }[]>`
+      SELECT s.id AS session_id, s.csrf_token, s.expires_at,
+             u.id AS user_id, u.email, u.role, u.status,
+             om.organization_id
+      FROM sessions s
+      JOIN users u ON u.id = s.user_id
+      LEFT JOIN organization_members om ON om.user_id = u.id
+      WHERE s.token_hash = ${tokenHash}
+        AND s.expires_at > now()
+        AND u.status = 'active'
+      LIMIT 1
+    `;
+    const row = rows[0];
+    if (row) {
+      c.set('user', {
+        id: row.user_id,
+        email: row.email,
+        role: row.role,
+        status: row.status,
+        organizationId: row.organization_id,
+      });
+      c.set('session', { id: row.session_id, csrfToken: row.csrf_token, expiresAt: row.expires_at });
     }
+  } finally {
+    await closeDatabase(sql);
+  }
+  return next();
+};
 
-    await next();
-  };
+export const requireAuth = (): MiddlewareHandler<{ Bindings: Env; Variables: AppVariables }> => async (c, next) => {
+  if (!c.get('user')) return c.json({ error: { code: 'UNAUTHORIZED', message: 'Authentication required' }, requestId: c.get('requestId') }, 401);
+  return next();
+};
+
+export const requireCsrf = (): MiddlewareHandler<{ Bindings: Env; Variables: AppVariables }> => async (c, next) => {
+  if (['GET', 'HEAD', 'OPTIONS'].includes(c.req.method)) return next();
+  const session = c.get('session');
+  const supplied = c.req.header('X-CSRF-Token');
+  if (!session || !timingSafeEqual(supplied, session.csrfToken)) {
+    return c.json({ error: { code: 'CSRF_INVALID', message: 'Security token is missing or invalid' }, requestId: c.get('requestId') }, 403);
+  }
+  return next();
+};
+
+export const requireRole = (...roles: Role[]): MiddlewareHandler<{ Bindings: Env; Variables: AppVariables }> => async (c, next) => {
+  const user = c.get('user');
+  if (!user) return c.json({ error: { code: 'UNAUTHORIZED', message: 'Authentication required' }, requestId: c.get('requestId') }, 401);
+  if (!roles.includes(user.role)) return c.json({ error: { code: 'FORBIDDEN', message: 'Insufficient permissions' }, requestId: c.get('requestId') }, 403);
+  return next();
+};
+
+export const requirePermission = (permission: Permission): MiddlewareHandler<{ Bindings: Env; Variables: AppVariables }> => async (c, next) => {
+  const user = c.get('user');
+  if (!user) return c.json({ error: { code: 'UNAUTHORIZED', message: 'Authentication required' }, requestId: c.get('requestId') }, 401);
+  if (!hasPermission(user.role, permission)) return c.json({ error: { code: 'FORBIDDEN', message: 'Insufficient permissions' }, requestId: c.get('requestId') }, 403);
+  return next();
 };
