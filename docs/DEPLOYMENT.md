@@ -44,6 +44,8 @@ Restrict `staging` deployments to `staging` and production deployments to `main`
 4. Register the intended administrator in the target environment, set `DATABASE_URL` locally to that environment's direct migration URL, and run `npm run admin:promote -- --email=...`.
 5. Promote the exact tested `staging` tree to `main` through a reviewed pull request and approve the production environment deployment. The production workflow rejects a `main` tree that differs from `staging`.
 
+For routine releases, use the **Prepare production promotion** workflow in GitHub Actions. It creates the `staging` to `main` pull request only when the current staging commit has a successful staging deployment. The initial release may require creating this pull request manually because GitHub only exposes manually dispatched workflows after the workflow file exists on the default branch.
+
 ## Release verification
 
 The deployment workflows require the frontend, `/api/v1/health`, and database-backed `/api/v1/ready` to pass. Also inspect Cloudflare Worker errors/traces and Neon metrics. Confirm HTTPS redirection, CSP/security headers, cache headers, Turnstile enforcement, Google token verification, R2 privacy/recovery, WAF activity, and that customer records cannot cross account boundaries.

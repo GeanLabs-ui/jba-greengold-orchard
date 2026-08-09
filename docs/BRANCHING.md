@@ -11,6 +11,17 @@
 5. Open a `staging` to `main` pull request. The protected GitHub `production` environment must require a human approval.
 6. The merge to `main` deploys production. Never force-push or develop directly on `main`.
 
+## Production promotion button
+
+After the current `staging` commit has deployed successfully and acceptance testing is signed off:
+
+1. Open GitHub Actions and select **Prepare production promotion**.
+2. Choose **Run workflow**, select `PROMOTE`, optionally add testing notes, and run it.
+3. The workflow verifies that the exact current staging commit has a successful staging deployment. It then creates (or links to) the `staging` to `main` pull request.
+4. Review and merge that pull request. The production deployment then pauses at the protected `production` environment until an authorized reviewer clicks **Approve and deploy**.
+
+The button never copies database records. Migration files move with the tested commit and run first against staging, then against production after approval. Each environment keeps its own permanent data.
+
 Use squash merge for feature pull requests and a merge commit for `staging` to `main`, preserving an auditable release boundary. Tag successful production releases as `vYYYY.MM.DD.N`.
 
 For an urgent correction, branch from `staging`, use the same staging validation path, and then promote the exact staging tree. Production never accepts an untested direct hotfix.
