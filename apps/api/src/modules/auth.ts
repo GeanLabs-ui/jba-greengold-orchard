@@ -1,4 +1,5 @@
 import { Hono, type Context } from 'hono';
+import { createRemoteJWKSet, jwtVerify } from 'jose';
 import { z } from 'zod';
 import { closeDatabase, createDatabase } from '../db.js';
 import type { AppVariables } from '../middleware/auth.js';
@@ -26,6 +27,14 @@ const credentialsSchema = z.object({
   password: z.string().min(12).max(128),
 });
 const resetSchema = z.object({ resetToken: z.string().min(32).max(256), newPassword: z.string().min(12).max(128) });
+const googleCredentialSchema = z.object({ credential: z.string().min(100).max(8192) });
+const googleClaimsSchema = z.object({
+  sub: z.string().min(1).max(255),
+  email: z.string().trim().toLowerCase().email().max(254),
+  email_verified: z.literal(true),
+  name: z.string().trim().min(1).max(200).optional(),
+});
+const googleJwks = createRemoteJWKSet(new URL('https://www.googleapis.com/oauth2/v3/certs'));
 
 function secureCookie(env: Env): boolean {
   return env.APP_ENV !== 'local';
@@ -117,6 +126,77 @@ router.post('/login', async (c) => {
     const user = users[0];
     if (!user || !user.password_valid || user.status !== 'active') return c.json({ error: { code: 'INVALID_CREDENTIALS', message: 'Invalid email or password' }, requestId: c.get('requestId') }, 401);
     await sql`UPDATE users SET last_login_at = now() WHERE id = ${user.id}`;
+    const csrfToken = await createSession(c, user.id);
+    return c.json({ data: { user: { id: user.id, email: user.email, role: user.role }, csrf_token: csrfToken }, requestId: c.get('requestId') });
+  } finally {
+    await closeDatabase(sql);
+  }
+});
+
+router.post('/google', async (c) => {
+  const input = googleCredentialSchema.safeParse(await c.req.json().catch(() => null));
+  if (!input.success || !c.env.GOOGLE_CLIENT_ID) {
+    return c.json({ error: { code: 'GOOGLE_AUTH_UNAVAILABLE', message: 'Google sign-in is not available' }, requestId: c.get('requestId') }, 503);
+  }
+
+  const sql = createDatabase(c.env);
+  try {
+    const limit = await checkRateLimit(sql, 'google-login', requestIp(c.req.raw), 10, 900);
+    if (!limit.allowed) {
+      c.header('Retry-After', String(limit.retryAfter));
+      return c.json({ error: { code: 'RATE_LIMITED', message: 'Too many Google sign-in attempts' }, requestId: c.get('requestId') }, 429);
+    }
+
+    let claims: z.infer<typeof googleClaimsSchema>;
+    try {
+      const verified = await jwtVerify(input.data.credential, googleJwks, {
+        algorithms: ['RS256'],
+        audience: c.env.GOOGLE_CLIENT_ID,
+        issuer: ['https://accounts.google.com', 'accounts.google.com'],
+      });
+      claims = googleClaimsSchema.parse(verified.payload);
+    } catch {
+      return c.json({ error: { code: 'INVALID_GOOGLE_CREDENTIAL', message: 'Google sign-in could not be verified' }, requestId: c.get('requestId') }, 401);
+    }
+
+    const users = await sql<{ id: string; email: string; role: string; status: string; google_subject: string | null }[]>`
+      SELECT id, email, role, status, google_subject
+      FROM users
+      WHERE google_subject = ${claims.sub} OR email = ${claims.email}
+      ORDER BY CASE WHEN google_subject = ${claims.sub} THEN 0 ELSE 1 END
+      LIMIT 1
+    `;
+    let user = users[0];
+
+    if (user && user.google_subject !== claims.sub) {
+      return c.json({
+        error: {
+          code: 'ACCOUNT_EXISTS',
+          message: 'An account already exists for this email. Sign in with your password instead.',
+        },
+        requestId: c.get('requestId'),
+      }, 409);
+    }
+
+    if (!user) {
+      const userId = crypto.randomUUID();
+      const inserted = await sql<{ id: string; email: string; role: string; status: string; google_subject: string }[]>`
+        INSERT INTO users (id, email, google_subject, full_name, role, status, email_verified_at, last_login_at)
+        VALUES (${userId}, ${claims.email}, ${claims.sub}, ${claims.name || claims.email.split('@')[0]}, 'customer', 'active', now(), now())
+        ON CONFLICT DO NOTHING
+        RETURNING id, email, role, status, google_subject
+      `;
+      user = inserted[0];
+      if (!user) {
+        return c.json({ error: { code: 'ACCOUNT_EXISTS', message: 'An account already exists for this Google identity' }, requestId: c.get('requestId') }, 409);
+      }
+    }
+
+    if (user.status !== 'active') {
+      return c.json({ error: { code: 'ACCOUNT_DISABLED', message: 'This account is not active' }, requestId: c.get('requestId') }, 403);
+    }
+
+    await sql`UPDATE users SET last_login_at = now(), updated_at = now() WHERE id = ${user.id}`;
     const csrfToken = await createSession(c, user.id);
     return c.json({ data: { user: { id: user.id, email: user.email, role: user.role }, csrf_token: csrfToken }, requestId: c.get('requestId') });
   } finally {

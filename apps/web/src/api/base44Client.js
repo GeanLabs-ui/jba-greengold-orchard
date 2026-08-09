@@ -193,6 +193,15 @@ const auth = {
     csrfToken = data.csrf_token;
     return data.user;
   },
+  async loginViaGoogle(credential) {
+    const data = await request("/auth/google", {
+      method: "POST",
+      body: { credential },
+      publicRequest: true,
+    });
+    csrfToken = data.csrf_token;
+    return data.user;
+  },
   async resetPasswordRequest(email) {
     return request("/auth/password-reset/request", {
       method: "POST",

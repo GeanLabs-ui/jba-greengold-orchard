@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/AuthContext';
 import { base44 } from '@/api/base44Client';
 import { subscribeToDataChanges } from '@/lib/data-sync';
 import { timeAgo } from '@/components/shared/format';
+import { getSafeRedirectTarget } from '@/lib/safe-redirect';
 
 const adminDestinations = [
   ['Dashboard', '/admin', 'overview summary performance kpi'], ['CRM', '/admin/crm', 'customer contact'],
@@ -53,7 +54,10 @@ export default function AdminTopbar({ onMenuClick }) {
   const openNotification = async (notification) => {
     setNotifOpen(false);
     if (notification.status !== 'read') await base44.entities.Notification.update(notification.id, { status: 'read', read_date: new Date().toISOString() }).catch(() => {});
-    if (typeof notification.destination === 'string' && notification.destination.startsWith('/admin/')) navigate(notification.destination);
+    const safeDestination = typeof notification.destination === 'string' && !notification.destination.includes('\\')
+      ? getSafeRedirectTarget(notification.destination, '')
+      : '';
+    if (safeDestination.startsWith('/admin/')) navigate(safeDestination);
     else if (notification.inquiry_id || notification.type === 'inquiry') navigate(`/admin/inquiries${notification.inquiry_id ? `?inquiry=${encodeURIComponent(notification.inquiry_id)}` : ''}`);
     else if (notification.order_number || notification.type === 'order') navigate(`/admin/orders${notification.order_id ? `?order=${encodeURIComponent(notification.order_id)}` : ''}`);
     else if (notification.invoice_number || notification.type === 'payment') navigate(`/admin/sales${notification.invoice_number ? `?invoice=${encodeURIComponent(notification.invoice_number)}` : ''}`);

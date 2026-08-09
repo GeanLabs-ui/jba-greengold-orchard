@@ -32,15 +32,19 @@
     "assets:optimize": "node scripts/optimize-images.mjs"
   },
   "devDependencies": {
+    "brace-expansion": "1.1.18",
     "concurrently": "^9.2.1",
     "drizzle-orm": "^0.45.2",
     "esbuild": "0.25.12",
+    "js-yaml": "4.3.1",
     "sharp": "^0.35.3",
     "vitest": "^4.0.0",
-    "wrangler": "4.113.0"
+    "wrangler": "4.120.0"
   },
   "overrides": {
+    "brace-expansion": "$brace-expansion",
     "dompurify": "^3.4.13",
+    "js-yaml": "$js-yaml",
     "nanoid": "^3.3.18",
     "postcss": "^8.5.26",
     "sharp": "$sharp",

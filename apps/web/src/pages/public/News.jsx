@@ -31,7 +31,7 @@ export default function News() {
           ) : posts.length > 0 ? (
             <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
               {posts.map((post) => (
-                <Link key={post.id} to={`/news/${post.slug}`} className="group overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-shadow hover:shadow-lg">
+                <Link key={post.id} to={`/news/${encodeURIComponent(post.slug)}`} className="group overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-shadow hover:shadow-lg">
                   <div className="aspect-video overflow-hidden bg-muted">
                     {post.featured_image && <img src={post.featured_image} alt={post.title} className="h-full w-full object-cover transition-transform group-hover:scale-105" />}
                   </div>
