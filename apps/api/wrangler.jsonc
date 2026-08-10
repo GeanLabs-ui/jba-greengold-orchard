@@ -5,6 +5,7 @@
   "compatibility_date": "2026-07-22",
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": true,
+  "placement": { "mode": "smart" },
   "triggers": {
     "crons": ["0 * * * *"]
   },
@@ -25,6 +26,10 @@
     {
       "binding": "PRIVATE_FILES",
       "bucket_name": "jba-greengold-files-dev"
+    },
+    {
+      "binding": "PRIVATE_FILES_BACKUP",
+      "bucket_name": "jba-greengold-files-dev-backup"
     }
   ],
   "version_metadata": { "binding": "CF_VERSION_METADATA" },
@@ -40,8 +45,8 @@
       "version_metadata": { "binding": "CF_VERSION_METADATA" },
       "vars": {
         "APP_ENV": "staging",
-        "ALLOWED_ORIGINS": "https://feature-production-readiness.jba-greengold-orchard.pages.dev,https://staging.jbagreengoldorchard.farm",
-        "PASSWORD_RESET_URL": "https://feature-production-readiness.jba-greengold-orchard.pages.dev/reset-password",
+        "ALLOWED_ORIGINS": "https://staging.jba-greengold-orchard.pages.dev,https://staging.jbagreengoldorchard.farm",
+        "PASSWORD_RESET_URL": "https://staging.jbagreengoldorchard.farm/reset-password",
         "EMAIL_FROM": "JBA GreenGold Orchard <noreply@jbagreengoldorchard.farm>"
       },
       "hyperdrive": [
@@ -54,8 +59,17 @@
         {
           "binding": "PRIVATE_FILES",
           "bucket_name": "jba-greengold-files-staging"
+        },
+        {
+          "binding": "PRIVATE_FILES_BACKUP",
+          "bucket_name": "jba-greengold-files-staging-backup"
         }
-      ]
+      ],
+      "observability": {
+        "enabled": true,
+        "logs": { "head_sampling_rate": 1 },
+        "traces": { "enabled": true, "head_sampling_rate": 1 }
+      }
     },
     "production": {
       "name": "mango-farm-api-production",
@@ -77,8 +91,17 @@
         {
           "binding": "PRIVATE_FILES",
           "bucket_name": "jba-greengold-files-production"
+        },
+        {
+          "binding": "PRIVATE_FILES_BACKUP",
+          "bucket_name": "jba-greengold-files-production-backup"
         }
-      ]
+      ],
+      "observability": {
+        "enabled": true,
+        "logs": { "head_sampling_rate": 1 },
+        "traces": { "enabled": true, "head_sampling_rate": 0.1 }
+      }
     }
   }
 }

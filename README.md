@@ -7,8 +7,8 @@ Production monorepo for the public website, customer portal, staff workspace, an
 - React/Vite frontend on Cloudflare Pages
 - Hono API on Cloudflare Workers, reached through a Pages service binding at `/api/v1`
 - Neon PostgreSQL through Cloudflare Hyperdrive
-- Private application documents in Cloudflare R2
-- HttpOnly database-backed sessions, CSRF protection, role permissions, Turnstile, rate limits, audit logs, and structured Worker logs
+- Private application documents dual-written to primary and recovery Cloudflare R2 buckets
+- HttpOnly database-backed sessions, verified Google sign-in, CSRF protection, role permissions, Turnstile, rate limits, audit logs, and structured Cloudflare Worker logs/traces
 
 ## Local development
 

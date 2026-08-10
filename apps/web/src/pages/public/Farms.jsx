@@ -175,7 +175,7 @@ export default function Farms() {
                   </div>
                 ))}
               </dl>
-              <Link to={`/farms/${selectedFarm.slug}`} className="mt-5 inline-flex items-center gap-3 text-sm font-semibold text-[#a66b0b] hover:underline">
+              <Link to={`/farms/${encodeURIComponent(selectedFarm.slug)}`} className="mt-5 inline-flex items-center gap-3 text-sm font-semibold text-[#a66b0b] hover:underline">
                 Read full farm profile <ArrowRight className="h-4 w-4" />
               </Link>
             </div>

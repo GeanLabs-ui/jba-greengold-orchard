@@ -46,7 +46,7 @@ export default function LiveFarmMap({ farms, className = '' }) {
               <p className="text-base font-bold">{farm.name}</p>
               <p className="mt-1 text-xs">{farm.region}</p>
               <p className="mt-1 text-xs">{farm.acres} acres · {farm.coordinates}</p>
-              <Link to={`/farms/${farm.slug}`} className="mt-3 inline-flex text-xs font-bold text-[#a66b0b] hover:underline">Read more about farm →</Link>
+              <Link to={`/farms/${encodeURIComponent(farm.slug)}`} className="mt-3 inline-flex text-xs font-bold text-[#a66b0b] hover:underline">Read more about farm →</Link>
             </div>
           </Popup>
         </Marker>
@@ -54,4 +54,3 @@ export default function LiveFarmMap({ farms, className = '' }) {
     </MapContainer>
   );
 }
-

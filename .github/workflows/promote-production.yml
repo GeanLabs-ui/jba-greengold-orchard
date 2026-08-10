@@ -1,0 +1,95 @@
+name: Prepare production promotion
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: Select PROMOTE to create the staging-to-main pull request
+        required: true
+        type: choice
+        default: CANCEL
+        options:
+          - CANCEL
+          - PROMOTE
+      release_notes:
+        description: Optional testing notes for the production pull request
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+  pull-requests: write
+
+concurrency:
+  group: prepare-production-promotion
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    if: ${{ inputs.confirmation == 'PROMOTE' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify the current staging commit deployed successfully
+        id: staging
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          staging_sha="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/staging" --jq '.object.sha')"
+          conclusion="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow deploy-staging.yml --branch staging --commit "$staging_sha" --limit 1 --json conclusion --jq '.[0].conclusion // ""')"
+          run_url="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow deploy-staging.yml --branch staging --commit "$staging_sha" --limit 1 --json url --jq '.[0].url // ""')"
+
+          if [ "$conclusion" != "success" ]; then
+            echo "The current staging commit ($staging_sha) does not have a successful staging deployment." >&2
+            exit 1
+          fi
+
+          comparison="$(gh api "repos/${GITHUB_REPOSITORY}/compare/main...staging" --jq '.status')"
+          if [ "$comparison" = "identical" ]; then
+            echo "Staging and production already contain the same commit tree." >&2
+            exit 1
+          fi
+
+          echo "sha=$staging_sha" >> "$GITHUB_OUTPUT"
+          echo "run_url=$run_url" >> "$GITHUB_OUTPUT"
+
+      - name: Create or locate the production promotion pull request
+        id: pull_request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_NOTES: ${{ inputs.release_notes }}
+          STAGING_SHA: ${{ steps.staging.outputs.sha }}
+          STAGING_RUN_URL: ${{ steps.staging.outputs.run_url }}
+        run: |
+          existing_url="$(gh pr list --repo "$GITHUB_REPOSITORY" --base main --head staging --state open --json url --jq '.[0].url // ""')"
+          if [ -n "$existing_url" ]; then
+            echo "url=$existing_url" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          body="$(printf '%s\n\n%s\n%s\n\n%s\n' \
+            'This pull request promotes the exact commit tested in staging.' \
+            "Staging commit: \`$STAGING_SHA\`" \
+            "Successful staging deployment: $STAGING_RUN_URL" \
+            "Testing notes: ${RELEASE_NOTES:-No additional notes supplied.}")"
+
+          pr_url="$(gh pr create \
+            --repo "$GITHUB_REPOSITORY" \
+            --base main \
+            --head staging \
+            --title 'Promote tested staging release to production' \
+            --body "$body")"
+          echo "url=$pr_url" >> "$GITHUB_OUTPUT"
+
+      - name: Publish promotion instructions
+        env:
+          PR_URL: ${{ steps.pull_request.outputs.url }}
+        run: |
+          {
+            echo '## Production promotion is ready'
+            echo
+            echo "1. Review and merge: $PR_URL"
+            echo '2. The production deployment will wait for approval in the protected production environment.'
+            echo '3. Approve only after confirming the staging acceptance-test record.'
+          } >> "$GITHUB_STEP_SUMMARY"
