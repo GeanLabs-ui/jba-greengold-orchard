@@ -42,11 +42,12 @@
     "staging": {
       "name": "mango-farm-api-staging",
       "workers_dev": false,
+      "triggers": { "crons": [] },
       "version_metadata": { "binding": "CF_VERSION_METADATA" },
       "vars": {
         "APP_ENV": "staging",
         "ALLOWED_ORIGINS": "https://staging.jba-greengold-orchard.pages.dev,https://staging.jbagreengoldorchard.farm",
-        "PASSWORD_RESET_URL": "https://staging.jbagreengoldorchard.farm/reset-password",
+        "PASSWORD_RESET_URL": "https://staging.jba-greengold-orchard.pages.dev/reset-password",
         "EMAIL_FROM": "JBA GreenGold Orchard <noreply@jbagreengoldorchard.farm>"
       },
       "hyperdrive": [

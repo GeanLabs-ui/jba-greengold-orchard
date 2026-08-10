@@ -223,7 +223,7 @@ function App() {
     <AuthProvider>
       <CartProvider>
         <QueryClientProvider client={queryClientInstance}>
-          <Router>
+          <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <ScrollToTop />
             <SeoManager />
             <AuthenticatedApp />

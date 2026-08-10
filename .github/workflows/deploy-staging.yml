@@ -48,11 +48,9 @@ jobs:
           environment: staging
           secrets: |
             TURNSTILE_SECRET_KEY
-            GOOGLE_CLIENT_ID
-          command: deploy --env staging
+          command: deploy --env staging --keep-vars
         env:
           TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
-          GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_CLIENT_ID }}
       - name: Build Pages application
         run: npm run build:web
         env:
@@ -63,7 +61,8 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy apps/web/dist --config apps/web/wrangler.jsonc --project-name=jba-greengold-orchard --branch=staging
+          workingDirectory: apps/web
+          command: pages deploy dist --project-name=jba-greengold-orchard --branch=staging
       - name: Smoke test frontend and database readiness
         run: |
           curl --fail --retry 5 --retry-delay 5 "${{ vars.APP_URL }}/"

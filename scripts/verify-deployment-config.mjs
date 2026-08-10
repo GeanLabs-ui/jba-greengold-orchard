@@ -19,7 +19,7 @@ const primaryBucket = apiEnvironment?.r2_buckets?.find((binding) => binding.bind
 const backupBucket = apiEnvironment?.r2_buckets?.find((binding) => binding.binding === 'PRIVATE_FILES_BACKUP')?.bucket_name;
 const failures = [];
 const expectedAppUrl = environment === 'staging'
-  ? 'https://staging.jbagreengoldorchard.farm'
+  ? 'https://staging.jba-greengold-orchard.pages.dev'
   : 'https://jbagreengoldorchard.farm';
 
 function requiredEnvironmentValue(name) {
@@ -29,7 +29,7 @@ function requiredEnvironmentValue(name) {
 }
 
 const appUrl = requiredEnvironmentValue('APP_URL');
-const googleClientId = requiredEnvironmentValue('GOOGLE_CLIENT_ID');
+const googleClientId = process.env.GOOGLE_CLIENT_ID?.trim() || '';
 const turnstileSiteKey = requiredEnvironmentValue('TURNSTILE_SITE_KEY');
 const turnstileSecretKey = requiredEnvironmentValue('TURNSTILE_SECRET_KEY');
 const accountId = requiredEnvironmentValue('CLOUDFLARE_ACCOUNT_ID');
