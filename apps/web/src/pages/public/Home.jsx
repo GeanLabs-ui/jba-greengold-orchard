@@ -275,7 +275,7 @@ export default function Home() {
             </div>
             <div className="mt-8 grid gap-6 md:grid-cols-3">
               {newsPosts.map((post) => (
-                <Link key={post.id} to={`/news/${post.slug}`} className="group overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-shadow hover:shadow-lg">
+                <Link key={post.id} to={`/news/${encodeURIComponent(post.slug)}`} className="group overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-shadow hover:shadow-lg">
                   <div className="aspect-video overflow-hidden bg-muted">
                     {post.featured_image && <img src={post.featured_image} alt={post.title} className="h-full w-full object-cover transition-transform group-hover:scale-105" loading="lazy" decoding="async" />}
                   </div>

@@ -7,6 +7,28 @@ import DataTable from '@/components/shared/DataTable';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AdminCreateDialog from '@/components/admin/AdminCreateDialog';
 import { base44 } from '@/api/base44Client';
+import { useAuth } from '@/lib/AuthContext';
+
+const staffAccessFields = [
+  { name: 'fullName', label: 'Full Name', required: true },
+  { name: 'email', label: 'Google Email', type: 'email', required: true },
+  {
+    name: 'role', label: 'Workspace Role', type: 'select', defaultValue: 'farm_supervisor', required: true,
+    options: [
+      { value: 'admin', label: 'Administrator' },
+      { value: 'farm_manager', label: 'Farm Manager' },
+      { value: 'farm_supervisor', label: 'Farm Supervisor' },
+      { value: 'inventory_officer', label: 'Inventory Officer' },
+      { value: 'quality_officer', label: 'Quality Officer' },
+      { value: 'finance_officer', label: 'Finance Officer' },
+      { value: 'hr_officer', label: 'HR Officer' },
+      { value: 'sales_officer', label: 'Sales Officer' },
+      { value: 'logistics_officer', label: 'Logistics Officer' },
+      { value: 'content_editor', label: 'Content Editor' },
+      { value: 'auditor', label: 'Auditor' },
+    ],
+  },
+];
 
 const employeeFields = [
   { name: 'first_name', label: 'First Name', required: true },
@@ -41,6 +63,7 @@ const employeeFields = [
 ];
 
 export default function HR() {
+  const { user } = useAuth();
   const [employees, setEmployees] = useState([]);
   const [attendance, setAttendance] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -63,6 +86,7 @@ export default function HR() {
     ...payload,
     employee_code: `EMP-${Date.now().toString().slice(-6)}`,
   });
+  const canInviteStaff = ['super_admin', 'admin', 'hr_officer'].includes(String(user?.role || '').toLowerCase());
 
   const departments = {};
   employees.forEach((e) => { departments[e.department] = (departments[e.department] || 0) + 1; });
@@ -70,6 +94,16 @@ export default function HR() {
   return (
     <div>
       <PageHeader title="Human Resources" description="Employee records, departments, attendance, and role management.">
+        {canInviteStaff && (
+          <AdminCreateDialog
+            title="Invite Staff Member"
+            description="Send a one-time account setup link to this staff member's Google email."
+            buttonLabel="Invite Staff"
+            fields={staffAccessFields}
+            onCreate={(payload) => base44.staff.invite(payload)}
+            submitLabel="Send Invitation"
+          />
+        )}
         <AdminCreateDialog
           title="Add Employee"
           description="Create a staff record for HR tracking."

@@ -193,6 +193,15 @@ const auth = {
     csrfToken = data.csrf_token;
     return data.user;
   },
+  async loginViaGoogle(credential) {
+    const data = await request("/auth/google", {
+      method: "POST",
+      body: { credential },
+      publicRequest: true,
+    });
+    csrfToken = data.csrf_token;
+    return data.user;
+  },
   async resetPasswordRequest(email) {
     return request("/auth/password-reset/request", {
       method: "POST",
@@ -238,6 +247,22 @@ const applications = {
     return request("/applications", {
       method: "POST",
       body: formData,
+      publicRequest: true,
+    });
+  },
+};
+
+const staff = {
+  listInvitations() {
+    return request('/auth/staff-invitations');
+  },
+  invite(payload) {
+    return request('/auth/staff-invitations', { method: 'POST', body: payload });
+  },
+  acceptInvitation({ token, credential }) {
+    return request('/auth/staff-invitations/accept', {
+      method: 'POST',
+      body: { token, credential },
       publicRequest: true,
     });
   },
@@ -411,7 +436,7 @@ const farms = {
   },
 };
 
-const apiBase44 = { auth, entities, applications, commerce, files, farms };
+const apiBase44 = { auth, entities, applications, commerce, files, farms, staff };
 
 // The demo/preview client (and its seeded demo credentials) is only pulled into the
 // bundle when demo mode is actually enabled at build/runtime, via a dynamic import.

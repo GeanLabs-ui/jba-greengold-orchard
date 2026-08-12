@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { getSafeRedirectTarget } from "@/lib/safe-redirect";
@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { UserPlus, Mail, Lock, Loader2 } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
+import GoogleSignInButton from "@/components/GoogleSignInButton";
 
 export default function Register() {
   const isDemoMode = import.meta.env.VITE_DEMO_MODE === 'true';
@@ -40,6 +41,22 @@ export default function Register() {
     }
   };
 
+  const handleGoogleCredential = useCallback(async (credential) => {
+    setError("");
+    setLoading(true);
+    try {
+      await base44.auth.loginViaGoogle(credential);
+      window.location.assign(fromUrl);
+    } catch (err) {
+      setError(err.message || "Google sign-up failed");
+      setLoading(false);
+    }
+  }, [fromUrl]);
+
+  const handleGoogleError = useCallback((err) => {
+    setError(err.message || "Google sign-in is unavailable");
+  }, []);
+
   return (
     <AuthLayout
       icon={UserPlus}
@@ -66,6 +83,17 @@ export default function Register() {
         <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
           {error}
         </div>
+      )}
+
+      {!isDemoMode && import.meta.env.VITE_GOOGLE_CLIENT_ID && (
+        <>
+          <GoogleSignInButton onCredential={handleGoogleCredential} onError={handleGoogleError} />
+          <div className="my-4 flex items-center gap-3 text-xs uppercase tracking-wide text-muted-foreground">
+            <span className="h-px flex-1 bg-border" />
+            <span>or use email</span>
+            <span className="h-px flex-1 bg-border" />
+          </div>
+        </>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">

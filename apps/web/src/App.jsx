@@ -17,6 +17,7 @@ import Register from '@/pages/Register';
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
 import VerifyEmail from '@/pages/VerifyEmail';
+import AcceptStaffInvitation from '@/pages/AcceptStaffInvitation';
 // Public layout
 import PublicLayout from '@/components/public/PublicLayout';
 // Admin layout
@@ -87,21 +88,31 @@ const AdminSignInRedirect = () => {
   );
 };
 
-const AdminAccessDenied = () => (
-  <div className="min-h-screen bg-muted/30 px-4 py-16">
-    <div className="mx-auto max-w-md rounded-lg border border-border bg-card p-6 text-center shadow-sm">
-      <h1 className="font-heading text-2xl font-semibold">Admin access required</h1>
-      <p className="mt-3 text-sm text-muted-foreground">
-        This workspace is only available to company staff and administrators.
-      </p>
-      <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
-        <Button asChild>
-          <Link to="/">Go to Website</Link>
-        </Button>
+const AdminAccessDenied = () => {
+  const { logout } = useAuth();
+
+  const switchAccount = async () => {
+    await logout(false);
+    window.location.assign('/login?from_url=/admin');
+  };
+
+  return (
+    <div className="min-h-screen bg-muted/30 px-4 py-16">
+      <div className="mx-auto max-w-md rounded-lg border border-border bg-card p-6 text-center shadow-sm">
+        <h1 className="font-heading text-2xl font-semibold">Admin access required</h1>
+        <p className="mt-3 text-sm text-muted-foreground">
+          You are signed in, but this account is not a company staff or administrator account.
+        </p>
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
+          <Button onClick={switchAccount}>Sign in with a staff Google account</Button>
+          <Button asChild variant="outline">
+            <Link to="/">Go to Website</Link>
+          </Button>
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -136,6 +147,7 @@ const AuthenticatedApp = () => {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/verify-email" element={<VerifyEmail />} />
+      <Route path="/accept-staff-invite" element={<AcceptStaffInvitation />} />
 
       {/* Public website */}
       <Route element={<PublicLayout />}>
@@ -223,7 +235,7 @@ function App() {
     <AuthProvider>
       <CartProvider>
         <QueryClientProvider client={queryClientInstance}>
-          <Router>
+          <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <ScrollToTop />
             <SeoManager />
             <AuthenticatedApp />
