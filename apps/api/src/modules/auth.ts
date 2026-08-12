@@ -88,6 +88,11 @@ async function deliverStaffInvitation(env: Env, email: string, fullName: string 
   return response.ok;
 }
 
+function googleAccountUnavailable(c: AppContext, reason: string) {
+  console.info(JSON.stringify({ event: 'google_sign_in_rejected', requestId: c.get('requestId'), reason }));
+  return c.json({ error: { code: 'ACCOUNT_EXISTS', message: 'Sign-in is not available for this Google account.' }, requestId: c.get('requestId') }, 409);
+}
+
 function secureCookie(env: Env): boolean {
   return env.APP_ENV !== 'local';
 }
@@ -220,7 +225,7 @@ router.post('/google', async (c) => {
 
     if (isBootstrapAdmin) {
       if (user?.google_subject && user.google_subject !== claims.sub) {
-        return c.json({ error: { code: 'ACCOUNT_EXISTS', message: 'This administrator email is already linked to a different Google account' }, requestId: c.get('requestId') }, 409);
+        return googleAccountUnavailable(c, 'bootstrap_email_linked_to_another_google_identity');
       }
       if (!user) {
         const userId = crypto.randomUUID();
@@ -237,17 +242,11 @@ router.post('/google', async (c) => {
         `;
       }
       user = await findGoogleUser();
-      if (!user) return c.json({ error: { code: 'ACCOUNT_EXISTS', message: 'The administrator account could not be created' }, requestId: c.get('requestId') }, 409);
+      if (!user) return googleAccountUnavailable(c, 'bootstrap_account_creation_failed');
     }
 
     if (user && user.google_subject !== claims.sub) {
-      return c.json({
-        error: {
-          code: 'ACCOUNT_EXISTS',
-          message: 'An account already exists for this email. Sign in with your password instead.',
-        },
-        requestId: c.get('requestId'),
-      }, 409);
+      return googleAccountUnavailable(c, 'email_account_linked_to_another_google_identity');
     }
 
     if (!user) {
@@ -260,12 +259,12 @@ router.post('/google', async (c) => {
       `;
       user = inserted[0] || await findGoogleUser();
       if (!user) {
-        return c.json({ error: { code: 'ACCOUNT_EXISTS', message: 'An account already exists for this Google identity' }, requestId: c.get('requestId') }, 409);
+        return googleAccountUnavailable(c, 'google_identity_conflict');
       }
     }
 
     if (user.google_subject !== claims.sub) {
-      return c.json({ error: { code: 'ACCOUNT_EXISTS', message: 'An account already exists for this email. Sign in with your password instead.' }, requestId: c.get('requestId') }, 409);
+      return googleAccountUnavailable(c, 'email_account_linked_to_another_google_identity');
     }
 
     if (user.status !== 'active') {
@@ -394,7 +393,7 @@ router.post('/staff-invitations/accept', async (c) => {
       return { userId, role: invitation.role };
     });
     if (!result) return c.json({ error: { code: 'INVALID_INVITATION', message: 'This invitation is invalid, expired, or does not match this Google email' }, requestId: c.get('requestId') }, 422);
-    if ('conflict' in result) return c.json({ error: { code: 'ACCOUNT_EXISTS', message: 'This email is already linked to a different Google account' }, requestId: c.get('requestId') }, 409);
+    if ('conflict' in result) return googleAccountUnavailable(c, 'staff_invitation_email_linked_to_another_google_identity');
     const csrfToken = await createSession(c, result.userId);
     return c.json({ data: { user: { id: result.userId, email: claims.email, role: result.role }, csrf_token: csrfToken }, requestId: c.get('requestId') });
   } finally {
