@@ -56,6 +56,21 @@ export const passwordResetTokens = pgTable('password_reset_tokens', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 }, (table) => [index('password_reset_user_idx').on(table.userId)]);
 
+export const staffInvitations = pgTable('staff_invitations', {
+  id: text('id').primaryKey(),
+  email: text('email').notNull(),
+  fullName: text('full_name'),
+  role: text('role').notNull(),
+  tokenHash: text('token_hash').unique().notNull(),
+  invitedBy: text('invited_by').notNull().references(() => users.id, { onDelete: 'restrict' }),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  acceptedAt: timestamp('accepted_at', { withTimezone: true }),
+  revokedAt: timestamp('revoked_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  index('staff_invitations_expiry_idx').on(table.expiresAt),
+]);
+
 export const entityRecords = pgTable('entity_records', {
   id: text('id').primaryKey(),
   entityName: text('entity_name').notNull(),

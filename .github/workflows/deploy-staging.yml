@@ -48,9 +48,11 @@ jobs:
           environment: staging
           secrets: |
             TURNSTILE_SECRET_KEY
+            GOOGLE_CLIENT_ID
           command: deploy --env staging --keep-vars
         env:
           TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
+          GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_CLIENT_ID }}
       - name: Build Pages application
         run: npm run build:web
         env:

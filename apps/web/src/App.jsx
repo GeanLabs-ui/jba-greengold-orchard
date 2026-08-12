@@ -17,6 +17,7 @@ import Register from '@/pages/Register';
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
 import VerifyEmail from '@/pages/VerifyEmail';
+import AcceptStaffInvitation from '@/pages/AcceptStaffInvitation';
 // Public layout
 import PublicLayout from '@/components/public/PublicLayout';
 // Admin layout
@@ -136,6 +137,7 @@ const AuthenticatedApp = () => {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/verify-email" element={<VerifyEmail />} />
+      <Route path="/accept-staff-invite" element={<AcceptStaffInvitation />} />
 
       {/* Public website */}
       <Route element={<PublicLayout />}>

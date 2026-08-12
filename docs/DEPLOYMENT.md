@@ -13,6 +13,8 @@ The canonical production domain is `jbagreengoldorchard.farm`; `www.jbagreengold
 
 7. In Google Cloud Console, create separate OAuth 2.0 Web client IDs for staging and production. Add only the matching authorized JavaScript origins (`https://staging.jbagreengoldorchard.farm` for staging; the apex and `www` origins for production). No redirect URI is required for the Google Identity Services ID-token flow. Store each public client ID as that GitHub environment's `GOOGLE_CLIENT_ID` variable.
 
+   To bootstrap the first two workspace super administrators, set `BOOTSTRAP_ADMIN_EMAILS` as a Worker secret to a comma-separated, lower-case list of their verified Google addresses. This grants `super_admin` only when those exact Google identities first sign in. Remove the secret after both accounts have successfully signed in; subsequent staff must use the invitation flow.
+
 8. If transactional email is enabled, configure the optional Worker secret for each environment:
 
    ```bash
@@ -29,6 +31,8 @@ The canonical production domain is `jbagreengoldorchard.farm`; `www.jbagreengold
 ## GitHub environments
 
 Create `staging` and `production` environments. In each, add secrets `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `NEON_DATABASE_URL`, and `TURNSTILE_SECRET_KEY`; add variables `APP_URL`, `TURNSTILE_SITE_KEY`, and `GOOGLE_CLIENT_ID`. Scope the Cloudflare token to Workers Scripts edit, Pages edit, R2 edit, Hyperdrive read, and Account Settings read for this account only. Never use the Global API key.
+
+For staff invitations, configure `RESEND_API_KEY` as a Worker secret and verify `EMAIL_FROM` with Resend before inviting anyone. The staff invitation endpoint refuses to generate a link when the email provider is unavailable, so no setup token is exposed in an API response or application log.
 
 Set production `APP_URL` to `https://jbagreengoldorchard.farm` and staging to `https://staging.jbagreengoldorchard.farm`. Require reviewers on the production environment.
 
