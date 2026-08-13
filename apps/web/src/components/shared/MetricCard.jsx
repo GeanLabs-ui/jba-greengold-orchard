@@ -3,12 +3,12 @@ import { cn } from '@/lib/utils';
 
 export default function MetricCard({ title, value, icon: Icon, trend, trendUp, color = 'primary', subtitle }) {
   const colorClasses = {
-    primary: 'from-amber-500 to-orange-500 text-white',
-    green: 'from-emerald-500 to-green-600 text-white',
-    blue: 'from-blue-500 to-indigo-600 text-white',
-    purple: 'from-violet-500 to-purple-600 text-white',
-    red: 'from-red-500 to-rose-600 text-white',
-    amber: 'from-amber-400 to-yellow-500 text-white',
+    primary: 'metric-tone-primary from-amber-500 to-orange-500 text-white',
+    green: 'metric-tone-green from-emerald-500 to-green-600 text-white',
+    blue: 'metric-tone-blue from-blue-500 to-indigo-600 text-white',
+    purple: 'metric-tone-purple from-violet-500 to-purple-600 text-white',
+    red: 'metric-tone-red from-red-500 to-rose-600 text-white',
+    amber: 'metric-tone-amber from-amber-400 to-yellow-500 text-white',
   };
 
   return (

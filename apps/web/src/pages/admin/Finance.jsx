@@ -97,7 +97,7 @@ export default function Finance() {
 
   return (
     <div>
-      <PageHeader title="Finance" description="Revenue, expenses, payments, and financial summaries.">
+      <PageHeader>
         <AdminCreateDialog
           title="Record Expense"
           description="Add an expense to finance tracking."

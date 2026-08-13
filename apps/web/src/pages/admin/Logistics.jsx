@@ -65,7 +65,7 @@ export default function Logistics() {
 
   return (
     <div>
-      <PageHeader title="Delivery & Logistics" description="Dispatch tracking, route management, and proof of delivery.">
+      <PageHeader>
         <AdminCreateDialog
           title="Schedule Delivery"
           description="Create a delivery dispatch record."

@@ -36,7 +36,6 @@ export default function AdminDashboard() {
   const [data, setData] = useState(emptyData);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [lastUpdated, setLastUpdated] = useState(null);
 
   const loadDashboard = async (showToast = false) => {
     setLoading(true);
@@ -45,7 +44,6 @@ export default function AdminDashboard() {
       const results = await Promise.all(watchedEntities.map((entity) => base44.entities[entity].list('-created_date', 250).catch(() => [])));
       const next = Object.fromEntries(Object.keys(emptyData).map((key, index) => [key, results[index] || []]));
       setData(next);
-      setLastUpdated(new Date());
       if (showToast) toast({ title: 'Dashboard refreshed', description: 'All summaries now reflect the latest database records.' });
     } catch (loadError) {
       setError(loadError.message || 'Dashboard data could not be loaded.');
@@ -112,7 +110,7 @@ export default function AdminDashboard() {
 
   return (
     <div>
-      <PageHeader title="Business Overview" description={`Live summaries from the website, sales, finance, inventory, farms, logistics, and HR${lastUpdated ? ` · Updated ${lastUpdated.toLocaleTimeString('en-GH', { hour: '2-digit', minute: '2-digit' })}` : ''}.`}>
+      <PageHeader>
         <Button variant="outline" size="sm" onClick={exportDashboard}>Export PDF</Button>
         <Button size="sm" onClick={() => loadDashboard(true)} disabled={loading}><RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />Refresh</Button>
       </PageHeader>
@@ -129,10 +127,10 @@ export default function AdminDashboard() {
         <section className="rounded-xl border border-border bg-card p-5 shadow-sm lg:col-span-2">
           <div><h2 className="font-heading font-semibold">Sales and payments</h2><p className="text-xs text-muted-foreground">Rolling six-month value in GHS, calculated from live orders and receipts.</p></div>
           <ResponsiveContainer width="100%" height={280} className="mt-4"><AreaChart data={monthlyTrend}>
-            <defs><linearGradient id="salesFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#d97706" stopOpacity={0.28} /><stop offset="100%" stopColor="#d97706" stopOpacity={0} /></linearGradient></defs>
+            <defs><linearGradient id="salesFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#D4A017" stopOpacity={0.28} /><stop offset="100%" stopColor="#D4A017" stopOpacity={0} /></linearGradient></defs>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" /><XAxis dataKey="month" fontSize={12} /><YAxis fontSize={12} tickFormatter={compactAmount} />
             <Tooltip formatter={(value, name) => [formatCurrency(value), name === 'sales' ? 'Sales value' : 'Payments']} contentStyle={{ borderRadius: 10, border: '1px solid hsl(var(--border))' }} />
-            <Area type="monotone" dataKey="sales" stroke="#d97706" strokeWidth={2} fill="url(#salesFill)" /><Area type="monotone" dataKey="payments" stroke="#15803d" strokeWidth={2} fillOpacity={0} />
+            <Area type="monotone" dataKey="sales" stroke="#D4A017" strokeWidth={2} fill="url(#salesFill)" /><Area type="monotone" dataKey="payments" stroke="#2E7D32" strokeWidth={2} fillOpacity={0} />
           </AreaChart></ResponsiveContainer>
         </section>
         <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
@@ -144,7 +142,7 @@ export default function AdminDashboard() {
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <SmallMetric label="Customers" value={data.customers.length} icon={Users} path="/admin/crm" />
         <SmallMetric label="Products" value={data.products.length} icon={Package} path="/admin/content" />
-        <SmallMetric label="Active farms" value={data.farms.filter((farm) => farm.status !== 'inactive').length} icon={Sprout} path="/admin/harvests" />
+        <SmallMetric label="Active farms" value={data.farms.filter((farm) => farm.status !== 'inactive').length} icon={Sprout} path="/admin/farm-daily-activities/activities/farms" />
         <SmallMetric label="Staff" value={data.employees.length} icon={Activity} path="/admin/hr" />
         <SmallMetric label="Active deliveries" value={metrics.activeDeliveries.length} icon={Truck} path="/admin/logistics" />
         <SmallMetric label="Low stock" value={metrics.lowStock.length} icon={Boxes} path="/admin/inventory" alert={metrics.lowStock.length > 0} />
@@ -165,7 +163,7 @@ export default function AdminDashboard() {
           <div className="mt-4 grid gap-x-6 gap-y-4 sm:grid-cols-2">
             <OperatingStat label="Expenses this month" value={formatCurrency(metrics.expensesMtd)} icon={CircleDollarSign} path="/admin/finance" />
             <OperatingStat label="Purchase orders" value={data.purchaseOrders.length} icon={BriefcaseBusiness} path="/admin/procurement" />
-            <OperatingStat label="Harvest records" value={data.harvests.length + data.harvestBatches.length} icon={Sprout} path="/admin/harvests" />
+            <OperatingStat label="Harvest records" value={data.harvests.length + data.harvestBatches.length} icon={Sprout} path="/admin/farm-daily-activities/harvests/dashboard" />
             <OperatingStat label="Upcoming harvests" value={metrics.upcomingHarvests.length} icon={CalendarDays} path="/admin/farm-daily-activities/harvests/season-planner" />
             <OperatingStat label="Next harvest" value={metrics.nextHarvest ? new Date(metrics.nextHarvest.start_at).toLocaleDateString('en-GH', { day: 'numeric', month: 'short' }) : 'Not scheduled'} icon={Clock3} path="/admin/farm-daily-activities/harvests/season-planner" />
             <OperatingStat label="Open applications" value={data.applications.filter((item) => !['hired', 'rejected'].includes(item.status)).length} icon={Users} path="/admin/applications" />
@@ -196,7 +194,7 @@ function buildHarvestQuality(harvests, harvestGrades) {
   const totals = new Map();
   harvestGrades.forEach((grade) => totals.set(grade.grade || grade.quality_grade || 'Unspecified', (totals.get(grade.grade || grade.quality_grade || 'Unspecified') || 0) + asAmount(grade.quantity_kg || grade.total_quantity || 1)));
   harvests.forEach((harvest) => { if (harvest.quality_grade) totals.set(harvest.quality_grade, (totals.get(harvest.quality_grade) || 0) + asAmount(harvest.total_quantity || harvest.quantity_kg || 1)); });
-  const colors = ['#d97706', '#15803d', '#ca8a04', '#0891b2', '#64748b'];
+  const colors = ['#D4A017', '#2E7D32', '#F2C94C', '#2196C9', '#795548'];
   return [...totals.entries()].map(([name, value], index) => ({ name, value, color: colors[index % colors.length] })).filter((item) => item.value > 0);
 }
 function compactAmount(value) { return value >= 1_000_000 ? `${Math.round(value / 1_000_000)}M` : value >= 1_000 ? `${Math.round(value / 1_000)}K` : value; }

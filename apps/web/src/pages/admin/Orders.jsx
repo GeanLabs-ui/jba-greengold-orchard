@@ -157,7 +157,7 @@ export default function Orders() {
 
   return (
     <div>
-      <PageHeader title="Orders" description="Website and staff-created orders, fulfillment status, and delivery progress in one place.">
+      <PageHeader>
         <AdminCreateDialog title="New Order" description="Create a customer order and add it to the fulfillment pipeline." buttonLabel="New Order" fields={orderFields} onCreate={createOrder} onCreated={load} submitLabel="Create Order" />
       </PageHeader>
 

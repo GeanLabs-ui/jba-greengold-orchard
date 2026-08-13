@@ -27,11 +27,10 @@ import './DailyRoutineCheck.css';
 
 const VIEWS = [
   { id: 'dashboard', label: 'Overview', group: 'Management' },
-  { id: 'milestones', label: 'Master Schedule' },
+  { id: 'milestones', label: 'Main Activities' },
   { id: 'blocks', label: 'Farm blocks' },
   { id: 'logs', label: 'Field logs', group: 'Operations' },
   { id: 'finance', label: 'Budget & harvest' },
-  { id: 'risks', label: 'Risk register' },
   { id: 'sources', label: 'Sources' },
 ];
 
@@ -308,13 +307,13 @@ function mergeBlueprints(shared) {
   };
 }
 
-export default function DailyRoutineCheck() {
+export default function DailyRoutineCheck({ initialView = 'dashboard', riskOnly = false }) {
   const { toast } = useToast();
   const navigate = useNavigate();
   const fieldDialog = useRef(null);
   const harvestDialog = useRef(null);
   const initialized = useRef(false);
-  const [view, setView] = useState('dashboard');
+  const [view, setView] = useState(initialView);
   const [shared, setShared] = useState(() => mergeBlueprints(Object.fromEntries(entityLists.map(([key]) => [key, []]))));
   const [logType, setLogType] = useState('Nutrition');
   const [loading, setLoading] = useState(true);
@@ -630,7 +629,7 @@ export default function DailyRoutineCheck() {
       setShowNewMasterTask(false);
       setNewMasterTask({ title: '', owner_name: '', start_date: TODAY, due_date: '', priority: 'Medium', success_criteria: '' });
       toast({ title: 'Master task created', description: 'Add its checklist and field updates from the task workspace.' });
-      navigate(`/admin/daily-routine-check/master-schedule/${encodeURIComponent(created.id)}`);
+      navigate(`/admin/farm-daily-activities/activities/master-schedule/${encodeURIComponent(created.id)}`);
     } catch (error) {
       toast({ title: 'Master task could not be created', description: error.message, variant: 'destructive' });
     } finally {
@@ -906,19 +905,23 @@ export default function DailyRoutineCheck() {
     return (
       <div className="drc-boot">
         <Loader2 className="drc-spin" />
-        <strong>Preparing Daily Routine Check</strong>
+        <strong>{riskOnly ? 'Preparing Risk Register' : 'Preparing Daily Routine Check'}</strong>
         <span>{syncStatus}</span>
+      </div>
+    );
+  }
+
+  if (riskOnly) {
+    return (
+      <div className="drc-page drc-embedded-schedule">
+        <RiskRegisterView risks={shared.risks} onUpdateRisk={updateRisk} />
       </div>
     );
   }
 
   return (
     <div className="drc-page">
-      <div className="drc-programme-bar">
-        <div>
-          <span className="drc-eyebrow">Daily Routine Check</span>
-          <strong>2026–2027 Early Harvest Programme</strong>
-        </div>
+      <div className="drc-programme-bar drc-programme-actions">
         <div className="drc-sync-state">
           {loading ? <Loader2 className="drc-spin" /> : <CheckCircle2 />}
           <span>{syncStatus}</span>
@@ -944,7 +947,7 @@ export default function DailyRoutineCheck() {
       {view === 'milestones' ? <MasterScheduleView busyKey={busyKey} createMasterTask={createMasterTask} filteredScheduleProjects={filteredScheduleProjects} filteredSummary={filteredSummary} newMasterTask={newMasterTask} scheduleFilter={scheduleFilter} setNewMasterTask={setNewMasterTask} setScheduleFilter={setScheduleFilter} setShowNewMasterTask={setShowNewMasterTask} showNewMasterTask={showNewMasterTask} toggleProjectEnabled={toggleProjectEnabled} /> : null}
 
       <section className={`drc-view ${view === 'blocks' ? 'active' : ''}`}>
-        <PageHead eyebrow="Block management" title="Farm land sections" copy="Two farm lands in the same geographical area, each divided into five working sections with maturity and crop forecast controls." right={<button type="button" className="drc-primary gold" onClick={() => setShowNewFarmLand((current) => !current)}><Plus /> Add farm land</button>} />
+        <PageHead right={<button type="button" className="drc-primary gold" onClick={() => setShowNewFarmLand((current) => !current)}><Plus /> Add farm land</button>} />
         {showNewFarmLand && <form className="drc-farm-land-form" onSubmit={createFarmLand}>
           <label><span>Farm land name</span><input value={newFarmLand.name} onChange={(event) => setNewFarmLand((current) => ({ ...current, name: event.target.value }))} maxLength="100" required /></label>
           <label><span>Section prefix</span><input value={newFarmLand.code} onChange={(event) => setNewFarmLand((current) => ({ ...current, code: event.target.value.toUpperCase().replace(/[^A-Z]/g, '') }))} maxLength="3" required /></label>
@@ -972,7 +975,7 @@ export default function DailyRoutineCheck() {
       </section>
 
       <section className={`drc-view ${view === 'logs' ? 'active' : ''}`}>
-        <PageHead eyebrow="Operational evidence" title="Field logs" copy="Capture dated observations and interventions, tied to a block and responsible person." right={<button type="button" className="drc-primary gold" onClick={() => fieldDialog.current?.showModal()}><Plus /> New entry</button>} />
+        <PageHead right={<button type="button" className="drc-primary gold" onClick={() => fieldDialog.current?.showModal()}><Plus /> New entry</button>} />
         <div className="drc-log-tabs">{LOG_TYPES.map((type) => <button type="button" key={type} className={logType === type ? 'active' : ''} onClick={() => setLogType(type)}>{type} · {shared.logs.filter((item) => (item.type || item.log_type) === type).length}</button>)}</div>
         <div className="drc-table-shell">
           {shared.logs.filter((item) => (item.type || item.log_type) === logType).length ? (
@@ -988,20 +991,7 @@ export default function DailyRoutineCheck() {
 
       {view === 'finance' ? <BudgetHarvestView blocks={shared.blocks} busyKey={busyKey} finance={finance} financeRecords={shared.financeRecords} harvestDialog={harvestDialog} harvests={shared.harvests} onAddHarvest={addHarvest} onUpdateBudget={updateBudget} today={TODAY} /> : null}
 
-      <section className={`drc-view ${view === 'risks' ? 'active' : ''}`}>
-        <PageHead eyebrow="Risk register" title="Keep the early crop protected" copy="Prioritized agronomic, operational, compliance, weather and commercial threats." />
-        <div className="drc-table-shell">
-          <table className="drc-table">
-            <thead><tr><th>ID</th><th>Risk</th><th>Category</th><th>Probability</th><th>Impact</th><th>RAG</th><th>Mitigation</th><th>Owner</th><th>Status</th></tr></thead>
-            <tbody>{shared.risks.map((risk) => (
-              <tr key={risk.id}><td>{risk.risk_code}</td><td className="drc-task-name"><b>{risk.requirement}</b></td><td>{risk.category}</td><td>{risk.probability}</td><td>{risk.impact}</td><td><Pill value={risk.rag} label={risk.rag} /></td><td>{risk.mitigation}</td><td>{risk.owner}</td><td><select className="drc-inline" value={risk.status || 'Open'} onChange={(event) => updateRisk(risk, event.target.value)}><option>Open</option><option>Monitoring</option><option>Closed</option></select></td></tr>
-            ))}</tbody>
-          </table>
-        </div>
-      </section>
-
       <section className={`drc-view ${view === 'sources' ? 'active' : ''}`}>
-        <PageHead eyebrow="Planning basis" title="Sources and assumptions" copy="This schedule is a working agronomic control plan and must be adapted using field observations and qualified local advice." />
         <div className="drc-panel drc-sources">{SOURCE_NOTES.map((source) => (
           <div key={source.title}><b>{source.title}</b><p>{source.copy}</p>{source.url ? <a href={source.url} target="_blank" rel="noreferrer">Open source ↗</a> : <span />}</div>
         ))}</div>
@@ -1026,8 +1016,23 @@ export default function DailyRoutineCheck() {
   );
 }
 
-function PageHead({ eyebrow, title, copy, right }) {
-  return <div className="drc-page-head"><div><span className="drc-eyebrow">{eyebrow}</span><h1>{title}</h1><p>{copy}</p></div>{right}</div>;
+function PageHead({ right }) {
+  return right ? <div className="drc-page-head drc-page-actions">{right}</div> : null;
+}
+
+function RiskRegisterView({ risks, onUpdateRisk }) {
+  return (
+    <section className="drc-view drc-embedded-view active">
+      <div className="drc-table-shell">
+        <table className="drc-table">
+          <thead><tr><th>ID</th><th>Risk</th><th>Category</th><th>Probability</th><th>Impact</th><th>RAG</th><th>Mitigation</th><th>Owner</th><th>Status</th></tr></thead>
+          <tbody>{risks.map((risk) => (
+            <tr key={risk.id}><td>{risk.risk_code}</td><td className="drc-task-name"><b>{risk.requirement}</b></td><td>{risk.category}</td><td>{risk.probability}</td><td>{risk.impact}</td><td><Pill value={risk.rag} label={risk.rag} /></td><td>{risk.mitigation}</td><td>{risk.owner}</td><td><select className="drc-inline" value={risk.status || 'Open'} onChange={(event) => onUpdateRisk(risk, event.target.value)}><option>Open</option><option>Monitoring</option><option>Closed</option></select></td></tr>
+          ))}</tbody>
+        </table>
+      </div>
+    </section>
+  );
 }
 
 function Progress({ value, dark = false }) {

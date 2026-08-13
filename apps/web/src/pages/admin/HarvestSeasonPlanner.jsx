@@ -472,9 +472,8 @@ export default function HarvestSeasonPlanner() {
 
   return (
     <div className="space-y-5 pb-10">
-      <section className="overflow-hidden rounded-xl border border-emerald-900/15 bg-[#f7f8f3]">
-        <div className="flex flex-col gap-5 px-5 py-6 sm:px-7 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-3xl"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">Harvest planning</span><h2 className="mt-2 font-heading text-3xl font-semibold tracking-tight sm:text-4xl">Farm-land harvest seasons</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">Set harvest type and period for each farm land or sub-block, schedule the exact field time, and send operational reminders.</p></div>
+      <section className="overflow-hidden rounded-xl border border-emerald-900/15 bg-[#f4f7f4]">
+        <div className="flex flex-col gap-5 px-5 py-6 sm:px-7 lg:flex-row lg:items-end lg:justify-end">
           <div className="flex gap-2"><Button variant="outline" onClick={() => load()} disabled={loading}><RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />Refresh</Button><Button onClick={() => openCreate()} disabled={!farms.length}><Plus className="mr-2 h-4 w-4" />Schedule harvest</Button></div>
         </div>
         <div className="grid border-t border-border/70 bg-background/65 sm:grid-cols-2 lg:grid-cols-4">

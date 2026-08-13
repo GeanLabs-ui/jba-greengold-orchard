@@ -53,7 +53,7 @@ export default function Content() {
 
   return (
     <div>
-      <PageHeader title="Content Management" description="Manage website pages and news posts. Client messages are handled under Operations.">
+      <PageHeader>
         <AdminCreateDialog title="New Post" description="Create a news post for the public site." buttonLabel="New Post" fields={postFields} onCreate={createPost} onCreated={load} submitLabel="Create Post" />
       </PageHeader>
       <Tabs defaultValue="posts">

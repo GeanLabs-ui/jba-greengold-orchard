@@ -4,12 +4,14 @@ import BrandLogo from '@/components/shared/BrandLogo';
 import { farmDailyActivitiesNavigation } from '@/lib/farm-navigation';
 import {
   LayoutDashboard, Users, ShoppingCart, Package, Warehouse, Truck,
-  Scissors, UserCog, FileText, Banknote, Ship, BarChart3,
-  FolderOpen, Newspaper, Leaf, Settings, ChevronRight, FileCheck2, Sprout,
-  PanelLeftClose, PanelLeftOpen, ClipboardList, MessageSquareText, CalendarDays
+  UserCog, FileText, Banknote, Ship, BarChart3,
+  FolderOpen, Newspaper, Leaf, Settings, ChevronRight, FileCheck2,
+  PanelLeftClose, PanelLeftOpen, MessageSquareText, CalendarDays
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { subscribeToDataChanges } from '@/lib/data-sync';
+import { useAuth } from '@/lib/AuthContext';
+import { canAccessAdminPath } from '@/lib/access-control';
 
 const navSections = [
   {
@@ -32,11 +34,9 @@ const navSections = [
   {
     title: 'Production',
     items: [
-      { label: 'Farms', path: '/admin/farms', icon: Sprout },
-      { label: 'Harvests', path: '/admin/harvests', icon: Scissors },
+      { label: 'Farm Daily Activities', path: '/admin/farm-daily-activities', subheading: true },
+      ...farmDailyActivitiesNavigation.map(({ title, path, icon }) => ({ label: title, path, icon })),
       { label: 'Production Calendar', path: '/admin/calendar', icon: CalendarDays, countKey: 'calendar' },
-      { label: 'Farm Daily Activities', path: '/admin/farm-daily-activities', icon: ClipboardList },
-      { label: 'Daily Routine Check', path: '/admin/daily-routine-check', icon: FileCheck2 },
     ],
   },
   {
@@ -61,12 +61,15 @@ const navSections = [
 ];
 
 export default function AdminSidebar({ collapsed = false, onToggleCollapsed }) {
+  const { user } = useAuth();
   const location = useLocation();
-  const [fdaExpanded, setFdaExpanded] = useState(
-    location.pathname.startsWith('/admin/farm-daily-activities')
-  );
+  const [fdaExpanded, setFdaExpanded] = useState(false);
   const prevPathnameRef = useRef(location.pathname);
   const [attentionCounts, setAttentionCounts] = useState({ inquiries: 0, orders: 0, calendar: 0 });
+
+  useEffect(() => {
+    prevPathnameRef.current = location.pathname;
+  }, [location.pathname]);
 
   useEffect(() => {
     let active = true;
@@ -93,19 +96,12 @@ export default function AdminSidebar({ collapsed = false, onToggleCollapsed }) {
     return () => { active = false; clearTimeout(timer); clearInterval(interval); unsubscribe(); };
   }, []);
 
-  useEffect(() => {
-    const wasFDA = prevPathnameRef.current.startsWith('/admin/farm-daily-activities');
-    const isFDA = location.pathname.startsWith('/admin/farm-daily-activities');
-
-    if (isFDA && !wasFDA) {
-      setFdaExpanded(true);
-    }
-
-    prevPathnameRef.current = location.pathname;
-  }, [location.pathname]);
+  const accessibleSections = navSections
+    .map((section) => ({ ...section, items: section.items.filter((item) => canAccessAdminPath(user, item.path)) }))
+    .filter((section) => section.items.length > 0);
 
   return (
-    <aside className={`flex h-full shrink-0 flex-col border-r border-border bg-card transition-all duration-200 ${collapsed ? 'w-20' : 'w-64'}`}>
+    <aside className={`admin-sidebar flex h-full shrink-0 flex-col border-r border-border bg-card transition-all duration-200 ${collapsed ? 'w-20' : 'w-64'}`}>
       <div className={`flex h-16 items-center border-b border-border ${collapsed ? 'justify-center px-2' : 'gap-2 px-4'}`}>
         {!collapsed && <BrandLogo className="h-16" />}
         {onToggleCollapsed && (
@@ -122,7 +118,7 @@ export default function AdminSidebar({ collapsed = false, onToggleCollapsed }) {
       </div>
 
       <nav className={`flex-1 overflow-y-auto scrollbar-thin py-4 ${collapsed ? 'px-2' : 'px-3'}`}>
-        {navSections.map((section) => (
+        {accessibleSections.map((section) => (
           <div key={section.title} className="mb-4">
             {!collapsed && (
               <p className="px-3 py-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -130,6 +126,17 @@ export default function AdminSidebar({ collapsed = false, onToggleCollapsed }) {
               </p>
             )}
             {section.items.map((item) => {
+              if (item.subheading) {
+                return collapsed ? null : (
+                  <p
+                    key={item.path}
+                    className="mt-3 px-3 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"
+                  >
+                    {item.label}
+                  </p>
+                );
+              }
+
               const isActive = item.path === '/admin'
                 ? location.pathname === item.path
                 : location.pathname === item.path || location.pathname.startsWith(`${item.path}/`);
@@ -140,7 +147,7 @@ export default function AdminSidebar({ collapsed = false, onToggleCollapsed }) {
                 return (
                   <div key={item.path} className="flex flex-col">
                     <Link
-                      to="/admin/farm-daily-activities/dashboard"
+                      to="/admin/farm-daily-activities/activities/overview"
                       onClick={() => setFdaExpanded(!fdaExpanded)}
                       title={collapsed ? item.label : undefined}
                       className={`group flex items-center rounded-lg py-2 text-sm font-medium transition-colors ${

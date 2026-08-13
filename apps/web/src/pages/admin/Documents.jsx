@@ -49,7 +49,7 @@ export default function Documents() {
 
   return (
     <div>
-      <PageHeader title="Document Management" description="Certifications, notifications, and business documents.">
+      <PageHeader>
         <AdminCreateDialog
           title="Upload Document"
           description="Register a certification or business document record."

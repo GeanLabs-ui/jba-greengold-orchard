@@ -8,6 +8,7 @@ export interface AuthUser {
   id: string;
   email: string;
   role: Role;
+  pageAccess: string[] | null;
   status: string;
   organizationId: string | null;
 }
@@ -41,11 +42,12 @@ export const loadSession = (): MiddlewareHandler<{ Bindings: Env; Variables: App
       user_id: string;
       email: string;
       role: Role;
+      page_access: unknown;
       status: string;
       organization_id: string | null;
     }[]>`
       SELECT s.id AS session_id, s.csrf_token, s.expires_at,
-             u.id AS user_id, u.email, u.role, u.status,
+             u.id AS user_id, u.email, u.role, u.page_access, u.status,
              om.organization_id
       FROM sessions s
       JOIN users u ON u.id = s.user_id
@@ -61,6 +63,7 @@ export const loadSession = (): MiddlewareHandler<{ Bindings: Env; Variables: App
         id: row.user_id,
         email: row.email,
         role: row.role,
+        pageAccess: Array.isArray(row.page_access) ? row.page_access.filter((item): item is string => typeof item === 'string') : null,
         status: row.status,
         organizationId: row.organization_id,
       });

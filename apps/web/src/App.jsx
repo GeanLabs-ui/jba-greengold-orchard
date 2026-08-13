@@ -50,12 +50,9 @@ const Inquiries = lazy(() => import('@/pages/admin/Inquiries'));
 const Sales = lazy(() => import('@/pages/admin/Sales'));
 const Orders = lazy(() => import('@/pages/admin/Orders'));
 const Inventory = lazy(() => import('@/pages/admin/Inventory'));
-const Harvests = lazy(() => import('@/pages/admin/Harvests'));
-const FarmsAdmin = lazy(() => import('@/pages/admin/FarmsAdmin'));
 const FarmProfileAdmin = lazy(() => import('@/pages/admin/FarmProfileAdmin'));
 const BlockProfileAdmin = lazy(() => import('@/pages/admin/BlockProfileAdmin'));
 const FarmDailyActivities = lazy(() => import('@/pages/admin/FarmDailyActivities'));
-const DailyRoutineCheck = lazy(() => import('@/pages/admin/DailyRoutineCheck'));
 const MasterScheduleTask = lazy(() => import('@/pages/admin/MasterScheduleTask'));
 const ProductionCalendar = lazy(() => import('@/pages/admin/ProductionCalendar'));
 const Logistics = lazy(() => import('@/pages/admin/Logistics'));
@@ -188,16 +185,15 @@ const AuthenticatedApp = () => {
           <Route path="sales" element={<Sales />} />
           <Route path="orders" element={<Orders />} />
           <Route path="inventory" element={<Inventory />} />
-          <Route path="farms" element={<FarmsAdmin />} />
+          <Route path="farms" element={<Navigate to="/admin/farm-daily-activities/activities/farms" replace />} />
           <Route path="farms/:farmId" element={<FarmProfileAdmin />} />
           <Route path="farms/:farmId/blocks/:blockId" element={<BlockProfileAdmin />} />
-          <Route path="harvests" element={<Harvests />} />
+          <Route path="harvests" element={<Navigate to="/admin/farm-daily-activities/harvests/dashboard" replace />} />
           <Route path="farm-daily-activities" element={<FarmDailyActivities />} />
+          <Route path="farm-daily-activities/activities/farms/:farmId" element={<FarmProfileAdmin />} />
+          <Route path="farm-daily-activities/activities/farms/:farmId/blocks/:blockId" element={<BlockProfileAdmin />} />
           <Route path="farm-daily-activities/activities/master-schedule/:taskId" element={<MasterScheduleTask />} />
           <Route path="farm-daily-activities/*" element={<FarmDailyActivities />} />
-          <Route path="daily-routine-check" element={<DailyRoutineCheck />} />
-          <Route path="daily-routine-check/blocks/:blockId" element={<DailyRoutineCheck />} />
-          <Route path="daily-routine-check/master-schedule/:taskId" element={<MasterScheduleTask />} />
           <Route path="calendar" element={<ProductionCalendar />} />
           <Route path="logistics" element={<Logistics />} />
           <Route path="procurement" element={<Procurement />} />

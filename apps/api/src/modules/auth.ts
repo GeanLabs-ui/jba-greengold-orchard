@@ -3,7 +3,7 @@ import { createRemoteJWKSet, jwtVerify } from 'jose';
 import { z } from 'zod';
 import type { Role } from 'mango-farm-authorization';
 import { closeDatabase, createDatabase } from '../db.js';
-import { requireCsrf, requirePermission, type AppVariables } from '../middleware/auth.js';
+import { requireCsrf, requireRole, type AppVariables } from '../middleware/auth.js';
 import { checkRateLimit, requestIp } from '../rate-limit.js';
 import { clearSessionCookie, randomToken, sessionCookie, sha256, timingSafeEqual } from '../security.js';
 
@@ -37,17 +37,42 @@ const googleClaimsSchema = z.object({
 });
 const googleJwks = createRemoteJWKSet(new URL('https://www.googleapis.com/oauth2/v3/certs'));
 const staffRoles = ['admin', 'farm_manager', 'farm_supervisor', 'inventory_officer', 'quality_officer', 'finance_officer', 'hr_officer', 'sales_officer', 'logistics_officer', 'content_editor', 'auditor'] as const;
+const staffPageKeys = ['dashboard', 'crm', 'inquiries', 'sales', 'orders', 'inventory', 'logistics', 'farms', 'calendar', 'farm_daily_activities', 'procurement', 'finance', 'export_ops', 'hr', 'applications', 'content', 'documents', 'reports', 'settings'] as const;
+const pageAccessSchema = z.array(z.enum(staffPageKeys)).max(staffPageKeys.length);
 const staffInvitationSchema = z.object({
   email: z.string().trim().toLowerCase().email().max(254),
   fullName: z.string().trim().min(1).max(200).optional(),
   role: z.enum(staffRoles),
+  pageAccess: pageAccessSchema.optional(),
+  employeeId: z.string().uuid().optional(),
 });
+const staffAccessFieldsSchema = z.object({
+  role: z.enum(staffRoles).optional(),
+  pageAccess: pageAccessSchema.optional(),
+  status: z.enum(['active', 'inactive']).optional(),
+});
+const staffAccessUpdateSchema = staffAccessFieldsSchema.refine((value) => Object.keys(value).length > 0);
+const pendingStaffAccessUpdateSchema = staffAccessFieldsSchema.pick({ role: true, pageAccess: true }).refine((value) => Object.keys(value).length > 0);
 const acceptStaffInvitationSchema = z.object({
   token: z.string().min(32).max(256),
   credential: z.string().min(100).max(8192),
 });
 
 type GoogleClaims = z.infer<typeof googleClaimsSchema>;
+
+const rolePageDefaults: Record<(typeof staffRoles)[number], (typeof staffPageKeys)[number][]> = {
+  admin: [...staffPageKeys],
+  farm_manager: ['dashboard', 'farms', 'calendar', 'farm_daily_activities', 'inventory', 'procurement'],
+  farm_supervisor: ['dashboard', 'farms', 'calendar', 'farm_daily_activities'],
+  inventory_officer: ['dashboard', 'inventory', 'procurement'],
+  quality_officer: ['dashboard', 'farm_daily_activities', 'documents'],
+  finance_officer: ['dashboard', 'finance', 'reports'],
+  hr_officer: ['dashboard', 'hr', 'applications'],
+  sales_officer: ['dashboard', 'crm', 'inquiries', 'sales', 'orders'],
+  logistics_officer: ['dashboard', 'orders', 'logistics', 'export_ops'],
+  content_editor: ['dashboard', 'content'],
+  auditor: ['dashboard', 'documents', 'reports'],
+};
 
 function bootstrapAdminEmails(env: Env): Set<string> {
   return new Set((env.BOOTSTRAP_ADMIN_EMAILS || '').split(',').map((email) => email.trim().toLowerCase()).filter(Boolean));
@@ -279,13 +304,13 @@ router.post('/google', async (c) => {
   }
 });
 
-router.get('/staff-invitations', requirePermission('users.invite'), async (c) => {
+router.get('/staff-invitations', requireRole('super_admin', 'hr_officer'), async (c) => {
   const sql = createDatabase(c.env);
   try {
     const invitations = await sql<{
-      id: string; email: string; full_name: string | null; role: Role; expires_at: Date; accepted_at: Date | null; revoked_at: Date | null; created_at: Date;
+      id: string; email: string; full_name: string | null; role: Role; page_access: unknown; employee_id: string | null; expires_at: Date; accepted_at: Date | null; revoked_at: Date | null; created_at: Date;
     }[]>`
-      SELECT id, email, full_name, role, expires_at, accepted_at, revoked_at, created_at
+      SELECT id, email, full_name, role, page_access, employee_id, expires_at, accepted_at, revoked_at, created_at
       FROM staff_invitations
       ORDER BY created_at DESC
       LIMIT 100
@@ -296,7 +321,7 @@ router.get('/staff-invitations', requirePermission('users.invite'), async (c) =>
   }
 });
 
-router.post('/staff-invitations', requirePermission('users.invite'), requireCsrf(), async (c) => {
+router.post('/staff-invitations', requireRole('super_admin', 'hr_officer'), requireCsrf(), async (c) => {
   const parsed = staffInvitationSchema.safeParse(await c.req.json().catch(() => null));
   if (!parsed.success) return c.json({ error: { code: 'VALIDATION_ERROR', message: 'Provide a valid staff email, name, and role' }, requestId: c.get('requestId') }, 422);
   if (!c.env.RESEND_API_KEY) return c.json({ error: { code: 'EMAIL_UNAVAILABLE', message: 'Staff invitations are unavailable until the email service is configured' }, requestId: c.get('requestId') }, 503);
@@ -304,6 +329,10 @@ router.post('/staff-invitations', requirePermission('users.invite'), requireCsrf
   const sql = createDatabase(c.env);
   const inviter = c.get('user')!;
   try {
+    if (inviter.role === 'hr_officer' && parsed.data.role === 'admin') {
+      return c.json({ error: { code: 'FORBIDDEN', message: 'Only a Super Admin can invite an administrator' }, requestId: c.get('requestId') }, 403);
+    }
+    const pageAccess = parsed.data.pageAccess || rolePageDefaults[parsed.data.role];
     const limit = await checkRateLimit(sql, 'staff-invite', inviter.id, 20, 3600);
     if (!limit.allowed) {
       c.header('Retry-After', String(limit.retryAfter));
@@ -325,16 +354,105 @@ router.post('/staff-invitations', requirePermission('users.invite'), requireCsrf
     const tokenHash = await sha256(token);
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
     await sql`
-      INSERT INTO staff_invitations (id, email, full_name, role, token_hash, invited_by, expires_at)
-      VALUES (${invitationId}, ${parsed.data.email}, ${parsed.data.fullName || null}, ${parsed.data.role}, ${tokenHash}, ${inviter.id}, ${expiresAt})
+      INSERT INTO staff_invitations (id, email, full_name, role, page_access, employee_id, token_hash, invited_by, expires_at)
+      VALUES (${invitationId}, ${parsed.data.email}, ${parsed.data.fullName || null}, ${parsed.data.role}, ${sql.json(pageAccess)}, ${parsed.data.employeeId || null}, ${tokenHash}, ${inviter.id}, ${expiresAt})
     `;
+    if (parsed.data.employeeId) {
+      await sql`
+        UPDATE entity_records
+        SET data = data || ${sql.json({ workspace_role: parsed.data.role, page_access: pageAccess, invitation_status: 'pending' })}, updated_by = ${inviter.id}, updated_at = now()
+        WHERE id = ${parsed.data.employeeId} AND entity_name = 'Employee'
+      `;
+    }
     await sql`
       INSERT INTO audit_events (id, user_id, action, target_table, record_id, new_values, ip_address)
       VALUES (${crypto.randomUUID()}, ${inviter.id}, 'staff_invited', 'staff_invitations', ${invitationId}, ${sql.json({ email: parsed.data.email, role: parsed.data.role })}, ${requestIp(c.req.raw)})
     `;
     const delivered = await deliverStaffInvitation(c.env, parsed.data.email, parsed.data.fullName, token);
     if (!delivered) return c.json({ error: { code: 'EMAIL_DELIVERY_FAILED', message: 'The invitation was saved but the email could not be delivered. Try again later.' }, requestId: c.get('requestId') }, 502);
-    return c.json({ data: { invitation: { id: invitationId, email: parsed.data.email, role: parsed.data.role, expiresAt } }, requestId: c.get('requestId') }, 201);
+    return c.json({ data: { invitation: { id: invitationId, email: parsed.data.email, role: parsed.data.role, page_access: pageAccess, employee_id: parsed.data.employeeId || null, expiresAt } }, requestId: c.get('requestId') }, 201);
+  } finally {
+    await closeDatabase(sql);
+  }
+});
+
+router.patch('/staff-invitations/:id', requireRole('super_admin', 'hr_officer'), requireCsrf(), async (c) => {
+  const parsed = pendingStaffAccessUpdateSchema.safeParse(await c.req.json().catch(() => null));
+  if (!parsed.success) return c.json({ error: { code: 'VALIDATION_ERROR', message: 'Provide a valid role or page access selection' }, requestId: c.get('requestId') }, 422);
+  const actor = c.get('user')!;
+  if (actor.role === 'hr_officer' && parsed.data.role === 'admin') {
+    return c.json({ error: { code: 'FORBIDDEN', message: 'Only a Super Admin can assign the administrator role' }, requestId: c.get('requestId') }, 403);
+  }
+  const sql = createDatabase(c.env);
+  try {
+    const rows = await sql<{ id: string; employee_id: string | null; role: Role; page_access: unknown }[]>`
+      UPDATE staff_invitations
+      SET role = COALESCE(${parsed.data.role || null}, role),
+          page_access = COALESCE(${parsed.data.pageAccess ? sql.json(parsed.data.pageAccess) : null}, page_access)
+      WHERE id = ${c.req.param('id')} AND accepted_at IS NULL AND revoked_at IS NULL AND expires_at > now()
+      RETURNING id, employee_id, role, page_access
+    `;
+    if (!rows[0]) return c.json({ error: { code: 'NOT_FOUND', message: 'Active invitation not found' }, requestId: c.get('requestId') }, 404);
+    const updatedPageAccess = Array.isArray(rows[0].page_access) ? rows[0].page_access.filter((item): item is string => typeof item === 'string') : [];
+    if (rows[0].employee_id) {
+      await sql`
+        UPDATE entity_records
+        SET data = data || ${sql.json({ workspace_role: rows[0].role, page_access: updatedPageAccess })}, updated_by = ${actor.id}, updated_at = now()
+        WHERE id = ${rows[0].employee_id} AND entity_name = 'Employee'
+      `;
+    }
+    return c.json({ data: { invitation: rows[0] }, requestId: c.get('requestId') });
+  } finally {
+    await closeDatabase(sql);
+  }
+});
+
+router.get('/staff-users', requireRole('super_admin', 'hr_officer'), async (c) => {
+  const sql = createDatabase(c.env);
+  try {
+    const users = await sql<{ id: string; email: string; full_name: string | null; role: Role; page_access: unknown; status: string; last_login_at: Date | null; created_at: Date }[]>`
+      SELECT id, email, full_name, role, page_access, status, last_login_at, created_at
+      FROM users
+      WHERE role NOT IN ('customer', 'user')
+      ORDER BY full_name NULLS LAST, email
+    `;
+    return c.json({ data: { users }, requestId: c.get('requestId') });
+  } finally {
+    await closeDatabase(sql);
+  }
+});
+
+router.patch('/staff-users/:id', requireRole('super_admin', 'hr_officer'), requireCsrf(), async (c) => {
+  const parsed = staffAccessUpdateSchema.safeParse(await c.req.json().catch(() => null));
+  if (!parsed.success) return c.json({ error: { code: 'VALIDATION_ERROR', message: 'Provide a valid role, status, or page access selection' }, requestId: c.get('requestId') }, 422);
+  const actor = c.get('user')!;
+  if (actor.role === 'hr_officer' && parsed.data.role === 'admin') {
+    return c.json({ error: { code: 'FORBIDDEN', message: 'Only a Super Admin can assign the administrator role' }, requestId: c.get('requestId') }, 403);
+  }
+  const sql = createDatabase(c.env);
+  try {
+    const targets = await sql<{ id: string; email: string; role: Role }[]>`SELECT id, email, role FROM users WHERE id = ${c.req.param('id')} LIMIT 1`;
+    const target = targets[0];
+    if (!target) return c.json({ error: { code: 'NOT_FOUND', message: 'Staff account not found' }, requestId: c.get('requestId') }, 404);
+    if (target.role === 'super_admin') return c.json({ error: { code: 'FORBIDDEN', message: 'Super Admin access cannot be restricted here' }, requestId: c.get('requestId') }, 403);
+    if (actor.role === 'hr_officer' && target.role === 'admin') return c.json({ error: { code: 'FORBIDDEN', message: 'Only a Super Admin can update an administrator' }, requestId: c.get('requestId') }, 403);
+    const rows = await sql<{ id: string; email: string; full_name: string | null; role: Role; page_access: unknown; status: string }[]>`
+      UPDATE users
+      SET role = COALESCE(${parsed.data.role || null}, role),
+          page_access = COALESCE(${parsed.data.pageAccess ? sql.json(parsed.data.pageAccess) : null}, page_access),
+          status = COALESCE(${parsed.data.status || null}, status),
+          updated_at = now()
+      WHERE id = ${target.id}
+      RETURNING id, email, full_name, role, page_access, status
+    `;
+    const updatedPageAccess = Array.isArray(rows[0].page_access) ? rows[0].page_access.filter((item): item is string => typeof item === 'string') : [];
+    await sql`
+      UPDATE entity_records
+      SET data = data || ${sql.json({ workspace_role: rows[0].role, page_access: updatedPageAccess, account_status: rows[0].status })}, updated_by = ${actor.id}, updated_at = now()
+      WHERE entity_name = 'Employee' AND lower(data->>'email') = ${target.email}
+    `;
+    await sql`INSERT INTO audit_events (id, user_id, action, target_table, record_id, new_values, ip_address) VALUES (${crypto.randomUUID()}, ${actor.id}, 'staff_access_updated', 'users', ${target.id}, ${sql.json(parsed.data)}, ${requestIp(c.req.raw)})`;
+    return c.json({ data: { user: rows[0] }, requestId: c.get('requestId') });
   } finally {
     await closeDatabase(sql);
   }
@@ -356,9 +474,9 @@ router.post('/staff-invitations/accept', async (c) => {
     const tokenHash = await sha256(parsed.data.token);
     const result = await sql.begin(async (transaction) => {
       const invitations = await transaction<{
-        id: string; email: string; full_name: string | null; role: Role; invited_by: string;
+        id: string; email: string; full_name: string | null; role: Role; page_access: unknown; employee_id: string | null; invited_by: string;
       }[]>`
-        SELECT id, email, full_name, role, invited_by
+        SELECT id, email, full_name, role, page_access, employee_id, invited_by
         FROM staff_invitations
         WHERE token_hash = ${tokenHash} AND accepted_at IS NULL AND revoked_at IS NULL AND expires_at > now()
         FOR UPDATE
@@ -371,19 +489,28 @@ router.post('/staff-invitations/accept', async (c) => {
       const existingUser = existingUsers[0];
       if (existingUser?.google_subject && existingUser.google_subject !== claims.sub) return { conflict: true };
       const userId = existingUser?.id || crypto.randomUUID();
+      const pageAccess = Array.isArray(invitation.page_access)
+        ? invitation.page_access.filter((item): item is (typeof staffPageKeys)[number] => typeof item === 'string' && staffPageKeys.includes(item as (typeof staffPageKeys)[number]))
+        : rolePageDefaults[invitation.role as (typeof staffRoles)[number]] || ['dashboard'];
       if (existingUser) {
         await transaction`
           UPDATE users
           SET google_subject = ${claims.sub}, full_name = COALESCE(${invitation.full_name}, ${claims.name || claims.email.split('@')[0]}),
-              role = ${invitation.role}, status = 'active', email_verified_at = now(), last_login_at = now(), updated_at = now()
+              role = ${invitation.role}, page_access = ${sql.json(pageAccess)}, status = 'active', email_verified_at = now(), last_login_at = now(), updated_at = now()
           WHERE id = ${userId}
         `;
       } else {
         await transaction`
-          INSERT INTO users (id, email, google_subject, full_name, role, status, email_verified_at, last_login_at)
-          VALUES (${userId}, ${claims.email}, ${claims.sub}, ${invitation.full_name || claims.name || claims.email.split('@')[0]}, ${invitation.role}, 'active', now(), now())
+          INSERT INTO users (id, email, google_subject, full_name, role, page_access, status, email_verified_at, last_login_at)
+          VALUES (${userId}, ${claims.email}, ${claims.sub}, ${invitation.full_name || claims.name || claims.email.split('@')[0]}, ${invitation.role}, ${sql.json(pageAccess)}, 'active', now(), now())
         `;
       }
+      await transaction`
+        UPDATE entity_records
+        SET data = data || ${sql.json({ user_id: userId, workspace_role: invitation.role, page_access: pageAccess, invitation_status: 'accepted', account_status: 'active' })}, updated_at = now()
+        WHERE entity_name = 'Employee'
+          AND (id = ${invitation.employee_id || ''} OR lower(data->>'email') = ${claims.email})
+      `;
       await transaction`UPDATE staff_invitations SET accepted_at = now() WHERE id = ${invitation.id}`;
       await transaction`DELETE FROM sessions WHERE user_id = ${userId}`;
       await transaction`

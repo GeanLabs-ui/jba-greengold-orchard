@@ -1,15 +1,27 @@
-import React, { useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, Outlet, useLocation } from 'react-router-dom';
+import { ShieldX } from 'lucide-react';
 import AdminSidebar from './AdminSidebar';
 import AdminTopbar from './AdminTopbar';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
+import { useAuth } from '@/lib/AuthContext';
+import { canAccessAdminPath, defaultAdminPath } from '@/lib/access-control';
 
 export default function AdminLayout() {
+  const { user } = useAuth();
+  const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const canAccessPage = canAccessAdminPath(user, location.pathname);
+
+  useEffect(() => {
+    document.documentElement.classList.add('admin-theme');
+    return () => document.documentElement.classList.remove('admin-theme');
+  }, []);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-muted/30">
+    <div className="admin-shell flex h-screen overflow-hidden bg-background">
       <div className="hidden lg:flex lg:flex-col">
         <AdminSidebar
           collapsed={sidebarCollapsed}
@@ -31,7 +43,16 @@ export default function AdminLayout() {
       <div className="flex flex-1 flex-col overflow-hidden">
         <AdminTopbar onMenuClick={() => setMobileOpen(true)} />
         <main className="flex-1 overflow-y-auto scrollbar-thin p-4 md:p-6">
-          <Outlet />
+          {canAccessPage ? <Outlet /> : (
+            <div className="grid min-h-[60vh] place-items-center">
+              <div className="max-w-md text-center">
+                <span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-destructive/10 text-destructive"><ShieldX className="h-6 w-6" /></span>
+                <p className="mt-4 font-heading text-xl font-semibold">Page access is turned off</p>
+                <p className="mt-2 text-sm text-muted-foreground">Your staff profile does not allow access to this workspace page.</p>
+                <Button asChild className="mt-5"><Link to={defaultAdminPath(user)}>Go to an available page</Link></Button>
+              </div>
+            </div>
+          )}
         </main>
       </div>
     </div>

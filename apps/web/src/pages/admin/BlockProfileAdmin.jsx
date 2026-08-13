@@ -227,12 +227,12 @@ export default function BlockProfileAdmin() {
         className="mb-3 flex flex-wrap items-center gap-1 text-sm text-muted-foreground"
         aria-label="Breadcrumb"
       >
-        <Link to="/admin/farms" className="hover:text-foreground">
+        <Link to="/admin/farm-daily-activities/activities/farms" className="hover:text-foreground">
           Farms
         </Link>
         <span>/</span>
         <Link
-          to={`/admin/farms/${farm.id}?tab=blocks`}
+          to={`/admin/farm-daily-activities/activities/farms/${farm.id}?tab=blocks`}
           className="hover:text-foreground"
         >
           {farm.name}
@@ -274,7 +274,7 @@ export default function BlockProfileAdmin() {
           </div>
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" asChild>
-              <Link to={`/admin/farms/${farm.id}?tab=blocks`}>
+              <Link to={`/admin/farm-daily-activities/activities/farms/${farm.id}?tab=blocks`}>
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Farm blocks
               </Link>
