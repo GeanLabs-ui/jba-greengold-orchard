@@ -113,7 +113,13 @@ const seedData = {
 };
 
 const nowIso = () => new Date().toISOString();
-const createId = (prefix = 'item') => `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+const secureIdSuffix = () => {
+  const bytes = new Uint8Array(8);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (byte) => byte.toString(36).padStart(2, '0')).join('');
+};
+
+const createId = (prefix = 'item') => `${prefix}_${Date.now().toString(36)}_${secureIdSuffix()}`;
 
 const demoEmployeeCode = (joiningAt, uniquePart) => {
   const parsed = new Date(joiningAt);
@@ -446,7 +452,18 @@ const staff = {
   },
   async invite(payload) {
     const invitations = readJson(STAFF_INVITATIONS_KEY, []);
-    const invitation = { id: createId('invite'), ...payload, page_access: payload.pageAccess || [], employee_id: payload.employeeId || null, created_at: nowIso(), expires_at: new Date(Date.now() + 86400000).toISOString() };
+    // Browser demo data must not persist staff identifiers. The production API
+    // associates invitations with employees server-side.
+    const invitation = {
+      id: createId('invite'),
+      fullName: payload.fullName,
+      email: payload.email,
+      role: payload.role,
+      page_access: payload.pageAccess || [],
+      employee_id: null,
+      created_at: nowIso(),
+      expires_at: new Date(Date.now() + 86400000).toISOString(),
+    };
     invitations.unshift(invitation);
     writeJson(STAFF_INVITATIONS_KEY, invitations);
     return { invitation };
