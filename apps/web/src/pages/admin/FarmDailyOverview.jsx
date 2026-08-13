@@ -31,7 +31,7 @@ export default function FarmDailyOverview() {
       setProjects(projectRows.filter((item) => item.programme_code === PROGRAMME_CODE));
       setSubtasks(taskRows.filter((item) => item.parent_project_id && !item.archived_at));
     } catch (error) {
-      toast({ title: 'Programme Overview could not be loaded', description: error.message, variant: 'destructive' });
+      toast({ title: 'Report could not be loaded', description: error.message, variant: 'destructive' });
     } finally {
       if (!silent) setLoading(false);
     }
@@ -58,7 +58,7 @@ export default function FarmDailyOverview() {
     return { total, completed, active, overdue, progress, subtasks: subtasks.length, disabled: allScheduleProjects.length - total };
   }, [allScheduleProjects.length, scheduleProjects, subtasks.length]);
 
-  if (loading && !projects.length) return <div className="flex min-h-64 items-center justify-center gap-3 text-muted-foreground"><Loader2 className="h-5 w-5 animate-spin" />Loading Programme Overview…</div>;
+  if (loading && !projects.length) return <div className="flex min-h-64 items-center justify-center gap-3 text-muted-foreground"><Loader2 className="h-5 w-5 animate-spin" />Loading Report…</div>;
 
   return <div className="drc-page drc-embedded-schedule"><ProgrammeOverviewView embedded metrics={metrics} onOpenSchedule={() => navigate(masterSchedulePath)} scheduleProjects={scheduleProjects} taskBasePath={masterSchedulePath} /></div>;
 }

@@ -133,10 +133,7 @@ export default function FarmsAdmin() {
 
   return (
     <div className="pb-10">
-      <PageHeader
-        title="Farms"
-        description="Manage farm locations, block allocation, tree inventory, and production performance."
-      >
+      <PageHeader>
         {canManageFarms(user?.role) ? (
           <Button onClick={() => setDialogOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
@@ -376,14 +373,14 @@ export default function FarmsAdmin() {
                       {canManageBlocks(user?.role) &&
                       farm.status === "active" ? (
                         <Button variant="ghost" size="sm" asChild>
-                          <Link to={`/admin/farms/${farm.id}?action=add-block`}>
+                          <Link to={`/admin/farm-daily-activities/activities/farms/${farm.id}?action=add-block`}>
                             <Layers3 className="mr-1.5 h-4 w-4" />
                             Add block
                           </Link>
                         </Button>
                       ) : null}
                       <Button variant="outline" size="sm" asChild>
-                        <Link to={`/admin/farms/${farm.id}`}>
+                        <Link to={`/admin/farm-daily-activities/activities/farms/${farm.id}`}>
                           View farm
                           <ArrowRight className="ml-1.5 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                         </Link>

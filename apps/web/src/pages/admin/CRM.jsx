@@ -63,7 +63,7 @@ export default function CRM() {
 
   return (
     <div>
-      <PageHeader title="Customer Relationship Management" description="Manage local, corporate, export, and walk-in customers.">
+      <PageHeader>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button className="gradient-mango text-white"><Plus className="mr-2 h-4 w-4" /> New Customer</Button>

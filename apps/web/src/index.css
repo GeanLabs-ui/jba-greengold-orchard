@@ -123,3 +123,186 @@
     background: linear-gradient(135deg, hsl(150 45% 42%) 0%, hsl(150 35% 30%) 100%);
   }
 }
+
+/* Admin-only JBA GreenGold color system. The class is mounted by AdminLayout so
+   Radix portals (dialogs, menus, sheets) inherit the same palette as the page. */
+.admin-theme {
+  --brand-green: #2e7d32;
+  --brand-deep-green: #1b5e20;
+  --brand-leaf: #43a047;
+  --brand-gold: #d4a017;
+  --brand-blue: #2196c9;
+  --brand-earth: #795548;
+  --brand-cream: #f8f5e8;
+  --brand-neutral: #f4f7f4;
+  --brand-gray: #607067;
+  --brand-charcoal: #263238;
+  --status-success: #2eb857;
+  --status-warning: #e0a800;
+  --status-error: #d64545;
+  --background: 120 15.8% 96.3%;
+  --foreground: 200 19.1% 18.4%;
+  --card: 0 0% 100%;
+  --card-foreground: 200 19.1% 18.4%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 200 19.1% 18.4%;
+  --primary: 123 46.2% 33.5%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 198.2 71.8% 45.9%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 120 33.3% 95.9%;
+  --muted-foreground: 146.3 7.7% 40.8%;
+  --accent: 120 33.3% 95.9%;
+  --accent-foreground: 124.5 55.4% 23.7%;
+  --destructive: 0 63.9% 55.5%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 132 11.6% 91.6%;
+  --input: 132 11.6% 91.6%;
+  --ring: 123 46.2% 33.5%;
+  --chart-1: 123 46.2% 33.5%;
+  --chart-2: 43.5 80.4% 46.1%;
+  --chart-3: 198.2 71.8% 45.9%;
+  --chart-4: 15.9 25.4% 37.8%;
+  --chart-5: 122.6 41% 44.5%;
+  color-scheme: light;
+}
+
+.admin-sidebar {
+  --card: 124.5 55.4% 23.7%;
+  --foreground: 0 0% 100%;
+  --muted: 124.2 46.3% 24.1%;
+  --muted-foreground: 114.3 39.6% 79.2%;
+  --primary: 43.5 80.4% 46.1%;
+  --primary-foreground: 125.3 55.6% 15.9%;
+  --border: 124.2 46.3% 24.1%;
+  background-color: #1b5e20;
+  background-image: linear-gradient(165deg, #155a20 0%, #176b27 52%, #116123 100%);
+  color: hsl(var(--foreground));
+  box-shadow: 8px 0 24px rgb(18 63 22 / 0.08);
+}
+
+.admin-avatar {
+  background: #d4a017;
+  color: #26332c;
+  box-shadow: 0 0 0 3px #fff3c4;
+}
+
+.admin-theme .metric-tone-primary {
+  background-image: none;
+  background-color: transparent;
+  color: #2e7d32;
+}
+
+.admin-theme .metric-tone-green {
+  background-image: none;
+  background-color: transparent;
+  color: #2e7d32;
+}
+
+.admin-theme .metric-tone-blue,
+.admin-theme .metric-tone-purple {
+  background-image: none;
+  background-color: transparent;
+  color: #2196c9;
+}
+
+.admin-theme .metric-tone-red {
+  background-image: none;
+  background-color: transparent;
+  color: #d64545;
+}
+
+.admin-theme .metric-tone-amber {
+  background-image: none;
+  background-color: transparent;
+  color: #d4a017;
+}
+
+/* Normalize existing admin utilities to the exact approved brand ramps.
+   Attribute matching includes Tailwind opacity variants such as bg-*-50/60. */
+.admin-theme [class*="bg-emerald-50"] { background-color: #f1f8f1; }
+.admin-theme [class*="bg-emerald-100"] { background-color: #dcefd9; }
+.admin-theme .bg-emerald-500 { background-color: #2eb857; }
+.admin-theme .bg-emerald-800 { background-color: #1b5e20; }
+.admin-theme .bg-emerald-900,
+.admin-theme .bg-emerald-950 { background-color: #123f16; }
+.admin-theme .text-emerald-500,
+.admin-theme .text-emerald-600 { color: #2e7d32; }
+.admin-theme [class*="text-emerald-700"] { color: #2e7d32; }
+.admin-theme [class*="text-emerald-800"] { color: #1b5e20; }
+.admin-theme .text-emerald-900,
+.admin-theme .text-emerald-950 { color: #123f16; }
+.admin-theme [class*="text-emerald-100"] { color: #dcefd9; }
+.admin-theme [class*="text-emerald-200"] { color: #b9dfb5; }
+.admin-theme .border-emerald-200,
+.admin-theme .border-emerald-300 { border-color: #b9dfb5; }
+.admin-theme .border-emerald-400 { border-color: #66bb6a; }
+.admin-theme [class*="border-emerald-700"],
+.admin-theme [class*="border-emerald-800"],
+.admin-theme [class*="border-emerald-900"],
+.admin-theme [class*="border-emerald-950"] { border-color: #1b5e20; }
+.admin-theme .ring-emerald-200 { --tw-ring-color: #b9dfb5; }
+.admin-theme .ring-emerald-600,
+.admin-theme .ring-emerald-700 { --tw-ring-color: #2e7d32; }
+.admin-theme .from-emerald-900 { --tw-gradient-from: #1b5e20 var(--tw-gradient-from-position); --tw-gradient-to: rgb(27 94 32 / 0) var(--tw-gradient-to-position); }
+.admin-theme .via-emerald-600 { --tw-gradient-to: rgb(46 125 50 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), #2e7d32 var(--tw-gradient-via-position), var(--tw-gradient-to); }
+.admin-theme .bg-green-500 { background-color: #2e7d32; }
+.admin-theme .bg-green-600 { background-color: #276a2b; }
+.admin-theme .bg-green-700 { background-color: #215a25; }
+
+.admin-theme [class*="bg-blue-50"],
+.admin-theme [class*="bg-sky-50"] { background-color: #eff9fd; }
+.admin-theme [class*="bg-blue-100"],
+.admin-theme [class*="bg-sky-100"],
+.admin-theme .bg-indigo-100,
+.admin-theme .bg-violet-100 { background-color: #d5f0fa; }
+.admin-theme .bg-blue-500,
+.admin-theme .bg-violet-500 { background-color: #2196c9; }
+.admin-theme .text-blue-500,
+.admin-theme .text-blue-600 { color: #2196c9; }
+.admin-theme .text-blue-700,
+.admin-theme .text-blue-900,
+.admin-theme .text-sky-700,
+.admin-theme .text-indigo-500,
+.admin-theme .text-indigo-700,
+.admin-theme .text-violet-600 { color: #176e94; }
+.admin-theme .border-blue-200,
+.admin-theme .border-sky-200 { border-color: #a9e1f4; }
+.admin-theme .ring-sky-200 { --tw-ring-color: #a9e1f4; }
+
+.admin-theme [class*="bg-amber-50"],
+.admin-theme [class*="bg-yellow-50"],
+.admin-theme [class*="bg-orange-50"] { background-color: #fffbea; }
+.admin-theme .bg-amber-100,
+.admin-theme .bg-yellow-100 { background-color: #fff0b8; }
+.admin-theme .bg-amber-500 { background-color: #d4a017; }
+.admin-theme .text-amber-500,
+.admin-theme .text-amber-600 { color: #d4a017; }
+.admin-theme .text-amber-700,
+.admin-theme .text-amber-800,
+.admin-theme .text-amber-900,
+.admin-theme .text-orange-800 { color: #956d0b; }
+.admin-theme .text-amber-300 { color: #f9d76a; }
+.admin-theme .border-amber-200,
+.admin-theme .border-orange-200 { border-color: #ffe797; }
+.admin-theme .to-amber-400 { --tw-gradient-to: #d4a017 var(--tw-gradient-to-position); }
+
+.admin-theme [class*="bg-red-50"] { background-color: #fff1f0; }
+.admin-theme .bg-red-100 { background-color: #ffd9d6; }
+.admin-theme .bg-red-500 { background-color: #d64545; }
+.admin-theme .text-red-500,
+.admin-theme .text-red-600,
+.admin-theme .text-red-700 { color: #a83232; }
+.admin-theme .border-red-200 { border-color: #ffd9d6; }
+.admin-theme .ring-red-200 { --tw-ring-color: #ffd9d6; }
+
+.admin-theme .bg-slate-100 { background-color: #f4f7f4; }
+.admin-theme .bg-slate-200 { background-color: #e7ece8; }
+.admin-theme .border-slate-200,
+.admin-theme .border-slate-300 { border-color: #e7ece8; }
+.admin-theme .text-slate-500,
+.admin-theme .text-slate-600,
+.admin-theme .text-slate-700 { color: #607067; }
+.admin-theme .text-slate-800,
+.admin-theme .text-slate-900 { color: #263238; }
+.admin-theme .accent-orange-600 { accent-color: #2e7d32; }

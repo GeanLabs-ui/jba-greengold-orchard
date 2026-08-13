@@ -251,7 +251,7 @@ export function FarmSeasonSummary({ farm, blocks = [], onManage }) {
               return (
                 <Link
                   key={block.id}
-                  to={`/admin/farms/${farm.id}/blocks/${block.id}?tab=season`}
+                  to={`/admin/farm-daily-activities/activities/farms/${farm.id}/blocks/${block.id}?tab=season`}
                   className="group rounded-xl border bg-background p-4 transition hover:border-emerald-300 hover:bg-emerald-50/30 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"
                 >
                   <div className="flex items-start justify-between gap-3">

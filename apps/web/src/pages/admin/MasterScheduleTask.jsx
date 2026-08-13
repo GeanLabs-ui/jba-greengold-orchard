@@ -84,7 +84,7 @@ export default function MasterScheduleTask() {
   const navigate = useNavigate();
   const masterSchedulePath = location.pathname.startsWith('/admin/farm-daily-activities/')
     ? '/admin/farm-daily-activities/activities/master-schedule'
-    : '/admin/daily-routine-check';
+    : '/admin/farm-daily-activities/activities/master-schedule';
   const { toast } = useToast();
   const [task, setTask] = useState(null);
   const [form, setForm] = useState(null);
@@ -416,7 +416,6 @@ export default function MasterScheduleTask() {
           <Button variant="ghost" asChild className="-ml-3 mb-3"><Link to={masterSchedulePath}><ArrowLeft /> Master Schedule</Link></Button>
           <p className="text-xs font-semibold uppercase tracking-wide text-primary">{task.milestone_code || task.project_code || 'Schedule task'}</p>
           <div className="mt-1 flex flex-wrap items-center gap-3"><h1 className="text-3xl font-semibold tracking-tight">{task.title}</h1><span className={`rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${statusTone}`}>{STATUS_LABELS[form.status]}</span></div>
-          <p className="mt-2 text-sm text-muted-foreground">Manage planning, field execution, and daily reporting in one place.</p>
         </div>
         <div className="flex items-center gap-2"><Button type="button" variant={task.master_timer_started_at ? 'outline' : 'secondary'} disabled={saving || form.status === 'completed'} onClick={toggleMasterTimer}>{task.master_timer_started_at ? <Pause /> : <Play />}{task.master_timer_started_at ? 'Pause master task' : 'Start master task'}</Button><Button type="button" variant="outline" onClick={() => navigate(masterSchedulePath)}>Cancel</Button><Button type="submit" form="task-editor" disabled={saving}>{saving ? <Loader2 className="animate-spin" /> : <Save />} Save task</Button></div>
       </div>

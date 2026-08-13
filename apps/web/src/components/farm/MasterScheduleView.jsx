@@ -53,7 +53,7 @@ const displayDate = (value) => {
     : parsed.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 };
 
-const SchedulePageHead = ({ right }) => <div className="drc-page-head"><div><span className="drc-eyebrow">Programme management</span><h1>Master Schedule</h1><p>Create seasonal work, turn tasks on or off, and review dates, ownership and acceptance criteria.</p></div>{right}</div>;
+const SchedulePageHead = ({ right }) => <div className="drc-page-head drc-page-actions">{right}</div>;
 const SchedulePill = ({ value }) => <span className={`drc-pill ${value || ''}`}>{MASTER_SCHEDULE_STATUS_LABELS[value] || value || '—'}</span>;
 
 export default function MasterScheduleView({
@@ -68,7 +68,7 @@ export default function MasterScheduleView({
   setScheduleFilter,
   setShowNewMasterTask,
   showNewMasterTask,
-  taskBasePath = '/admin/daily-routine-check/master-schedule',
+  taskBasePath = '/admin/farm-daily-activities/activities/master-schedule',
   toggleProjectEnabled,
 }) {
   return (

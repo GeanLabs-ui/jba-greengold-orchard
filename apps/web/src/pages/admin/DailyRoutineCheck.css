@@ -1,17 +1,17 @@
 .drc-page {
-  --drc-ink: #17211c;
-  --drc-muted: #69746e;
-  --drc-line: #dfe5df;
-  --drc-paper: #f6f7f2;
+  --drc-ink: #26332c;
+  --drc-muted: #607067;
+  --drc-line: #e7ece8;
+  --drc-paper: #f4f7f4;
   --drc-surface: #ffffff;
-  --drc-green: #173f32;
-  --drc-green-2: #245a47;
-  --drc-leaf: #72a758;
-  --drc-mango: #e9b84c;
-  --drc-red: #b84a40;
-  --drc-red-bg: #fae9e6;
-  --drc-amber: #9a681e;
-  --drc-amber-bg: #fbf0d8;
+  --drc-green: #1b5e20;
+  --drc-green-2: #2e7d32;
+  --drc-leaf: #43a047;
+  --drc-mango: #d4a017;
+  --drc-red: #d64545;
+  --drc-red-bg: #fff1f0;
+  --drc-amber: #a87800;
+  --drc-amber-bg: #fff9e6;
   min-height: calc(100% + 2rem);
   margin: -1rem;
   padding: 0 1.25rem 3.5rem;
@@ -60,9 +60,8 @@
   backdrop-filter: blur(14px);
 }
 
-.drc-programme-bar > div:first-child {
-  display: grid;
-  gap: 0.2rem;
+.drc-programme-bar.drc-programme-actions {
+  justify-content: flex-end;
 }
 
 .drc-programme-bar strong {
@@ -101,7 +100,7 @@
   padding: 0.7rem 1.5rem;
   overflow-x: auto;
   background: var(--drc-green);
-  color: #c8dbd1;
+  color: #b9dfb5;
 }
 
 .drc-view-nav > div {
@@ -111,7 +110,7 @@
 
 .drc-view-nav span {
   margin: 0 0.3rem 0 0.55rem;
-  color: #86a595;
+  color: #8fcb8b;
   font-size: 0.55rem;
   font-weight: 800;
   letter-spacing: 0.13em;
@@ -168,6 +167,10 @@
   justify-content: space-between;
   gap: 1.4rem;
   margin-bottom: 1.65rem;
+}
+
+.drc-page-head.drc-page-actions {
+  justify-content: flex-end;
 }
 
 .drc-eyebrow {
@@ -259,9 +262,9 @@
 }
 
 .drc-task-toggle.on {
-  border-color: #b9d4b0;
-  background: #edf6e9;
-  color: #356d35;
+  border-color: #b9dfb5;
+  background: #f1f8f1;
+  color: #2e7d32;
 }
 
 .drc-task-disabled {
@@ -429,7 +432,7 @@
 }
 
 .drc-overall span {
-  color: #c5d7cd;
+  color: #b9dfb5;
   font-size: 0.68rem;
 }
 
@@ -483,7 +486,7 @@
   height: 0.5rem;
   overflow: hidden;
   border-radius: 999px;
-  background: #e8ece8;
+  background: #e7ece8;
 }
 
 .drc-track.dark {
@@ -537,19 +540,19 @@
   height: 0.45rem;
   margin-top: 0.25rem;
   border-radius: 50%;
-  background: #abb4af;
+  background: #aeb9b1;
 }
 
 .drc-dot.RED { background: var(--drc-red); }
-.drc-dot.AMBER { background: #dba739; }
+.drc-dot.AMBER { background: #e0a800; }
 .drc-dot.GREEN { background: var(--drc-leaf); }
 
 .drc-pill {
   display: inline-block;
   width: fit-content;
   border-radius: 999px;
-  background: #edf0ed;
-  color: #59675f;
+  background: #f4f7f4;
+  color: #607067;
   padding: 0.28rem 0.45rem;
   font-size: 0.52rem;
   font-weight: 900;
@@ -564,8 +567,8 @@
 
 .drc-pill.completed,
 .drc-pill.GREEN {
-  background: #e5f1e0;
-  color: #4d783f;
+  background: #dcefd9;
+  color: #2e7d32;
 }
 
 .drc-pill.blocked,
@@ -581,7 +584,7 @@
   gap: 1.2rem;
   margin-top: 1.2rem;
   border-radius: 1.1rem;
-  background: #eee7d4;
+  background: #fff3c4;
   padding: 1.2rem 1.35rem;
 }
 
@@ -593,7 +596,7 @@
 .drc-focus p {
   max-width: 50rem;
   margin: 0;
-  color: #666050;
+  color: #735208;
   font-size: 0.68rem;
 }
 
@@ -742,7 +745,7 @@
   top: 0;
   z-index: 1;
   border-bottom: 1px solid var(--drc-line);
-  background: #fafbf8;
+  background: #fafcfa;
   color: var(--drc-muted);
   padding: 0.7rem 0.75rem;
   text-align: left;
@@ -753,7 +756,7 @@
 }
 
 .drc-table td {
-  border-bottom: 1px solid #edf0ec;
+  border-bottom: 1px solid #e7ece8;
   padding: 0.75rem;
   font-size: 0.62rem;
   line-height: 1.45;
@@ -765,7 +768,7 @@
 }
 
 .drc-table tbody tr:hover {
-  background: #fbfcf9;
+  background: #fafcfa;
 }
 
 .drc-table tr.overdue {
@@ -1022,7 +1025,7 @@
 }
 
 .drc-finance-summary > span {
-  color: #c5d7cd;
+  color: #b9dfb5;
   font-size: 0.62rem;
 }
 
@@ -1052,7 +1055,7 @@
   width: 7rem;
 }
 
-.drc-table .positive { color: #4f7a41; }
+.drc-table .positive { color: #2eb857; }
 .drc-table .negative { color: var(--drc-red); }
 
 .drc-harvest-panel {
@@ -1136,7 +1139,7 @@
   place-items: center;
   border: 0;
   border-radius: 50%;
-  background: #edf0ed;
+  background: #f4f7f4;
 }
 
 .drc-form-grid {
@@ -1188,16 +1191,16 @@
   place-items: center;
   align-content: center;
   gap: 0.65rem;
-  border: 1px solid #dfe5df;
+  border: 1px solid #e7ece8;
   border-radius: 1rem;
-  background: #f6f7f2;
-  color: #17211c;
+  background: #f4f7f4;
+  color: #263238;
 }
 
 .drc-boot svg {
   width: 1.5rem;
   height: 1.5rem;
-  color: #245a47;
+  color: #2e7d32;
 }
 
 .drc-boot strong {
@@ -1205,7 +1208,7 @@
 }
 
 .drc-boot span {
-  color: #69746e;
+  color: #607067;
   font-size: 0.68rem;
 }
 

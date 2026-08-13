@@ -9,7 +9,7 @@ const displayDate = (value) => {
     : parsed.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 };
 const money = (value) => `GHS ${Number(value || 0).toLocaleString('en-GH', { maximumFractionDigits: 0 })}`;
-const PageHead = ({ right }) => <div className="drc-page-head"><div><span className="drc-eyebrow">Commercial control</span><h1>Budget and harvest returns</h1><p>Track planned versus actual spend, then calculate Grade A yield and sales revenue automatically.</p></div>{right}</div>;
+const PageHead = ({ right }) => <div className="drc-page-head drc-page-actions">{right}</div>;
 const PanelHead = ({ title, copy }) => <div className="drc-panel-head"><div><h2>{title}</h2><p>{copy}</p></div></div>;
 const FinanceRow = ({ label, value, icon: Icon }) => <div className="drc-finance-row"><Icon /><span>{label}</span><b>{value}</b></div>;
 const Empty = ({ title, copy }) => <div className="drc-empty"><CloudSun /><b>{title}</b><p>{copy}</p></div>;

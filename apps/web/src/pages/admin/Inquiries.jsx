@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, Clock3, Inbox, Mail, MessageSquareText, Phone, Search, UserRoundCheck } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
-import PageHeader from '@/components/shared/PageHeader';
 import StatusBadge from '@/components/shared/StatusBadge';
 import DataTable from '@/components/shared/DataTable';
 import { formatDateTime, timeAgo } from '@/components/shared/format';
@@ -95,7 +94,6 @@ export default function Inquiries() {
 
   return (
     <div>
-      <PageHeader title="Client Inquiries" description="Website messages, sales requests, export questions, support cases, and partnership opportunities." />
       {error && <div role="alert" className="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
 
       <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

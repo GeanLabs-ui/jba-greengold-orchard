@@ -123,7 +123,7 @@ export default function Sales() {
 
   return (
     <div>
-      <PageHeader title="Sales Management" description="Every successful website and staff order, invoice, payment, quotation, and return in one ledger.">
+      <PageHeader>
         <AdminCreateDialog title="New Invoice" description="Create an invoice and add it to Sales and Finance." buttonLabel="New Invoice" fields={invoiceFields} onCreate={createInvoice} onCreated={load} submitLabel="Create Invoice" />
       </PageHeader>
 

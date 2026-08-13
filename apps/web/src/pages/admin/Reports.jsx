@@ -63,7 +63,7 @@ export default function Reports() {
 
   return (
     <div>
-      <PageHeader title="Analytics & Reporting" description="Generate and export business reports.">
+      <PageHeader>
         <Button variant="outline" size="sm" onClick={() => downloadExcel()}><FileSpreadsheet className="mr-2 h-4 w-4" /> Export Excel</Button>
         <Button size="sm" className="gradient-mango text-white" onClick={() => downloadPdf()}><FileBarChart className="mr-2 h-4 w-4" /> Export PDF</Button>
       </PageHeader>

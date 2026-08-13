@@ -294,7 +294,7 @@ export default function ProductionCalendar() {
 
   return (
     <div>
-      <PageHeader title="Production Calendar" description="Schedule farm work, track completion, and keep Daily Routine, reminders, and company calendars aligned.">
+      <PageHeader>
         <Button variant="outline" size="sm" onClick={() => downloadICalendar(events, connected?.calendar_name)}><Download className="mr-2 h-4 w-4" />Export .ics</Button>
         <Button variant="outline" size="sm" onClick={() => setShowConnections(true)}><Link2 className="mr-2 h-4 w-4" />Calendar link</Button>
         <Button size="sm" onClick={() => startCreate()}><Plus className="mr-2 h-4 w-4" />Schedule activity</Button>

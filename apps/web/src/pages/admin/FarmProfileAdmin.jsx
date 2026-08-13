@@ -170,7 +170,7 @@ function BlockDecisionCard({ block, farm, canChangeStatus, onStatusChange }) {
   return (
     <article className="group relative flex min-h-full flex-col overflow-hidden rounded-xl border bg-card transition duration-200 hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-md">
       <Link
-        to={`/admin/farms/${farm.id}/blocks/${block.id}`}
+        to={`/admin/farm-daily-activities/activities/farms/${farm.id}/blocks/${block.id}`}
         className="absolute inset-0 z-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 focus-visible:ring-offset-2"
         aria-label={`Open ${block.name} profile to view or update details`}
       />
@@ -470,7 +470,7 @@ export default function FarmProfileAdmin() {
   return (
     <div className="pb-10">
       <Button variant="ghost" asChild className="-ml-3 mb-3">
-        <Link to="/admin/farms">
+        <Link to="/admin/farm-daily-activities/activities/farms">
           <ArrowLeft className="mr-2 h-4 w-4" />
           All farms
         </Link>

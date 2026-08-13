@@ -10,7 +10,6 @@ import {
   ShieldCheck,
   UserRoundCheck,
 } from 'lucide-react';
-import PageHeader from '@/components/shared/PageHeader';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { formatDate } from '@/components/shared/format';
 import { Button } from '@/components/ui/button';
@@ -84,11 +83,6 @@ export default function Applications() {
 
   return (
     <div>
-      <PageHeader
-        title="Job Applications ATS"
-        description="Track career applications, score resume fit, review uploads, and manage HR follow-up."
-      />
-
       <div className="mb-6 grid gap-4 sm:grid-cols-3">
         <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
           <Briefcase className="h-5 w-5 text-primary" />

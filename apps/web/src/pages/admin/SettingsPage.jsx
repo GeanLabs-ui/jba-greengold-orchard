@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Shield, Bell, Database, Globe } from 'lucide-react';
-import PageHeader from '@/components/shared/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
@@ -20,8 +19,6 @@ export default function SettingsPage() {
 
   return (
     <div>
-      <PageHeader title="System Settings" description="Configure platform settings, permissions, and integrations." />
-
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
           <div className="flex items-center gap-2"><Globe className="h-5 w-5 text-primary" /><h3 className="font-heading font-semibold">Company Information</h3></div>

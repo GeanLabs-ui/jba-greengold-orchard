@@ -19,6 +19,62 @@ const DEMO_ADMIN = Object.freeze({
   status: 'active',
 });
 
+const demoDate = (offset = 0, hour = 8, minute = 0) => {
+  const date = new Date();
+  date.setHours(hour, minute, 0, 0);
+  date.setDate(date.getDate() + offset);
+  return date;
+};
+const demoDateKey = (offset = 0) => demoDate(offset).toISOString().slice(0, 10);
+const demoDateTime = (offset = 0, hour = 8, minute = 0) => demoDate(offset, hour, minute).toISOString();
+
+const DEMO_DEPARTMENTS = [
+  { id: 'department_farm', name: 'Farm Operations', code: 'FARM', status: 'active' },
+  { id: 'department_logistics', name: 'Logistics', code: 'LOG', status: 'active' },
+  { id: 'department_sales', name: 'Sales & Marketing', code: 'SALES', status: 'active' },
+  { id: 'department_admin', name: 'Admin & Finance', code: 'ADMIN', status: 'active' },
+];
+
+const DEMO_EMPLOYEES = [
+  { id: 'employee_001', employee_code: 'EMP-001', first_name: 'Kofi', last_name: 'Boateng', full_name: 'Kofi Boateng', department_id: 'department_farm', department: 'Farm Operations', department_name: 'Farm Operations', role: 'Farm Manager', workspace_role: 'farm_manager', status: 'active', created_date: '2026-06-15T08:00:00.000Z' },
+  { id: 'employee_002', employee_code: 'EMP-002', first_name: 'Abena', last_name: 'Owusu', full_name: 'Abena Owusu', department_id: 'department_logistics', department: 'Logistics', department_name: 'Logistics', role: 'Dispatch Lead', workspace_role: 'logistics_officer', status: 'active', created_date: '2026-06-16T08:00:00.000Z' },
+  { id: 'employee_003', employee_code: 'EMP-003', first_name: 'Esther', last_name: 'Mensah', full_name: 'Esther Mensah', department_id: 'department_sales', department: 'Sales & Marketing', department_name: 'Sales & Marketing', role: 'Sales Officer', workspace_role: 'sales_officer', status: 'active', created_date: '2026-06-17T08:00:00.000Z' },
+  { id: 'employee_004', employee_code: 'EMP-004', first_name: 'Yaw', last_name: 'Boateng', full_name: 'Yaw Boateng', department_id: 'department_admin', department: 'Admin & Finance', department_name: 'Admin & Finance', role: 'Finance Officer', workspace_role: 'finance_officer', status: 'active', created_date: '2026-06-18T08:00:00.000Z' },
+];
+
+const DEMO_ATTENDANCE = Array.from({ length: 7 }, (_, dayIndex) => {
+  const offset = dayIndex - 6;
+  const statuses = [
+    ['present', 'present', 'late', 'present'],
+    ['present', 'present', 'present', 'absent'],
+    ['present', 'late', 'present', 'present'],
+    ['present', 'present', 'leave', 'present'],
+    ['late', 'present', 'present', 'present'],
+    ['present', 'present', 'present', 'absent'],
+    ['present', 'present', 'late', 'present'],
+  ][dayIndex];
+  return DEMO_EMPLOYEES.map((employee, employeeIndex) => {
+    const status = statuses[employeeIndex];
+    const attended = !['absent', 'leave'].includes(status);
+    return {
+      id: `attendance_${dayIndex}_${employeeIndex}`,
+      employee_id: employee.id,
+      employee_name: employee.full_name,
+      department_id: employee.department_id,
+      department_name: employee.department_name,
+      attendance_date: demoDateKey(offset),
+      check_in_at: attended ? demoDateTime(offset, status === 'late' ? 9 : 8, 2 + employeeIndex * 5) : '',
+      check_out_at: attended ? demoDateTime(offset, 17, employeeIndex * 4) : '',
+      status,
+      created_date: demoDateTime(offset, 17, 30),
+    };
+  });
+}).flat().concat([
+  { id: 'leave_upcoming_001', employee_id: 'employee_002', employee_name: 'Abena Owusu', department_id: 'department_logistics', department_name: 'Logistics', attendance_date: demoDateKey(5), status: 'leave', notes: 'Annual Leave', created_date: demoDateTime(0) },
+  { id: 'leave_upcoming_002', employee_id: 'employee_002', employee_name: 'Abena Owusu', department_id: 'department_logistics', department_name: 'Logistics', attendance_date: demoDateKey(6), status: 'leave', notes: 'Annual Leave', created_date: demoDateTime(0) },
+  { id: 'leave_upcoming_003', employee_id: 'employee_003', employee_name: 'Esther Mensah', department_id: 'department_sales', department_name: 'Sales & Marketing', attendance_date: demoDateKey(8), status: 'leave', notes: 'Personal Leave', created_date: demoDateTime(0) },
+]);
+
 const seedData = {
   Customer: [
     { id: 'customer_001', company_name: 'Golden Market Foods', email: 'orders@goldenmarket.example', phone: '+233 20 000 1000', status: 'active', created_date: '2026-07-18T10:00:00.000Z' },
@@ -49,16 +105,30 @@ const seedData = {
   Delivery: [
     { id: 'delivery_001', delivery_number: 'DEL-5001', customer_name: 'Golden Market Foods', vehicle_number: 'GT-4455-26', status: 'in_transit', delivery_date: '2026-07-29T08:00:00.000Z', created_date: '2026-07-29T08:00:00.000Z' },
   ],
-  Employee: [
-    { id: 'employee_001', employee_code: 'EMP-001', full_name: 'Kofi Boateng', department: 'Farm Operations', role: 'Farm Manager', status: 'active', created_date: '2026-06-15T08:00:00.000Z' },
-    { id: 'employee_002', employee_code: 'EMP-002', full_name: 'Abena Owusu', department: 'Logistics', role: 'Dispatch Lead', status: 'active', created_date: '2026-06-16T08:00:00.000Z' },
-  ],
+  Department: DEMO_DEPARTMENTS,
+  Employee: DEMO_EMPLOYEES,
+  Attendance: DEMO_ATTENDANCE,
   Inquiry: [],
   JobApplication: [],
 };
 
 const nowIso = () => new Date().toISOString();
 const createId = (prefix = 'item') => `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+
+const demoEmployeeCode = (joiningAt, uniquePart) => {
+  const parsed = new Date(joiningAt);
+  const date = Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+  const stamp = [
+    date.getUTCFullYear(),
+    String(date.getUTCMonth() + 1).padStart(2, '0'),
+    String(date.getUTCDate()).padStart(2, '0'),
+    '-',
+    String(date.getUTCHours()).padStart(2, '0'),
+    String(date.getUTCMinutes()).padStart(2, '0'),
+    String(date.getUTCSeconds()).padStart(2, '0'),
+  ].join('');
+  return `JBA-${stamp}-${uniquePart.slice(-4).toUpperCase()}`;
+};
 
 const readJson = (key, fallback) => {
   try {
@@ -115,16 +185,34 @@ const createEntityApi = (entityName) => ({
     const items = sortItems(readData()[entityName] || [], sortBy);
     return typeof limit === 'number' ? items.slice(0, limit) : items;
   },
+  async listAll(sortBy) {
+    const data = readData();
+    return sortItems([...(data[entityName] || [])], sortBy);
+  },
   async filter(query = {}, sortBy, limit = 100) {
     const items = sortItems((readData()[entityName] || []).filter((item) => matchesQuery(item, query)), sortBy);
     return typeof limit === 'number' ? items.slice(0, limit) : items;
   },
   async create(payload) {
     const data = readData();
-    const normalizedPayload = entityName === 'Inquiry'
+    const id = createId(entityName.toLowerCase());
+    const createdAt = nowIso();
+    let normalizedPayload = entityName === 'Inquiry'
       ? { status: 'new', source_page: 'contact', ...payload }
       : payload;
-    const record = { id: createId(entityName.toLowerCase()), created_date: nowIso(), updated_date: nowIso(), ...normalizedPayload };
+    if (entityName === 'Employee') {
+      const joiningAt = payload.joining_at || createdAt;
+      normalizedPayload = {
+        ...payload,
+        employee_code: demoEmployeeCode(joiningAt, id),
+        joining_at: joiningAt,
+        hire_date: payload.hire_date || joiningAt.slice(0, 10),
+        full_name: payload.full_name || `${payload.first_name || ''} ${payload.last_name || ''}`.trim(),
+        email: normalizeEmail(payload.email),
+        status: payload.status || 'active',
+      };
+    }
+    const record = { id, created_date: createdAt, updated_date: createdAt, ...normalizedPayload };
     data[entityName] = [record, ...(data[entityName] || [])];
     if (entityName === 'Inquiry') {
       const notification = {
@@ -169,6 +257,7 @@ const createEntityApi = (entityName) => ({
 const getSessionUser = () => readJson(SESSION_KEY, null);
 const setSessionUser = (user) => writeJson(SESSION_KEY, user);
 const clearSession = () => localStorage.removeItem(SESSION_KEY);
+const STAFF_INVITATIONS_KEY = 'mango_farm_demo_staff_invitations';
 
 const auth = {
   async me() {
@@ -351,10 +440,50 @@ const commerce = {
   },
 };
 
+const staff = {
+  async listInvitations() {
+    return { invitations: readJson(STAFF_INVITATIONS_KEY, []) };
+  },
+  async invite(payload) {
+    const invitations = readJson(STAFF_INVITATIONS_KEY, []);
+    const invitation = { id: createId('invite'), ...payload, page_access: payload.pageAccess || [], employee_id: payload.employeeId || null, created_at: nowIso(), expires_at: new Date(Date.now() + 86400000).toISOString() };
+    invitations.unshift(invitation);
+    writeJson(STAFF_INVITATIONS_KEY, invitations);
+    return { invitation };
+  },
+  async updateInvitation(id, payload) {
+    const invitations = readJson(STAFF_INVITATIONS_KEY, []);
+    const invitation = invitations.find((item) => item.id === id);
+    if (!invitation) throw new Error('Invitation not found');
+    Object.assign(invitation, payload, payload.pageAccess ? { page_access: payload.pageAccess } : {});
+    writeJson(STAFF_INVITATIONS_KEY, invitations);
+    return { invitation };
+  },
+  async listUsers() {
+    return { users: readJson(USERS_KEY, []).filter((item) => !['customer', 'user'].includes(item.role)) };
+  },
+  async updateUser(id, payload) {
+    const users = readJson(USERS_KEY, []);
+    const user = users.find((item) => item.id === id);
+    if (!user) throw new Error('Staff account not found');
+    Object.assign(user, payload, payload.pageAccess ? { page_access: payload.pageAccess } : {});
+    writeJson(USERS_KEY, users);
+    return { user };
+  },
+};
+
+const files = {
+  async upload(file) {
+    return { id: createId('file'), name: file.name, contentType: file.type, sizeBytes: file.size, url: URL.createObjectURL(file) };
+  },
+};
+
 export const demoBase44 = {
   auth,
   entities,
   commerce,
+  files,
+  staff,
   applications: {
     submit(formData) {
       return entities.JobApplication.create(Object.fromEntries(formData.entries()));

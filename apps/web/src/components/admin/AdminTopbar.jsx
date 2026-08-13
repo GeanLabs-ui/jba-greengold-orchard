@@ -8,15 +8,15 @@ import { base44 } from '@/api/base44Client';
 import { subscribeToDataChanges } from '@/lib/data-sync';
 import { timeAgo } from '@/components/shared/format';
 import { getSafeRedirectTarget } from '@/lib/safe-redirect';
+import { canAccessAdminPath, defaultAdminPath } from '@/lib/access-control';
 
 const adminDestinations = [
   ['Dashboard', '/admin', 'overview summary performance kpi'], ['CRM', '/admin/crm', 'customer contact'],
   ['Client inquiries', '/admin/inquiries', 'website messages leads contact support partnership'],
   ['Sales', '/admin/sales', 'invoice payment quotation return'], ['Orders', '/admin/orders', 'website fulfillment'],
   ['Inventory', '/admin/inventory', 'stock warehouse movement'], ['Logistics', '/admin/logistics', 'delivery vehicle dispatch'],
-  ['Harvests', '/admin/harvests', 'grade yield'],
   ['Production calendar', '/admin/calendar', 'schedule task reminder activity google outlook business calendar'],
-  ['Daily activities', '/admin/farm-daily-activities/dashboard', 'routine worker farm report'], ['Finance', '/admin/finance', 'expense revenue profit'],
+  ['Daily activities', '/admin/farm-daily-activities/activities/overview', 'routine worker farm report'], ['Finance', '/admin/finance', 'expense revenue profit'],
   ['Procurement', '/admin/procurement', 'supplier purchase order'], ['Export operations', '/admin/export-ops', 'shipment export'],
   ['Human resources', '/admin/hr', 'employee attendance'], ['Applications', '/admin/applications', 'career applicant'],
   ['Content', '/admin/content', 'website product news'], ['Documents', '/admin/documents', 'certificate notification'],
@@ -41,8 +41,11 @@ export default function AdminTopbar({ onMenuClick }) {
   const searchResults = useMemo(() => {
     const term = search.trim().toLowerCase();
     if (!term) return [];
-    return adminDestinations.filter(([label, _path, keywords]) => `${label} ${keywords}`.toLowerCase().includes(term)).slice(0, 6);
-  }, [search]);
+    return adminDestinations
+      .filter(([, path]) => canAccessAdminPath(user, path))
+      .filter(([label, _path, keywords]) => `${label} ${keywords}`.toLowerCase().includes(term))
+      .slice(0, 6);
+  }, [search, user]);
   const unread = notifications.filter((item) => !['read', 'archived'].includes(item.status)).length;
 
   const runSearch = (event) => {
@@ -57,11 +60,12 @@ export default function AdminTopbar({ onMenuClick }) {
     const safeDestination = typeof notification.destination === 'string' && !notification.destination.includes('\\')
       ? getSafeRedirectTarget(notification.destination, '')
       : '';
-    if (safeDestination.startsWith('/admin/')) navigate(safeDestination);
-    else if (notification.inquiry_id || notification.type === 'inquiry') navigate(`/admin/inquiries${notification.inquiry_id ? `?inquiry=${encodeURIComponent(notification.inquiry_id)}` : ''}`);
-    else if (notification.order_number || notification.type === 'order') navigate(`/admin/orders${notification.order_id ? `?order=${encodeURIComponent(notification.order_id)}` : ''}`);
-    else if (notification.invoice_number || notification.type === 'payment') navigate(`/admin/sales${notification.invoice_number ? `?invoice=${encodeURIComponent(notification.invoice_number)}` : ''}`);
-    else navigate('/admin/documents');
+    let destination = '/admin/documents';
+    if (safeDestination.startsWith('/admin/')) destination = safeDestination;
+    else if (notification.inquiry_id || notification.type === 'inquiry') destination = `/admin/inquiries${notification.inquiry_id ? `?inquiry=${encodeURIComponent(notification.inquiry_id)}` : ''}`;
+    else if (notification.order_number || notification.type === 'order') destination = `/admin/orders${notification.order_id ? `?order=${encodeURIComponent(notification.order_id)}` : ''}`;
+    else if (notification.invoice_number || notification.type === 'payment') destination = `/admin/sales${notification.invoice_number ? `?invoice=${encodeURIComponent(notification.invoice_number)}` : ''}`;
+    navigate(canAccessAdminPath(user, destination) ? destination : defaultAdminPath(user));
   };
 
   return (
@@ -85,7 +89,7 @@ export default function AdminTopbar({ onMenuClick }) {
             <div className="max-h-80 overflow-y-auto p-2">{notifications.length ? notifications.map((notification) => <button key={notification.id} type="button" onClick={() => openNotification(notification)} className={`block w-full rounded-md px-3 py-2.5 text-left hover:bg-muted ${notification.status === 'read' ? 'opacity-65' : ''}`}><span className="flex items-start justify-between gap-3"><span className="text-sm font-medium">{notification.title}</span>{notification.status !== 'read' && <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-primary" />}</span><span className="mt-1 block text-xs leading-5 text-muted-foreground">{notification.message}</span><span className="mt-1 block text-[11px] text-muted-foreground">{timeAgo(notification.created_date)}</span></button>) : <p className="px-3 py-8 text-center text-sm text-muted-foreground">No notifications yet.</p>}</div>
           </div>}
         </div>
-        <div className="flex items-center gap-2"><div className="flex h-9 w-9 items-center justify-center rounded-full gradient-mango text-sm font-semibold text-white">{(user?.full_name || user?.email || 'A')[0].toUpperCase()}</div><div className="hidden md:block"><p className="text-sm font-medium leading-tight">{user?.full_name || user?.email || 'Admin User'}</p><p className="text-xs capitalize text-muted-foreground">{String(user?.role || 'admin').replaceAll('_', ' ')}</p></div></div>
+        <div className="flex items-center gap-2"><div className="admin-avatar flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold">{(user?.full_name || user?.email || 'A')[0].toUpperCase()}</div><div className="hidden md:block"><p className="text-sm font-medium leading-tight">{user?.full_name || user?.email || 'Admin User'}</p><p className="text-xs capitalize text-muted-foreground">{String(user?.role || 'admin').replaceAll('_', ' ')}</p></div></div>
       </div>
     </header>
   );

@@ -37,7 +37,7 @@ export default function FarmDailyMasterSchedule() {
       setProjects(projectRows.filter((item) => item.programme_code === PROGRAMME_CODE));
       setSubtasks(taskRows.filter((item) => item.parent_project_id && !item.archived_at));
     } catch (error) {
-      toast({ title: 'Master Schedule could not be loaded', description: error.message, variant: 'destructive' });
+      toast({ title: 'Main Activities could not be loaded', description: error.message, variant: 'destructive' });
     } finally {
       if (!silent) setLoading(false);
     }
@@ -132,7 +132,7 @@ export default function FarmDailyMasterSchedule() {
     }
   };
 
-  if (loading && !projects.length) return <div className="flex min-h-64 items-center justify-center gap-3 text-muted-foreground"><Loader2 className="h-5 w-5 animate-spin" />Loading Master Schedule…</div>;
+  if (loading && !projects.length) return <div className="flex min-h-64 items-center justify-center gap-3 text-muted-foreground"><Loader2 className="h-5 w-5 animate-spin" />Loading Main Activities…</div>;
 
   return <div className="drc-page drc-embedded-schedule"><MasterScheduleView embedded busyKey={busyKey} createMasterTask={createMasterTask} filteredScheduleProjects={filteredScheduleProjects} filteredSummary={filteredSummary} newMasterTask={newMasterTask} scheduleFilter={scheduleFilter} setNewMasterTask={setNewMasterTask} setScheduleFilter={setScheduleFilter} setShowNewMasterTask={setShowNewMasterTask} showNewMasterTask={showNewMasterTask} taskBasePath={taskBasePath} toggleProjectEnabled={toggleProjectEnabled} /></div>;
 }

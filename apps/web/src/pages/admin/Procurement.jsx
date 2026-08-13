@@ -53,7 +53,7 @@ export default function Procurement() {
 
   return (
     <div>
-      <PageHeader title="Procurement & Suppliers" description="Manage suppliers, purchase orders, and procurement workflows.">
+      <PageHeader>
         <AdminCreateDialog
           title="New Purchase Order"
           description="Create a supplier purchase order."

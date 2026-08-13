@@ -32,7 +32,7 @@ const matchesQuery = (item, query = {}) =>
     return item[key] === value;
   });
 
-const parseResponse = async (response) => {
+const parsePayload = async (response) => {
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
     const error = new Error(payload.error?.message || "Request failed");
@@ -40,8 +40,10 @@ const parseResponse = async (response) => {
     error.code = payload.error?.code;
     throw error;
   }
-  return payload.data;
+  return payload;
 };
+
+const parseResponse = async (response) => (await parsePayload(response)).data;
 
 const apiUnavailableError = (cause) => {
   const error = new Error(
@@ -68,16 +70,17 @@ const refreshCsrf = async () => {
 };
 
 const request = async (path, options = {}) => {
-  const method = (options.method || "GET").toUpperCase();
-  const headers = new Headers(options.headers || {});
+  const { includeMeta = false, publicRequest = false, ...fetchOptions } = options;
+  const method = (fetchOptions.method || "GET").toUpperCase();
+  const headers = new Headers(fetchOptions.headers || {});
   headers.set("Accept", "application/json");
-  const isFormData = options.body instanceof FormData;
-  if (options.body && !isFormData)
+  const isFormData = fetchOptions.body instanceof FormData;
+  if (fetchOptions.body && !isFormData)
     headers.set("Content-Type", "application/json");
   if (
     !["GET", "HEAD", "OPTIONS"].includes(method) &&
     !csrfToken &&
-    !options.publicRequest
+    !publicRequest
   )
     await refreshCsrf();
   if (csrfToken && !["GET", "HEAD", "OPTIONS"].includes(method))
@@ -85,19 +88,20 @@ const request = async (path, options = {}) => {
   let response;
   try {
     response = await fetch(`${API_BASE_URL}${path}`, {
-      ...options,
+      ...fetchOptions,
       method,
       headers,
       credentials: "include",
       body:
-        options.body && !isFormData
-          ? JSON.stringify(options.body)
-          : options.body,
+        fetchOptions.body && !isFormData
+          ? JSON.stringify(fetchOptions.body)
+          : fetchOptions.body,
     });
   } catch (cause) {
     throw apiUnavailableError(cause);
   }
-  return parseResponse(response);
+  const payload = await parsePayload(response);
+  return includeMeta ? payload : payload.data;
 };
 
 const createEntityApi = (entityName) => ({
@@ -119,6 +123,38 @@ const createEntityApi = (entityName) => ({
     const items = await request(
       `/entities/${encodeURIComponent(entityName)}?${params}`,
     );
+    return sortItems(items, sortBy);
+  },
+  async listAll(sortBy, query = {}) {
+    const pageSize = 250;
+    let offset = 0;
+    const items = [];
+    let hasMore = true;
+    while (hasMore) {
+      const params = new URLSearchParams({
+        limit: String(pageSize),
+        offset: String(offset),
+      });
+      Object.entries(query).forEach(([key, value]) => {
+        if (
+          value !== undefined &&
+          value !== null &&
+          value !== "" &&
+          !Array.isArray(value) &&
+          typeof value !== "object"
+        ) {
+          params.set(key, String(value));
+        }
+      });
+      const payload = await request(
+        `/entities/${encodeURIComponent(entityName)}?${params}`,
+        { includeMeta: true },
+      );
+      const page = Array.isArray(payload.data) ? payload.data : [];
+      items.push(...page);
+      hasMore = Boolean(payload.pagination?.hasMore) && page.length > 0;
+      offset += page.length;
+    }
     return sortItems(items, sortBy);
   },
   async filter(query = {}, sortBy, limit = 100) {
@@ -259,6 +295,15 @@ const staff = {
   invite(payload) {
     return request('/auth/staff-invitations', { method: 'POST', body: payload });
   },
+  updateInvitation(id, payload) {
+    return request(`/auth/staff-invitations/${encodeURIComponent(id)}`, { method: 'PATCH', body: payload });
+  },
+  listUsers() {
+    return request('/auth/staff-users');
+  },
+  updateUser(id, payload) {
+    return request(`/auth/staff-users/${encodeURIComponent(id)}`, { method: 'PATCH', body: payload });
+  },
   acceptInvitation({ token, credential }) {
     return request('/auth/staff-invitations/accept', {
       method: 'POST',
@@ -312,25 +357,33 @@ const farms = {
       `/farms/${encodeURIComponent(id)}${params.size ? `?${params}` : ""}`,
     );
   },
-  create(payload) {
-    return request("/farms", { method: "POST", body: payload });
+  async create(payload) {
+    const record = await request("/farms", { method: "POST", body: payload });
+    publishDataChange("Farm", "create", record?.id);
+    return record;
   },
-  update(id, payload) {
-    return request(`/farms/${encodeURIComponent(id)}`, {
+  async update(id, payload) {
+    const record = await request(`/farms/${encodeURIComponent(id)}`, {
       method: "PATCH",
       body: payload,
     });
+    publishDataChange("Farm", "update", id);
+    return record;
   },
-  deactivate(id, payload) {
-    return request(`/farms/${encodeURIComponent(id)}/deactivate`, {
+  async deactivate(id, payload) {
+    const record = await request(`/farms/${encodeURIComponent(id)}/deactivate`, {
       method: "POST",
       body: payload,
     });
+    publishDataChange("Farm", "deactivate", id);
+    return record;
   },
-  reactivate(id) {
-    return request(`/farms/${encodeURIComponent(id)}/reactivate`, {
+  async reactivate(id) {
+    const record = await request(`/farms/${encodeURIComponent(id)}/reactivate`, {
       method: "POST",
     });
+    publishDataChange("Farm", "reactivate", id);
+    return record;
   },
   history(id) {
     return request(`/farms/${encodeURIComponent(id)}/history`);
@@ -341,11 +394,13 @@ const farms = {
       `/farms/${encodeURIComponent(id)}/blocks${params.size ? `?${params}` : ""}`,
     );
   },
-  createBlock(id, payload) {
-    return request(`/farms/${encodeURIComponent(id)}/blocks`, {
+  async createBlock(id, payload) {
+    const record = await request(`/farms/${encodeURIComponent(id)}/blocks`, {
       method: "POST",
       body: payload,
     });
+    publishDataChange("FarmBlock", "create", record?.id);
+    return record;
   },
   getBlock(id, filters = {}) {
     const params = new URLSearchParams();
@@ -357,37 +412,47 @@ const farms = {
       `/blocks/${encodeURIComponent(id)}${params.size ? `?${params}` : ""}`,
     );
   },
-  updateBlock(id, payload) {
-    return request(`/blocks/${encodeURIComponent(id)}`, {
+  async updateBlock(id, payload) {
+    const record = await request(`/blocks/${encodeURIComponent(id)}`, {
       method: "PATCH",
       body: payload,
     });
+    publishDataChange("FarmBlock", "update", id);
+    return record;
   },
-  deactivateBlock(id, payload) {
-    return request(`/blocks/${encodeURIComponent(id)}/deactivate`, {
+  async deactivateBlock(id, payload) {
+    const record = await request(`/blocks/${encodeURIComponent(id)}/deactivate`, {
       method: "POST",
       body: payload,
     });
+    publishDataChange("FarmBlock", "deactivate", id);
+    return record;
   },
-  reactivateBlock(id) {
-    return request(`/blocks/${encodeURIComponent(id)}/reactivate`, {
+  async reactivateBlock(id) {
+    const record = await request(`/blocks/${encodeURIComponent(id)}/reactivate`, {
       method: "POST",
     });
+    publishDataChange("FarmBlock", "reactivate", id);
+    return record;
   },
   blockHistory(id) {
     return request(`/blocks/${encodeURIComponent(id)}/history`);
   },
-  addInventory(id, payload) {
-    return request(`/blocks/${encodeURIComponent(id)}/inventory`, {
+  async addInventory(id, payload) {
+    const record = await request(`/blocks/${encodeURIComponent(id)}/inventory`, {
       method: "POST",
       body: payload,
     });
+    publishDataChange("FarmBlock", "inventory-create", id);
+    return record;
   },
-  updateInventory(id, payload) {
-    return request(`/block-inventory/${encodeURIComponent(id)}`, {
+  async updateInventory(id, payload) {
+    const record = await request(`/block-inventory/${encodeURIComponent(id)}`, {
       method: "PATCH",
       body: payload,
     });
+    publishDataChange("FarmBlock", "inventory-update", record?.block_id || id);
+    return record;
   },
   addActivity(id, payload) {
     return request(`/blocks/${encodeURIComponent(id)}/activities`, {
@@ -428,8 +493,10 @@ const farms = {
   mergeImpact(id) {
     return request(`/blocks/merge/${encodeURIComponent(id)}/impact`);
   },
-  mergeBlocks(payload) {
-    return request("/blocks/merge", { method: "POST", body: payload });
+  async mergeBlocks(payload) {
+    const record = await request("/blocks/merge", { method: "POST", body: payload });
+    publishDataChange("FarmBlock", "merge", record?.id);
+    return record;
   },
   cropVarieties() {
     return request("/crop-varieties");

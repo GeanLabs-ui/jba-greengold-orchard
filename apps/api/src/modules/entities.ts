@@ -13,6 +13,7 @@ import {
   listCanonicalFarmEntity,
   updateCanonicalFarmEntity,
 } from "./farm-entity-compat.js";
+import { generateEmployeeCode } from "./staff-identity.js";
 
 const ENTITY_NAMES = new Set([
   "Product",
@@ -57,6 +58,7 @@ const ENTITY_NAMES = new Set([
   "FarmNote",
   "FarmProject",
   "Delivery",
+  "Department",
   "Employee",
   "Warehouse",
   "StockMovement",
@@ -157,6 +159,7 @@ const ROLE_READ_ENTITIES: Partial<Record<AuthUser["role"], Set<string>>> = {
     "QualityCheck",
     "WasteLoss",
     "WeatherLog",
+    "FarmExpense",
     "DailyReport",
     "FarmNote",
     "Notification",
@@ -194,6 +197,7 @@ const ROLE_READ_ENTITIES: Partial<Record<AuthUser["role"], Set<string>>> = {
     "CustomerContract",
   ]),
   hr_officer: new Set([
+    "Department",
     "Employee",
     "Worker",
     "Attendance",
@@ -254,6 +258,7 @@ const ROLE_WRITE_ENTITIES: Partial<Record<AuthUser["role"], Set<string>>> = {
     "QualityCheck",
     "WasteLoss",
     "WeatherLog",
+    "FarmExpense",
     "DailyReport",
     "Notification",
     "StockMovement",
@@ -266,6 +271,7 @@ const ROLE_WRITE_ENTITIES: Partial<Record<AuthUser["role"], Set<string>>> = {
   quality_officer: ROLE_READ_ENTITIES.quality_officer,
   finance_officer: ROLE_READ_ENTITIES.finance_officer,
   hr_officer: new Set([
+    "Department",
     "Employee",
     "Worker",
     "Attendance",
@@ -298,12 +304,14 @@ function canRead(
   if (publicAccess) return true;
   if (!user) return false;
   if (isAdmin(user)) return true;
+  if (["Department", "Employee"].includes(name) && user.pageAccess?.includes("hr")) return true;
   if (user.role === "customer") return CUSTOMER_READ.has(name);
   return ROLE_READ_ENTITIES[user.role]?.has(name) ?? false;
 }
 
 function canWrite(user: AuthUser | null, name: string): boolean {
   if (!user) return false;
+  if (["Department", "Employee"].includes(name)) return ["super_admin", "hr_officer"].includes(user.role);
   return isAdmin(user) || (ROLE_WRITE_ENTITIES[user.role]?.has(name) ?? false);
 }
 
@@ -505,9 +513,42 @@ router.post("/:entity", async (c) => {
     payload.source_page =
       typeof payload.source_page === "string" ? payload.source_page : "contact";
   }
+  if (name === "Employee") {
+    const joiningAt = typeof payload.joining_at === "string" && payload.joining_at
+      ? payload.joining_at
+      : new Date().toISOString();
+    const firstName = typeof payload.first_name === "string" ? payload.first_name.trim() : "";
+    const lastName = typeof payload.last_name === "string" ? payload.last_name.trim() : "";
+    payload.employee_code = generateEmployeeCode(joiningAt);
+    payload.joining_at = joiningAt;
+    payload.hire_date = typeof payload.hire_date === "string" && payload.hire_date
+      ? payload.hire_date
+      : joiningAt.slice(0, 10);
+    payload.full_name = typeof payload.full_name === "string" && payload.full_name.trim()
+      ? payload.full_name.trim()
+      : `${firstName} ${lastName}`.trim();
+    payload.email = typeof payload.email === "string" ? payload.email.trim().toLowerCase() : "";
+    payload.status = typeof payload.status === "string" ? payload.status : "active";
+  }
 
   const sql = createDatabase(c.env);
   try {
+    if (name === "Employee" && typeof payload.email === "string" && payload.email) {
+      const duplicates = await sql<{ id: string }[]>`
+        SELECT id FROM entity_records
+        WHERE entity_name = 'Employee' AND lower(data->>'email') = ${payload.email}
+        LIMIT 1
+      `;
+      if (duplicates[0]) return c.json({ error: { code: "EMPLOYEE_EXISTS", message: "An employee with this Google email already exists" }, requestId: c.get("requestId") }, 409);
+    }
+    if (name === "Department" && typeof payload.code === "string" && payload.code) {
+      const duplicates = await sql<{ id: string }[]>`
+        SELECT id FROM entity_records
+        WHERE entity_name = 'Department' AND upper(data->>'code') = ${payload.code.toUpperCase()}
+        LIMIT 1
+      `;
+      if (duplicates[0]) return c.json({ error: { code: "DEPARTMENT_EXISTS", message: "A department with this code already exists" }, requestId: c.get("requestId") }, 409);
+    }
     if (PUBLIC_CREATE.has(name)) {
       const rate = await checkRateLimit(
         sql,
