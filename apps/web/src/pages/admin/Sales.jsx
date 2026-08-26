@@ -171,7 +171,8 @@ export default function Sales() {
 }
 
 function Summary({ icon: Icon, label, value, tone = '' }) {
-  return <div className="rounded-xl border border-border bg-card p-5 shadow-sm"><div className="flex items-center gap-2 text-sm text-muted-foreground"><Icon className="h-4 w-4" />{label}</div><p className={`mt-2 font-heading text-2xl font-bold ${tone}`}>{value}</p></div>;
+  const semanticTone = /revenue|sales/i.test(label) ? 'text-blue-600' : tone;
+  return <div className="rounded-xl border border-border bg-card p-5 shadow-sm"><div className={`flex items-center gap-2 text-sm ${semanticTone || 'text-muted-foreground'}`}><Icon className="h-4 w-4" />{label}</div><p className={`mt-2 font-heading text-2xl font-bold ${semanticTone}`}>{value}</p></div>;
 }
 
 function SalesOrdersTable({ orders, invoiceByOrder, loading }) {
@@ -180,7 +181,7 @@ function SalesOrdersTable({ orders, invoiceByOrder, loading }) {
   return (
     <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
       <table className="w-full min-w-[1000px] text-sm"><thead><tr className="border-b bg-muted/50 text-left text-muted-foreground">
-        <th className="px-4 py-3">Order</th><th className="px-4 py-3">Customer & contact</th><th className="px-4 py-3">Items</th><th className="px-4 py-3">Source</th><th className="px-4 py-3">Payment</th><th className="px-4 py-3 text-right">Total</th><th className="px-4 py-3">Status</th>
+        <th className="px-4 py-3">Order</th><th className="px-4 py-3">Customer & contact</th><th className="px-4 py-3">Items</th><th className="px-4 py-3">Source</th><th className="px-4 py-3">Payment</th><th className="px-4 py-3 text-right text-blue-600">Revenue</th><th className="px-4 py-3">Status</th>
       </tr></thead><tbody className="divide-y divide-border">{orders.map((order) => {
         const invoice = invoiceByOrder.get(order.order_number);
         return <tr key={order.id} className="align-top hover:bg-muted/20">
@@ -188,7 +189,7 @@ function SalesOrdersTable({ orders, invoiceByOrder, loading }) {
           <td className="px-4 py-3"><p className="font-medium">{order.customer_name}</p><p className="mt-1 text-xs text-muted-foreground">{order.contact_email || order.customer_email || 'No email'}</p><p className="text-xs text-muted-foreground">{order.contact_phone || 'No phone'}</p></td>
           <td className="max-w-xs px-4 py-3">{order.items?.length ? order.items.map((item) => <p key={`${order.id}-${item.product_id}`} className="text-xs"><span className="font-medium">{item.product_name}</span> × {item.quantity}</p>) : <span className="text-muted-foreground">{order.item_count || 0} items</span>}</td>
           <td className="px-4 py-3 capitalize">{humanize(order.source)}</td><td className="px-4 py-3"><StatusBadge status={order.payment_status || invoice?.status || 'pending'} /><p className="mt-1 text-xs capitalize text-muted-foreground">{humanize(order.payment_method)}</p></td>
-          <td className="px-4 py-3 text-right font-semibold">{formatCurrency(order.total_amount)}</td><td className="px-4 py-3"><StatusBadge status={order.status} /></td>
+          <td className="px-4 py-3 text-right font-semibold text-blue-600">{formatCurrency(order.total_amount)}</td><td className="px-4 py-3"><StatusBadge status={order.status} /></td>
         </tr>;
       })}</tbody></table>
     </div>
@@ -199,5 +200,6 @@ function humanize(value) { return String(value || '—').replaceAll('_', ' '); }
 function Empty() { return <div className="rounded-xl border border-border bg-card p-12 text-center text-muted-foreground">No records found.</div>; }
 function DataTable({ items, columns }) {
   if (!items?.length) return <Empty />;
-  return <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm"><table className="w-full min-w-[760px] text-sm"><thead><tr className="border-b bg-muted/50">{columns.map((column) => <th key={column.key} className="px-4 py-3 text-left font-semibold text-muted-foreground">{column.label}</th>)}</tr></thead><tbody className="divide-y divide-border">{items.map((item) => <tr key={item.id} className="hover:bg-muted/30">{columns.map((column) => { const value = item[column.key]; return <td key={column.key} className="px-4 py-3">{column.render ? column.render(value, item) : column.format ? column.format(value) : value || '—'}</td>; })}</tr>)}</tbody></table></div>;
+  const toneFor = (column) => /total|amount|balance|revenue|sales/i.test(`${column.label} ${column.key}`) ? 'text-blue-600' : 'text-muted-foreground';
+  return <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm"><table className="w-full min-w-[760px] text-sm"><thead><tr className="border-b bg-muted/50">{columns.map((column) => <th key={column.key} className={`px-4 py-3 text-left font-semibold ${toneFor(column)}`}>{column.label}</th>)}</tr></thead><tbody className="divide-y divide-border">{items.map((item) => <tr key={item.id} className="hover:bg-muted/30">{columns.map((column) => { const value = item[column.key]; const semantic = /total|amount|balance|revenue|sales/i.test(`${column.label} ${column.key}`) ? 'text-blue-600 font-semibold' : ''; return <td key={column.key} className={`px-4 py-3 ${semantic}`}>{column.render ? column.render(value, item) : column.format ? column.format(value) : value || '—'}</td>; })}</tr>)}</tbody></table></div>;
 }

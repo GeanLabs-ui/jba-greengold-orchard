@@ -83,13 +83,14 @@ const Detail = ({ label, value }) => (
 );
 
 function Metric({ icon: Icon, label, value, detail }) {
+  const isYield = /yield/i.test(label);
   return (
     <div className="min-w-0 px-4 py-4 sm:px-5">
       <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
         <Icon className="h-4 w-4 text-emerald-700" />
         {label}
       </div>
-      <p className="mt-2 truncate font-heading text-2xl font-semibold tabular-nums">
+      <p className={`mt-2 truncate font-heading text-2xl font-semibold tabular-nums ${isYield ? 'text-emerald-700' : ''}`}>
         {value}
       </p>
       <p className="mt-1 truncate text-xs text-muted-foreground">{detail}</p>

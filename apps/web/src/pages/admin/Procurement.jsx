@@ -81,7 +81,7 @@ export default function Procurement() {
               { key: 'supplier_name', label: 'Supplier' },
               { key: 'order_date', label: 'Date', format: formatDate },
               { key: 'expected_delivery_date', label: 'Expected', format: formatDate },
-              { key: 'total_amount', label: 'Total', align: 'right', format: (v) => formatCurrency(v) },
+              { key: 'total_amount', label: 'Total Cost', semantic: 'cost', align: 'right', format: (v) => formatCurrency(v) },
               { key: 'status', label: 'Status', render: (v) => <StatusBadge status={v} /> },
             ]} />
           )}

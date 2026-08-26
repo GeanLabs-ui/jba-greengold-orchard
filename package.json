@@ -9,7 +9,7 @@
     "dev": "npm run dev:all",
     "predev:all": "npm run db:migrate",
     "dev:all": "concurrently --kill-others-on-fail --names web,api --prefix-colors cyan,green \"npm run dev:web\" \"npm run dev:api\"",
-    "dev:web": "npm run dev -w apps/web",
+    "dev:web": "npm run dev -w apps/web -- --host 127.0.0.1",
     "build": "npm run build:web && npm run typecheck:api",
     "build:web": "npm run build -w apps/web",
     "lint": "npm run lint:web",

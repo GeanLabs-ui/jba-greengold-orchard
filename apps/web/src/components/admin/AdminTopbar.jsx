@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Bell, Menu, Search } from 'lucide-react';
+import { Bell, Menu, RefreshCw, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -54,6 +54,7 @@ export default function AdminTopbar({ onMenuClick }) {
     navigate(searchResults[0][1]);
     setSearch('');
   };
+  const refreshCurrentPage = () => window.location.reload();
   const openNotification = async (notification) => {
     setNotifOpen(false);
     if (notification.status !== 'read') await base44.entities.Notification.update(notification.id, { status: 'read', read_date: new Date().toISOString() }).catch(() => {});
@@ -80,6 +81,9 @@ export default function AdminTopbar({ onMenuClick }) {
       </form>
 
       <div className="ml-auto flex items-center gap-3">
+        <Button variant="ghost" size="icon" onClick={refreshCurrentPage} aria-label="Refresh current page" title="Refresh current page">
+          <RefreshCw className="h-5 w-5" />
+        </Button>
         <div className="relative">
           <Button variant="ghost" size="icon" onClick={() => setNotifOpen((open) => !open)} aria-label={`Notifications${unread ? `, ${unread} unread` : ''}`}>
             <Bell className="h-5 w-5" />{unread > 0 && <span className="absolute right-1 top-1 min-w-4 rounded-full bg-destructive px-1 text-[10px] font-bold leading-4 text-white">{unread > 9 ? '9+' : unread}</span>}

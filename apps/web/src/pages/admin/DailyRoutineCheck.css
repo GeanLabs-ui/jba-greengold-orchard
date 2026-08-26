@@ -1055,6 +1055,15 @@
   width: 7rem;
 }
 
+.drc-cost { color: var(--drc-red) !important; font-weight: 700; }
+.drc-revenue { color: #2563eb !important; font-weight: 700; }
+.drc-yield { color: #198f3c !important; font-weight: 700; }
+.drc-cost-table th:not(:first-child) { color: var(--drc-red); }
+.drc-harvest-panel .drc-table th:nth-child(5), .drc-harvest-panel .drc-table th:nth-child(6), .drc-harvest-panel .drc-table th:nth-child(7) { color: #198f3c; }
+.drc-harvest-panel .drc-table th:nth-child(9) { color: #2563eb; }
+.drc-finance-row.drc-cost svg, .drc-finance-row.drc-cost b { color: #fda4af; }
+.drc-finance-row.drc-revenue svg, .drc-finance-row.drc-revenue b { color: #93c5fd; }
+.drc-finance-row.drc-yield svg, .drc-finance-row.drc-yield b { color: #86efac; }
 .drc-table .positive { color: #2eb857; }
 .drc-table .negative { color: var(--drc-red); }
 

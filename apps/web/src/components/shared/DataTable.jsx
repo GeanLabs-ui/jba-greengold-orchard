@@ -1,5 +1,13 @@
 import React from 'react';
 
+const semanticTone = (column) => {
+  const text = `${column.semantic || ''} ${column.label || ''} ${column.key || ''}`.toLowerCase();
+  if (/(cost|expense)/.test(text)) return 'text-rose-600';
+  if (/yield/.test(text)) return 'text-emerald-700';
+  if (/(revenue|sales)/.test(text)) return 'text-blue-600';
+  return '';
+};
+
 export default function DataTable({
   items,
   columns,
@@ -22,7 +30,7 @@ export default function DataTable({
         <thead>
           <tr className="border-b border-border bg-muted/50">
             {columns.map((col) => (
-              <th key={col.key} className={`px-4 py-3 font-semibold text-muted-foreground ${col.align === 'right' ? 'text-right' : 'text-left'}`}>
+              <th key={col.key} className={`px-4 py-3 font-semibold ${semanticTone(col) || 'text-muted-foreground'} ${col.align === 'right' ? 'text-right' : 'text-left'}`}>
                 {col.label}
               </th>
             ))}
@@ -39,7 +47,7 @@ export default function DataTable({
               {columns.map((col) => {
                 const val = item[col.key];
                 return (
-                  <td key={col.key} className={`px-4 py-3 ${col.align === 'right' ? 'text-right' : ''}`}>
+                  <td key={col.key} className={`px-4 py-3 ${semanticTone(col)} ${col.align === 'right' ? 'text-right' : ''}`}>
                     {col.render ? col.render(val, item) : col.format ? col.format(val) : val || '—'}
                   </td>
                 );

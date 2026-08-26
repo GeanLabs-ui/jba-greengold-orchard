@@ -72,7 +72,7 @@ export default function ExportOps() {
           { key: 'destination_country', label: 'Destination' },
           { key: 'incoterm', label: 'Incoterm' },
           { key: 'shipment_date', label: 'Shipment Date', format: formatDate },
-          { key: 'total_amount', label: 'Value', align: 'right', format: (v) => formatCurrency(v) },
+          { key: 'total_amount', label: 'Revenue', semantic: 'revenue', align: 'right', format: (v) => formatCurrency(v) },
           { key: 'status', label: 'Status', render: (v) => <StatusBadge status={v} /> },
         ]} />
       )}

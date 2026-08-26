@@ -1,188 +1,333 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Banknote, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
-import PageHeader from '@/components/shared/PageHeader';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Banknote, CalendarDays, Filter, MapPin, RotateCcw, TrendingDown, TrendingUp, Trash2, Wallet } from 'lucide-react';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { formatCurrency, formatDate } from '@/components/shared/format';
 import DataTable from '@/components/shared/DataTable';
 import MetricCard from '@/components/shared/MetricCard';
-import AdminCreateDialog from '@/components/admin/AdminCreateDialog';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/use-toast';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { base44 } from '@/api/base44Client';
 import { subscribeToDataChanges } from '@/lib/data-sync';
+import { useAuth } from '@/lib/AuthContext';
+import {
+  activityExpenseRows,
+  buildMonthlyFinanceData,
+  matchesDateSelection,
+  matchesFarmSelection,
+  outstandingWebsiteInvoices,
+  sumAmounts,
+  websiteSales,
+} from '@/lib/finance-data';
 
-const expenseFields = [
-  { name: 'category', label: 'Category', required: true },
-  { name: 'vendor_name', label: 'Vendor' },
-  { name: 'expense_date', label: 'Expense Date', type: 'date', required: true },
-  { name: 'amount', label: 'Amount', type: 'number', required: true },
-  {
-    name: 'status',
-    label: 'Status',
-    type: 'select',
-    defaultValue: 'pending',
-    options: [
-      { value: 'pending', label: 'Pending' },
-      { value: 'approved', label: 'Approved' },
-      { value: 'paid', label: 'Paid' },
-    ],
-  },
-];
+const canClearActivityCosts = (user) => (
+  ['super_admin', 'admin', 'farm_manager'].includes(String(user?.role || '').trim().toLowerCase())
+);
+
+const yearOptions = Array.from({ length: 15 }, (_, index) => 2026 + index);
+const today = new Date();
+const initialMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+const initialYear = String(today.getFullYear());
+
+const dateValue = (record, fields) => fields.map((field) => record?.[field]).find(Boolean);
+
+const chartWindow = (selection, sales, expenses) => {
+  if (selection.mode === 'month' && selection.month) {
+    const [year, month] = selection.month.split('-').map(Number);
+    return { anchor: new Date(year, month - 1, 1), months: 1 };
+  }
+  if (selection.mode === 'year' && selection.year) {
+    return { anchor: new Date(Number(selection.year), 11, 1), months: 12 };
+  }
+
+  const recordDates = [
+    ...sales.map((record) => dateValue(record, ['order_date', 'created_date'])),
+    ...expenses.map((record) => dateValue(record, ['expense_date', 'created_date'])),
+  ].map((value) => new Date(value)).filter((date) => !Number.isNaN(date.getTime()));
+  const customStart = selection.mode === 'custom' && selection.start ? new Date(`${selection.start}T00:00:00`) : null;
+  const customEnd = selection.mode === 'custom' && selection.end ? new Date(`${selection.end}T23:59:59`) : null;
+  const start = customStart || (recordDates.length ? new Date(Math.min(...recordDates)) : today);
+  const end = customEnd || (recordDates.length ? new Date(Math.max(...recordDates)) : today);
+  const span = ((end.getFullYear() - start.getFullYear()) * 12) + end.getMonth() - start.getMonth() + 1;
+  return { anchor: end, months: Math.min(24, Math.max(1, span)) };
+};
 
 export default function Finance() {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [activities, setActivities] = useState([]);
+  const [orders, setOrders] = useState([]);
   const [invoices, setInvoices] = useState([]);
-  const [payments, setPayments] = useState([]);
-  const [expenses, setExpenses] = useState([]);
-  const [financeRecords, setFinanceRecords] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState('');
+  const [farmFilter, setFarmFilter] = useState('all');
+  const [dateMode, setDateMode] = useState('all');
+  const [monthFilter, setMonthFilter] = useState(initialMonth);
+  const [yearFilter, setYearFilter] = useState(initialYear);
+  const [customStart, setCustomStart] = useState('');
+  const [customEnd, setCustomEnd] = useState('');
 
-  const load = () => {
-    setLoading(true);
-    Promise.all([
-      base44.entities.Invoice.list('-invoice_date', 50),
-      base44.entities.Payment.list('-payment_date', 50),
-      base44.entities.Expense.list('-expense_date', 50),
-      base44.entities.FarmExpense.list('-expense_date', 250),
-      base44.entities.FarmFinanceRecord.list('-record_date', 250),
-    ]).then(([invs, pays, exps, farmExps, records]) => {
-      setInvoices(invs || []);
-      setPayments(pays || []);
-      setExpenses([
-        ...(exps || []),
-        ...(farmExps || []).map((expense) => ({
-          ...expense,
-          expense_number: expense.expense_number || expense.expense_code,
-          vendor_name: expense.vendor_name || expense.vendor,
-        })),
-      ]);
-      setFinanceRecords(records || []);
-      setLoading(false);
-    }).catch(() => setLoading(false));
-  };
+  const load = useCallback((showLoading = true) => {
+    if (showLoading) setLoading(true);
+    return Promise.all([
+      base44.entities.DailyActivity.listAll('-activity_date'),
+      base44.entities.Order.listAll('-order_date'),
+      base44.entities.Invoice.listAll('-invoice_date'),
+    ]).then(([activityRecords, orderRecords, invoiceRecords]) => {
+      setActivities(activityRecords || []);
+      setOrders(orderRecords || []);
+      setInvoices(invoiceRecords || []);
+    }).catch((error) => {
+      toast({ title: 'Finance data could not be loaded', description: error.message, variant: 'destructive' });
+    }).finally(() => setLoading(false));
+  }, [toast]);
 
   useEffect(() => {
     load();
     let timer;
     const unsubscribe = subscribeToDataChanges(() => {
       clearTimeout(timer);
-      timer = setTimeout(load, 120);
-    }, ['Invoice', 'Payment', 'Expense', 'FarmExpense', 'FarmFinanceRecord']);
+      timer = setTimeout(() => load(false), 120);
+    }, ['DailyActivity', 'FarmExpense', 'Order', 'Invoice']);
     return () => { clearTimeout(timer); unsubscribe(); };
-  }, []);
+  }, [load]);
 
-  const createExpense = (payload) => base44.entities.Expense.create({
-    ...payload,
-    expense_number: `EXP-${Date.now().toString().slice(-6)}`,
-  });
+  const dateSelection = useMemo(() => ({
+    mode: dateMode,
+    month: monthFilter,
+    year: yearFilter,
+    start: customStart,
+    end: customEnd,
+  }), [dateMode, monthFilter, yearFilter, customStart, customEnd]);
+  const allExpenses = useMemo(() => activityExpenseRows(activities), [activities]);
+  const allSales = useMemo(() => websiteSales(orders), [orders]);
+  const allOutstandingInvoices = useMemo(() => {
+    const orderById = new Map(orders.map((order) => [order.id, order]));
+    const orderByNumber = new Map(orders.map((order) => [order.order_number, order]));
+    return outstandingWebsiteInvoices(invoices).map((invoice) => {
+      const order = orderById.get(invoice.order_id) || orderByNumber.get(invoice.order_number) || {};
+      return {
+        ...order,
+        ...invoice,
+        farm_name: invoice.farm_name || order.farm_name,
+        farm_code: invoice.farm_code || order.farm_code,
+        block_name: invoice.block_name || order.block_name,
+        block_code: invoice.block_code || order.block_code,
+        items: invoice.items || order.items,
+      };
+    });
+  }, [invoices, orders]);
+  const expenses = useMemo(() => allExpenses.filter((expense) => (
+    matchesFarmSelection(expense, farmFilter)
+    && matchesDateSelection(dateValue(expense, ['expense_date', 'created_date']), dateSelection)
+  )), [allExpenses, farmFilter, dateSelection]);
+  const sales = useMemo(() => allSales.filter((sale) => (
+    matchesFarmSelection(sale, farmFilter)
+    && matchesDateSelection(dateValue(sale, ['order_date', 'created_date']), dateSelection)
+  )), [allSales, farmFilter, dateSelection]);
+  const outstandingInvoices = useMemo(() => allOutstandingInvoices.filter((invoice) => (
+    matchesFarmSelection(invoice, farmFilter)
+    && matchesDateSelection(dateValue(invoice, ['invoice_date', 'created_date']), dateSelection)
+  )), [allOutstandingInvoices, farmFilter, dateSelection]);
+  const totalSales = sumAmounts(sales, 'total_amount');
+  const totalExpenses = sumAmounts(expenses, 'amount');
+  const outstanding = outstandingInvoices.reduce((sum, invoice) => (
+    sum + Number(invoice.balance_due ?? invoice.total_amount ?? 0)
+  ), 0);
+  const netProfit = totalSales - totalExpenses;
+  const monthlyData = useMemo(() => {
+    const window = chartWindow(dateSelection, sales, expenses);
+    return buildMonthlyFinanceData(sales, expenses, window.anchor, window.months);
+  }, [dateSelection, sales, expenses]);
 
-  const totalRevenue = payments.reduce((s, p) => s + (p.amount || 0), 0);
-  const totalExpenses = expenses.reduce((s, e) => s + (e.amount || 0), 0);
-  const outstanding = invoices.filter((i) => i.status !== 'paid').reduce((s, i) => s + (i.balance_due || 0), 0);
-  const netProfit = totalRevenue - totalExpenses;
-  const businessTargets = financeRecords.filter((record) => record.record_type === 'business_target');
-  const harvestReconciliation = financeRecords.find((record) => record.record_type === 'harvest_reconciliation');
-  const monthlyData = useMemo(() => Array.from({ length: 6 }, (_, index) => {
-    const date = new Date();
-    date.setDate(1);
-    date.setMonth(date.getMonth() - (5 - index));
-    const inMonth = (value) => {
-      const current = new Date(value);
-      return current.getFullYear() === date.getFullYear() && current.getMonth() === date.getMonth();
-    };
-    return {
-      month: date.toLocaleDateString('en-GH', { month: 'short' }),
-      revenue: payments.filter((payment) => inMonth(payment.payment_date || payment.created_date)).reduce((sum, payment) => sum + Number(payment.amount || 0), 0),
-      expenses: expenses.filter((expense) => inMonth(expense.expense_date || expense.created_date)).reduce((sum, expense) => sum + Number(expense.amount || 0), 0),
-    };
-  }), [payments, expenses]);
+  const resetFilters = () => {
+    setFarmFilter('all');
+    setDateMode('all');
+    setMonthFilter(initialMonth);
+    setYearFilter(initialYear);
+    setCustomStart('');
+    setCustomEnd('');
+  };
+
+  const deleteActivityCost = async (activity) => {
+    if (!activity?.id || !canClearActivityCosts(user)) return;
+    const label = activity.description || activity.title || activity.activity_code || 'this activity';
+    const confirmed = window.confirm(
+      `Delete the financial cost for ${label}? The Daily Activity record will remain, but its actual and itemized costs will be cleared from Finance.`,
+    );
+    if (!confirmed) return;
+
+    setDeletingId(activity.id);
+    try {
+      await base44.entities.DailyActivity.update(activity.id, {
+        actual_cost: 0,
+        cost: 0,
+        labour_cost: 0,
+        equipment_cost: 0,
+        fuel_cost: 0,
+        input_cost: 0,
+        transport_cost: 0,
+        expense_id: null,
+        expense_code: null,
+        expense_recorded_at: null,
+      });
+
+      if (activity.expense_id) {
+        await base44.entities.FarmExpense.delete(activity.expense_id).catch((error) => {
+          if (error.status !== 404) throw error;
+        });
+      }
+
+      setActivities((current) => current.map((item) => (
+        item.id === activity.id
+          ? { ...item, actual_cost: 0, cost: 0 }
+          : item
+      )));
+      toast({ title: 'Financial cost deleted', description: 'The Daily Activity itself was preserved.' });
+    } catch (error) {
+      toast({ title: 'Financial cost could not be deleted', description: error.message, variant: 'destructive' });
+      await load(false);
+    } finally {
+      setDeletingId('');
+    }
+  };
 
   return (
     <div>
-      <PageHeader>
-        <AdminCreateDialog
-          title="Record Expense"
-          description="Add an expense to finance tracking."
-          buttonLabel="Record Expense"
-          fields={expenseFields}
-          onCreate={createExpense}
-          onCreated={load}
-          submitLabel="Record Expense"
-        />
-      </PageHeader>
+      <div className="mb-6 rounded-xl border border-border bg-card p-4 shadow-sm">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-sm font-semibold"><Filter className="h-4 w-4 text-primary" />Filters</div>
+          {(farmFilter !== 'all' || dateMode !== 'all') && (
+            <Button type="button" size="sm" variant="ghost" onClick={resetFilters}><RotateCcw />Reset</Button>
+          )}
+        </div>
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <label className="space-y-1.5 text-xs font-medium text-muted-foreground">
+            <span className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" />Farm / Block</span>
+            <select value={farmFilter} onChange={(event) => setFarmFilter(event.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-sm outline-none focus:ring-2 focus:ring-ring">
+              <option value="all">All Farms</option>
+              <optgroup label="Farm A">
+                <option value="A">Farm A (all blocks)</option>
+                {Array.from({ length: 5 }, (_, index) => <option key={`A${index + 1}`} value={`A${index + 1}`}>Farm A{index + 1}</option>)}
+              </optgroup>
+              <optgroup label="Farm B">
+                <option value="B">Farm B (all blocks)</option>
+                {Array.from({ length: 5 }, (_, index) => <option key={`B${index + 1}`} value={`B${index + 1}`}>Farm B{index + 1}</option>)}
+              </optgroup>
+            </select>
+          </label>
+
+          <label className="space-y-1.5 text-xs font-medium text-muted-foreground">
+            <span className="flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5" />Date Filter</span>
+            <select value={dateMode} onChange={(event) => setDateMode(event.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-sm outline-none focus:ring-2 focus:ring-ring">
+              <option value="all">All Dates</option>
+              <option value="month">Monthly</option>
+              <option value="year">Yearly</option>
+              <option value="custom">Custom Date</option>
+            </select>
+          </label>
+
+          {dateMode === 'month' && (
+            <label className="space-y-1.5 text-xs font-medium text-muted-foreground">
+              <span>Month</span>
+              <input type="month" value={monthFilter} onChange={(event) => setMonthFilter(event.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-sm outline-none focus:ring-2 focus:ring-ring" />
+            </label>
+          )}
+
+          {dateMode === 'year' && (
+            <label className="space-y-1.5 text-xs font-medium text-muted-foreground">
+              <span>Year</span>
+              <select value={yearFilter} onChange={(event) => setYearFilter(event.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-sm outline-none focus:ring-2 focus:ring-ring">
+                {yearOptions.map((year) => <option key={year} value={year}>{year}</option>)}
+              </select>
+            </label>
+          )}
+
+          {dateMode === 'custom' && (
+            <>
+              <label className="space-y-1.5 text-xs font-medium text-muted-foreground">
+                <span>Start Date</span>
+                <input type="date" value={customStart} max={customEnd || undefined} onChange={(event) => setCustomStart(event.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-sm outline-none focus:ring-2 focus:ring-ring" />
+              </label>
+              <label className="space-y-1.5 text-xs font-medium text-muted-foreground">
+                <span>End Date</span>
+                <input type="date" value={customEnd} min={customStart || undefined} onChange={(event) => setCustomEnd(event.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-sm outline-none focus:ring-2 focus:ring-ring" />
+              </label>
+            </>
+          )}
+        </div>
+      </div>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard title="Total Revenue" value={formatCurrency(totalRevenue)} icon={TrendingUp} color="green" subtitle="From payments" />
-        <MetricCard title="Total Expenses" value={formatCurrency(totalExpenses)} icon={TrendingDown} color="red" subtitle="Recorded" />
-        <MetricCard title="Outstanding" value={formatCurrency(outstanding)} icon={Wallet} color="amber" subtitle="Unpaid invoices" />
-        <MetricCard title="Net Profit" value={formatCurrency(netProfit)} icon={Banknote} color={netProfit >= 0 ? 'green' : 'red'} subtitle="Revenue - Expenses" />
+        <MetricCard title="Total Revenue" value={formatCurrency(totalSales)} icon={TrendingUp} color="blue" subtitle="From website sales" />
+        <MetricCard title="Total Expenses" value={formatCurrency(totalExpenses)} icon={TrendingDown} color="red" subtitle="From Daily Activity costs" />
+        <MetricCard title="Outstanding" value={formatCurrency(outstanding)} icon={Wallet} color="amber" subtitle="Unpaid website invoices" />
+        <MetricCard title="Net Profit" value={formatCurrency(netProfit)} icon={Banknote} color={netProfit >= 0 ? 'green' : 'red'} subtitle="Revenue − Expenses" />
       </div>
 
       <div className="mt-6 rounded-xl border border-border bg-card p-5 shadow-sm">
-        <h3 className="font-heading font-semibold">Revenue vs Expenses (GHS)</h3>
+        <h3 className="font-heading font-semibold">Website Sales vs Daily Activity Expenses (GHS)</h3>
         <ResponsiveContainer width="100%" height={280} className="mt-4">
           <BarChart data={monthlyData}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
             <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize={12} />
             <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
-            <Tooltip contentStyle={{ borderRadius: '0.75rem', border: '1px solid hsl(var(--border))' }} />
-            <Bar dataKey="revenue" fill="hsl(150 45% 42%)" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="expenses" fill="hsl(0 72% 51%)" radius={[4, 4, 0, 0]} />
+            <Tooltip contentStyle={{ borderRadius: '0.75rem', border: '1px solid hsl(var(--border))' }} formatter={(value) => formatCurrency(value)} />
+            <Bar dataKey="expenses" name="Activity expenses" fill="hsl(0 72% 51%)" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="sales" name="Website revenue" fill="#2563eb" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
 
-      {(businessTargets.length > 0 || harvestReconciliation) && (
-        <div className="mt-6 grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
-          {businessTargets.length > 0 && (
-            <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
-              <h3 className="font-heading font-semibold">Workbook growth targets</h3>
-              <p className="mb-4 text-xs text-muted-foreground">Targets imported from the 2026–2030 plan in the farm records workbook.</p>
-              <DataTable items={businessTargets} columns={[
-                { key: 'category', label: 'Area' },
-                { key: 'target_2026', label: '2026', align: 'right', render: formatTarget },
-                { key: 'target_2027', label: '2027', align: 'right', render: formatTarget },
-                { key: 'target_2028', label: '2028', align: 'right', render: formatTarget },
-                { key: 'target_2029', label: '2029', align: 'right', render: formatTarget },
-                { key: 'target_2030', label: '2030', align: 'right', render: formatTarget },
-              ]} />
-            </section>
-          )}
-          {harvestReconciliation && (
-            <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
-              <h3 className="font-heading font-semibold">Harvest reconciliation</h3>
-              <p className="text-xs text-muted-foreground">Imported 2026 workbook totals.</p>
-              <dl className="mt-4 space-y-3 text-sm">
-                <FinanceLine label="Projected gross" value={harvestReconciliation.projected_gross} />
-                <FinanceLine label="Harvest cost" value={harvestReconciliation.harvest_cost} />
-                <FinanceLine label="Net projected" value={harvestReconciliation.net_projected} />
-                <FinanceLine label="Receipts recorded" value={harvestReconciliation.total_receipts} />
-                <FinanceLine label="Buyer deductions" value={harvestReconciliation.buyer_deductions} />
-              </dl>
-            </section>
-          )}
+      <section className="mt-6">
+        <div className="mb-3">
+          <h3 className="font-heading font-semibold">Daily Activity Expenses</h3>
+          <p className="mt-1 text-xs text-muted-foreground">Deleting a financial cost preserves the operational Daily Activity record.</p>
         </div>
-      )}
-
-      <div className="mt-6">
-        <h3 className="mb-3 font-heading font-semibold">Recent Expenses</h3>
         {loading ? <div className="h-48 animate-pulse rounded-xl bg-muted" /> : (
-          <DataTable items={expenses} columns={[
-            { key: 'expense_number', label: 'Expense #' },
-            { key: 'category', label: 'Category' },
-            { key: 'expense_date', label: 'Date', format: formatDate },
-            { key: 'vendor_name', label: 'Vendor' },
-            { key: 'amount', label: 'Amount', align: 'right', format: (v) => formatCurrency(v) },
-            { key: 'status', label: 'Status', render: (v) => <StatusBadge status={v} /> },
+          <DataTable
+            items={expenses}
+            emptyMessage="No Daily Activity costs match the selected filters."
+            columns={[
+              { key: 'expense_number', label: 'Activity #' },
+              { key: 'description', label: 'Activity' },
+              { key: 'expense_date', label: 'Date', format: formatDate },
+              { key: 'category', label: 'Cost Type' },
+              { key: 'vendor_name', label: 'Responsible' },
+              { key: 'amount', label: 'Actual Cost', align: 'right', format: formatCurrency },
+              { key: 'status', label: 'Status', render: (value) => <StatusBadge status={String(value || '').toLowerCase()} label={value} /> },
+            ]}
+            rowActions={canClearActivityCosts(user) ? (activity) => (
+              <Button
+                type="button"
+                size="sm"
+                variant="destructive"
+                disabled={deletingId === activity.id}
+                onClick={() => deleteActivityCost(activity)}
+              >
+                <Trash2 />{deletingId === activity.id ? 'Deleting…' : 'Delete'}
+              </Button>
+            ) : undefined}
+          />
+        )}
+      </section>
+
+      <section className="mt-6">
+        <div className="mb-3">
+          <h3 className="font-heading font-semibold">Recent Website Sales</h3>
+          <p className="mt-1 text-xs text-muted-foreground">Orders placed by customers through the public website.</p>
+        </div>
+        {loading ? <div className="h-48 animate-pulse rounded-xl bg-muted" /> : (
+          <DataTable items={sales} emptyMessage="No website sales match the selected filters." columns={[
+            { key: 'order_number', label: 'Order #' },
+            { key: 'order_date', label: 'Date', format: formatDate },
+            { key: 'customer_name', label: 'Customer' },
+            { key: 'payment_status', label: 'Payment', render: (value) => <StatusBadge status={value || 'pending'} /> },
+            { key: 'total_amount', label: 'Total', semantic: 'revenue', align: 'right', format: formatCurrency },
+            { key: 'status', label: 'Order Status', render: (value) => <StatusBadge status={value} /> },
           ]} />
         )}
-      </div>
+      </section>
     </div>
   );
-}
-
-function formatTarget(value, record) {
-  return record?.category === 'FARM' ? formatCurrency(value) : Number(value || 0).toLocaleString('en-GH');
-}
-
-function FinanceLine({ label, value }) {
-  return <div className="flex items-center justify-between gap-4 border-b border-border pb-2 last:border-0"><dt className="text-muted-foreground">{label}</dt><dd className="font-semibold">{formatCurrency(value)}</dd></div>;
 }

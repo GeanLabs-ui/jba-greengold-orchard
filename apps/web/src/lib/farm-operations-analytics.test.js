@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+  activityCost,
+  activityMatchesBlock,
   activityYieldKg,
   buildFarmOperationsAnalytics,
 } from './farm-operations-analytics.js';
@@ -79,6 +81,21 @@ describe('farm operations analytics', () => {
     expect(activityYieldKg({ category: 'Pruning', quantity_used: 75 })).toBe(0);
   });
 
+  it('uses the calculated activity cost when the optional actual-cost field is blank', () => {
+    expect(activityCost({ actual_cost: '', cost: 125 })).toBe(125);
+    expect(activityCost({ actual_cost: 0, cost: 125 })).toBe(0);
+  });
+
+  it('matches block performance rows only to an explicit saved block reference', () => {
+    const block = { id: 'a1', name: 'A1', block_code: 'A1' };
+
+    expect(activityMatchesBlock({ block_id: 'a1' }, block)).toBe(true);
+    expect(activityMatchesBlock({ block_code: 'a1' }, block)).toBe(true);
+    expect(activityMatchesBlock({ block_name: 'A1' }, block)).toBe(true);
+    expect(activityMatchesBlock({}, block)).toBe(false);
+    expect(activityMatchesBlock({ block_id: 'b1' }, block)).toBe(false);
+  });
+
   it('assigns older activity rows to a farm through their saved block relationship', () => {
     const result = buildFarmOperationsAnalytics({
       farms,
@@ -89,6 +106,22 @@ describe('farm operations analytics', () => {
     expect(result.activities).toHaveLength(1);
     expect(result.farmFor(result.activities[0])).toBe('Farm A');
     expect(result.farmFor({ farm_name: 'All Farms' })).toBe('Unassigned farm');
+    expect(result.totalCost).toBe(55);
+  });
+
+  it('filters an analytics view to a selected farm block', () => {
+    const result = buildFarmOperationsAnalytics({
+      farms,
+      blocks,
+      dailyActivities: [
+        { id: 'a1-row', block_id: 'a1', activity_date: '2026-08-13', actual_cost: 55 },
+        { id: 'b1-row', block_id: 'b1', activity_date: '2026-08-13', actual_cost: 80 },
+      ],
+    }, { blockId: 'a1' });
+
+    expect(result.visibleFarms.map((farm) => farm.id)).toEqual(['farm-a']);
+    expect(result.visibleBlocks.map((block) => block.id)).toEqual(['a1']);
+    expect(result.activities.map((activity) => activity.id)).toEqual(['a1-row']);
     expect(result.totalCost).toBe(55);
   });
 });

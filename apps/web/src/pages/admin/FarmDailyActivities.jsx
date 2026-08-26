@@ -52,8 +52,8 @@ import MetricCard from '@/components/shared/MetricCard';
 import StatusBadge from '@/components/shared/StatusBadge';
 import DataTable from '@/components/shared/DataTable';
 import AdminCreateDialog from '@/components/admin/AdminCreateDialog';
-import FarmDailyOverview from '@/pages/admin/FarmDailyOverview';
 import FarmOperationsAnalytics from '@/pages/admin/FarmOperationsAnalytics';
+import PageSkeleton from '@/components/shared/PageSkeleton';
 import FarmDailyMasterSchedule from '@/pages/admin/FarmDailyMasterSchedule';
 import FarmDailyBudgetHarvest from '@/pages/admin/FarmDailyBudgetHarvest';
 import HarvestSeasonPlanner from '@/pages/admin/HarvestSeasonPlanner';
@@ -74,7 +74,7 @@ const pageMap = [
   {
     name: 'Daily Activities',
     icon: ClipboardList,
-    screens: ['Daily Activity Log', 'Activities List', 'Create Activity', 'Activity Details', 'Edit Activity', 'Activity Calendar View', 'Activity Timeline View', 'Activity Approval Queue', 'Programme Overview', 'Master Schedule', 'Risk Register', 'Farms'],
+    screens: ['Daily Activity Log', 'Activities List', 'Create Activity', 'Activity Details', 'Edit Activity', 'Activity Calendar View', 'Activity Timeline View', 'Activity Approval Queue', 'Master Schedule', 'Risk Register', 'Farms'],
   },
   {
     name: 'Work Orders',
@@ -214,12 +214,13 @@ const groupSum = (items, key, valueKey) => (
 
 const FieldGrid = ({ fields }) => (
   <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-    {fields.map(([label, value]) => (
-      <div key={label} className="rounded-lg border border-border bg-card p-3">
-        <p className="text-xs font-medium text-muted-foreground">{label}</p>
-        <p className="mt-1 break-words text-sm font-semibold">{value || '—'}</p>
+    {fields.map(([label, value]) => {
+      const semantic = /cost|expense/i.test(label) ? 'text-rose-600' : /yield|harvest/i.test(label) ? 'text-emerald-700' : /revenue|sales/i.test(label) ? 'text-blue-600' : '';
+      return <div key={label} className="rounded-lg border border-border bg-card p-3">
+        <p className={`text-xs font-medium ${semantic || 'text-muted-foreground'}`}>{label}</p>
+        <p className={`mt-1 break-words text-sm font-semibold ${semantic}`}>{value || '—'}</p>
       </div>
-    ))}
+    })}
   </div>
 );
 
@@ -412,7 +413,7 @@ const expenseColumns = [
   { key: 'activity', label: 'Activity' },
   { key: 'category', label: 'Category' },
   { key: 'description', label: 'Description' },
-  { key: 'amount', label: 'Amount', align: 'right', format: formatCurrency },
+  { key: 'amount', label: 'Cost Amount', semantic: 'cost', align: 'right', format: formatCurrency },
   { key: 'approved_by', label: 'Approved By' },
   { key: 'status', label: 'Status', render: (value) => <StatusBadge status={String(value).toLowerCase()} label={value} /> },
 ];
@@ -424,7 +425,7 @@ const reportColumns = [
   { key: 'supervisor', label: 'Supervisor' },
   { key: 'workers_present', label: 'Workers Present', align: 'right', format: formatNumber },
   { key: 'harvest_quantity', label: 'Harvest Quantity', align: 'right', format: formatNumber },
-  { key: 'expenses', label: 'Expenses', align: 'right', format: formatCurrency },
+  { key: 'expenses', label: 'Expenses', semantic: 'cost', align: 'right', format: formatCurrency },
   { key: 'manager_approval', label: 'Manager Approval' },
   { key: 'status', label: 'Status', render: (value) => <StatusBadge status={String(value).toLowerCase()} label={value} /> },
 ];
@@ -447,6 +448,7 @@ const routeToPageName = {
 };
 
 const removedSectionPaths = [
+  '/admin/farm-daily-activities/activities/report',
   '/admin/farm-daily-activities/dashboard',
   '/admin/farm-daily-activities/work-orders',
   '/admin/farm-daily-activities/labour',
@@ -465,10 +467,10 @@ const activityLogColumns = [
   { key: 'responsible', label: 'Responsible', className: 'w-[116px]', render: (item) => item.responsible || item.assigned_workers || item.supervisor_name },
   { key: 'contact', label: 'Contact', className: 'w-[92px]', render: (item) => item.contact },
   { key: 'block_name', label: 'Farm Block', className: 'w-[102px]', render: (item) => item.block_name || item.block_code },
-  { key: 'projected_cost', label: 'Projected Cost', className: 'w-[96px] text-center', render: (item) => formatCurrency(item.projected_cost) },
-  { key: 'actual_cost', label: 'Actual Cost', className: 'w-[96px] text-center', render: (item) => formatCurrency(item.actual_cost ?? item.cost) },
-  { key: 'revenue', label: 'Revenue', className: 'w-[84px] text-center', render: (item) => formatCurrency(item.revenue) },
-  { key: 'output_quantity_kg', label: 'Harvest / Output kg', className: 'w-[104px] text-center', render: (item) => `${formatNumber(item.harvest_quantity ?? item.output_quantity_kg)} kg` },
+  { key: 'projected_cost', label: 'Projected Cost', className: 'w-[96px] text-center text-rose-100', render: (item) => <span className="font-semibold text-rose-600">{formatCurrency(item.projected_cost)}</span> },
+  { key: 'actual_cost', label: 'Actual Cost', className: 'w-[96px] text-center text-rose-100', render: (item) => <span className="font-semibold text-rose-600">{formatCurrency(item.actual_cost ?? item.cost)}</span> },
+  { key: 'revenue', label: 'Revenue', className: 'w-[84px] text-center text-blue-100', render: (item) => <span className="font-semibold text-blue-600">{formatCurrency(item.revenue)}</span> },
+  { key: 'output_quantity_kg', label: 'Harvest / Output kg', className: 'w-[104px] text-center text-emerald-100', render: (item) => <span className="font-semibold text-emerald-700">{formatNumber(item.harvest_quantity ?? item.output_quantity_kg)} kg</span> },
   { key: 'cost_type', label: 'Type of Cost', className: 'w-[86px] text-center', render: (item) => item.cost_type },
   { key: 'notes', label: 'Notes', className: 'w-[170px]', render: (item) => item.notes },
   { key: 'actions', label: 'Actions', className: 'w-[58px] text-center' },
@@ -511,9 +513,9 @@ const DailyActivityLog = ({
   onDelete,
   renderEditAction,
 }) => {
-  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedId, setSelectedId] = useState(() => items[0]?.id || items[0]?.activity_code || (items[0] ? 'activity-0' : null));
+  const [selectedId, setSelectedId] = useState(null);
   const rowId = (item, index = 0) => item.id || item.activity_code || `activity-${index}`;
   const pageCount = Math.max(1, Math.ceil(items.length / rowsPerPage));
   const safePage = Math.min(currentPage, pageCount);
@@ -528,12 +530,69 @@ const DailyActivityLog = ({
 
   useEffect(() => {
     setCurrentPage(1);
+    setSelectedId(null);
   }, [statusFilter, farmBlockFilter, activityTypeFilter, rowsPerPage]);
 
   useEffect(() => {
-    if (selectedId && items.length && !selectedItem) setSelectedId(rowId(items[0], 0));
-    if (!items.length && selectedId) setSelectedId(null);
+    if (selectedId && !selectedItem) setSelectedId(null);
   }, [items, selectedId, selectedItem]);
+
+  const renderActivityDetails = (item) => (
+    <section className="m-2 rounded-md border border-emerald-800/20 bg-white px-4 py-3 text-left shadow-[0_1px_3px_rgba(15,23,42,0.04)]">
+      <div className="flex items-center justify-between">
+        <h3 className="text-xs font-semibold text-slate-900">Activity Details</h3>
+        <button type="button" onClick={() => setSelectedId(null)} className="rounded p-1 text-slate-600 hover:bg-slate-100" aria-label="Close activity details">
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+      <div className="mt-2 grid gap-0 text-[11px] leading-5 md:grid-cols-2 xl:grid-cols-4">
+        <div className="pr-6 xl:border-r xl:border-slate-200">
+          <p className="mb-1 font-semibold text-[#167329]">Details</p>
+          {[
+            ['Date', formatDate(item.activity_date)],
+            ['Activity Type', item.category],
+            ['Item Tag', item.item_tag || item.input_name || item.equipment_used],
+            ['Quantity', formatNumber(item.quantity_used ?? item.harvest_quantity ?? item.crates_used)],
+            ['Responsible', item.responsible || item.assigned_workers || item.supervisor_name],
+            ['Contact', item.contact],
+          ].map(([label, value]) => <p key={label} className="grid grid-cols-[118px_1fr] gap-3"><span className="text-slate-600">{label}</span><span>{displayValue(value)}</span></p>)}
+        </div>
+        <div className="px-0 pt-4 md:pl-6 md:pt-0 xl:border-r xl:border-slate-200 xl:pr-6">
+          <p className="mb-1 font-semibold text-[#167329]">Financials</p>
+          {[
+            ['Projected Cost', formatCurrency(item.projected_cost)],
+            ['Actual Cost', formatCurrency(item.actual_cost ?? item.cost)],
+            ['Revenue', formatCurrency(item.revenue)],
+          ].map(([label, value]) => <p key={label} className="grid grid-cols-[132px_1fr] gap-3"><span className={label === 'Revenue' ? 'text-blue-600' : 'text-rose-600'}>{label}</span><span className={label === 'Revenue' ? 'font-semibold text-blue-600' : 'font-semibold text-rose-600'}>{value}</span></p>)}
+        </div>
+        <div className="px-0 pt-4 md:pr-6 xl:border-r xl:border-slate-200 xl:pl-6 xl:pt-0">
+          <p className="mb-1 font-semibold text-[#167329]">Production</p>
+          {[
+            ['Harvest / Output', `${formatNumber(item.harvest_quantity ?? item.output_quantity_kg)} kg`],
+            ['Farm Block', item.block_name || item.block_code],
+            ['Main Farm', item.farm_name],
+          ].map(([label, value]) => <p key={label} className="grid grid-cols-[132px_1fr] gap-3"><span className={label === 'Harvest / Output' ? 'text-emerald-700' : 'text-slate-600'}>{label}</span><span className={label === 'Harvest / Output' ? 'font-semibold text-emerald-700' : ''}>{displayValue(value)}</span></p>)}
+        </div>
+        <div className="flex min-h-32 flex-col pl-0 pt-4 md:pl-6 xl:pt-0">
+          <p className="mb-1 font-semibold text-[#167329]">Notes</p>
+          <p className="max-w-xs leading-5 text-slate-700">{displayValue(item.notes)}</p>
+          <div className="mt-auto flex justify-end gap-3 pt-4">
+            {renderEditAction?.(item)}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={deletingId === item.id}
+              onClick={() => onDelete(item)}
+              className="h-8 border-rose-300 px-4 text-xs text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+            >
+              <Trash2 className="mr-2 h-3.5 w-3.5" />Delete
+            </Button>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
 
   return (
     <div className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
@@ -545,14 +604,14 @@ const DailyActivityLog = ({
           <span><strong className="block text-xl leading-none text-slate-950">{formatNumber(items.length)}</strong><span className="mt-1 block text-xs text-slate-600">Activities</span></span>
         </div>
         <div className="flex min-h-20 items-center justify-center gap-4 px-5 py-3">
-          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#e3f3df] text-[11px] font-bold text-[#167329]">GHS</span>
-          <span><strong className="block text-xl leading-none text-slate-950">{formatNumber(totalCost)}</strong><span className="mt-1 block text-xs text-slate-600">Total Cost</span></span>
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-rose-100 text-[11px] font-bold text-rose-700">GHS</span>
+          <span><strong className="block text-xl leading-none text-rose-600">{formatNumber(totalCost)}</strong><span className="mt-1 block text-xs text-rose-600">Total Cost</span></span>
         </div>
         <div className="flex min-h-20 items-center justify-center gap-4 px-5 py-3">
           <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#e3f3df] text-[#167329]">
             <Leaf className="h-5 w-5" />
           </span>
-          <span><strong className="block text-xl leading-none text-slate-950">{formatNumber(totalOutput)} <small className="text-sm">kg</small></strong><span className="mt-1 block text-xs text-slate-600">Harvest Output</span></span>
+          <span><strong className="block text-xl leading-none text-emerald-700">{formatNumber(totalOutput)} <small className="text-sm">kg</small></strong><span className="mt-1 block text-xs text-emerald-700">Harvest Output</span></span>
         </div>
         <div className="flex min-h-20 items-center justify-center gap-4 px-5 py-3">
           <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#e3f3df] text-[#167329]">
@@ -563,30 +622,21 @@ const DailyActivityLog = ({
       </div>
 
       <section className="bg-white">
-      <div className="overflow-x-auto">
+      <div className="max-h-[calc(100vh-12rem)] overflow-auto">
         <table className="w-full min-w-[1320px] table-fixed border-collapse text-[11px] leading-4 text-slate-800">
           <thead>
-            <tr className="bg-[#106922] text-white">
-              <th rowSpan={2} className="w-7 border border-[#2f8140] px-1 text-center">
-                <input
-                  type="checkbox"
-                  checked={Boolean(pageItems.length && selectedId && pageItems.every((item, index) => rowId(item, pageStart + index) === selectedId))}
-                  onChange={(event) => setSelectedId(event.target.checked && pageItems[0] ? rowId(pageItems[0], pageStart) : null)}
-                  className="h-3.5 w-3.5 accent-[#167329]"
-                  aria-label="Select activities on this page"
-                />
-              </th>
-              <th colSpan={4} className="border border-[#2f8140] px-2 py-1 text-center text-[10px] font-semibold">Activity</th>
-              <th colSpan={5} className="border border-[#2f8140] px-2 py-1 text-center text-[10px] font-semibold">Assignment &amp; Inputs</th>
-              <th colSpan={5} className="border border-[#2f8140] px-2 py-1 text-center text-[10px] font-semibold">Financials &amp; Output</th>
-              <th colSpan={2} className="border border-[#2f8140] px-2 py-1 text-center text-[10px] font-semibold">Record</th>
+            <tr className="h-8 text-white">
+              <th colSpan={4} className="sticky top-0 z-30 h-8 border border-[#2f8140] bg-[#106922] px-2 py-1 text-center text-[10px] font-semibold">Activity</th>
+              <th colSpan={5} className="sticky top-0 z-30 h-8 border border-[#2f8140] bg-[#106922] px-2 py-1 text-center text-[10px] font-semibold">Assignment &amp; Inputs</th>
+              <th colSpan={5} className="sticky top-0 z-30 h-8 border border-[#2f8140] bg-[#106922] px-2 py-1 text-center text-[10px] font-semibold">Financials &amp; Output</th>
+              <th colSpan={2} className="sticky top-0 z-30 h-8 border border-[#2f8140] bg-[#106922] px-2 py-1 text-center text-[10px] font-semibold">Record</th>
             </tr>
-            <tr className="bg-[#147228] text-white">
+            <tr className="text-white">
               {activityLogColumns.map((column) => (
                 <th
                   key={column.key}
                   scope="col"
-                  className={`border border-[#2f8140] px-2 py-1.5 text-center text-[10px] font-semibold ${column.className || ''}`}
+                  className={`sticky top-8 z-30 border border-[#2f8140] bg-[#147228] px-2 py-1.5 text-center text-[10px] font-semibold ${column.className || ''}`}
                 >
                   {column.key === 'status' ? (
                     <label className="relative flex cursor-pointer items-center">
@@ -648,21 +698,21 @@ const DailyActivityLog = ({
               const itemId = rowId(item, pageStart + index);
               const isSelected = selectedId === itemId;
               return (
+              <React.Fragment key={itemId}>
               <tr
-                key={itemId}
                 onClick={() => setSelectedId(itemId)}
+                onMouseEnter={() => setSelectedId(itemId)}
+                onFocus={() => setSelectedId(itemId)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    setSelectedId(itemId);
+                  }
+                }}
+                tabIndex={0}
+                aria-selected={isSelected}
                 className={`cursor-pointer transition-colors hover:bg-[#f3faf2] ${isSelected ? 'bg-[#eff8ef]' : 'bg-white'}`}
               >
-                <td className="w-7 border border-slate-200 px-1 text-center align-middle">
-                  <input
-                    type="checkbox"
-                    checked={isSelected}
-                    onChange={() => setSelectedId(isSelected ? null : itemId)}
-                    onClick={(event) => event.stopPropagation()}
-                    className="h-3.5 w-3.5 accent-[#167329]"
-                    aria-label={`Select ${item.title || item.activity_title || 'activity'}`}
-                  />
-                </td>
                 {activityLogColumns.map((column) => {
                   const value = column.key === 'status' ? (
                     <span className="inline-flex rounded-sm bg-[#dff1d8] px-2 py-0.5 text-[10px] font-medium text-[#167329]">
@@ -685,69 +735,20 @@ const DailyActivityLog = ({
                   );
                 })}
               </tr>
+              {isSelected && (
+                <tr className="bg-[#f8fbf8]">
+                  <td colSpan={activityLogColumns.length} className="border border-slate-200 p-0 align-top">
+                    {renderActivityDetails(item)}
+                  </td>
+                </tr>
+              )}
+              </React.Fragment>
               );
             })}
           </tbody>
         </table>
       </div>
       </section>
-
-      {selectedItem ? (
-        <section className="m-2 rounded-md border border-emerald-800/20 bg-white px-4 py-3 shadow-[0_1px_3px_rgba(15,23,42,0.04)]">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-semibold text-slate-900">Activity Details</h3>
-            <button type="button" onClick={() => setSelectedId(null)} className="rounded p-1 text-slate-600 hover:bg-slate-100" aria-label="Close activity details">
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-          <div className="mt-2 grid gap-0 text-[11px] leading-5 md:grid-cols-2 xl:grid-cols-4">
-            <div className="pr-6 xl:border-r xl:border-slate-200">
-              <p className="mb-1 font-semibold text-[#167329]">Details</p>
-              {[
-                ['Date', formatDate(selectedItem.activity_date)],
-                ['Activity Type', selectedItem.category],
-                ['Item Tag', selectedItem.item_tag || selectedItem.input_name || selectedItem.equipment_used],
-                ['Quantity', formatNumber(selectedItem.quantity_used ?? selectedItem.harvest_quantity ?? selectedItem.crates_used)],
-                ['Responsible', selectedItem.responsible || selectedItem.assigned_workers || selectedItem.supervisor_name],
-                ['Contact', selectedItem.contact],
-              ].map(([label, value]) => <p key={label} className="grid grid-cols-[118px_1fr] gap-3"><span className="text-slate-600">{label}</span><span>{displayValue(value)}</span></p>)}
-            </div>
-            <div className="px-0 pt-4 md:pl-6 md:pt-0 xl:border-r xl:border-slate-200 xl:pr-6">
-              <p className="mb-1 font-semibold text-[#167329]">Financials</p>
-              {[
-                ['Projected Cost', formatCurrency(selectedItem.projected_cost)],
-                ['Actual Cost', formatCurrency(selectedItem.actual_cost ?? selectedItem.cost)],
-                ['Revenue', formatCurrency(selectedItem.revenue)],
-              ].map(([label, value]) => <p key={label} className="grid grid-cols-[132px_1fr] gap-3"><span className="text-slate-600">{label}</span><span>{value}</span></p>)}
-            </div>
-            <div className="px-0 pt-4 md:pr-6 xl:border-r xl:border-slate-200 xl:pl-6 xl:pt-0">
-              <p className="mb-1 font-semibold text-[#167329]">Production</p>
-              {[
-                ['Harvest / Output', `${formatNumber(selectedItem.harvest_quantity ?? selectedItem.output_quantity_kg)} kg`],
-                ['Farm Block', selectedItem.block_name || selectedItem.block_code],
-                ['Main Farm', selectedItem.farm_name],
-              ].map(([label, value]) => <p key={label} className="grid grid-cols-[132px_1fr] gap-3"><span className="text-slate-600">{label}</span><span>{displayValue(value)}</span></p>)}
-            </div>
-            <div className="flex min-h-32 flex-col pl-0 pt-4 md:pl-6 xl:pt-0">
-              <p className="mb-1 font-semibold text-[#167329]">Notes</p>
-              <p className="max-w-xs leading-5 text-slate-700">{displayValue(selectedItem.notes)}</p>
-              <div className="mt-auto flex justify-end gap-3 pt-4">
-                {renderEditAction?.(selectedItem)}
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={deletingId === selectedItem.id}
-                  onClick={() => onDelete(selectedItem)}
-                  className="h-8 border-rose-300 px-4 text-xs text-rose-600 hover:bg-rose-50 hover:text-rose-700"
-                >
-                  <Trash2 className="mr-2 h-3.5 w-3.5" />Delete
-                </Button>
-              </div>
-            </div>
-          </div>
-        </section>
-      ) : null}
 
       <footer className="grid items-center gap-4 border-t border-slate-200 px-5 py-4 text-[11px] text-slate-600 md:grid-cols-3">
         <p>Showing {items.length ? pageStart + 1 : 0}–{Math.min(pageStart + rowsPerPage, items.length)} of {items.length}</p>
@@ -758,7 +759,7 @@ const DailyActivityLog = ({
             onChange={(event) => setRowsPerPage(Number(event.target.value))}
             className="h-8 rounded-md border border-slate-200 bg-white px-3 text-xs text-slate-800 outline-none focus:border-[#167329]"
           >
-            {[5, 10, 20].map((size) => <option key={size} value={size}>{size}</option>)}
+            {[10, 20, 50].map((size) => <option key={size} value={size}>{size}</option>)}
           </select>
         </label>
         <nav className="flex items-center justify-end gap-2" aria-label="Activity log pagination">
@@ -2438,7 +2439,7 @@ export default function FarmDailyActivities() {
   );
 
   const renderScreen = () => {
-    if (loading) return <div className="h-96 animate-pulse rounded-xl bg-muted" />;
+    if (loading) return <PageSkeleton variant={activeScreen === 'Operations Analytics Overview' ? 'analytics' : 'page'} />;
 
     let activities = filterRows(data.dailyActivities || [], ['activity_code', 'title', 'item_tag', 'responsible', 'contact', 'farm_name', 'block_name', 'category', 'cost_type', 'supervisor_name', 'notes']);
     let workOrders = filterRows(data.workOrders || [], ['work_order_code', 'title', 'farm_name', 'block_name', 'category']);
@@ -2543,8 +2544,6 @@ export default function FarmDailyActivities() {
         return renderApprovalQueue('Activity Approval Queue', approvals.filter((item) => item.module === 'Daily Activity' && !['Approved', 'Rejected'].includes(item.status)));
       case 'Operations Analytics Overview':
         return <FarmOperationsAnalytics data={data} />;
-      case 'Programme Overview':
-        return <FarmDailyOverview />;
       case 'Master Schedule':
         return <FarmDailyMasterSchedule />;
       case 'Risk Register':
@@ -2811,7 +2810,7 @@ export default function FarmDailyActivities() {
   };
 
   const getPageInfo = () => {
-    if (activeScreen === 'Operations Analytics Overview' || activeScreen === 'Programme Overview' || activeScreen === 'Master Schedule' || activeScreen === 'Risk Register' || activeScreen === 'Farms' || activeScreen === 'Budget & Harvest' || activeScreen === 'Harvest Seasons') {
+    if (activeScreen === 'Operations Analytics Overview' || activeScreen === 'Master Schedule' || activeScreen === 'Risk Register' || activeScreen === 'Farms' || activeScreen === 'Budget & Harvest' || activeScreen === 'Harvest Seasons') {
       return { placeholder: '', action: null, hideSearch: true };
     }
 
@@ -2880,26 +2879,8 @@ export default function FarmDailyActivities() {
   return (
     <div className="space-y-6">
       <div className="sticky top-0 z-20 -mx-2 space-y-3 border-b border-border bg-background/95 px-2 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/85">
-        <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-end">
-          <div className="flex flex-wrap items-center gap-2">
-            {!pageInfo.hideSearch ? (
-              <Input
-                className="w-full sm:w-64"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder={pageInfo.placeholder}
-              />
-            ) : null}
-            {pageInfo.action}
-            <Button variant="outline" size="sm" onClick={load} className="h-10">
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Refresh
-            </Button>
-          </div>
-        </div>
-
-        <div className="border-t border-border/45 pt-2">
-          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
+        <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+          <nav className="flex max-w-full items-center gap-2 overflow-x-auto scrollbar-thin" aria-label="Farm daily activities navigation">
             {topNavigationChildren.map((child) => {
               const isChildActive = pathname === child.path;
               return (
@@ -2917,6 +2898,19 @@ export default function FarmDailyActivities() {
                 </button>
               );
             })}
+          </nav>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {!pageInfo.hideSearch ? (
+              <Input
+                className="w-full sm:w-64"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder={pageInfo.placeholder}
+              />
+            ) : null}
+            {pageInfo.action}
+            {activeScreen === 'Operations Analytics Overview' ? <div id="farm-analytics-header-controls" className="flex flex-wrap items-center" /> : null}
           </div>
         </div>
 

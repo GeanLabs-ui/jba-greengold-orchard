@@ -6,8 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { groupYieldRecords } from '@/lib/farm-management';
 
 const chartConfig = {
-  actual: { label: 'Actual yield', color: 'hsl(var(--chart-2))' },
-  forecast: { label: 'Forecast yield', color: 'hsl(var(--chart-1))' },
+  actual: { label: 'Actual yield', color: '#198f3c' },
+  forecast: { label: 'Forecast yield', color: '#72bd48' },
 };
 
 const labelForDate = (value, granularity) => {
