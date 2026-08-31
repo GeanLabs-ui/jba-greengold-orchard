@@ -40,6 +40,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run check
+      - name: Reject destructive database migrations
+        run: npm run db:check-migrations
       - name: Validate migrations and idempotency
         run: npm run db:migrate && npm run db:migrate
       - name: Audit production dependencies
