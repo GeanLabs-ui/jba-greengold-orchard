@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, Clock3, Inbox, Mail, MessageSquareText, Phone, Search, UserRoundCheck } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import StatusBadge from '@/components/shared/StatusBadge';
+import PageSkeleton from '@/components/shared/PageSkeleton';
 import DataTable from '@/components/shared/DataTable';
 import { formatDateTime, timeAgo } from '@/components/shared/format';
 import { Input } from '@/components/ui/input';
@@ -115,7 +116,7 @@ export default function Inquiries() {
       </div>
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1.5fr)_minmax(20rem,0.75fr)]">
-        {loading ? <div className="h-80 animate-pulse rounded-xl bg-muted" /> : (
+        {loading ? <PageSkeleton contentOnly /> : (
           <DataTable
             items={filtered}
             selectedId={selectedId}

@@ -64,24 +64,29 @@ const dateString = z
   .trim()
   .regex(/^\d{4}-\d{2}-\d{2}$/, "Expected YYYY-MM-DD");
 
+// Profile forms load nullable database columns directly. Accepting null here is
+// intentional: it lets a user save an unchanged, optional field that has not
+// yet been recorded instead of rejecting the entire update.
+const optionalText = (max: number) => z.string().trim().max(max).nullable().optional();
+
 const farmCreateSchema = z.object({
   farm_code: z.string().trim().min(1).max(50).optional(),
   name: z.string().trim().min(1).max(200),
-  location: z.string().trim().max(300).optional(),
-  region: z.string().trim().max(120).optional(),
-  country: z.string().trim().max(120).optional(),
+  location: optionalText(300),
+  region: optionalText(120),
+  country: optionalText(120),
   latitude: z.number().min(-90).max(90).nullable().optional(),
   longitude: z.number().min(-180).max(180).nullable().optional(),
-  soil_type: z.string().trim().max(120).optional(),
+  soil_type: optionalText(120),
   soil_ph: z.number().min(0).max(14).nullable().optional(),
-  soil_notes: z.string().trim().max(2000).optional(),
+  soil_notes: optionalText(2000),
   size_acres: z.number().positive().nullable().optional(),
-  owner_name: z.string().trim().max(200).optional(),
+  owner_name: optionalText(200),
   operations_started_on: dateString.nullable().optional(),
   planting_started_on: dateString.nullable().optional(),
-  description: z.string().trim().max(2000).optional(),
-  notes: z.string().trim().max(2000).optional(),
-  image_url: z.string().trim().max(500).optional(),
+  description: optionalText(2000),
+  notes: optionalText(2000),
+  image_url: optionalText(500),
 });
 const farmUpdateSchema = farmCreateSchema.partial();
 
@@ -127,13 +132,16 @@ const blockCreateSchema = z.object({
   size_acres: z.number().positive().nullable().optional(),
   shoot_maturity: z.number().min(0).max(1).optional(),
   forecast_yield_kg: z.number().min(0).nullable().optional(),
+  actual_yield_kg: z.number().min(0).nullable().optional(),
+  mango_variety: z.string().trim().max(120).nullable().optional(),
   fruit_fly_pressure: z.string().trim().max(120).nullable().optional(),
   disease_rating: z.string().trim().max(120).nullable().optional(),
+  disease_severity: z.enum(["Low", "Medium", "High"]).nullable().optional(),
   latitude: z.number().min(-90).max(90).nullable().optional(),
   longitude: z.number().min(-180).max(180).nullable().optional(),
-  soil_type: z.string().trim().max(120).optional(),
+  soil_type: optionalText(120),
   soil_ph: z.number().min(0).max(14).nullable().optional(),
-  soil_notes: z.string().trim().max(2000).optional(),
+  soil_notes: optionalText(2000),
   status: z.enum(["active", "inactive"]).optional().default("active"),
   operations_started_on: dateString.nullable().optional(),
   planting_started_on: dateString.nullable().optional(),
@@ -144,6 +152,7 @@ const blockUpdateSchema = blockCreateSchema
   .omit({ inventory: true })
   .partial()
   .extend({
+    farm_id: z.string().trim().min(1).optional(),
     allow_size_override: z.boolean().optional().default(false),
   });
 
@@ -468,6 +477,8 @@ router.get("/farms", requirePermission("farms.read"), async (c) => {
         COALESCE(bc.block_count, 0)::int AS block_count,
         COALESCE(bc.active_block_count, 0)::int AS active_block_count,
         COALESCE(bc.allocated_size_acres, 0) AS allocated_size_acres,
+        COALESCE(bc.block_varieties, ARRAY[]::text[]) AS block_varieties,
+        COALESCE(bc.block_locations, ARRAY[]::text[]) AS block_locations,
         CASE WHEN COALESCE(tc.inventory_record_count, 0) > 0 THEN tc.total_trees::int ELSE NULL END AS total_trees,
         COALESCE(tc.inventory_record_count, 0)::int AS inventory_record_count,
         COALESCE(tc.variety_totals, '{}'::jsonb) AS variety_totals,
@@ -478,7 +489,16 @@ router.get("/farms", requirePermission("farms.read"), async (c) => {
         SELECT
           count(*) AS block_count,
           count(*) FILTER (WHERE status = 'active') AS active_block_count,
-          COALESCE(sum(size_acres) FILTER (WHERE status = 'active'), 0) AS allocated_size_acres
+          COALESCE(sum(size_acres) FILTER (WHERE status = 'active'), 0) AS allocated_size_acres,
+          COALESCE(
+            array_agg(DISTINCT fb.variety) FILTER (WHERE NULLIF(btrim(fb.variety), '') IS NOT NULL),
+            ARRAY[]::text[]
+          ) AS block_varieties,
+          COALESCE(
+            array_agg(DISTINCT NULLIF(btrim(to_jsonb(fb)->>'location'), ''))
+              FILTER (WHERE NULLIF(btrim(to_jsonb(fb)->>'location'), '') IS NOT NULL),
+            ARRAY[]::text[]
+          ) AS block_locations
         FROM farm_blocks fb WHERE fb.farm_id = mf.id
       ) bc ON true
       LEFT JOIN LATERAL (
@@ -897,7 +917,7 @@ router.get("/farms/:id/history", requirePermission("farms.read"), async (c) => {
 
 async function loadBlock(sql: Database, id: string, user: AuthUser) {
   const rows = await sql`
-    SELECT fb.*, fb.operations_started_on::text AS operations_started_on, fb.planting_started_on::text AS planting_started_on,
+    SELECT fb.*, fb.variety AS mango_variety, fb.operations_started_on::text AS operations_started_on, fb.planting_started_on::text AS planting_started_on,
       fb.merge_effective_date::text AS merge_effective_date
     FROM farm_blocks fb
     JOIN farms f ON f.id = fb.farm_id
@@ -917,7 +937,7 @@ router.get(
       const farm = await loadFarm(sql, c.req.param("farmId"), user);
       if (!farm) return errorResponse(c, "NOT_FOUND", "Farm not found", 404);
       const rows = await sql`
-      SELECT fb.*, fb.operations_started_on::text AS operations_started_on, fb.planting_started_on::text AS planting_started_on
+      SELECT fb.*, fb.variety AS mango_variety, fb.operations_started_on::text AS operations_started_on, fb.planting_started_on::text AS planting_started_on
       FROM farm_blocks fb
       WHERE fb.farm_id = ${farm.id} AND (${status}::text IS NULL OR fb.status = ${status})
       ORDER BY fb.block_code
@@ -986,7 +1006,7 @@ router.post(
         INSERT INTO farm_blocks (
           id, farm_id, block_code, name, description, early_block_classification, year_planted,
           size_acres, latitude, longitude, soil_type, soil_ph, soil_notes,
-          early_harvest, shoot_maturity, forecast_yield_kg, fruit_fly_pressure, disease_rating,
+          early_harvest, shoot_maturity, forecast_yield_kg, actual_yield_kg, variety, fruit_fly_pressure, disease_rating, disease_severity,
           status, operations_started_on, planting_started_on,
           organization_id, created_by, updated_by
         ) VALUES (
@@ -996,11 +1016,11 @@ router.post(
           ${parsed.data.latitude ?? null}, ${parsed.data.longitude ?? null}, ${parsed.data.soil_type ?? null},
           ${parsed.data.soil_ph ?? null}, ${parsed.data.soil_notes ?? null},
           ${parsed.data.early_block_classification === "Yes"}, ${parsed.data.shoot_maturity ?? 0},
-          ${parsed.data.forecast_yield_kg ?? null}, ${parsed.data.fruit_fly_pressure ?? null}, ${parsed.data.disease_rating ?? null},
+          ${parsed.data.forecast_yield_kg ?? null}, ${parsed.data.actual_yield_kg ?? null}, ${parsed.data.mango_variety ?? null}, ${parsed.data.fruit_fly_pressure ?? null}, ${parsed.data.disease_rating ?? null}, ${parsed.data.disease_severity ?? null},
           ${parsed.data.status}, ${parsed.data.operations_started_on || null}, ${parsed.data.planting_started_on || null},
           ${farm.organization_id}, ${user.id}, ${user.id}
         )
-        RETURNING *, operations_started_on::text AS operations_started_on, planting_started_on::text AS planting_started_on
+        RETURNING *, variety AS mango_variety, operations_started_on::text AS operations_started_on, planting_started_on::text AS planting_started_on
       `;
         for (const entry of parsed.data.inventory) {
           const cropVarietyId = await resolveVarietyId(
@@ -1168,12 +1188,16 @@ router.patch(
           422,
         );
 
-      if (
-        parsed.data.block_code &&
-        parsed.data.block_code !== existing.block_code
-      ) {
+      const targetFarm = parsed.data.farm_id && parsed.data.farm_id !== existing.farm_id
+        ? await loadFarm(sql, parsed.data.farm_id, user)
+        : null;
+      if (parsed.data.farm_id && parsed.data.farm_id !== existing.farm_id && !targetFarm)
+        return errorResponse(c, "NOT_FOUND", "The selected parent farm was not found", 404);
+      const nextFarmId = targetFarm?.id || existing.farm_id;
+      if (parsed.data.block_code || nextFarmId !== existing.farm_id) {
+        const nextCode = parsed.data.block_code || existing.block_code;
         const dupe =
-          await sql`SELECT id FROM farm_blocks WHERE farm_id = ${existing.farm_id} AND block_code = ${parsed.data.block_code} AND id != ${existing.id}`;
+          await sql`SELECT id FROM farm_blocks WHERE farm_id = ${nextFarmId} AND block_code = ${nextCode} AND id != ${existing.id}`;
         if (dupe[0])
           return errorResponse(
             c,
@@ -1185,17 +1209,17 @@ router.patch(
 
       const merged = { ...existing, ...parsed.data };
       if (
-        parsed.data.size_acres != null &&
-        parsed.data.size_acres !== existing.size_acres
+        (parsed.data.size_acres != null && parsed.data.size_acres !== existing.size_acres) ||
+        nextFarmId !== existing.farm_id
       ) {
         const farm =
-          await sql`SELECT size_acres FROM farms WHERE id = ${existing.farm_id}`;
+          await sql`SELECT size_acres FROM farms WHERE id = ${nextFarmId}`;
         const allocated =
-          await sql`SELECT COALESCE(sum(size_acres), 0) AS total FROM farm_blocks WHERE farm_id = ${existing.farm_id} AND status = 'active' AND id != ${existing.id}`;
+          await sql`SELECT COALESCE(sum(size_acres), 0) AS total FROM farm_blocks WHERE farm_id = ${nextFarmId} AND status = 'active' AND id != ${existing.id}`;
         const allocation = checkFarmSizeAllocation({
           farmSizeAcres: farm[0]?.size_acres ?? null,
           currentlyAllocatedAcres: Number(allocated[0].total),
-          incomingSizeAcres: parsed.data.size_acres,
+          incomingSizeAcres: parsed.data.size_acres ?? existing.size_acres,
           allowOverride:
             parsed.data.allow_size_override &&
             (isAdmin(user) || hasPermission(user.role, "farms.update")),
@@ -1212,7 +1236,7 @@ router.patch(
 
       const rows = await sql`
       UPDATE farm_blocks SET
-        block_code = ${merged.block_code ?? existing.block_code}, name = ${merged.name ?? existing.name},
+        farm_id = ${nextFarmId}, block_code = ${merged.block_code ?? existing.block_code}, name = ${merged.name ?? existing.name},
         description = ${"description" in parsed.data ? (parsed.data.description ?? null) : existing.description},
         early_block_classification = ${"early_block_classification" in parsed.data ? (parsed.data.early_block_classification ?? null) : existing.early_block_classification},
         year_planted = ${"year_planted" in parsed.data ? (parsed.data.year_planted ?? null) : existing.year_planted},
@@ -1222,12 +1246,15 @@ router.patch(
         early_harvest = ${"early_block_classification" in parsed.data ? parsed.data.early_block_classification === "Yes" : existing.early_harvest},
         shoot_maturity = ${merged.shoot_maturity ?? existing.shoot_maturity},
         forecast_yield_kg = ${"forecast_yield_kg" in parsed.data ? (parsed.data.forecast_yield_kg ?? null) : existing.forecast_yield_kg},
+        actual_yield_kg = ${"actual_yield_kg" in parsed.data ? (parsed.data.actual_yield_kg ?? null) : existing.actual_yield_kg},
+        variety = ${"mango_variety" in parsed.data ? (parsed.data.mango_variety ?? null) : existing.variety},
         fruit_fly_pressure = ${"fruit_fly_pressure" in parsed.data ? (parsed.data.fruit_fly_pressure ?? null) : existing.fruit_fly_pressure},
         disease_rating = ${"disease_rating" in parsed.data ? (parsed.data.disease_rating ?? null) : existing.disease_rating},
+        disease_severity = ${"disease_severity" in parsed.data ? (parsed.data.disease_severity ?? null) : existing.disease_severity},
         status = ${merged.status ?? existing.status}, operations_started_on = ${merged.operations_started_on || null},
         planting_started_on = ${merged.planting_started_on || null}, updated_by = ${user.id}, updated_at = now()
       WHERE id = ${existing.id}
-      RETURNING *, operations_started_on::text AS operations_started_on, planting_started_on::text AS planting_started_on
+      RETURNING *, variety AS mango_variety, operations_started_on::text AS operations_started_on, planting_started_on::text AS planting_started_on
     `;
       await sql`
       INSERT INTO audit_events (id, user_id, action, target_table, record_id, old_values, new_values, ip_address)

@@ -26,7 +26,7 @@ export default function Terms() {
           <section>
             <h2 className="font-heading text-xl font-semibold">3. Orders and Payments</h2>
             <p className="mt-3">
-              Placing an order constitutes an offer to purchase. We reserve the right to refuse or cancel orders at our discretion. Prices are displayed in Ghanaian Cedi (GHS) and subject to change. Payment is due at the time of order confirmation unless otherwise agreed.
+              Placing an order constitutes an offer to purchase. We reserve the right to refuse or cancel orders at our discretion. Prices are displayed in Ghana cedis (₵) and subject to change. Payment is due at the time of order confirmation unless otherwise agreed.
             </p>
           </section>
 

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Ship, Globe2 } from 'lucide-react';
 import PageHeader from '@/components/shared/PageHeader';
+import PageSkeleton from '@/components/shared/PageSkeleton';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { formatCurrency, formatDate } from '@/components/shared/format';
 import DataTable from '@/components/shared/DataTable';
@@ -65,7 +66,7 @@ export default function ExportOps() {
         <div className="rounded-xl border border-border bg-card p-5 shadow-sm"><Globe2 className="h-5 w-5 text-emerald-500" /><p className="mt-2 font-heading text-2xl font-bold">{new Set(shipments.map((s) => s.destination_country)).size}</p><p className="text-xs text-muted-foreground">Destinations</p></div>
       </div>
 
-      {loading ? <div className="h-64 animate-pulse rounded-xl bg-muted" /> : (
+      {loading ? <PageSkeleton contentOnly /> : (
         <DataTable items={shipments} columns={[
           { key: 'export_code', label: 'Export #' },
           { key: 'customer_name', label: 'Customer' },

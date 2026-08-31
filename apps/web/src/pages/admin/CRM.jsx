@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Plus, Search, Users, Mail, Phone, Building2 } from 'lucide-react';
 import PageHeader from '@/components/shared/PageHeader';
+import PageSkeleton from '@/components/shared/PageSkeleton';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { formatCurrency } from '@/components/shared/format';
 import { Button } from '@/components/ui/button';
@@ -127,7 +128,7 @@ export default function CRM() {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {loading ? (
-          [1, 2, 3, 4, 5, 6].map((i) => <div key={i} className="h-48 animate-pulse rounded-xl bg-muted" />)
+          <div className="sm:col-span-2 lg:col-span-3"><PageSkeleton contentOnly /></div>
         ) : filtered.length > 0 ? (
           filtered.map((c) => (
             <div key={c.id} className="rounded-xl border border-border bg-card p-5 shadow-sm transition-shadow hover:shadow-md">

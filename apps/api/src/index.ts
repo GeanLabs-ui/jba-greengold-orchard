@@ -10,6 +10,7 @@ import filesRouter from './modules/files.js';
 import commerceRouter from './modules/commerce.js';
 import calendarRouter from './modules/calendar.js';
 import farmsRouter from './modules/farms.js';
+import activityLogRouter from './modules/activity-log.js';
 import { runCalendarReminders } from './calendar-reminders.js';
 import { purgeExpiredRateLimitWindows, purgeExpiredVerificationTokens } from './maintenance.js';
 
@@ -81,6 +82,7 @@ api.route('/applications', applicationsRouter);
 api.route('/files', filesRouter);
 api.route('/commerce', commerceRouter);
 api.route('/calendar', calendarRouter);
+api.route('/activity-log', activityLogRouter);
 
 // Public deployment probes must be registered before the authenticated farms router,
 // which is mounted at the API root and otherwise intercepts every remaining path.

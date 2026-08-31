@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Truck, Package } from 'lucide-react';
 import PageHeader from '@/components/shared/PageHeader';
+import PageSkeleton from '@/components/shared/PageSkeleton';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { formatDateTime } from '@/components/shared/format';
 import DataTable from '@/components/shared/DataTable';
@@ -88,7 +89,7 @@ export default function Logistics() {
         <TabsList><TabsTrigger value="deliveries">Deliveries</TabsTrigger><TabsTrigger value="vehicles">Vehicles</TabsTrigger></TabsList>
 
         <TabsContent value="deliveries" className="mt-4">
-          {loading ? <div className="h-64 animate-pulse rounded-xl bg-muted" /> : (
+          {loading ? <PageSkeleton contentOnly /> : (
             <DataTable items={deliveries} columns={[
               { key: 'delivery_code', label: 'Code' },
               { key: 'order_number', label: 'Order #' },

@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Banknote, CalendarDays, Filter, MapPin, RotateCcw, TrendingDown, TrendingUp, Trash2, Wallet } from 'lucide-react';
 import StatusBadge from '@/components/shared/StatusBadge';
+import PageSkeleton from '@/components/shared/PageSkeleton';
 import { formatCurrency, formatDate } from '@/components/shared/format';
 import DataTable from '@/components/shared/DataTable';
 import MetricCard from '@/components/shared/MetricCard';
@@ -30,6 +31,7 @@ const initialMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padS
 const initialYear = String(today.getFullYear());
 
 const dateValue = (record, fields) => fields.map((field) => record?.[field]).find(Boolean);
+const compactCedis = (value) => value >= 1_000_000 ? `₵${Math.round(value / 1_000_000)}M` : value >= 1_000 ? `₵${Math.round(value / 1_000)}K` : `₵${value}`;
 
 const chartWindow = (selection, sales, expenses) => {
   if (selection.mode === 'month' && selection.month) {
@@ -266,12 +268,12 @@ export default function Finance() {
       </div>
 
       <div className="mt-6 rounded-xl border border-border bg-card p-5 shadow-sm">
-        <h3 className="font-heading font-semibold">Website Sales vs Daily Activity Expenses (GHS)</h3>
+        <h3 className="font-heading font-semibold">Website Sales vs Daily Activity Expenses (₵)</h3>
         <ResponsiveContainer width="100%" height={280} className="mt-4">
           <BarChart data={monthlyData}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
             <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-            <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
+            <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickFormatter={compactCedis} />
             <Tooltip contentStyle={{ borderRadius: '0.75rem', border: '1px solid hsl(var(--border))' }} formatter={(value) => formatCurrency(value)} />
             <Bar dataKey="expenses" name="Activity expenses" fill="hsl(0 72% 51%)" radius={[4, 4, 0, 0]} />
             <Bar dataKey="sales" name="Website revenue" fill="#2563eb" radius={[4, 4, 0, 0]} />
@@ -284,7 +286,7 @@ export default function Finance() {
           <h3 className="font-heading font-semibold">Daily Activity Expenses</h3>
           <p className="mt-1 text-xs text-muted-foreground">Deleting a financial cost preserves the operational Daily Activity record.</p>
         </div>
-        {loading ? <div className="h-48 animate-pulse rounded-xl bg-muted" /> : (
+        {loading ? <PageSkeleton contentOnly /> : (
           <DataTable
             items={expenses}
             emptyMessage="No Daily Activity costs match the selected filters."
@@ -317,7 +319,7 @@ export default function Finance() {
           <h3 className="font-heading font-semibold">Recent Website Sales</h3>
           <p className="mt-1 text-xs text-muted-foreground">Orders placed by customers through the public website.</p>
         </div>
-        {loading ? <div className="h-48 animate-pulse rounded-xl bg-muted" /> : (
+        {loading ? <PageSkeleton contentOnly /> : (
           <DataTable items={sales} emptyMessage="No website sales match the selected filters." columns={[
             { key: 'order_number', label: 'Order #' },
             { key: 'order_date', label: 'Date', format: formatDate },

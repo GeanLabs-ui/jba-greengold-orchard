@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Search, Package, AlertTriangle, ArrowDownUp } from 'lucide-react';
 import PageHeader from '@/components/shared/PageHeader';
+import PageSkeleton from '@/components/shared/PageSkeleton';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { formatNumber, formatDate } from '@/components/shared/format';
 import { Input } from '@/components/ui/input';
@@ -151,7 +152,7 @@ export default function Inventory() {
             <Input placeholder="Search stock..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
           </div>
           {loading ? (
-            <div className="h-64 animate-pulse rounded-xl bg-muted" />
+            <PageSkeleton contentOnly />
           ) : (
             <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
               <table className="w-full text-sm">

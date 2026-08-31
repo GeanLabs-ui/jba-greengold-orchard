@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import {
-  ArrowDown, CalendarDays, ChartNoAxesCombined, CircleDollarSign, ClipboardList, Eye,
+  ArrowDown, CalendarDays, ChartNoAxesCombined, ClipboardList, Eye,
   House, Leaf, Plus, Sprout, Trees, TrendingUp, Trophy,
 } from 'lucide-react';
 import {
@@ -10,6 +10,7 @@ import {
   ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
 import { Button } from '@/components/ui/button';
+import CircleCediSign from '@/components/icons/CircleCediSign';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { formatCurrency, formatDate, formatNumber } from '@/components/shared/format';
 import {
@@ -31,7 +32,7 @@ const text = (value) => String(value || '').trim();
 const lower = (value) => text(value).toLowerCase();
 const recordDate = (row, keys) => keys.map((key) => parseRecordDate(row[key])).find(Boolean) || null;
 const monthLabel = (date) => date.toLocaleDateString('en-US', { month: 'short' });
-const formatCedis = (value) => formatCurrency(value, '₵');
+const formatCedis = (value) => formatCurrency(value);
 const compactCurrency = (value) => value >= 1000000 ? `₵${(value / 1000000).toFixed(1)}m` : value >= 1000 ? `₵${(value / 1000).toFixed(value >= 100000 ? 0 : 1)}k` : `₵${formatNumber(value)}`;
 
 function AnalyticsPanel({ title, children, className = '', action }) {
@@ -347,7 +348,7 @@ export default function FarmOperationsAnalytics({ data }) {
 
       <section className="sticky top-28 z-10 grid gap-3 bg-background/95 py-1 backdrop-blur xl:top-14 sm:grid-cols-2 xl:grid-cols-4">
         <SummaryKpi icon={Trees} label="Farm Structure" value={`${visibleFarms.length} farms · ${visibleBlocks.length} blocks`} note={`${formatNumber(totalTrees)} total trees`} />
-        <MergedKpi first={{ icon: CircleDollarSign, label: 'Projected Cost', value: compactCurrency(totalProjectedCost), tone: 'red' }} second={{ icon: CircleDollarSign, label: 'Actual Cost', value: compactCurrency(totalCost), tone: 'red' }} />
+        <MergedKpi first={{ icon: CircleCediSign, label: 'Projected Cost', value: compactCurrency(totalProjectedCost), tone: 'red' }} second={{ icon: CircleCediSign, label: 'Actual Cost', value: compactCurrency(totalCost), tone: 'red' }} />
         <MergedKpi first={{ icon: TrendingUp, label: 'Total Revenue', value: compactCurrency(totalRevenue), tone: 'blue' }} second={{ icon: Leaf, label: 'Total Yield', value: `${formatNumber(totalYieldKg / 1000)} tonnes`, tone: 'green' }} />
         <SummaryKpi icon={ClipboardList} label="Active Tasks" value={activeTasks} note="Open farm activities" tone="blue" />
       </section>
@@ -371,7 +372,7 @@ export default function FarmOperationsAnalytics({ data }) {
             <div className="space-y-3 p-3">
               <PerformanceHighlight icon={Trophy} tone="green" label="Most Profitable Block" value={mostProfitableBlock?.blockLabel || '—'} detail={`Profit: ${formatCedis(mostProfitableBlock?.margin || 0)}`} gauge={totalRevenue ? Math.min(100, Math.max(0, ((mostProfitableBlock?.margin || 0) / totalRevenue) * 100)) : 0} />
               <PerformanceHighlight icon={Sprout} tone="green" label="Highest Yield" value={highestYieldBlock?.blockLabel || '—'} detail={`${formatNumber(highestYieldBlock?.yieldTonnes || 0)} tonnes`} />
-              <PerformanceHighlight icon={CircleDollarSign} tone="red" label="Lowest Cost" value={lowestCostBlock?.blockLabel || '—'} detail={formatCedis(lowestCostBlock?.cost || 0)} />
+              <PerformanceHighlight icon={CircleCediSign} tone="red" label="Lowest Cost" value={lowestCostBlock?.blockLabel || '—'} detail={formatCedis(lowestCostBlock?.cost || 0)} />
               <PerformanceHighlight icon={ChartNoAxesCombined} tone="blue" label="Revenue Performance" value={totalRevenue >= totalCost ? 'Strong' : 'Needs attention'} detail={`${formatNumber(revenueMargin)}% margin this period`} gauge={revenueMargin} />
             </div>
           </AnalyticsPanel>

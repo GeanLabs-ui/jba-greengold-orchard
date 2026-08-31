@@ -1,6 +1,5 @@
 import {
   ClipboardList,
-  Scissors,
   Wrench,
   FileText
 } from 'lucide-react';
@@ -21,22 +20,6 @@ export const farmDailyActivitiesNavigation = [
       { title: "Main Activities", path: "/admin/farm-daily-activities/activities/master-schedule", screen: "Master Schedule" },
       { title: "Risk Register", path: "/admin/farm-daily-activities/activities/risk-register", screen: "Risk Register" },
       { title: "Farms", path: "/admin/farm-daily-activities/activities/farms", screen: "Farms" }
-    ]
-  },
-  {
-    title: "Harvest Operations",
-    path: "/admin/farm-daily-activities/harvests",
-    icon: Scissors,
-    children: [
-      { title: "Harvest Dashboard", path: "/admin/farm-daily-activities/harvests/dashboard", screen: "Harvest Dashboard" },
-      { title: "Harvest Batches", path: "/admin/farm-daily-activities/harvests/batches", screen: "Daily Harvest Log" },
-      { title: "Grading", path: "/admin/farm-daily-activities/harvests/grading", screen: "Daily Harvest Log" },
-      { title: "Rejected Fruit", path: "/admin/farm-daily-activities/harvests/rejected", screen: "Daily Harvest Log", filter: { rejectedOnly: true } },
-      { title: "Warehouse Transfers", path: "/admin/farm-daily-activities/harvests/transfers", screen: "Crate Tracking" },
-      { title: "Truck Loading", path: "/admin/farm-daily-activities/harvests/loading", screen: "Truck Loading" },
-      { title: "Harvest Reports", path: "/admin/farm-daily-activities/harvests/reports", screen: "Daily Harvest Log" },
-      { title: "Budget & Harvest", path: "/admin/farm-daily-activities/harvests/budget-harvest", screen: "Budget & Harvest" },
-      { title: "Harvest Seasons", path: "/admin/farm-daily-activities/harvests/season-planner", screen: "Harvest Seasons" }
     ]
   },
   {

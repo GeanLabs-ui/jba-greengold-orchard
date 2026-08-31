@@ -1,58 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import BrandLogo from '@/components/shared/BrandLogo';
-import { farmDailyActivitiesNavigation } from '@/lib/farm-navigation';
 import {
-  LayoutDashboard, Users, ShoppingCart, Package, Warehouse, Truck,
-  UserCog, FileText, Banknote, Ship, BarChart3,
-  FolderOpen, Newspaper, Leaf, Settings, ChevronDown, FileCheck2,
-  PanelLeftClose, PanelLeftOpen, MessageSquareText, CalendarDays,
+  ChevronDown, Leaf, PanelLeftClose, PanelLeftOpen,
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { subscribeToDataChanges } from '@/lib/data-sync';
 import { useAuth } from '@/lib/AuthContext';
 import { canAccessAdminPath } from '@/lib/access-control';
-
-const dashboardItem = { label: 'Dashboard', path: '/admin', icon: LayoutDashboard };
-
-const navSections = [
-  {
-    title: 'Production',
-    icon: Leaf,
-    items: [
-      { label: 'Farm Daily Activities', path: '/admin/farm-daily-activities', subheading: true },
-      ...farmDailyActivitiesNavigation.map(({ title, path, icon }) => ({ label: title, path, icon })),
-      { label: 'Production Calendar', path: '/admin/calendar', icon: CalendarDays, countKey: 'calendar' },
-    ],
-  },
-  {
-    title: 'Business',
-    icon: Users,
-    items: [
-      { label: 'CRM', path: '/admin/crm', icon: Users },
-      { label: 'Client Inquiries', path: '/admin/inquiries', icon: MessageSquareText, countKey: 'inquiries' },
-      { label: 'Sales', path: '/admin/sales', icon: ShoppingCart },
-      { label: 'Orders', path: '/admin/orders', icon: Package, countKey: 'orders' },
-      { label: 'Inventory', path: '/admin/inventory', icon: Warehouse },
-      { label: 'Logistics', path: '/admin/logistics', icon: Truck },
-      { label: 'Procurement', path: '/admin/procurement', icon: FileText },
-      { label: 'Finance', path: '/admin/finance', icon: Banknote },
-      { label: 'Export Ops', path: '/admin/export-ops', icon: Ship },
-    ],
-  },
-  {
-    title: 'System',
-    icon: Settings,
-    items: [
-      { label: 'HR', path: '/admin/hr', icon: UserCog },
-      { label: 'Applications ATS', path: '/admin/applications', icon: FileCheck2 },
-      { label: 'Content', path: '/admin/content', icon: Newspaper },
-      { label: 'Documents', path: '/admin/documents', icon: FolderOpen },
-      { label: 'Reports', path: '/admin/reports', icon: BarChart3 },
-      { label: 'Settings', path: '/admin/settings', icon: Settings },
-    ],
-  },
-];
+import { adminNavSections, dashboardItem, isAdminNavItemActive } from './admin-navigation';
 
 export default function AdminSidebar({ collapsed = false, onToggleCollapsed }) {
   const { user } = useAuth();
@@ -87,12 +43,8 @@ export default function AdminSidebar({ collapsed = false, onToggleCollapsed }) {
     return () => { active = false; clearTimeout(timer); clearInterval(interval); unsubscribe(); };
   }, []);
 
-  const isItemActive = (item) => (
-    item.path === '/admin'
-      ? location.pathname === item.path
-      : location.pathname === item.path || location.pathname.startsWith(`${item.path}/`)
-  );
-  const accessibleSections = navSections
+  const isItemActive = (item) => isAdminNavItemActive(location.pathname, item);
+  const accessibleSections = adminNavSections
     .map((section) => ({ ...section, items: section.items.filter((item) => canAccessAdminPath(user, item.path)) }))
     .filter((section) => section.items.length > 0);
   const activeSection = accessibleSections.find((section) => section.items.some((item) => !item.subheading && isItemActive(item)))?.title || null;
@@ -206,8 +158,9 @@ export default function AdminSidebar({ collapsed = false, onToggleCollapsed }) {
                 type="button"
                 aria-expanded={isOpen}
                 aria-controls={`admin-nav-${section.title.toLowerCase()}`}
+                aria-label={`${section.title} navigation`}
                 onClick={() => toggleSection(section.title)}
-                title={collapsed ? section.title : undefined}
+                title={`${section.title} navigation`}
                 className={`flex w-full items-center rounded-lg py-2 text-left text-xs font-semibold uppercase tracking-wider transition-colors ${
                   collapsed ? 'justify-center px-2' : 'gap-2 px-3'
                 } ${
@@ -230,7 +183,6 @@ export default function AdminSidebar({ collapsed = false, onToggleCollapsed }) {
                 }`}
               >
                 <div className={`${collapsed ? '' : 'min-h-0 pt-1'}`}>
-                  {collapsed && <p className="px-3 pb-2 pt-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{section.title}</p>}
                   <div className={collapsed ? 'flex flex-col' : 'ml-3 border-l border-border/80 pl-2'}>
                     {section.items.map((item) => renderItem(item, false))}
                   </div>

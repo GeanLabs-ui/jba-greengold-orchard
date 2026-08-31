@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Bell, Menu, RefreshCw, Search } from 'lucide-react';
+import { Bell, Menu, RefreshCw, Search, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import BrandLogo from '@/components/shared/BrandLogo';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/lib/AuthContext';
@@ -9,6 +10,7 @@ import { subscribeToDataChanges } from '@/lib/data-sync';
 import { timeAgo } from '@/components/shared/format';
 import { getSafeRedirectTarget } from '@/lib/safe-redirect';
 import { canAccessAdminPath, defaultAdminPath } from '@/lib/access-control';
+import AdminHorizontalNav from './AdminHorizontalNav';
 
 const adminDestinations = [
   ['Dashboard', '/admin', 'overview summary performance kpi'], ['CRM', '/admin/crm', 'customer contact'],
@@ -68,11 +70,17 @@ export default function AdminTopbar({ onMenuClick }) {
     else if (notification.invoice_number || notification.type === 'payment') destination = `/admin/sales${notification.invoice_number ? `?invoice=${encodeURIComponent(notification.invoice_number)}` : ''}`;
     navigate(canAccessAdminPath(user, destination) ? destination : defaultAdminPath(user));
   };
+  const deleteNotification = async (notification) => {
+    setNotifications((current) => current.filter((item) => item.id !== notification.id));
+    await base44.entities.Notification.delete(notification.id).catch(loadNotifications);
+  };
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-border bg-card/95 px-4 backdrop-blur md:px-6">
-      <button type="button" className="lg:hidden" onClick={onMenuClick} aria-label="Open navigation"><Menu className="h-5 w-5" /></button>
-      <form onSubmit={runSearch} className="relative hidden max-w-md flex-1 md:block">
+    <header className="sticky top-0 z-[60] flex h-16 items-center gap-3 border-b border-border bg-card/95 px-4 backdrop-blur md:px-6">
+      <button type="button" className="xl:hidden" onClick={onMenuClick} aria-label="Open navigation"><Menu className="h-5 w-5" /></button>
+      <BrandLogo className="hidden h-12 w-[92px] shrink-0 xl:flex" imageClassName="h-10 max-w-[92px] sm:h-10" />
+      <AdminHorizontalNav />
+      <form onSubmit={runSearch} className="relative hidden min-w-48 max-w-sm flex-1 md:block">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search admin tools…" className="border-0 bg-muted/50 pl-9" />
         {search && <div className="absolute left-0 right-0 top-[calc(100%+8px)] overflow-hidden rounded-lg border border-border bg-card shadow-xl">
@@ -80,7 +88,7 @@ export default function AdminTopbar({ onMenuClick }) {
         </div>}
       </form>
 
-      <div className="ml-auto flex items-center gap-3">
+      <div className="ml-auto flex shrink-0 items-center gap-3">
         <Button variant="ghost" size="icon" onClick={refreshCurrentPage} aria-label="Refresh current page" title="Refresh current page">
           <RefreshCw className="h-5 w-5" />
         </Button>
@@ -90,7 +98,7 @@ export default function AdminTopbar({ onMenuClick }) {
           </Button>
           {notifOpen && <div className="absolute right-0 mt-2 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-lg border border-border bg-card shadow-xl">
             <div className="flex items-center justify-between border-b px-4 py-3"><p className="text-sm font-semibold">Notifications</p><span className="text-xs text-muted-foreground">{unread} unread</span></div>
-            <div className="max-h-80 overflow-y-auto p-2">{notifications.length ? notifications.map((notification) => <button key={notification.id} type="button" onClick={() => openNotification(notification)} className={`block w-full rounded-md px-3 py-2.5 text-left hover:bg-muted ${notification.status === 'read' ? 'opacity-65' : ''}`}><span className="flex items-start justify-between gap-3"><span className="text-sm font-medium">{notification.title}</span>{notification.status !== 'read' && <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-primary" />}</span><span className="mt-1 block text-xs leading-5 text-muted-foreground">{notification.message}</span><span className="mt-1 block text-[11px] text-muted-foreground">{timeAgo(notification.created_date)}</span></button>) : <p className="px-3 py-8 text-center text-sm text-muted-foreground">No notifications yet.</p>}</div>
+            <div className="max-h-80 overflow-y-auto p-2">{notifications.length ? notifications.map((notification) => <div key={notification.id} className={`group flex rounded-md hover:bg-muted ${notification.status === 'read' ? 'opacity-65' : ''}`}><button type="button" onClick={() => openNotification(notification)} className="min-w-0 flex-1 px-3 py-2.5 text-left"><span className="flex items-start justify-between gap-3"><span className="text-sm font-medium">{notification.title}</span>{notification.status !== 'read' && <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-primary" />}</span><span className="mt-1 block text-xs leading-5 text-muted-foreground">{notification.message}</span><span className="mt-1 block text-[11px] text-muted-foreground">{timeAgo(notification.created_date)}</span></button>{notification.status === 'read' && <Button type="button" variant="ghost" size="icon" onClick={() => deleteNotification(notification)} className="mr-1 mt-1.5 h-8 w-8 shrink-0" aria-label={`Delete notification: ${notification.title}`} title="Delete notification"><Trash2 className="h-4 w-4" /></Button>}</div>) : <p className="px-3 py-8 text-center text-sm text-muted-foreground">No notifications yet.</p>}</div>
           </div>}
         </div>
         <div className="flex items-center gap-2"><div className="admin-avatar flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold">{(user?.full_name || user?.email || 'A')[0].toUpperCase()}</div><div className="hidden md:block"><p className="text-sm font-medium leading-tight">{user?.full_name || user?.email || 'Admin User'}</p><p className="text-xs capitalize text-muted-foreground">{String(user?.role || 'admin').replaceAll('_', ' ')}</p></div></div>

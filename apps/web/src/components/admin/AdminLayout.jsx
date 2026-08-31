@@ -12,7 +12,6 @@ export default function AdminLayout() {
   const { user } = useAuth();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const canAccessPage = canAccessAdminPath(user, location.pathname);
 
   useEffect(() => {
@@ -22,13 +21,6 @@ export default function AdminLayout() {
 
   return (
     <div className="admin-shell flex h-screen overflow-hidden bg-background">
-      <div className="hidden lg:flex lg:flex-col">
-        <AdminSidebar
-          collapsed={sidebarCollapsed}
-          onToggleCollapsed={() => setSidebarCollapsed((collapsed) => !collapsed)}
-        />
-      </div>
-
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
         <SheetContent side="left" className="w-64 p-0">
           <SheetHeader className="px-4 py-3 border-b">

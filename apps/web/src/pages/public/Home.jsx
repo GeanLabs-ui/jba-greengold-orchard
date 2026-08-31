@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Sprout, Truck, Globe2, Leaf, ShieldCheck, TrendingUp, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { base44 } from '@/api/base44Client';
 
 export default function Home() {
@@ -127,7 +128,10 @@ export default function Home() {
           <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {loading ? (
               [1, 2, 3].map((i) => (
-                <div key={i} className="h-72 animate-pulse rounded-2xl bg-muted" />
+                <article key={i} className="overflow-hidden rounded-2xl border bg-card shadow-sm">
+                  <Skeleton className="aspect-[4/3] w-full rounded-none" />
+                  <div className="space-y-3 p-5"><Skeleton className="h-3 w-20" /><Skeleton className="h-5 w-3/4" /><Skeleton className="h-3 w-full" /><div className="flex justify-between pt-2"><Skeleton className="h-5 w-24" /><Skeleton className="h-3 w-16" /></div></div>
+                </article>
               ))
             ) : featuredProducts.length > 0 ? (
               featuredProducts.map((product) => (
@@ -152,7 +156,7 @@ export default function Home() {
                     <h3 className="mt-1 font-heading text-lg font-semibold">{product.name}</h3>
                     <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{product.description || product.variety}</p>
                     <div className="mt-3 flex items-center justify-between">
-                      <span className="font-heading text-lg font-bold text-primary">GHS {product.price?.toLocaleString()}</span>
+                      <span className="font-heading text-lg font-bold text-primary">₵ {product.price?.toLocaleString()}</span>
                       <span className="text-xs text-muted-foreground">per {product.unit_of_measure}</span>
                     </div>
                   </div>

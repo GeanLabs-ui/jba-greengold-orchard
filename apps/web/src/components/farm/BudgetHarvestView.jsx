@@ -1,4 +1,5 @@
-import { CheckCircle2, CircleDollarSign, CloudSun, Loader2, Plus, Sprout, Target } from 'lucide-react';
+import { CheckCircle2, CloudSun, Loader2, Plus, Sprout, Target } from 'lucide-react';
+import CircleCediSign from '@/components/icons/CircleCediSign';
 import '@/pages/admin/DailyRoutineCheck.css';
 
 const displayDate = (value) => {
@@ -8,7 +9,7 @@ const displayDate = (value) => {
     ? String(value)
     : parsed.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 };
-const money = (value) => `GHS ${Number(value || 0).toLocaleString('en-GH', { maximumFractionDigits: 0 })}`;
+const money = (value) => `₵ ${Number(value || 0).toLocaleString('en-GH', { maximumFractionDigits: 0 })}`;
 const PageHead = ({ right }) => <div className="drc-page-head drc-page-actions">{right}</div>;
 const PanelHead = ({ title, copy }) => <div className="drc-panel-head"><div><h2>{title}</h2><p>{copy}</p></div></div>;
 const FinanceRow = ({ label, value, icon: Icon }) => {
@@ -57,10 +58,10 @@ export default function BudgetHarvestView({
           <aside className="drc-finance-summary">
             <span>Remaining budget</span><strong>{money(finance.planned - finance.actual)}</strong>
             <FinanceRow label="Planned" value={money(finance.planned)} icon={Target} />
-            <FinanceRow label="Actual" value={money(finance.actual)} icon={CircleDollarSign} />
+            <FinanceRow label="Actual" value={money(finance.actual)} icon={CircleCediSign} />
             <FinanceRow label="Harvested" value={`${finance.kg.toLocaleString()} kg`} icon={Sprout} />
             <FinanceRow label="Grade A" value={`${finance.gradePct}%`} icon={CheckCircle2} />
-            <FinanceRow label="Revenue" value={money(finance.revenue)} icon={CircleDollarSign} />
+            <FinanceRow label="Revenue" value={money(finance.revenue)} icon={CircleCediSign} />
           </aside>
         </div>
         <div className="drc-panel drc-harvest-panel">
@@ -87,7 +88,7 @@ export default function BudgetHarvestView({
           <Field label="Lot code"><input name="lot_code" required maxLength="80" /></Field>
           <Field label="Harvested kg"><input name="harvested_kg" type="number" min="0.01" step="0.01" required /></Field>
           <Field label="Grade A kg"><input name="grade_a_kg" type="number" min="0" step="0.01" required /></Field>
-          <Field label="Price per kg (GHS)"><input name="price_per_kg" type="number" min="0" step="0.01" required /></Field>
+          <Field label="Price per kg (₵)"><input name="price_per_kg" type="number" min="0" step="0.01" required /></Field>
           <Field label="Buyer"><input name="buyer" required maxLength="180" /></Field>
           <div className="drc-form-actions"><button type="button" className="drc-btn" onClick={() => harvestDialog.current?.close()}>Cancel</button><button className="drc-primary" disabled={busyKey === 'harvest'}>{busyKey === 'harvest' ? <Loader2 className="drc-spin" /> : null} Save harvest</button></div>
         </form>

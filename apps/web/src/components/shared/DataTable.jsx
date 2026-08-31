@@ -15,6 +15,9 @@ export default function DataTable({
   onRowClick,
   selectedId,
   rowActions,
+  selectable = false,
+  selectedIds = [],
+  onSelectedIdsChange,
 }) {
   if (!items || items.length === 0) {
     return (
@@ -29,6 +32,7 @@ export default function DataTable({
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-border bg-muted/50">
+            {selectable && <th className="w-12 px-4 py-3"><input type="checkbox" aria-label="Select all rows" checked={items.length > 0 && items.every((item) => selectedIds.includes(item.id))} onChange={(event) => onSelectedIdsChange?.(event.target.checked ? items.map((item) => item.id).filter(Boolean) : [])} /></th>}
             {columns.map((col) => (
               <th key={col.key} className={`px-4 py-3 font-semibold ${semanticTone(col) || 'text-muted-foreground'} ${col.align === 'right' ? 'text-right' : 'text-left'}`}>
                 {col.label}
@@ -44,6 +48,7 @@ export default function DataTable({
               className={`transition-colors hover:bg-muted/30 ${onRowClick ? 'cursor-pointer' : ''} ${selectedId === item.id ? 'bg-primary/10' : ''}`}
               onClick={() => onRowClick?.(item)}
             >
+              {selectable && <td className="px-4 py-3" onClick={(event) => event.stopPropagation()}><input type="checkbox" aria-label={`Select row ${i + 1}`} checked={selectedIds.includes(item.id)} onChange={(event) => onSelectedIdsChange?.(event.target.checked ? [...selectedIds, item.id] : selectedIds.filter((id) => id !== item.id))} /></td>}
               {columns.map((col) => {
                 const val = item[col.key];
                 return (

@@ -5,8 +5,11 @@ import {
   CloudSun,
   Loader2,
   Plus,
+  Pencil,
   RefreshCw,
+  Trash2,
 } from 'lucide-react';
+import PageSkeleton from '@/components/shared/PageSkeleton';
 import { base44 } from '@/api/base44Client';
 import { subscribeToDataChanges } from '@/lib/data-sync';
 import { taskStatusToCalendar } from '@/lib/production-calendar';
@@ -68,7 +71,7 @@ const entityLists = [
   ['logs', 'FarmProcessLog', '-activity_date'],
   ['financeRecords', 'FarmFinanceRecord', 'category'],
   ['harvests', 'HarvestBatch', '-harvest_date'],
-  ['risks', 'FarmComplianceRecord', 'record_code'],
+  ['risks', 'FarmComplianceRecord', '-created_date'],
   ['activities', 'DailyActivity', '-activity_date'],
   ['notes', 'FarmNote', '-created_date'],
 ];
@@ -79,6 +82,11 @@ const date = (value) => {
   return Number.isNaN(parsed.getTime())
     ? String(value)
     : parsed.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+};
+const dateTime = (value) => {
+  if (!value) return '—';
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? String(value) : parsed.toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' });
 };
 const code = (prefix) => `${prefix}-${Date.now().toString().slice(-8)}`;
 const normalizedStatus = (value) => {
@@ -303,7 +311,9 @@ function mergeBlueprints(shared) {
     logs: shared.logs.filter((item) => item.programme_code === PROGRAMME_CODE),
     financeRecords: shared.financeRecords.filter((item) => item.programme_code === PROGRAMME_CODE && item.record_type === 'programme_budget'),
     harvests: shared.harvests.filter((item) => item.programme_code === PROGRAMME_CODE),
-    risks: shared.risks.filter((item) => item.programme_code === PROGRAMME_CODE),
+    risks: shared.risks
+      .filter((item) => item.programme_code === PROGRAMME_CODE)
+      .sort((left, right) => new Date(right.updated_date || right.created_date || right.recorded_at || 0) - new Date(left.updated_date || left.created_date || left.recorded_at || 0)),
   };
 }
 
@@ -389,13 +399,14 @@ export default function DailyRoutineCheck({ initialView = 'dashboard', riskOnly 
     if (filterRange.start && dates.length && !dates.some((value) => value >= filterRange.start && value <= filterRange.end)) return false;
     return !(filterRange.end && dates.length && !dates.some((value) => value <= filterRange.end));
   }), [allScheduleProjects, filterRange, scheduleFilter, shared.scheduleSubtasks]);
+  const trackedScheduleProjects = useMemo(() => filteredScheduleProjects.filter((item) => item.is_enabled !== false), [filteredScheduleProjects]);
   const filteredSummary = useMemo(() => ({
-    total: filteredScheduleProjects.length,
-    active: filteredScheduleProjects.filter((item) => normalizedStatus(item.status) === 'in_progress').length,
-    completed: filteredScheduleProjects.filter((item) => normalizedStatus(item.status) === 'completed').length,
-    overdue: filteredScheduleProjects.filter((item) => item.overdue || isOverdue(item)).length,
-    progress: Math.round(filteredScheduleProjects.reduce((sum, item) => sum + Number(item.progress_percent || 0), 0) / (filteredScheduleProjects.length || 1)),
-  }), [filteredScheduleProjects]);
+    total: trackedScheduleProjects.length,
+    active: trackedScheduleProjects.filter((item) => normalizedStatus(item.status) === 'in_progress').length,
+    completed: trackedScheduleProjects.filter((item) => normalizedStatus(item.status) === 'completed').length,
+    overdue: trackedScheduleProjects.filter((item) => item.overdue || isOverdue(item)).length,
+    progress: Math.round(trackedScheduleProjects.reduce((sum, item) => sum + Number(item.progress_percent || 0), 0) / (trackedScheduleProjects.length || 1)),
+  }), [trackedScheduleProjects]);
 
   const metrics = useMemo(() => {
     const total = scheduleProjects.length;
@@ -758,6 +769,66 @@ export default function DailyRoutineCheck({ initialView = 'dashboard', riskOnly 
     }
   };
 
+  const createRisk = async (values) => {
+    setBusyKey('new-risk');
+    try {
+      const riskCode = code('RISK');
+      const created = await base44.entities.FarmComplianceRecord.create({
+        programme_code: PROGRAMME_CODE,
+        source: 'Risk Register',
+        record_code: riskCode,
+        risk_code: riskCode,
+        compliance_area: 'Programme Risk',
+        requirement: values.requirement,
+        category: values.category,
+        probability: values.probability,
+        impact: values.impact,
+        mitigation: values.mitigation,
+        owner: values.owner,
+        status: values.status,
+        risk_date: new Date().toISOString(),
+        recorded_at: new Date().toISOString(),
+        farm_id: shared.farms[0]?.id || '',
+        farm_name: shared.farms[0]?.name || PROGRAMME.name,
+      });
+      setShared((current) => ({ ...current, risks: [created, ...current.risks] }));
+      toast({ title: 'Risk added to the register' });
+    } catch (error) {
+      toast({ title: 'Risk could not be added', description: error.message, variant: 'destructive' });
+      throw error;
+    } finally { setBusyKey(''); }
+  };
+
+  const editRisk = async (risk, values) => {
+    setBusyKey(risk.id);
+    try {
+      const updated = await base44.entities.FarmComplianceRecord.update(risk.id, {
+        ...values,
+        completed_date: values.status === 'Closed' ? (risk.completed_date || TODAY) : '',
+        recorded_at: risk.recorded_at || risk.created_date || new Date().toISOString(),
+      });
+      setShared((current) => ({ ...current, risks: current.risks.map((item) => item.id === updated.id ? updated : item).sort((left, right) => new Date(right.updated_date || right.created_date || right.recorded_at || 0) - new Date(left.updated_date || left.created_date || left.recorded_at || 0)) }));
+      toast({ title: 'Risk updated' });
+    } catch (error) {
+      toast({ title: 'Risk could not be updated', description: error.message, variant: 'destructive' });
+      throw error;
+    } finally { setBusyKey(''); }
+  };
+
+  const deleteRisk = async (risk) => {
+    if (!risk?.id || !window.confirm(`Delete “${risk.requirement || risk.risk_code || 'this risk'}”? This cannot be undone.`)) return false;
+    setBusyKey(risk.id);
+    try {
+      await base44.entities.FarmComplianceRecord.delete(risk.id);
+      setShared((current) => ({ ...current, risks: current.risks.filter((item) => item.id !== risk.id) }));
+      toast({ title: 'Risk deleted' });
+      return true;
+    } catch (error) {
+      toast({ title: 'Risk could not be deleted', description: error.message, variant: 'destructive' });
+      return false;
+    } finally { setBusyKey(''); }
+  };
+
   const addFieldLog = async (event) => {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
@@ -902,19 +973,13 @@ export default function DailyRoutineCheck({ initialView = 'dashboard', riskOnly 
   };
 
   if (loading && !shared.tasks.length) {
-    return (
-      <div className="drc-boot">
-        <Loader2 className="drc-spin" />
-        <strong>{riskOnly ? 'Preparing Risk Register' : 'Preparing Daily Routine Check'}</strong>
-        <span>{syncStatus}</span>
-      </div>
-    );
+    return <PageSkeleton variant={riskOnly ? 'risk' : 'schedule'} />;
   }
 
   if (riskOnly) {
     return (
       <div className="drc-page drc-embedded-schedule">
-        <RiskRegisterView risks={shared.risks} onUpdateRisk={updateRisk} />
+        <RiskRegisterView risks={shared.risks} onCreateRisk={createRisk} onEditRisk={editRisk} onDeleteRisk={deleteRisk} busyKey={busyKey} />
       </div>
     );
   }
@@ -1020,17 +1085,72 @@ function PageHead({ right }) {
   return right ? <div className="drc-page-head drc-page-actions">{right}</div> : null;
 }
 
-function RiskRegisterView({ risks, onUpdateRisk }) {
+function RiskRegisterView({ risks, onCreateRisk, onEditRisk, onDeleteRisk, busyKey }) {
+  const riskDialog = useRef(null);
+  const [editingRisk, setEditingRisk] = useState(null);
+  const [riskDialogMode, setRiskDialogMode] = useState(null);
+  const [statusFilter, setStatusFilter] = useState('all');
+  const visibleRisks = risks.filter((risk) => (
+    statusFilter === 'all' || String(risk.status || 'Open').toLowerCase() === statusFilter
+  ));
+  const closeRiskDialog = () => {
+    riskDialog.current?.close();
+  };
+  const resetRiskDialog = () => {
+    setEditingRisk(null);
+    setRiskDialogMode(null);
+  };
+  const openRiskDialog = (risk = null) => {
+    setEditingRisk(risk);
+    setRiskDialogMode(risk ? 'edit' : 'create');
+    riskDialog.current?.showModal();
+  };
+  const saveRisk = async (event) => {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const values = Object.fromEntries(['requirement', 'category', 'probability', 'impact', 'mitigation', 'owner', 'status'].map((name) => [name, String(form.get(name) || '').trim()]));
+    if (editingRisk) await onEditRisk(editingRisk, values);
+    else await onCreateRisk(values);
+    closeRiskDialog();
+  };
+  const removeRisk = async () => {
+    if (editingRisk && await onDeleteRisk(editingRisk)) closeRiskDialog();
+  };
   return (
     <section className="drc-view drc-embedded-view active">
+      <div className="drc-risk-toolbar">
+        <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} aria-label="Filter risks by status">
+          <option value="all">All statuses</option>
+          <option value="open">Open</option>
+          <option value="monitoring">Monitoring</option>
+          <option value="closed">Closed</option>
+        </select>
+        <button type="button" className="drc-primary gold" onClick={() => openRiskDialog()}><Plus /> Add risk</button>
+      </div>
       <div className="drc-table-shell">
         <table className="drc-table">
-          <thead><tr><th>ID</th><th>Risk</th><th>Category</th><th>Probability</th><th>Impact</th><th>RAG</th><th>Mitigation</th><th>Owner</th><th>Status</th></tr></thead>
-          <tbody>{risks.map((risk) => (
-            <tr key={risk.id}><td>{risk.risk_code}</td><td className="drc-task-name"><b>{risk.requirement}</b></td><td>{risk.category}</td><td>{risk.probability}</td><td>{risk.impact}</td><td><Pill value={risk.rag} label={risk.rag} /></td><td>{risk.mitigation}</td><td>{risk.owner}</td><td><select className="drc-inline" value={risk.status || 'Open'} onChange={(event) => onUpdateRisk(risk, event.target.value)}><option>Open</option><option>Monitoring</option><option>Closed</option></select></td></tr>
+          <thead><tr><th>ID</th><th>Risk</th><th>Category</th><th>Probability</th><th>Impact</th><th>Mitigation</th><th>Owner</th><th>Recorded</th><th>Updated</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody>{visibleRisks.map((risk) => (
+            <tr key={risk.id}><td>{risk.risk_code}</td><td className="drc-task-name"><b>{risk.requirement}</b></td><td>{risk.category}</td><td>{risk.probability}</td><td>{risk.impact}</td><td>{risk.mitigation}</td><td>{risk.owner}</td><td>{dateTime(risk.recorded_at || risk.created_date)}</td><td>{dateTime(risk.updated_date || risk.created_date)}</td><td><Pill value={risk.status === 'Closed' ? 'GREEN' : risk.status === 'Monitoring' ? 'AMBER' : 'RED'} label={risk.status || 'Open'} /></td><td><button type="button" className="drc-btn drc-risk-edit" onClick={() => openRiskDialog(risk)}><Pencil /> Edit</button></td></tr>
           ))}</tbody>
         </table>
       </div>
+      <dialog className="drc-dialog drc-risk-dialog" ref={riskDialog} onClose={resetRiskDialog} aria-labelledby="risk-dialog-title">
+        <div className="drc-modal-head"><div><span className="drc-eyebrow">Risk register</span><h2 id="risk-dialog-title">{riskDialogMode === 'edit' ? 'Edit risk' : 'Add risk'}</h2></div><button type="button" onClick={closeRiskDialog} aria-label="Close risk form">×</button></div>
+        <form key={editingRisk?.id || 'new-risk'} className="drc-master-task-form drc-risk-form" onSubmit={saveRisk}>
+          <label className="wide"><span>Risk title</span><input name="requirement" defaultValue={editingRisk?.requirement || ''} required minLength="3" maxLength="300" /></label>
+          <label><span>Category</span><input name="category" defaultValue={editingRisk?.category || ''} required maxLength="100" /></label>
+          <label><span>Owner</span><input name="owner" defaultValue={editingRisk?.owner || ''} required maxLength="120" /></label>
+          <label><span>Probability</span><select name="probability" defaultValue={editingRisk?.probability || 'Medium'}><option>Low</option><option>Medium</option><option>High</option></select></label>
+          <label><span>Impact</span><select name="impact" defaultValue={editingRisk?.impact || 'Medium'}><option>Low</option><option>Medium</option><option>High</option></select></label>
+          <label><span>Status</span><select name="status" defaultValue={editingRisk?.status || 'Open'}><option>Open</option><option>Monitoring</option><option>Closed</option></select></label>
+          <label className="wide"><span>Mitigation / next action</span><textarea name="mitigation" rows="3" defaultValue={editingRisk?.mitigation || ''} required minLength="3" maxLength="2000" /></label>
+          <div className="drc-master-task-actions">
+            {editingRisk ? <button type="button" className="drc-btn drc-danger" onClick={removeRisk} disabled={busyKey === editingRisk.id}><Trash2 /> Delete risk</button> : null}
+            <div className="drc-risk-form-primary-actions"><button type="button" className="drc-btn" onClick={closeRiskDialog}>Cancel</button><button className="drc-primary" disabled={busyKey === 'new-risk' || busyKey === editingRisk?.id}>{busyKey === 'new-risk' || busyKey === editingRisk?.id ? <Loader2 className="drc-spin" /> : <Plus />}{editingRisk ? 'Save changes' : 'Add risk'}</button></div>
+          </div>
+        </form>
+      </dialog>
     </section>
   );
 }

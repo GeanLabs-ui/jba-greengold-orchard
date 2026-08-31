@@ -25,6 +25,17 @@ const pruneReplacedPublicAssets = () => ({
   ))),
 });
 
+const splitVendorChunk = (id) => {
+  if (!id.includes('node_modules')) return undefined;
+  if (/[\\/]node_modules[\\/](react|react-dom|react-router|react-router-dom|scheduler)[\\/]/.test(id)) return 'vendor-react';
+  if (id.includes('@radix-ui') || /[\\/]node_modules[\\/](lucide-react|cmdk|vaul|embla-carousel-react)[\\/]/.test(id)) return 'vendor-ui';
+  if (id.includes('framer-motion')) return 'vendor-motion';
+  if (id.includes('recharts') || /[\\/]node_modules[\\/](d3-|victory-vendor)/.test(id)) return 'vendor-charts';
+  if (id.includes('@tanstack') || /[\\/]node_modules[\\/](date-fns|moment|zod)[\\/]/.test(id)) return 'vendor-data';
+  if (id.includes('@stripe')) return 'vendor-commerce';
+  return 'vendor-core';
+};
+
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
@@ -40,6 +51,11 @@ export default defineConfig({
     target: 'es2022',
     sourcemap: false,
     assetsInlineLimit: 4096,
+    rollupOptions: {
+      output: {
+        manualChunks: splitVendorChunk,
+      },
+    },
   },
   server: {
     proxy: {

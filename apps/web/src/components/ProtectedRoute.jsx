@@ -5,7 +5,7 @@ import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import PageSkeleton from '@/components/shared/PageSkeleton';
 
 const DefaultFallback = () => (
-  <div className="min-h-screen bg-background p-6 sm:p-10"><PageSkeleton /></div>
+  <PageSkeleton fullPage />
 );
 
 export default function ProtectedRoute({

@@ -224,7 +224,8 @@
 }
 
 .drc-master-task-form input,
-.drc-master-task-form select {
+.drc-master-task-form select,
+.drc-master-task-form textarea {
   min-width: 0;
   height: 2.35rem;
   border: 1px solid var(--drc-line);
@@ -235,10 +236,76 @@
   font-size: 0.76rem;
 }
 
+.drc-master-task-form textarea {
+  height: auto;
+  min-height: 5.5rem;
+  padding: 0.65rem;
+  resize: vertical;
+}
+
+.drc-risk-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.55rem;
+  margin-bottom: 0.8rem;
+}
+
+.drc-risk-toolbar select {
+  height: 2.25rem;
+  border: 1px solid var(--drc-line);
+  border-radius: 0.45rem;
+  background: var(--drc-paper);
+  color: var(--drc-ink);
+  padding: 0 2rem 0 0.65rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.drc-risk-edit {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  white-space: nowrap;
+}
+
+.drc-risk-edit svg {
+  width: 0.8rem;
+  height: 0.8rem;
+}
+
+.drc-risk-dialog {
+  width: min(48rem, calc(100vw - 2rem));
+}
+
+.drc-risk-dialog .drc-risk-form {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
 .drc-master-task-actions {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
   gap: 0.6rem;
+}
+
+.drc-risk-form-primary-actions {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.drc-danger {
+  margin-right: auto;
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+
+.drc-danger:hover {
+  border-color: #fca5a5;
+  background: #fef2f2;
 }
 
 .drc-task-toggle {
@@ -282,6 +349,35 @@
   background: var(--drc-surface);
 }
 
+.drc-schedule-toolbar {
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+}
+
+.drc-schedule-toolbar .drc-schedule-filter {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+}
+
+.drc-schedule-toolbar > .drc-primary {
+  flex: none;
+}
+
+.drc-schedule-sticky {
+  position: sticky;
+  top: 3.4rem;
+  z-index: 18;
+  padding-top: 0.75rem;
+  background: var(--drc-paper);
+  box-shadow: 0 12px 18px -20px rgb(38 51 44 / 55%);
+}
+
+.drc-schedule-sticky .drc-schedule-analysis {
+  margin-bottom: 0.85rem;
+}
+
 .drc-schedule-filter input,
 .drc-schedule-filter select {
   min-width: 9rem;
@@ -309,7 +405,34 @@
 }
 
 .drc-schedule-analysis > div {
+  background: linear-gradient(180deg, var(--drc-metric-bg), var(--drc-surface));
+  box-shadow: inset 0 3px 0 var(--drc-metric-color);
   padding: 0.8rem 1rem;
+}
+
+.drc-schedule-analysis .drc-metric-total {
+  --drc-metric-color: #2563eb;
+  --drc-metric-bg: #eff6ff;
+}
+
+.drc-schedule-analysis .drc-metric-progress {
+  --drc-metric-color: #f59e0b;
+  --drc-metric-bg: #fffbeb;
+}
+
+.drc-schedule-analysis .drc-metric-completed {
+  --drc-metric-color: #16a34a;
+  --drc-metric-bg: #f0fdf4;
+}
+
+.drc-schedule-analysis .drc-metric-overdue {
+  --drc-metric-color: #dc2626;
+  --drc-metric-bg: #fef2f2;
+}
+
+.drc-schedule-analysis .drc-metric-average {
+  --drc-metric-color: #7c3aed;
+  --drc-metric-bg: #f5f3ff;
 }
 
 .drc-schedule-analysis > div + div {
@@ -323,13 +446,56 @@
 
 .drc-schedule-analysis span,
 .drc-task-analysis small {
-  color: var(--drc-muted);
+  color: var(--drc-metric-color, var(--drc-muted));
   font-size: 0.6rem;
 }
 
 .drc-schedule-analysis strong {
+  color: var(--drc-metric-color, var(--drc-ink));
   margin-top: 0.2rem;
   font-size: 1.25rem;
+}
+
+.drc-task-link {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  text-align: left;
+}
+
+.drc-task-link:hover,
+.drc-task-link:focus-visible {
+  color: var(--drc-green-2);
+  text-decoration: underline;
+}
+
+.drc-schedule-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 0.75rem;
+  color: var(--drc-muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.drc-schedule-pagination > div {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.drc-schedule-pagination strong {
+  min-width: 5.5rem;
+  color: var(--drc-ink);
+  text-align: center;
+}
+
+.drc-schedule-pagination .drc-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
 }
 
 .drc-date-chip {
@@ -1266,6 +1432,19 @@
 
   .drc-page-head {
     display: block;
+  }
+
+  .drc-schedule-toolbar > .drc-primary {
+    margin-top: 0.65rem;
+  }
+
+  .drc-schedule-pagination {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .drc-schedule-pagination > div {
+    justify-content: space-between;
   }
 
   .drc-date-chip {

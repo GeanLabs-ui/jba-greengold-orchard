@@ -19,6 +19,7 @@ export const ADMIN_PAGE_ACCESS = [
   { key: 'content', label: 'Content', path: '/admin/content', group: 'System' },
   { key: 'documents', label: 'Documents', path: '/admin/documents', group: 'System' },
   { key: 'reports', label: 'Reports', path: '/admin/reports', group: 'System' },
+  { key: 'system_log', label: 'System Log', path: '/admin/system-log', group: 'System' },
   { key: 'settings', label: 'Settings', path: '/admin/settings', group: 'System' },
 ];
 
@@ -33,7 +34,7 @@ export const ROLE_PAGE_DEFAULTS = {
   sales_officer: ['dashboard', 'crm', 'inquiries', 'sales', 'orders'],
   logistics_officer: ['dashboard', 'orders', 'logistics', 'export_ops'],
   content_editor: ['dashboard', 'content'],
-  auditor: ['dashboard', 'documents', 'reports'],
+  auditor: ['dashboard', 'documents', 'reports', 'system_log'],
 };
 
 const normalizeRole = (role) => String(role || '').trim().toLowerCase();

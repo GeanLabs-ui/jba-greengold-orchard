@@ -14,6 +14,7 @@ import {
   UserRoundCheck,
 } from 'lucide-react';
 import PageHeader from '@/components/shared/PageHeader';
+import PageSkeleton from '@/components/shared/PageSkeleton';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { formatCurrency, formatDate, formatNumber } from '@/components/shared/format';
 import { Button } from '@/components/ui/button';
@@ -533,7 +534,7 @@ export default function Harvests({ embedded = false }) {
       </div>
 
       {loading ? (
-        <div className="h-96 animate-pulse rounded-xl bg-muted" />
+        <PageSkeleton contentOnly />
       ) : view === 'process' ? (
         <div className="grid gap-5 xl:grid-cols-[1.15fr_0.85fr]">
           <section className="rounded-xl border border-border bg-card p-5 shadow-sm">

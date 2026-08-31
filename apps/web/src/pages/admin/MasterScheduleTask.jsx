@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
+import PageSkeleton from '@/components/shared/PageSkeleton';
 
 const STATUS_LABELS = {
   not_started: 'Not Started',
@@ -78,8 +79,9 @@ function AttachmentPreview({ attachment, onClose }) {
   return <Dialog open={Boolean(attachment)} onOpenChange={(open) => !open && onClose()}><DialogContent className="max-w-5xl"><DialogHeader><DialogTitle>{attachment.name}</DialogTitle><DialogDescription>{canPreview ? 'Private preview' : 'This file type is available for download.'}</DialogDescription></DialogHeader>{type.startsWith('image/') ? <img src={previewUrl} alt={attachment.name} className="max-h-[70vh] w-full object-contain" /> : type.startsWith('video/') ? <video src={previewUrl} controls className="max-h-[70vh] w-full" /> : type === 'application/pdf' ? <iframe title={attachment.name} src={previewUrl} className="h-[70vh] w-full border" /> : type === 'text/plain' ? <iframe title={attachment.name} src={previewUrl} className="h-[60vh] w-full border" /> : <p className="text-sm text-muted-foreground">DOCX files and non-previewable formats can be downloaded for viewing in their native application.</p>}<div className="flex justify-end"><Button asChild><a href={attachment.url}><Download /> Download</a></Button></div></DialogContent></Dialog>;
 }
 
-export default function MasterScheduleTask() {
-  const { taskId } = useParams();
+export default function MasterScheduleTask({ modal = false, onClose, taskId: providedTaskId }) {
+  const { taskId: routeTaskId } = useParams();
+  const taskId = providedTaskId || routeTaskId;
   const location = useLocation();
   const navigate = useNavigate();
   const masterSchedulePath = location.pathname.startsWith('/admin/farm-daily-activities/')
@@ -104,6 +106,19 @@ export default function MasterScheduleTask() {
   const [currentTime, setCurrentTime] = useState(Date.now());
   const [previewAttachment, setPreviewAttachment] = useState(null);
   const [activeView, setActiveView] = useState('overview');
+  const closeTask = () => {
+    if (modal) onClose?.();
+    else navigate(masterSchedulePath);
+  };
+
+  const renderWorkspace = (content, title = 'Master Schedule task') => modal ? (
+    <Dialog open onOpenChange={(open) => !open && closeTask()}>
+      <DialogContent className="h-[92vh] w-[min(96vw,90rem)] max-w-none overflow-hidden p-0">
+        <DialogHeader className="sr-only"><DialogTitle>{title}</DialogTitle><DialogDescription>Master Schedule task workspace</DialogDescription></DialogHeader>
+        <div className="h-full overflow-x-hidden overflow-y-auto p-4 sm:p-6">{content}</div>
+      </DialogContent>
+    </Dialog>
+  ) : content;
 
   useEffect(() => {
     const timer = window.setInterval(() => setCurrentTime(Date.now()), 60_000);
@@ -403,21 +418,21 @@ export default function MasterScheduleTask() {
     } finally { setPostingFeedback(false); }
   };
 
-  if (loading) return <div className="grid min-h-[20rem] place-items-center"><Loader2 className="h-7 w-7 animate-spin text-primary" /></div>;
-  if (!task || !form) return <div className="mx-auto max-w-2xl py-16 text-center"><h1 className="text-xl font-semibold">Schedule task not found</h1><Button asChild className="mt-4"><Link to={masterSchedulePath}>Back to Master Schedule</Link></Button></div>;
+  if (loading) return renderWorkspace(<PageSkeleton variant="task" />, 'Loading Master Schedule task');
+  if (!task || !form) return renderWorkspace(<div className="mx-auto max-w-2xl py-16 text-center"><h1 className="text-xl font-semibold">Schedule task not found</h1>{modal ? <Button type="button" className="mt-4" onClick={closeTask}>Close</Button> : <Button asChild className="mt-4"><Link to={masterSchedulePath}>Back to Master Schedule</Link></Button>}</div>, 'Schedule task not found');
 
   const completedSubtasks = subtasks.filter((subtask) => subtask.status === 'completed').length;
   const statusTone = form.status === 'completed' ? 'bg-emerald-50 text-emerald-700 ring-emerald-200' : form.status === 'blocked' ? 'bg-red-50 text-red-700 ring-red-200' : form.status === 'in_progress' ? 'bg-sky-50 text-sky-700 ring-sky-200' : 'bg-muted text-muted-foreground ring-border';
 
-  return (
-    <div className="mx-auto max-w-6xl space-y-5 pb-8">
+  const workspace = (
+    <div className={`${modal ? 'space-y-5 pb-2' : 'mx-auto max-w-6xl space-y-5 pb-8'}`}>
       <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-5">
         <div>
-          <Button variant="ghost" asChild className="-ml-3 mb-3"><Link to={masterSchedulePath}><ArrowLeft /> Master Schedule</Link></Button>
+          {!modal ? <Button variant="ghost" asChild className="-ml-3 mb-3"><Link to={masterSchedulePath}><ArrowLeft /> Master Schedule</Link></Button> : null}
           <p className="text-xs font-semibold uppercase tracking-wide text-primary">{task.milestone_code || task.project_code || 'Schedule task'}</p>
           <div className="mt-1 flex flex-wrap items-center gap-3"><h1 className="text-3xl font-semibold tracking-tight">{task.title}</h1><span className={`rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${statusTone}`}>{STATUS_LABELS[form.status]}</span></div>
         </div>
-        <div className="flex items-center gap-2"><Button type="button" variant={task.master_timer_started_at ? 'outline' : 'secondary'} disabled={saving || form.status === 'completed'} onClick={toggleMasterTimer}>{task.master_timer_started_at ? <Pause /> : <Play />}{task.master_timer_started_at ? 'Pause master task' : 'Start master task'}</Button><Button type="button" variant="outline" onClick={() => navigate(masterSchedulePath)}>Cancel</Button><Button type="submit" form="task-editor" disabled={saving}>{saving ? <Loader2 className="animate-spin" /> : <Save />} Save task</Button></div>
+        <div className="flex flex-wrap items-center gap-2"><Button type="button" variant={task.master_timer_started_at ? 'outline' : 'secondary'} disabled={saving || form.status === 'completed'} onClick={toggleMasterTimer}>{task.master_timer_started_at ? <Pause /> : <Play />}{task.master_timer_started_at ? 'Pause master task' : 'Start master task'}</Button><Button type="button" variant="outline" onClick={closeTask}>Cancel</Button><Button type="submit" form="task-editor" disabled={saving}>{saving ? <Loader2 className="animate-spin" /> : <Save />} Save task</Button></div>
       </div>
 
       <div className="grid divide-y overflow-hidden rounded-lg border border-border bg-card shadow-sm sm:grid-cols-4 sm:divide-x sm:divide-y-0">
@@ -428,7 +443,7 @@ export default function MasterScheduleTask() {
       </div>
 
       <Tabs value={activeView} onValueChange={setActiveView} className="space-y-4">
-        <TabsList className="w-full justify-start rounded-md border border-border bg-card p-1 shadow-sm"><TabsTrigger value="overview" className="gap-2"><LayoutDashboard className="h-4 w-4" />Overview</TabsTrigger><TabsTrigger value="plan" className="gap-2"><ClipboardList className="h-4 w-4" />Master task details</TabsTrigger><TabsTrigger value="subtasks" className="gap-2"><CheckSquare className="h-4 w-4" />Subtasks <span className="rounded bg-muted px-1.5 text-xs">{subtasks.length}</span></TabsTrigger><TabsTrigger value="feedback" className="gap-2"><MessageSquare className="h-4 w-4" />Field updates <span className="rounded bg-muted px-1.5 text-xs">{feedback.length}</span></TabsTrigger><TabsTrigger value="history" className="gap-2"><History className="h-4 w-4" />History <span className="rounded bg-muted px-1.5 text-xs">{archivedSubtasks.length}</span></TabsTrigger></TabsList>
+        <TabsList className="w-full justify-start overflow-x-auto rounded-md border border-border bg-card p-1 shadow-sm"><TabsTrigger value="overview" className="gap-2"><LayoutDashboard className="h-4 w-4" />Overview</TabsTrigger><TabsTrigger value="plan" className="gap-2"><ClipboardList className="h-4 w-4" />Master task details</TabsTrigger><TabsTrigger value="subtasks" className="gap-2"><CheckSquare className="h-4 w-4" />Subtasks <span className="rounded bg-muted px-1.5 text-xs">{subtasks.length}</span></TabsTrigger><TabsTrigger value="feedback" className="gap-2"><MessageSquare className="h-4 w-4" />Field updates <span className="rounded bg-muted px-1.5 text-xs">{feedback.length}</span></TabsTrigger><TabsTrigger value="history" className="gap-2"><History className="h-4 w-4" />History <span className="rounded bg-muted px-1.5 text-xs">{archivedSubtasks.length}</span></TabsTrigger></TabsList>
         <TabsContent value="overview" className="rounded-lg border border-border bg-card p-5 shadow-sm md:p-7"><div className="flex flex-wrap items-start justify-between gap-4 border-b pb-5"><div><h2 className="font-semibold">Task workspace</h2><p className="mt-1 text-sm text-muted-foreground">Use the dedicated views below to plan the main task, execute subtasks, and capture field evidence.</p></div><Button type="button" onClick={() => setActiveView('subtasks')}><CheckSquare /> Manage subtasks</Button></div><div className="mt-5 grid gap-4 md:grid-cols-3"><div className="rounded-md border p-4"><p className="text-xs font-semibold uppercase tracking-wide text-primary">1. Master task details</p><p className="mt-2 text-sm text-muted-foreground">Owner, priority, schedule window, success criteria, and overall status for this parent task.</p><Button type="button" variant="link" className="mt-3 h-auto px-0" onClick={() => setActiveView('plan')}>Open master task details</Button></div><div className="rounded-md border p-4"><p className="text-xs font-semibold uppercase tracking-wide text-primary">2. Subtasks</p><p className="mt-2 text-sm text-muted-foreground">The individual actions that record start, pause, completion, timing, and roll up into the parent.</p><Button type="button" variant="link" className="mt-3 h-auto px-0" onClick={() => setActiveView('subtasks')}>Open subtasks</Button></div><div className="rounded-md border p-4"><p className="text-xs font-semibold uppercase tracking-wide text-primary">3. Field updates</p><p className="mt-2 text-sm text-muted-foreground">Daily updates, private attachments, and a restoreable history of deleted subtasks.</p><Button type="button" variant="link" className="mt-3 h-auto px-0" onClick={() => setActiveView('feedback')}>Open field updates</Button></div></div></TabsContent>
         <TabsContent value="plan" className="rounded-lg border border-border bg-card p-5 shadow-sm md:p-7"><div className="mb-6 flex items-center gap-3 border-b pb-4"><span className="grid h-9 w-9 place-items-center rounded-md bg-primary/10 text-primary"><CalendarDays className="h-5 w-5" /></span><div><h2 className="font-semibold">Task plan</h2><p className="text-sm text-muted-foreground">Define accountability, timing, expected outcome, and current state.</p></div></div><form id="task-editor" onSubmit={save} className="grid gap-5 md:grid-cols-2"><TaskField label="Task name" full><input name="title" value={form.title} onChange={updateForm} required maxLength="200" className="h-10 rounded-md border border-input bg-background px-3" /></TaskField><TaskField label="Task owner"><input name="owner_name" value={form.owner_name} onChange={updateForm} maxLength="160" className="h-10 rounded-md border border-input bg-background px-3" /></TaskField><TaskField label="Priority"><select name="priority" value={form.priority} onChange={updateForm} className="h-10 rounded-md border border-input bg-background px-3"><option>Critical</option><option>High</option><option>Medium</option><option>Low</option></select></TaskField><TaskField label="Start date"><input name="start_date" type="date" value={form.start_date} onChange={updateForm} className="h-10 rounded-md border border-input bg-background px-3" /></TaskField><TaskField label="Start time"><input name="start_time" type="time" value={form.start_time} onChange={updateForm} className="h-10 rounded-md border border-input bg-background px-3" /></TaskField><TaskField label="Due date"><input name="due_date" type="date" value={form.due_date} onChange={updateForm} className="h-10 rounded-md border border-input bg-background px-3" /></TaskField><TaskField label="End time"><input name="end_time" type="time" value={form.end_time} onChange={updateForm} className="h-10 rounded-md border border-input bg-background px-3" /></TaskField><TaskField label="Status"><select name="status" value={form.status} onChange={updateForm} className="h-10 rounded-md border border-input bg-background px-3">{Object.entries(STATUS_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></TaskField><TaskField label="Completion (%)"><input name="progress_percent" type="number" min="0" max="100" value={form.progress_percent} onChange={updateForm} className="h-10 rounded-md border border-input bg-background px-3" /></TaskField><TaskField label="Success criteria" full><textarea name="success_criteria" value={form.success_criteria} onChange={updateForm} rows="3" maxLength="2000" className="rounded-md border border-input bg-background px-3 py-2" /></TaskField><TaskField label="Full task details" full><textarea name="description" value={form.description} onChange={updateForm} rows="5" maxLength="5000" className="rounded-md border border-input bg-background px-3 py-2" /></TaskField><TaskField label="Update notes" full><textarea name="notes" value={form.notes} onChange={updateForm} rows="4" maxLength="5000" className="rounded-md border border-input bg-background px-3 py-2" /></TaskField></form></TabsContent>
         <TabsContent value="subtasks" className="rounded-lg border border-border bg-card p-5 shadow-sm md:p-7"><div className="flex flex-wrap items-start justify-between gap-4 border-b pb-4"><div><h2 className="font-semibold">Execution checklist</h2><p className="mt-1 text-sm text-muted-foreground">Plan each action, track active working time, and mark it complete when finished.</p></div><p className="rounded-md bg-muted px-3 py-2 text-sm font-medium">{completedSubtasks} of {subtasks.length} done</p></div><form onSubmit={addSubtask} className="mt-5 grid gap-3 rounded-md border bg-muted/20 p-4 md:grid-cols-2"><label className="grid gap-1 text-xs font-medium text-muted-foreground md:col-span-2"><span>Subtask name</span><input value={newSubtask} onChange={(event) => setNewSubtask(event.target.value)} placeholder="Add a subtask" maxLength="200" className="h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground" /></label><label className="grid gap-1 text-xs font-medium text-muted-foreground"><span>Priority</span><select value={subtaskPriority} onChange={(event) => setSubtaskPriority(event.target.value)} className="h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground"><option value="urgent">Urgent</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select></label><label className="grid gap-1 text-xs font-medium text-muted-foreground"><span>Planned start</span><input type="datetime-local" value={subtaskStartAt} onChange={(event) => setSubtaskStartAt(event.target.value)} className="h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground" /></label><label className="grid gap-1 text-xs font-medium text-muted-foreground md:col-span-2"><span>Completion due</span><input type="datetime-local" value={subtaskDueAt} onChange={(event) => setSubtaskDueAt(event.target.value)} className="h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground" /></label><div className="md:col-span-2"><Button type="submit" disabled={saving || !newSubtask.trim()}><Plus /> Add subtask</Button></div></form><div className="mt-5 divide-y rounded-md border">{subtasks.length ? subtasks.map((subtask) => <SubtaskRow key={subtask.id} subtask={subtask} currentTime={currentTime} onComplete={toggleSubtask} onTimerToggle={toggleSubtaskTimer} onUpdate={updateSubtask} onArchive={archiveSubtask} />) : <p className="p-5 text-sm text-muted-foreground">No subtasks yet. Add the first action above.</p>}</div></TabsContent>
@@ -438,4 +453,6 @@ export default function MasterScheduleTask() {
       <AttachmentPreview attachment={previewAttachment} onClose={() => setPreviewAttachment(null)} />
     </div>
   );
+
+  return renderWorkspace(workspace, task.title);
 }

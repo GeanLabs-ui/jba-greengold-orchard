@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Banknote, CreditCard, Globe2, Receipt, ShoppingBag } from 'lucide-react';
 import PageHeader from '@/components/shared/PageHeader';
+import PageSkeleton from '@/components/shared/PageSkeleton';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { formatCurrency, formatDate } from '@/components/shared/format';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -176,7 +177,7 @@ function Summary({ icon: Icon, label, value, tone = '' }) {
 }
 
 function SalesOrdersTable({ orders, invoiceByOrder, loading }) {
-  if (loading) return <div className="h-64 animate-pulse rounded-xl bg-muted" />;
+  if (loading) return <PageSkeleton contentOnly />;
   if (!orders.length) return <Empty />;
   return (
     <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">

@@ -16,6 +16,7 @@
     "area_acres": { "type": ["number", "null"], "title": "Acres" },
     "shoot_maturity": { "type": "number", "title": "Maturity", "minimum": 0, "maximum": 1 },
     "forecast_yield_kg": { "type": ["number", "null"], "title": "Forecasted Yield (KG)" },
+    "actual_yield_kg": { "type": ["number", "null"], "title": "Actual Yield (KG)" },
     "fruit_fly_pressure": { "type": ["string", "null"], "title": "Fruit Flies" },
     "disease_rating": { "type": ["string", "null"], "title": "Disease" },
     "latitude": { "type": "number", "title": "Latitude" },
@@ -28,6 +29,7 @@
       "enum": ["harvesting", "pruning", "fertilizer_application", "flower_induction", "fruiting", "pest_control", "irrigation", "dormant", "land_preparation"]
     },
     "mango_variety": { "type": "string", "title": "Mango Variety" },
+    "disease_severity": { "type": ["string", "null"], "title": "Disease Severity" },
     "soil_condition": { "type": "string", "title": "Soil Condition" },
     "irrigation_status": { "type": "string", "title": "Irrigation Status" },
     "status": {

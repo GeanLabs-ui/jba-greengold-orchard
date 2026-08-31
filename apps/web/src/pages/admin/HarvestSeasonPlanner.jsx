@@ -16,6 +16,7 @@ import {
   Sprout,
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+import PageSkeleton from '@/components/shared/PageSkeleton';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -468,7 +469,7 @@ export default function HarvestSeasonPlanner() {
 
   const selectedFarm = farms.find((farm) => farm.id === form.farm_id);
 
-  if (loading && !farms.length) return <div className="grid min-h-[28rem] place-items-center"><div className="flex items-center gap-3 text-sm text-muted-foreground"><Loader2 className="h-5 w-5 animate-spin text-primary" />Loading farm lands and harvest seasons…</div></div>;
+  if (loading && !farms.length) return <PageSkeleton variant="calendar" />;
 
   return (
     <div className="space-y-5 pb-10">

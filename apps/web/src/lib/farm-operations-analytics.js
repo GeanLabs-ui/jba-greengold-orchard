@@ -26,7 +26,7 @@ export function activityYieldKg(activity) {
 }
 
 export function activityRevenue(activity) {
-  return asNumber(activity.revenue ?? activity.actual_revenue ?? activity.total_revenue);
+  return asNumber(activity.actual_revenue ?? activity.revenue ?? activity.total_revenue);
 }
 
 export function activityCost(activity) {

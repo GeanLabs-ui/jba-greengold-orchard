@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+import PageSkeleton from '@/components/shared/PageSkeleton';
 import BudgetHarvestView, { summarizeBudgetHarvest } from '@/components/farm/BudgetHarvestView';
 import { useToast } from '@/components/ui/use-toast';
 import { PROGRAMME, PROGRAMME_CODE } from '@/data/dailyRoutineProgramme';
@@ -123,7 +123,7 @@ export default function FarmDailyBudgetHarvest() {
     }
   };
 
-  if (loading && !financeRecords.length && !harvests.length) return <div className="flex min-h-64 items-center justify-center gap-3 text-muted-foreground"><Loader2 className="h-5 w-5 animate-spin" />Loading Budget & Harvest…</div>;
+  if (loading && !financeRecords.length && !harvests.length) return <PageSkeleton variant="harvest" />;
 
   return <div className="drc-page drc-embedded-schedule"><BudgetHarvestView blocks={blocks} busyKey={busyKey} embedded finance={finance} financeRecords={financeRecords} harvestDialog={harvestDialog} harvests={harvests} onAddHarvest={addHarvest} onUpdateBudget={updateBudget} today={TODAY} /></div>;
 }

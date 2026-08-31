@@ -2,6 +2,7 @@ import React, { Fragment, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ChevronDown, ChevronUp, Globe2, Loader2, PackageCheck, Search, Truck } from 'lucide-react';
 import PageHeader from '@/components/shared/PageHeader';
+import PageSkeleton from '@/components/shared/PageSkeleton';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { formatCurrency, formatDate } from '@/components/shared/format';
 import { Input } from '@/components/ui/input';
@@ -184,7 +185,7 @@ export default function Orders() {
       </div>
       {error && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
 
-      {loading ? <div className="h-64 animate-pulse rounded-xl bg-muted" /> : (
+      {loading ? <PageSkeleton contentOnly /> : (
         <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
           <table className="w-full min-w-[920px] text-sm">
             <thead><tr className="border-b border-border bg-muted/50">

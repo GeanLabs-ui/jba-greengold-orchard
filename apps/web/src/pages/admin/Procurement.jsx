@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { FileText, Package } from 'lucide-react';
 import PageHeader from '@/components/shared/PageHeader';
+import PageSkeleton from '@/components/shared/PageSkeleton';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { formatCurrency, formatDate } from '@/components/shared/format';
 import DataTable from '@/components/shared/DataTable';
@@ -75,7 +76,7 @@ export default function Procurement() {
         <TabsList><TabsTrigger value="orders">Purchase Orders</TabsTrigger><TabsTrigger value="suppliers">Suppliers</TabsTrigger></TabsList>
 
         <TabsContent value="orders" className="mt-4">
-          {loading ? <div className="h-64 animate-pulse rounded-xl bg-muted" /> : (
+          {loading ? <PageSkeleton contentOnly /> : (
             <DataTable items={pos} columns={[
               { key: 'po_number', label: 'PO #' },
               { key: 'supplier_name', label: 'Supplier' },

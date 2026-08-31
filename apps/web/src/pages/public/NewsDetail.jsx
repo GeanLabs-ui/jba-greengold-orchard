@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Calendar, User } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { base44 } from '@/api/base44Client';
+import PageSkeleton from '@/components/shared/PageSkeleton';
 
 export default function NewsDetail() {
   const { slug } = useParams();
@@ -16,7 +17,7 @@ export default function NewsDetail() {
   }, [slug]);
 
   if (loading) {
-    return <div className="py-20 text-center"><div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-border border-t-primary" /></div>;
+    return <PageSkeleton contentOnly />;
   }
 
   if (!post) {

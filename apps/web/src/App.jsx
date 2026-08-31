@@ -1,8 +1,9 @@
 import { lazy, Suspense, useEffect } from 'react';
 import { Toaster } from "@/components/ui/toaster"
+import { Toaster as HotToaster } from "react-hot-toast"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Navigate, Route, Routes, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Navigate, Route, Routes, Link, useLocation } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
@@ -65,6 +66,7 @@ const Applications = lazy(() => import('@/pages/admin/Applications'));
 const Content = lazy(() => import('@/pages/admin/Content'));
 const Documents = lazy(() => import('@/pages/admin/Documents'));
 const Reports = lazy(() => import('@/pages/admin/Reports'));
+const SystemLog = lazy(() => import('@/pages/admin/SystemLog'));
 const SettingsPage = lazy(() => import('@/pages/admin/SettingsPage'));
 // Portal pages
 const PortalDashboard = lazy(() => import('@/pages/portal/PortalDashboard'));
@@ -114,10 +116,16 @@ const AdminAccessDenied = () => {
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
+  const location = useLocation();
+  const waitsForIdentity = location.pathname === '/checkout'
+    || location.pathname === '/my-orders'
+    || location.pathname.startsWith('/portal')
+    || location.pathname.startsWith('/admin');
 
-  // Show loading spinner while checking app public settings or auth
-  if (isLoadingPublicSettings || isLoadingAuth) {
-    return <div className="min-h-screen bg-background p-6 sm:p-10"><PageSkeleton /></div>;
+  // Public and authentication pages can load while the session check runs.
+  // Identity-sensitive routes retain the gate so protected content never flashes.
+  if (waitsForIdentity && (isLoadingPublicSettings || isLoadingAuth)) {
+    return <PageSkeleton fullPage />;
   }
 
   // Handle authentication errors
@@ -133,7 +141,7 @@ const AuthenticatedApp = () => {
 
   // Render the main app
   return (
-    <Suspense fallback={<div className="min-h-screen bg-background p-6 sm:p-10"><PageSkeleton /></div>}>
+    <Suspense fallback={<PageSkeleton fullPage />}>
     <Routes>
       {/* Authentication */}
       <Route path="/login" element={<Login />} />
@@ -185,11 +193,12 @@ const AuthenticatedApp = () => {
           <Route path="farms" element={<Navigate to="/admin/farm-daily-activities/activities/farms" replace />} />
           <Route path="farms/:farmId" element={<FarmProfileAdmin />} />
           <Route path="farms/:farmId/blocks/:blockId" element={<BlockProfileAdmin />} />
-          <Route path="harvests" element={<Navigate to="/admin/farm-daily-activities/harvests/dashboard" replace />} />
+          <Route path="harvests" element={<Navigate to="/admin/farm-daily-activities/activities/overview" replace />} />
           <Route path="farm-daily-activities" element={<FarmDailyActivities />} />
           <Route path="farm-daily-activities/activities/farms/:farmId" element={<FarmProfileAdmin />} />
           <Route path="farm-daily-activities/activities/farms/:farmId/blocks/:blockId" element={<BlockProfileAdmin />} />
           <Route path="farm-daily-activities/activities/master-schedule/:taskId" element={<MasterScheduleTask />} />
+          <Route path="farm-daily-activities/harvests/*" element={<Navigate to="/admin/farm-daily-activities/activities/overview" replace />} />
           <Route path="farm-daily-activities/*" element={<FarmDailyActivities />} />
           <Route path="calendar" element={<ProductionCalendar />} />
           <Route path="logistics" element={<Logistics />} />
@@ -201,6 +210,7 @@ const AuthenticatedApp = () => {
           <Route path="content" element={<Content />} />
           <Route path="documents" element={<Documents />} />
           <Route path="reports" element={<Reports />} />
+          <Route path="system-log" element={<SystemLog />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>
       </Route>
@@ -234,6 +244,7 @@ function App() {
             <AuthenticatedApp />
           </Router>
           <Toaster />
+          <HotToaster position="top-right" />
         </QueryClientProvider>
       </CartProvider>
     </AuthProvider>

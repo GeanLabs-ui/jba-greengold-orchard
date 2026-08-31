@@ -26,6 +26,6 @@ Never edit a migration after it has been applied. Add a new additive migration s
 
 ## Local Docker database
 
-The only runtime local database is the Compose service in the repository root. Its container is managed by `docker compose`, its volume is `farmactualproject_mango_farm_postgres_data`, and the application connects to `127.0.0.1:54329/mango_farm` through `DATABASE_URL`.
+The only runtime local database is the Compose service in the repository root. Its container is managed by `docker compose`, its volume is `farmactualproject_mango_farm_postgres_data`, and the application connects to `127.0.0.1:55432/mango_farm` through `DATABASE_URL`.
 
 If data must be recovered from an older local PostgreSQL instance, expose that instance on a temporary port, take backups of both databases, and run `npm run db:consolidate:local` with `LEGACY_DATABASE_URL` set. The consolidation is deliberately selective: it preserves users, customer/order/inquiry/application records, uploaded-file metadata, audit history, custom Master Schedule work, and recorded milestone progress without duplicating the seeded programme or Farm/FarmBlock rows.
