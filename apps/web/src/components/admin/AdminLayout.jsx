@@ -3,6 +3,7 @@ import { Link, Outlet, useLocation } from 'react-router-dom';
 import { ShieldX } from 'lucide-react';
 import AdminSidebar from './AdminSidebar';
 import AdminTopbar from './AdminTopbar';
+import AdminMobileNav from './AdminMobileNav';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/lib/AuthContext';
@@ -20,13 +21,13 @@ export default function AdminLayout() {
   }, []);
 
   return (
-    <div className="admin-shell flex h-screen overflow-hidden bg-background">
+    <div className="admin-shell flex h-[100dvh] overflow-hidden bg-background md:h-screen">
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-        <SheetContent side="left" className="w-64 p-0">
-          <SheetHeader className="px-4 py-3 border-b">
-            <SheetTitle className="text-left">Navigation</SheetTitle>
+        <SheetContent side="left" className="flex w-[min(19rem,86vw)] flex-col bg-[#0b432f] p-0 text-white">
+          <SheetHeader className="shrink-0 border-b border-white/10 px-4 py-4">
+            <SheetTitle className="text-left text-white">Admin navigation</SheetTitle>
           </SheetHeader>
-          <div className="overflow-y-auto h-full">
+          <div className="min-h-0 flex-1 overflow-y-auto pb-16">
             <AdminSidebar />
           </div>
         </SheetContent>
@@ -34,7 +35,7 @@ export default function AdminLayout() {
 
       <div className="flex flex-1 flex-col overflow-hidden">
         <AdminTopbar onMenuClick={() => setMobileOpen(true)} />
-        <main className="flex-1 overflow-y-auto scrollbar-thin p-4 md:p-6">
+        <main className="flex-1 overflow-y-auto scrollbar-thin p-4 pb-24 md:p-6">
           {canAccessPage ? <Outlet /> : (
             <div className="grid min-h-[60vh] place-items-center">
               <div className="max-w-md text-center">
@@ -47,6 +48,7 @@ export default function AdminLayout() {
           )}
         </main>
       </div>
+      <AdminMobileNav user={user} onMore={() => setMobileOpen(true)} />
     </div>
   );
 }

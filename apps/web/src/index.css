@@ -88,10 +88,30 @@
 
   body {
     @apply bg-background text-foreground font-body antialiased;
+    min-width: 320px;
+    overflow-x: hidden;
+    -webkit-tap-highlight-color: transparent;
   }
 
   h1, h2, h3, h4, h5, h6 {
     @apply font-heading;
+  }
+}
+
+/* Mobile shell defaults. These only apply below the tablet breakpoint, leaving
+   approved desktop compositions and navigation unchanged. */
+@media (max-width: 767px) {
+  html { min-height: 100%; background: hsl(var(--background)); }
+  body { min-height: 100dvh; }
+  input, select, textarea { font-size: 16px; }
+  .admin-shell main { scroll-padding-bottom: 6rem; }
+  .admin-shell [class*="overflow-x-auto"],
+  .admin-shell [class*="overflow-auto"] {
+    overscroll-behavior-inline: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+  .admin-mobile-nav {
+    box-shadow: 0 -10px 28px rgb(18 63 22 / 0.1);
   }
 }
 
