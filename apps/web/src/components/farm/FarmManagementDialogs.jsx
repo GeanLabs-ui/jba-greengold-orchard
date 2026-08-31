@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AlertTriangle, CalendarDays, FileText, ImagePlus, Info, Leaf, Loader2, MapPin, Plus, Trash2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,6 @@ import { formatNumber } from '@/lib/farm-management';
 
 const today = () => new Date().toISOString().slice(0, 10);
 const optionalNumber = (value) => value === '' || value == null ? null : Number(value);
-const farmImagePreviewUrl = /^\/api\/v1\/files\/[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}\?preview=1$/i;
 const emptyFarm = {
   name: '', farm_code: '', location: '', region: '', country: 'Ghana', size_acres: '',
   latitude: '', longitude: '', soil_type: '', soil_ph: '', soil_notes: '', owner_name: '',
@@ -55,16 +54,6 @@ export function FarmFormDialog({ open, onOpenChange, farm, onSubmit, saving }) {
     setDirty(false);
   }, [open, farm]);
 
-  const localImagePreview = useMemo(
-    () => imageFile ? URL.createObjectURL(imageFile) : null,
-    [imageFile],
-  );
-  const storedImagePreview = farmImagePreviewUrl.test(form.image_url || '') ? form.image_url : null;
-  const imagePreview = localImagePreview || storedImagePreview;
-  useEffect(() => () => {
-    if (localImagePreview) URL.revokeObjectURL(localImagePreview);
-  }, [localImagePreview]);
-
   const change = (key, value) => { setForm((current) => ({ ...current, [key]: value })); setDirty(true); };
   const requestClose = (nextOpen) => {
     if (!nextOpen && dirty && !saving && !window.confirm('Discard your unsaved farm changes?')) return;
@@ -94,11 +83,7 @@ export function FarmFormDialog({ open, onOpenChange, farm, onSubmit, saving }) {
           {farm ? (
             <Field label="Farm image" hint="JPG, PNG, or WebP up to 5 MB. The image appears in the Farm Summary header.">
               <label className="group flex cursor-pointer items-center gap-4 rounded-lg border border-dashed bg-muted/20 p-3 transition hover:border-emerald-400 hover:bg-emerald-50/40">
-                {imagePreview ? (
-                  <img src={imagePreview} alt="Farm preview" className="h-20 w-28 rounded-md object-cover" />
-                ) : (
-                  <span className="grid h-20 w-28 place-items-center rounded-md bg-muted text-muted-foreground"><ImagePlus className="h-6 w-6" /></span>
-                )}
+                <span className="grid h-20 w-28 place-items-center rounded-md bg-muted text-muted-foreground"><ImagePlus className="h-6 w-6" /></span>
                 <span className="min-w-0 text-sm">
                   <span className="block font-medium">{imageFile ? imageFile.name : 'Choose farm image'}</span>
                   <span className="mt-1 block text-xs text-muted-foreground">Click to browse from your device</span>
