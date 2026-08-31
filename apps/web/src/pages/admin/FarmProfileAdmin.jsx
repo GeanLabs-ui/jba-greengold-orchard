@@ -48,6 +48,7 @@ import {
 const currentYearStart = () => `${new Date().getFullYear()}-01-01`;
 const today = () => new Date().toISOString().slice(0, 10);
 const fallbackFarmImage = "/pages/local-supply-header.webp";
+const farmImagePreviewUrl = /^\/api\/v1\/files\/[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}\?preview=1$/i;
 
 const blockHarvest = (block) =>
   block.current_harvest ||
@@ -300,6 +301,7 @@ export default function FarmProfileAdmin() {
   if (!farm) return null;
 
   const unallocated = analytics.unallocatedSizeAcres;
+  const farmImageUrl = farmImagePreviewUrl.test(farm.image_url || '') ? farm.image_url : fallbackFarmImage;
   const currentStage = analytics.mixedActivityStages
     ? "Mixed stages"
     : analytics.currentActivityStage
@@ -325,7 +327,7 @@ export default function FarmProfileAdmin() {
         <div className="bg-gradient-to-r from-emerald-950 to-emerald-800 px-4 pb-4 text-white">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
             <img
-              src={farm.image_url || fallbackFarmImage}
+              src={farmImageUrl}
               alt={`${farm.name} farm`}
               className="h-28 w-full rounded-lg border border-white/20 object-cover object-[70%_center] shadow-sm sm:w-60 lg:h-28 lg:w-60"
             />

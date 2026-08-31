@@ -12,6 +12,7 @@ import { formatNumber } from '@/lib/farm-management';
 
 const today = () => new Date().toISOString().slice(0, 10);
 const optionalNumber = (value) => value === '' || value == null ? null : Number(value);
+const farmImagePreviewUrl = /^\/api\/v1\/files\/[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}\?preview=1$/i;
 const emptyFarm = {
   name: '', farm_code: '', location: '', region: '', country: 'Ghana', size_acres: '',
   latitude: '', longitude: '', soil_type: '', soil_ph: '', soil_notes: '', owner_name: '',
@@ -54,13 +55,15 @@ export function FarmFormDialog({ open, onOpenChange, farm, onSubmit, saving }) {
     setDirty(false);
   }, [open, farm]);
 
-  const imagePreview = useMemo(
-    () => imageFile ? URL.createObjectURL(imageFile) : form.image_url,
-    [imageFile, form.image_url],
+  const localImagePreview = useMemo(
+    () => imageFile ? URL.createObjectURL(imageFile) : null,
+    [imageFile],
   );
+  const storedImagePreview = farmImagePreviewUrl.test(form.image_url || '') ? form.image_url : null;
+  const imagePreview = localImagePreview || storedImagePreview;
   useEffect(() => () => {
-    if (imagePreview?.startsWith('blob:')) URL.revokeObjectURL(imagePreview);
-  }, [imagePreview]);
+    if (localImagePreview) URL.revokeObjectURL(localImagePreview);
+  }, [localImagePreview]);
 
   const change = (key, value) => { setForm((current) => ({ ...current, [key]: value })); setDirty(true); };
   const requestClose = (nextOpen) => {

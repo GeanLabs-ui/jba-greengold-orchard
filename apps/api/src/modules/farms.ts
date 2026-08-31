@@ -68,6 +68,11 @@ const dateString = z
 // intentional: it lets a user save an unchanged, optional field that has not
 // yet been recorded instead of rejecting the entire update.
 const optionalText = (max: number) => z.string().trim().max(max).nullable().optional();
+const farmImagePreviewUrl = z.string()
+  .trim()
+  .regex(/^\/api\/v1\/files\/[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}\?preview=1$/i, "Expected a managed farm image preview URL")
+  .nullable()
+  .optional();
 
 const farmCreateSchema = z.object({
   farm_code: z.string().trim().min(1).max(50).optional(),
@@ -86,7 +91,7 @@ const farmCreateSchema = z.object({
   planting_started_on: dateString.nullable().optional(),
   description: optionalText(2000),
   notes: optionalText(2000),
-  image_url: optionalText(500),
+  image_url: farmImagePreviewUrl,
 });
 const farmUpdateSchema = farmCreateSchema.partial();
 

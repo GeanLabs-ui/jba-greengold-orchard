@@ -38,6 +38,13 @@ function textValue(value: unknown): string | null {
   return trimmed || null;
 }
 
+function imagePreviewUrl(value: unknown): string | null {
+  const url = textValue(value);
+  return url && /^\/api\/v1\/files\/[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}\?preview=1$/i.test(url)
+    ? url
+    : null;
+}
+
 function numberValue(value: unknown, fallback = 0): number {
   const parsed = typeof value === 'number' ? value : Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
@@ -275,7 +282,7 @@ export async function createCanonicalFarmEntity(
         ${textValue(payload.owner_name)}, ${Math.trunc(nonNegative(payload.tree_count))},
         ${Math.trunc(nonNegative(payload.production_capacity_kg))},
         ${canonicalStatus(payload.status, ['active', 'inactive', 'archived'], 'active')},
-        ${textValue(payload.image_url)}, ${textValue(payload.description)}, ${textValue(payload.notes)},
+        ${imagePreviewUrl(payload.image_url)}, ${textValue(payload.description)}, ${textValue(payload.notes)},
         ${user.organizationId}, ${textValue(payload.operations_started_on)}, ${textValue(payload.planting_started_on)},
         ${user.id}, ${user.id}
       ) RETURNING *
@@ -374,7 +381,7 @@ export async function updateCanonicalFarmEntity(
         tree_count = ${Math.trunc(nextNumber(payload, 'tree_count', existing.tree_count))},
         production_capacity_kg = ${Math.trunc(nextNumber(payload, 'production_capacity_kg', existing.production_capacity_kg))},
         status = ${canonicalStatus(payload.status, ['active', 'inactive', 'archived'], existing.status)},
-        image_url = ${nextText(payload, 'image_url', existing.image_url)}, description = ${nextText(payload, 'description', existing.description)},
+        image_url = ${'image_url' in payload ? imagePreviewUrl(payload.image_url) : existing.image_url}, description = ${nextText(payload, 'description', existing.description)},
         notes = ${nextText(payload, 'notes', existing.notes)}, operations_started_on = ${nextText(payload, 'operations_started_on', existing.operations_started_on)},
         planting_started_on = ${nextText(payload, 'planting_started_on', existing.planting_started_on)},
         updated_by = ${user.id}, updated_at = now()
