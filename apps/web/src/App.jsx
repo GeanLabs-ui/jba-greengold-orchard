@@ -24,6 +24,8 @@ import AcceptStaffInvitation from '@/pages/AcceptStaffInvitation';
 import PublicLayout from '@/components/public/PublicLayout';
 // Admin layout
 import AdminLayout from '@/components/admin/AdminLayout';
+import FarmDailyActivitiesLayout from '@/components/admin/FarmDailyActivitiesLayout';
+import DeploymentRecoveryBoundary from '@/components/shared/DeploymentRecoveryBoundary';
 // Portal layout
 import PortalLayout from '@/components/portal/PortalLayout';
 // Public pages
@@ -194,12 +196,14 @@ const AuthenticatedApp = () => {
           <Route path="farms/:farmId" element={<FarmProfileAdmin />} />
           <Route path="farms/:farmId/blocks/:blockId" element={<BlockProfileAdmin />} />
           <Route path="harvests" element={<Navigate to="/admin/farm-daily-activities/activities/overview" replace />} />
-          <Route path="farm-daily-activities" element={<FarmDailyActivities />} />
-          <Route path="farm-daily-activities/activities/farms/:farmId" element={<FarmProfileAdmin />} />
-          <Route path="farm-daily-activities/activities/farms/:farmId/blocks/:blockId" element={<BlockProfileAdmin />} />
-          <Route path="farm-daily-activities/activities/master-schedule/:taskId" element={<MasterScheduleTask />} />
-          <Route path="farm-daily-activities/harvests/*" element={<Navigate to="/admin/farm-daily-activities/activities/overview" replace />} />
-          <Route path="farm-daily-activities/*" element={<FarmDailyActivities />} />
+          <Route path="farm-daily-activities" element={<FarmDailyActivitiesLayout />}>
+            <Route index element={<FarmDailyActivities />} />
+            <Route path="activities/farms/:farmId" element={<FarmProfileAdmin />} />
+            <Route path="activities/farms/:farmId/blocks/:blockId" element={<BlockProfileAdmin />} />
+            <Route path="activities/master-schedule/:taskId" element={<MasterScheduleTask />} />
+            <Route path="harvests/*" element={<Navigate to="/admin/farm-daily-activities/activities/overview" replace />} />
+            <Route path="*" element={<FarmDailyActivities />} />
+          </Route>
           <Route path="calendar" element={<ProductionCalendar />} />
           <Route path="logistics" element={<Logistics />} />
           <Route path="procurement" element={<Procurement />} />
@@ -241,7 +245,9 @@ function App() {
           <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <ScrollToTop />
             <SeoManager />
-            <AuthenticatedApp />
+            <DeploymentRecoveryBoundary>
+              <AuthenticatedApp />
+            </DeploymentRecoveryBoundary>
           </Router>
           <Toaster />
           <HotToaster position="top-right" />

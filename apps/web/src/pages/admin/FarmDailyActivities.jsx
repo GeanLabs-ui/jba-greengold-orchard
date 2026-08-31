@@ -3160,35 +3160,10 @@ export default function FarmDailyActivities() {
   };
 
   const pageInfo = getPageInfo();
-  const hiddenActivityBarItems = new Set(['Create Activity', 'Pending Activities', 'Completed Activities', 'Activity Calendar', 'Approvals']);
-  const topNavigationChildren = activeSection.path === '/admin/farm-daily-activities/activities'
-    ? activeSection.children.filter((child) => !hiddenActivityBarItems.has(child.title))
-    : activeSection.children;
-
   return (
     <div className="space-y-6">
-      {activeScreen !== 'Daily Activity Log' ? <div className="sticky top-0 z-20 -mx-2 space-y-3 border-b border-border bg-background/95 px-2 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/85">
-        <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-          <nav className="flex max-w-full items-center gap-2 overflow-x-auto scrollbar-thin" aria-label="Farm daily activities navigation">
-            {topNavigationChildren.map((child) => {
-              const isChildActive = pathname === child.path;
-              return (
-                <button
-                  key={child.path}
-                  type="button"
-                  onClick={() => navigate(child.path)}
-                  className={`shrink-0 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
-                    isChildActive
-                      ? 'bg-primary text-primary-foreground shadow-sm'
-                      : 'border border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
-                  }`}
-                >
-                  {child.title}
-                </button>
-              );
-            })}
-          </nav>
-
+      {activeScreen !== 'Daily Activity Log' ? <div className="-mt-3 border-b border-border pb-3">
+        <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-end">
           <div className="flex flex-wrap items-center gap-2">
             {!pageInfo.hideSearch ? (
               <Input
@@ -3202,7 +3177,6 @@ export default function FarmDailyActivities() {
             {activeScreen === 'Operations Analytics Overview' ? <div id="farm-analytics-header-controls" className="flex flex-wrap items-center" /> : null}
           </div>
         </div>
-
       </div> : null}
 
       <main className="min-w-0">
