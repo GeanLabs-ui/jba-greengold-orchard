@@ -3,6 +3,7 @@ import { readdir, readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import postgres from 'postgres';
+import { assertMigrationIsNonDestructive } from './migration-safety.mjs';
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) throw new Error('DATABASE_URL is required');
@@ -22,6 +23,7 @@ try {
 
   for (const file of files) {
     const source = await readFile(path.join(migrationDirectory, file), 'utf8');
+    assertMigrationIsNonDestructive(file, source);
     const checksum = createHash('sha256').update(source).digest('hex');
     await sql.begin(async (transaction) => {
       await transaction`SELECT pg_advisory_xact_lock(hashtext('jba-greengold-migrations'))`;
