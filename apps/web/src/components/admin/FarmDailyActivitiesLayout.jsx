@@ -32,7 +32,7 @@ export default function FarmDailyActivitiesLayout() {
         </nav>
       </div>
 
-      <DeploymentRecoveryBoundary>
+      <DeploymentRecoveryBoundary resetKey={`${location.pathname}${location.search}`}>
         <Outlet />
       </DeploymentRecoveryBoundary>
     </div>

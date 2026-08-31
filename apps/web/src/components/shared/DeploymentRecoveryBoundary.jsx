@@ -1,10 +1,14 @@
 import { Component } from 'react';
 
 const recoveryStorageKey = 'jba-deployment-recovery-path';
-const preloadErrorPattern = /Failed to fetch dynamically imported module|Importing a module script failed|error loading dynamically imported module|use(?:Memo|Callback|Effect|State|Ref|Context|Reducer|LayoutEffect) is not defined|Cannot access ['"][^'"]+['"] before initialization/i;
+const preloadErrorPattern = /Failed to fetch dynamically imported module|Importing a module script failed|error loading dynamically imported module/i;
 
 export const isDeploymentPreloadError = (error) => preloadErrorPattern.test(
   String(error?.message || error || ''),
+);
+
+export const shouldResetDeploymentRecovery = (previousKey, nextKey) => (
+  previousKey !== nextKey
 );
 
 const currentPath = () => `${window.location.pathname}${window.location.search}`;
@@ -18,6 +22,12 @@ export default class DeploymentRecoveryBoundary extends Component {
 
   componentDidCatch(error) {
     this.recoverOnce(error);
+  }
+
+  componentDidUpdate(previousProps) {
+    if (this.state.error && shouldResetDeploymentRecovery(previousProps.resetKey, this.props.resetKey)) {
+      this.setState({ error: null });
+    }
   }
 
   componentWillUnmount() {
@@ -46,21 +56,31 @@ export default class DeploymentRecoveryBoundary extends Component {
     window.location.reload();
   };
 
+  retryPage = () => {
+    this.setState({ error: null });
+  };
+
   render() {
     if (!this.state.error) return this.props.children;
 
+    const preloadFailure = isDeploymentPreloadError(this.state.error);
+
     return (
       <section className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-center text-amber-950" role="alert">
-        <h1 className="font-heading text-lg font-semibold">This page needs the latest update</h1>
+        <h1 className="font-heading text-lg font-semibold">
+          {preloadFailure ? 'This page needs the latest update' : 'This page could not be displayed'}
+        </h1>
         <p className="mx-auto mt-2 max-w-xl text-sm text-amber-900/80">
-          The page stopped while loading an updated application file. Reload to continue with the newest deployed version.
+          {preloadFailure
+            ? 'The page stopped while loading an updated application file. Reload to continue with the newest deployed version.'
+            : 'A page component stopped unexpectedly. You can try this page again or use the navigation above to continue elsewhere.'}
         </p>
         <button
           type="button"
-          onClick={this.reloadLatest}
+          onClick={preloadFailure ? this.reloadLatest : this.retryPage}
           className="mt-4 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90"
         >
-          Reload latest version
+          {preloadFailure ? 'Reload latest version' : 'Try this page again'}
         </button>
       </section>
     );
