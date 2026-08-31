@@ -1,12 +1,15 @@
 {
   "name": "JBA GreenGold Orchard",
   "short_name": "JBA GreenGold",
+  "id": "/",
   "description": "Mango production, supply, export, and farm management platform.",
   "start_url": "/",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
+  "orientation": "any",
   "background_color": "#fffaf2",
   "theme_color": "#064e3b",
   "icons": [
-    { "src": "/brand/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+    { "src": "/brand/app-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
   ]
 }

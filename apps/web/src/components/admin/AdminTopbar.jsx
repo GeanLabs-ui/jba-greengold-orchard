@@ -11,6 +11,7 @@ import { timeAgo } from '@/components/shared/format';
 import { getSafeRedirectTarget } from '@/lib/safe-redirect';
 import { canAccessAdminPath, defaultAdminPath } from '@/lib/access-control';
 import AdminHorizontalNav from './AdminHorizontalNav';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 
 const adminDestinations = [
   ['Dashboard', '/admin', 'overview summary performance kpi'], ['CRM', '/admin/crm', 'customer contact'],
@@ -31,6 +32,7 @@ export default function AdminTopbar({ onMenuClick }) {
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [search, setSearch] = useState('');
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
 
   const loadNotifications = () => base44.entities.Notification.list('-created_date', 20).then((items) => setNotifications(items || [])).catch(() => {});
   useEffect(() => {
@@ -55,6 +57,12 @@ export default function AdminTopbar({ onMenuClick }) {
     if (!searchResults[0]) return;
     navigate(searchResults[0][1]);
     setSearch('');
+    setMobileSearchOpen(false);
+  };
+  const selectSearchResult = (path) => {
+    navigate(path);
+    setSearch('');
+    setMobileSearchOpen(false);
   };
   const refreshCurrentPage = () => window.location.reload();
   const openNotification = async (notification) => {
@@ -76,8 +84,9 @@ export default function AdminTopbar({ onMenuClick }) {
   };
 
   return (
-    <header className="sticky top-0 z-[60] flex h-16 items-center gap-3 border-b border-border bg-card/95 px-4 backdrop-blur md:px-6">
-      <button type="button" className="xl:hidden" onClick={onMenuClick} aria-label="Open navigation"><Menu className="h-5 w-5" /></button>
+    <header className="sticky top-0 z-[60] flex h-16 items-center gap-2 border-b border-border bg-card/95 px-3 backdrop-blur sm:gap-3 sm:px-4 md:px-6">
+      <button type="button" className="grid h-11 w-11 shrink-0 place-items-center rounded-xl transition-colors hover:bg-muted xl:hidden" onClick={onMenuClick} aria-label="Open navigation"><Menu className="h-5 w-5" /></button>
+      <BrandLogo className="flex h-12 w-[104px] shrink-0 xl:hidden" imageClassName="h-9 max-w-[104px] sm:h-10" />
       <BrandLogo className="hidden h-12 w-[92px] shrink-0 xl:flex" imageClassName="h-10 max-w-[92px] sm:h-10" />
       <AdminHorizontalNav />
       <form onSubmit={runSearch} className="relative hidden min-w-48 max-w-sm flex-1 md:block">
@@ -88,8 +97,11 @@ export default function AdminTopbar({ onMenuClick }) {
         </div>}
       </form>
 
-      <div className="ml-auto flex shrink-0 items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={refreshCurrentPage} aria-label="Refresh current page" title="Refresh current page">
+      <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-3">
+        <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setMobileSearchOpen(true)} aria-label="Search admin tools" title="Search admin tools">
+          <Search className="h-5 w-5" />
+        </Button>
+        <Button variant="ghost" size="icon" className="hidden sm:inline-flex" onClick={refreshCurrentPage} aria-label="Refresh current page" title="Refresh current page">
           <RefreshCw className="h-5 w-5" />
         </Button>
         <div className="relative">
@@ -103,6 +115,24 @@ export default function AdminTopbar({ onMenuClick }) {
         </div>
         <div className="flex items-center gap-2"><div className="admin-avatar flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold">{(user?.full_name || user?.email || 'A')[0].toUpperCase()}</div><div className="hidden md:block"><p className="text-sm font-medium leading-tight">{user?.full_name || user?.email || 'Admin User'}</p><p className="text-xs capitalize text-muted-foreground">{String(user?.role || 'admin').replaceAll('_', ' ')}</p></div></div>
       </div>
+      <Sheet open={mobileSearchOpen} onOpenChange={setMobileSearchOpen}>
+        <SheetContent side="bottom" className="max-h-[82dvh] rounded-t-2xl px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-7 md:hidden">
+          <SheetHeader className="text-left">
+            <SheetTitle>Find an admin tool</SheetTitle>
+          </SheetHeader>
+          <form onSubmit={runSearch} className="mt-4">
+            <label className="relative block">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input autoFocus value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search pages and tools" className="h-12 bg-muted/50 pl-10 text-base" />
+            </label>
+          </form>
+          <div className="mt-4 max-h-[48dvh] overflow-y-auto">
+            {search.trim() ? (
+              searchResults.length ? searchResults.map(([label, path]) => <button key={path} type="button" onClick={() => selectSearchResult(path)} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium hover:bg-muted"><Search className="h-4 w-4 text-primary" />{label}</button>) : <p className="px-3 py-8 text-center text-sm text-muted-foreground">No matching admin tools.</p>
+            ) : <p className="px-3 py-5 text-sm text-muted-foreground">Search only the pages your role can access.</p>}
+          </div>
+        </SheetContent>
+      </Sheet>
     </header>
   );
 }

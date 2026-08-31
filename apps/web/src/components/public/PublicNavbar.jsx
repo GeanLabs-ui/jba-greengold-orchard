@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowRight, Menu, PackageSearch, ShoppingBag, X } from 'lucide-react';
+import { ArrowRight, Menu, PackageSearch, ShoppingBag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { useCart } from '@/lib/CartContext';
 
 const navLinks = [
@@ -81,50 +82,53 @@ export default function PublicNavbar() {
             </Button>
           </div>
 
-          <button className="lg:hidden" onClick={() => setOpen(!open)}>
-            {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          <button className="grid h-11 w-11 place-items-center rounded-xl text-[#0b432f] transition-colors hover:bg-[#0b432f]/5 lg:hidden" onClick={() => setOpen(true)} aria-label="Open website menu" aria-expanded={open}>
+            <Menu className="h-6 w-6" />
           </button>
         </div>
       </div>
 
-      {open && (
-        <div className="border-t border-border lg:hidden">
-          <nav className="flex flex-col gap-1 px-4 py-3">
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetContent side="left" className="w-[min(20rem,88vw)] border-0 bg-[#0b432f] p-0 text-white">
+          <div className="flex h-[4.5rem] items-center border-b border-white/10 px-5">
+            <SheetTitle className="text-left text-base text-white">Explore JBA GreenGold</SheetTitle>
+          </div>
+          <nav className="flex flex-col gap-1 px-4 py-5" aria-label="Website navigation">
             {navLinks.map((link) => (
               <Link
                 key={link.path}
                 to={link.path}
                 onClick={() => setOpen(false)}
-                className={`rounded-md px-3 py-2 text-sm font-medium ${
+                className={`rounded-xl px-3 py-3 text-sm font-medium ${
                   location.pathname === link.path
-                    ? 'bg-primary/10 text-primary'
-                    : 'text-muted-foreground hover:bg-muted'
+                    ? 'bg-[#d4a017] text-[#173d24]'
+                    : 'text-white/80 hover:bg-white/10 hover:text-white'
                 }`}
               >
                 {link.label}
               </Link>
             ))}
-            <div className="flex gap-2 pt-2">
-              <Button variant="outline" size="sm" className="flex-1" asChild>
+            <div className="flex gap-2 pt-4">
+              <Button variant="outline" size="sm" className="flex-1 border-white/20 bg-transparent text-white hover:bg-white/10 hover:text-white" asChild>
                 <Link to="/my-orders" onClick={() => setOpen(false)}>Track orders</Link>
               </Button>
               <Button
                 variant="outline"
                 size="sm"
-                className="flex-1"
+                className="flex-1 border-white/20 bg-transparent text-white hover:bg-white/10 hover:text-white"
                 onClick={() => { setOpen(false); openCart(); }}
               >
                 <ShoppingBag className="mr-2 h-4 w-4" /> Basket ({itemCount})
               </Button>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" className="flex-1" asChild>
+              <Button size="sm" className="flex-1 bg-[#d4a017] text-[#173d24] hover:bg-[#e1b335]" asChild>
                 <Link to="/portal" onClick={() => setOpen(false)}>Portal</Link>
               </Button>
             </div>
           </nav>
-        </div>
-      )}
+        </SheetContent>
+      </Sheet>
     </header>
   );
 }
