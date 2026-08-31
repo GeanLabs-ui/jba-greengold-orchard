@@ -96,6 +96,48 @@
 }
 
 @layer utilities {
+  @keyframes skeleton-shimmer {
+    0% { background-position: 180% 0; }
+    100% { background-position: -180% 0; }
+  }
+
+  @keyframes skeleton-arrive {
+    from { opacity: 0; transform: translateY(3px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .skeleton-shimmer {
+    background-color: hsl(var(--primary) / 0.08);
+    background-image: linear-gradient(100deg, transparent 20%, hsl(var(--primary) / 0.13) 42%, hsl(var(--primary) / 0.2) 50%, hsl(var(--primary) / 0.13) 58%, transparent 80%);
+    background-size: 220% 100%;
+    animation: skeleton-shimmer 1.8s ease-in-out infinite;
+  }
+
+  .skeleton-shimmer.skeleton-on-dark {
+    background-color: rgb(255 255 255 / 0.08);
+    background-image: linear-gradient(100deg, transparent 20%, rgb(255 255 255 / 0.08) 42%, rgb(255 255 255 / 0.17) 50%, rgb(255 255 255 / 0.08) 58%, transparent 80%);
+  }
+
+  .route-skeleton {
+    animation: skeleton-arrive 180ms ease-out both;
+  }
+
+  /* A route skeleton may contain more than one hundred shapes. Keeping those
+     shapes static avoids a matching number of paint animations while the real
+     route chunk and data request are competing for the main thread. */
+  .route-skeleton .skeleton-shimmer,
+  .skeleton-shell .skeleton-shimmer {
+    animation: none;
+    background-image: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .skeleton-shimmer,
+    .route-skeleton {
+      animation: none;
+    }
+  }
+
   .text-balance {
     text-wrap: balance;
   }
@@ -179,6 +221,18 @@
   background-image: linear-gradient(165deg, #155a20 0%, #176b27 52%, #116123 100%);
   color: hsl(var(--foreground));
   box-shadow: 8px 0 24px rgb(18 63 22 / 0.08);
+}
+
+.admin-horizontal-menu {
+  --foreground: 0 0% 100%;
+  --muted: 124.2 46.3% 24.1%;
+  --muted-foreground: 114.3 39.6% 79.2%;
+  --primary: 43.5 80.4% 46.1%;
+  --primary-foreground: 125.3 55.6% 15.9%;
+  background-color: #1b5e20;
+  background-image: linear-gradient(135deg, #155a20 0%, #176b27 58%, #116123 100%);
+  color: hsl(var(--foreground));
+  box-shadow: 0 8px 22px rgb(18 63 22 / 0.12);
 }
 
 .admin-avatar {
@@ -306,3 +360,70 @@
 .admin-theme .text-slate-800,
 .admin-theme .text-slate-900 { color: #263238; }
 .admin-theme .accent-orange-600 { accent-color: #2e7d32; }
+/* Keep the three controls in each block checklist stage compact and aligned. */
+@media (min-width: 640px) {
+  div:has(> select[aria-label$=" period"]) {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 145px 106px !important;
+    align-items: center !important;
+  }
+}
+
+/* Yield reporting remains available in analytics, not on individual block profiles. */
+.block-profile-page section:has(#yield-chart-title) {
+  display: none;
+}
+
+/* Streamline individual block pages to the approved operational view. */
+.block-profile-page nav[aria-label="Breadcrumb"],
+.block-profile-page > header > div > div:first-child > p:first-child,
+.block-profile-page > header > div > div:last-child > div:first-child,
+.block-profile-page aside.space-y-4 > section:nth-of-type(2),
+.block-profile-page aside.space-y-4 > section:nth-of-type(3) {
+  display: none;
+}
+
+.block-profile-page > header > div > div:last-child {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+/* Put the block profile above the working panels, then align records and season work. */
+.block-profile-page > div:has(> aside.space-y-4) > div.space-y-4,
+.block-profile-page > div:has(> aside.space-y-4) > aside.space-y-4 {
+  display: contents;
+}
+
+/* Keep the block editor compact enough to show its complete form in one view. */
+.block-editor .space-y-1\.5 { gap: 0.2rem; }
+.block-editor label { font-size: 0.72rem; line-height: 1rem; }
+.block-editor input,
+.block-editor textarea,
+.block-editor button[role="combobox"] { min-height: 2rem; height: 2rem; font-size: 0.8rem; }
+.block-editor textarea { height: auto; min-height: 2rem; line-height: 0.9rem; }
+.block-editor-section h3 { line-height: 1.1rem; }
+
+@media (min-width: 1024px) {
+  .block-profile-page > div:has(> aside.space-y-4) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .block-profile-page > div:has(> aside.space-y-4) > div.space-y-4 > section:first-child {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .block-profile-page > div:has(> aside.space-y-4) > aside.space-y-4 > section:first-child {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .block-profile-page > div:has(> aside.space-y-4) > div.space-y-4 > section:nth-child(2) {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .block-profile-page > div:has(> aside.space-y-4) > div.space-y-4 > .block-activity-analytics {
+    grid-column: 1 / -1;
+    grid-row: 3;
+  }
+}

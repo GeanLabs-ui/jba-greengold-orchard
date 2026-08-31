@@ -8,10 +8,10 @@ The canonical production domain is `jbagreengoldorchard.farm`; `www.jbagreengold
 2. Create Cloudflare Hyperdrive configurations for the staging and production Neon databases. Replace the zero placeholder IDs in `apps/api/wrangler.jsonc`. Use the Neon hostname and TLS settings Cloudflare documents for Hyperdrive.
 3. Enable R2 and create four private buckets: `jba-greengold-files-staging`, `jba-greengold-files-staging-backup`, `jba-greengold-files-production`, and `jba-greengold-files-production-backup`. Do not expose them with a public URL. Apply a retention lock to each backup bucket after testing the failed-upload cleanup path. The API dual-writes immutable UUID-keyed files and reads from the backup if the primary copy is missing.
 4. Create a Cloudflare Pages Direct Upload project named `jba-greengold-orchard`, with `main` as the production branch. This repository intentionally uses GitHub Actions Direct Upload; do not also connect Pages Git integration.
-5. Add `jbagreengoldorchard.farm` and `www.jbagreengoldorchard.farm` under Pages custom domains. Add `staging.jbagreengoldorchard.farm` to the staging branch. Keep the DNS zone proxied through Cloudflare.
+5. Add `jbagreengoldorchard.farm` and `www.jbagreengoldorchard.farm` under Pages custom domains. Add `staging.jbagreengoldorchard.farm` to the staging branch when that DNS name is ready. Keep the DNS zone proxied through Cloudflare. Until the custom staging hostname resolves, use `https://staging.jba-greengold-orchard.pages.dev` as the canonical staging origin.
 6. Create separate Turnstile widgets for the staging and production hostnames. The deployment workflows synchronize `TURNSTILE_SECRET_KEY` from the matching GitHub environment to the matching Worker. Do not reuse production keys in staging.
 
-7. In Google Cloud Console, create separate OAuth 2.0 Web client IDs for staging and production. Add only the matching authorized JavaScript origins (`https://staging.jbagreengoldorchard.farm` for staging; the apex and `www` origins for production). No redirect URI is required for the Google Identity Services ID-token flow. Store each public client ID as that GitHub environment's `GOOGLE_CLIENT_ID` variable.
+7. In Google Cloud Console, create separate OAuth 2.0 Web client IDs for staging and production. Add only the origins that actually serve each environment: authorize `https://staging.jba-greengold-orchard.pages.dev` for staging, add `https://staging.jbagreengoldorchard.farm` only after that custom hostname is active, and authorize the apex and `www` origins for production. No redirect URI is required for the Google Identity Services ID-token flow. Store each public client ID as that GitHub environment's required `GOOGLE_CLIENT_ID` variable.
 
    To bootstrap the first two workspace super administrators, set `BOOTSTRAP_ADMIN_EMAILS` as a Worker secret to a comma-separated, lower-case list of their verified Google addresses. This grants `super_admin` only when those exact Google identities first sign in. Remove the secret after both accounts have successfully signed in; subsequent staff must use the invitation flow.
 
@@ -34,7 +34,7 @@ Create `staging` and `production` environments. In each, add secrets `CLOUDFLARE
 
 For staff invitations, configure `RESEND_API_KEY` as a Worker secret and verify `EMAIL_FROM` with Resend before inviting anyone. The staff invitation endpoint refuses to generate a link when the email provider is unavailable, so no setup token is exposed in an API response or application log.
 
-Set production `APP_URL` to `https://jbagreengoldorchard.farm` and staging to `https://staging.jbagreengoldorchard.farm`. Require reviewers on the production environment.
+Set production `APP_URL` to `https://jbagreengoldorchard.farm` and staging to `https://staging.jba-greengold-orchard.pages.dev` until the custom staging hostname is active and the deployment configuration is deliberately updated. Require reviewers on the production environment.
 
 Restrict `staging` deployments to `staging` and production deployments to `main`. Require an explicit approval on the production environment. Branch rules must require pull requests, `verify` and `analyze` checks, resolved conversations, and block force pushes/deletions.
 

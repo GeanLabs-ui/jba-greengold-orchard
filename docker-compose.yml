@@ -6,7 +6,7 @@ services:
       POSTGRES_USER: mango_farm
       POSTGRES_PASSWORD: mango_farm_local_only
     ports:
-      - "54329:5432"
+      - "55432:5432"
     volumes:
       - mango_farm_postgres_data:/var/lib/postgresql/data
     healthcheck:

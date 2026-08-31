@@ -11,6 +11,7 @@ import {
   UserRoundCheck,
 } from 'lucide-react';
 import StatusBadge from '@/components/shared/StatusBadge';
+import PageSkeleton from '@/components/shared/PageSkeleton';
 import { formatDate } from '@/components/shared/format';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -124,7 +125,7 @@ export default function Applications() {
       </div>
 
       {loading ? (
-        <div className="h-72 animate-pulse rounded-xl bg-muted" />
+        <PageSkeleton contentOnly />
       ) : (
         <div className="grid gap-4">
           {filteredApplications.length > 0 ? filteredApplications.map((application) => {

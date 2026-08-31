@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { FolderOpen, FileText, Award, Download } from 'lucide-react';
 import PageHeader from '@/components/shared/PageHeader';
+import PageSkeleton from '@/components/shared/PageSkeleton';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { formatDate } from '@/components/shared/format';
 import { Button } from '@/components/ui/button';
@@ -68,7 +69,7 @@ export default function Documents() {
         </TabsList>
 
         <TabsContent value="certifications" className="mt-4">
-          {loading ? <div className="h-64 animate-pulse rounded-xl bg-muted" /> : (
+          {loading ? <PageSkeleton variant="table" contentOnly /> : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {certifications.length > 0 ? certifications.map((cert) => (
                 <div key={cert.id} className="rounded-xl border border-border bg-card p-5 shadow-sm">
@@ -96,7 +97,7 @@ export default function Documents() {
         </TabsContent>
 
         <TabsContent value="notifications" className="mt-4">
-          {loading ? <div className="h-64 animate-pulse rounded-xl bg-muted" /> : (
+          {loading ? <PageSkeleton variant="table" contentOnly /> : (
             <DataTable items={notifications} columns={[
               { key: 'title', label: 'Title' },
               { key: 'channel', label: 'Channel' },

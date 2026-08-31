@@ -107,4 +107,4 @@ export const PRODUCT_CATALOG = [
 ];
 
 export const PRODUCT_BY_ID = Object.fromEntries(PRODUCT_CATALOG.map((product) => [product.id, product]));
-export const formatProductPrice = (value) => `GHS ${Number(value || 0).toFixed(2)}`;
+export const formatProductPrice = (value) => `₵ ${Number(value || 0).toFixed(2)}`;

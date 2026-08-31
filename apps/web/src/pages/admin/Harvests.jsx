@@ -14,6 +14,7 @@ import {
   UserRoundCheck,
 } from 'lucide-react';
 import PageHeader from '@/components/shared/PageHeader';
+import PageSkeleton from '@/components/shared/PageSkeleton';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { formatCurrency, formatDate, formatNumber } from '@/components/shared/format';
 import { Button } from '@/components/ui/button';
@@ -291,7 +292,7 @@ const processEntityConfig = {
       { key: 'planting_date', label: 'Planting', format: formatDate },
       { key: 'expected_harvest_start', label: 'Harvest Start', format: formatDate },
       { key: 'target_yield_kg', label: 'Target kg', align: 'right', format: formatNumber },
-      { key: 'budget_amount', label: 'Budget', align: 'right', format: formatCurrency },
+      { key: 'budget_amount', label: 'Budget Cost', semantic: 'cost', align: 'right', format: formatCurrency },
       { key: 'status', label: 'Status', render: (value) => <StatusBadge status={value} /> },
     ],
   },
@@ -306,7 +307,7 @@ const processEntityConfig = {
       { key: 'project_type', label: 'Type' },
       { key: 'farm_name', label: 'Farm' },
       { key: 'due_date', label: 'Due', format: formatDate },
-      { key: 'budget_amount', label: 'Budget', align: 'right', format: formatCurrency },
+      { key: 'budget_amount', label: 'Budget Cost', semantic: 'cost', align: 'right', format: formatCurrency },
       { key: 'progress_percent', label: 'Progress', render: (value) => <Progress value={asNumber(value)} className="h-2 min-w-24" /> },
       { key: 'status', label: 'Status', render: (value) => <StatusBadge status={value} /> },
     ],
@@ -521,9 +522,9 @@ export default function Harvests({ embedded = false }) {
           <p className="text-xs text-muted-foreground">Open Tasks</p>
         </div>
         <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-          <CalendarDays className="h-5 w-5 text-blue-500" />
-          <p className="mt-2 font-heading text-2xl font-bold">{formatNumber(targetYield)} kg</p>
-          <p className="text-xs text-muted-foreground">Crop Plan Target</p>
+          <CalendarDays className="h-5 w-5 text-emerald-600" />
+          <p className="mt-2 font-heading text-2xl font-bold text-emerald-700">{formatNumber(targetYield)} kg</p>
+          <p className="text-xs text-emerald-700">Crop Plan Target</p>
         </div>
         <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
           <Pickaxe className="h-5 w-5 text-amber-500" />
@@ -533,7 +534,7 @@ export default function Harvests({ embedded = false }) {
       </div>
 
       {loading ? (
-        <div className="h-96 animate-pulse rounded-xl bg-muted" />
+        <PageSkeleton contentOnly />
       ) : view === 'process' ? (
         <div className="grid gap-5 xl:grid-cols-[1.15fr_0.85fr]">
           <section className="rounded-xl border border-border bg-card p-5 shadow-sm">

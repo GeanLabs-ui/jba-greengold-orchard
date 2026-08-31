@@ -187,11 +187,13 @@ const ROLE_READ_ENTITIES: Partial<Record<AuthUser["role"], Set<string>>> = {
     "FarmComplianceRecord",
   ]),
   finance_officer: new Set([
+    "Order",
     "Invoice",
     "Payment",
     "Expense",
     "FarmExpense",
     "FarmFinanceRecord",
+    "DailyActivity",
     "PurchaseOrder",
     "Quotation",
     "CustomerContract",

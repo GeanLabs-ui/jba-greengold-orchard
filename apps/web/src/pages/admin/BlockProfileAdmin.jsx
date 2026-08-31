@@ -1,860 +1,109 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
-import {
-  Activity,
-  ArrowLeft,
-  CalendarCheck2,
-  CalendarDays,
-  ClipboardList,
-  Edit3,
-  FileText,
-  GitMerge,
-  LayoutDashboard,
-  Leaf,
-  MapPin,
-  MoreHorizontal,
-  Ruler,
-  Trees,
-  TrendingUp,
-} from "lucide-react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { Activity, ArrowLeft, ArrowRight, CalendarCheck2, CalendarDays, CheckCircle2, Edit3, MapPin, MoreHorizontal, Plus, Ruler, Sprout, Trees, TrendingUp } from "lucide-react";
 import toast from "react-hot-toast";
 import { base44 } from "@/api/base44Client";
-import {
-  ActivityFormDialog,
-  BlockFormDialog,
-  InventoryFormDialog,
-  StatusActionDialog,
-} from "@/components/farm/FarmManagementDialogs";
-import FarmFieldLogs from "@/components/farm/FarmFieldLogs";
-import FarmSeasonChecklist from "@/components/farm/FarmSeasonChecklist";
+import { BlockFormDialog, InventoryFormDialog, StatusActionDialog } from "@/components/farm/FarmManagementDialogs";
+import BlockActivityAnalytics from "@/components/farm/BlockActivityAnalytics";
+import { SEASON_STAGES } from "@/components/farm/FarmSeasonChecklist";
 import YieldChart from "@/components/farm/YieldChart";
 import EditableStatusBadge from "@/components/shared/EditableStatusBadge";
 import StatusBadge from "@/components/shared/StatusBadge";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import { Progress } from "@/components/ui/progress";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/AuthContext";
-import {
-  canChangeBlockStatus,
-  canManageBlocks,
-  formatDate,
-  formatNumber,
-  humanize,
-} from "@/lib/farm-management";
+import { subscribeToDataChanges } from "@/lib/data-sync";
+import { canChangeBlockStatus, canManageBlocks, formatDate, formatNumber, humanize } from "@/lib/farm-management";
+import { cn } from "@/lib/utils";
 
 const yearStart = () => `${new Date().getFullYear()}-01-01`;
 const today = () => new Date().toISOString().slice(0, 10);
-const SECTIONS = [
-  { id: "overview", label: "Overview", icon: LayoutDashboard },
-  { id: "activities", label: "Activities", icon: Activity },
-  { id: "season", label: "Season checklist", icon: CalendarCheck2 },
-  { id: "logs", label: "Field logs", icon: ClipboardList },
-  { id: "details", label: "Block details", icon: FileText },
-];
+const hasValue = (value) => value !== undefined && value !== null && value !== "";
+const textValue = (value, fallback = "No data yet") => hasValue(value) ? value : fallback;
 
-const Detail = ({ label, value }) => (
-  <div className="border-b py-3 last:border-b-0">
-    <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-      {label}
-    </dt>
-    <dd className="mt-1 text-sm font-medium">{value ?? "No data yet"}</dd>
-  </div>
-);
-
-function Metric({ icon: Icon, label, value, detail }) {
-  return (
-    <div className="min-w-0 px-4 py-4 sm:px-5">
-      <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-        <Icon className="h-4 w-4 text-emerald-700" />
-        {label}
-      </div>
-      <p className="mt-2 truncate font-heading text-2xl font-semibold tabular-nums">
-        {value}
-      </p>
-      {detail ? (
-        <p className="mt-1 truncate text-xs text-muted-foreground">{detail}</p>
-      ) : null}
-    </div>
-  );
+function MetricCard({ icon: Icon, label, value, tone = "green" }) {
+  const tones = { green: "bg-emerald-50 text-emerald-700", gold: "bg-amber-50 text-amber-700", blue: "bg-sky-50 text-sky-700" };
+  return <article className="min-w-0 rounded-xl border border-slate-200/80 bg-white px-3 py-3 shadow-[0_2px_10px_rgba(15,23,42,0.025)] sm:px-4"><div className="flex gap-2.5"><span className={cn("grid h-8 w-8 shrink-0 place-items-center rounded-lg", tones[tone])}><Icon className="h-4 w-4" /></span><div className="min-w-0"><p className="text-[9px] font-bold uppercase tracking-wide text-slate-500">{label}</p><p className="mt-0.5 truncate text-sm font-bold text-slate-800">{value}</p></div></div></article>;
 }
 
-function SectionNav({ active, counts, onChange }) {
-  return (
-    <nav
-      className="sticky top-0 z-20 mt-4 overflow-x-auto rounded-xl border bg-background/95 p-1.5 shadow-sm backdrop-blur"
-      aria-label="Block profile sections"
-    >
-      <div className="flex min-w-max gap-1">
-        {SECTIONS.map(({ id, label, icon: Icon }) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => onChange(id)}
-            aria-current={active === id ? "page" : undefined}
-            className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition ${active === id ? "bg-emerald-950 text-white shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
-          >
-            <Icon className="h-4 w-4" />
-            {label}
-            {counts[id] != null ? (
-              <span
-                className={`rounded-full px-1.5 text-[10px] ${active === id ? "bg-white/15" : "bg-muted"}`}
-              >
-                {counts[id]}
-              </span>
-            ) : null}
-          </button>
-        ))}
-      </div>
-    </nav>
-  );
+function Panel({ title, icon: Icon, action, children, className }) {
+  return <section className={cn("overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-[0_2px_10px_rgba(15,23,42,0.025)]", className)}><header className="flex min-h-11 items-center justify-between gap-3 border-b border-slate-100 px-3 py-2.5 sm:px-4"><div className="flex min-w-0 items-center gap-2">{Icon ? <Icon className="h-4 w-4 shrink-0 text-emerald-700" /> : null}<h2 className="truncate text-xs font-bold text-slate-800">{title}</h2></div>{action}</header>{children}</section>;
+}
+
+function ProfileDatum({ label, value }) {
+  return <div className="min-w-0"><dt className="text-[8px] font-bold uppercase tracking-wide text-slate-500">{label}</dt><dd className="mt-0.5 truncate text-[11px] font-semibold text-slate-700" title={String(value)}>{textValue(value)}</dd></div>;
+}
+
+function CompactSeasonChecklist({ farm, block, canEdit }) {
+  const [records, setRecords] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [year, setYear] = useState(Math.max(new Date().getFullYear(), 2026));
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editorMode, setEditorMode] = useState("add");
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({ stage: SEASON_STAGES[0].id, total_tasks: "1", completed_tasks: "0", status: "planned", start_date: "", end_date: "" });
+  const years = Array.from({ length: 16 }, (_, index) => 2026 + index);
+  const load = useCallback(async () => {
+    if (!farm?.id || !block?.id) return;
+    try { setRecords((await base44.entities.FarmSeasonChecklist.filter({ farm_id: farm.id, season_year: year }, "-updated_date", 250)) || []); }
+    catch (error) { toast.error(error.message || "Unable to load the seasonal checklist"); }
+    finally { setLoading(false); }
+  }, [block?.id, farm?.id, year]);
+  useEffect(() => { setLoading(true); load(); return subscribeToDataChanges(load, ["FarmSeasonChecklist"]); }, [load]);
+  const recordForStage = (stage) => records.find((item) => item.block_id === block.id && item.stage === stage);
+  const formFor = (record, stage = SEASON_STAGES[0].id) => ({ stage: record?.stage || stage, total_tasks: String(record?.total_tasks || record?.task_count || 1), completed_tasks: String(record?.completed_tasks || (record?.completed ? record?.total_tasks || record?.task_count || 1 : 0)), status: record?.completed || String(record?.status).toLowerCase() === "completed" ? "completed" : String(record?.status).toLowerCase() === "in_progress" ? "in_progress" : "planned", start_date: record?.start_date || "", end_date: record?.end_date || "" });
+  const openEditor = (mode) => { setEditorMode(mode); const record = mode === "edit" ? records.find((item) => item.block_id === block.id) : null; setForm(formFor(record)); setEditorOpen(true); };
+  const changeStage = (stage) => { const record = recordForStage(stage); setForm(formFor(record, stage)); };
+  const saveActivity = async (event) => {
+    event.preventDefault(); const stage = SEASON_STAGES.find((item) => item.id === form.stage); if (!stage) return;
+    const total = Math.max(Number(form.total_tasks) || 1, 1); const completed = Math.min(Math.max(Number(form.completed_tasks) || 0, 0), total); const status = form.status === "completed" ? "completed" : form.status === "in_progress" ? "in_progress" : "planned"; const existing = recordForStage(stage.id);
+    const values = { farm_id: farm.id, farm_name: farm.name, block_id: block.id, block_name: block.name, block_code: block.block_code, season_year: year, stage: stage.id, stage_label: stage.label, total_tasks: total, completed_tasks: status === "completed" ? total : completed, completed: status === "completed", completed_at: status === "completed" ? new Date().toISOString() : "", status, start_date: form.start_date, end_date: form.end_date, source: "farm_season_checklist" };
+    setSaving(true); try { if (existing) await base44.entities.FarmSeasonChecklist.update(existing.id, values); else await base44.entities.FarmSeasonChecklist.create(values); toast.success(existing ? "Seasonal activity updated" : "Seasonal activity added"); setEditorOpen(false); await load(); } catch (error) { toast.error(error.message || "The seasonal activity could not be saved"); } finally { setSaving(false); }
+  };
+  const stages = SEASON_STAGES.map((stage) => {
+    const record = recordForStage(stage.id);
+    const total = Math.max(Number(record?.total_tasks || record?.task_count || 1), 1);
+    const complete = record?.completed || String(record?.status).toLowerCase() === "completed" ? total : Math.min(Number(record?.completed_tasks || 0), total);
+    const percent = Math.round((complete / total) * 100);
+    const inProgress = String(record?.status || "").toLowerCase() === "in_progress" || (Boolean(record) && !record.completed && record.start_date && record.start_date <= today());
+    return { ...stage, complete, total, percent, status: record?.completed || String(record?.status).toLowerCase() === "completed" ? "Completed" : inProgress ? "In progress" : "Upcoming" };
+  });
+  const statusClass = { Completed: "bg-emerald-100 text-emerald-700", "In progress": "bg-blue-100 text-blue-700", Upcoming: "bg-slate-100 text-slate-500" };
+  return <><section className="overflow-hidden rounded-md border border-blue-200 bg-white shadow-[0_1px_4px_rgba(15,23,42,0.04)]"><header className="flex items-center justify-between gap-2 px-3 pt-3"><div className="flex min-w-0 items-center gap-2"><CalendarCheck2 className="h-3.5 w-3.5 shrink-0 text-blue-600" /><h2 className="truncate text-[10px] font-bold text-blue-700">Season Checklist Progress</h2></div><div className="flex items-center gap-1"><select aria-label="Season checklist year" className="h-6 rounded border border-slate-200 bg-white px-1.5 text-[9px] font-semibold text-slate-600 outline-none" value={year} onChange={(event) => setYear(Number(event.target.value))}>{years.map((item) => <option key={item} value={item}>{item}</option>)}</select>{canEdit ? <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-6 w-6 text-slate-500 hover:bg-slate-100" aria-label="Season checklist actions"><MoreHorizontal className="h-3.5 w-3.5" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onClick={() => openEditor("add")}><Plus className="mr-2 h-3.5 w-3.5" />Add activity</DropdownMenuItem><DropdownMenuItem onClick={() => openEditor("edit")} disabled={!records.some((item) => item.block_id === block.id)}><Edit3 className="mr-2 h-3.5 w-3.5" />Edit activity</DropdownMenuItem></DropdownMenuContent></DropdownMenu> : null}</div></header><div className="px-3 pb-2 pt-2"><div className="grid grid-cols-[minmax(0,1.25fr)_minmax(110px,1.35fr)_68px] gap-2 border-b border-slate-100 pb-1.5 text-[7px] font-bold uppercase tracking-wide text-slate-400"><span>Activity</span><span>Progress</span><span>Status</span></div>{stages.map((stage) => <div key={stage.id} className="grid grid-cols-[minmax(0,1.25fr)_minmax(110px,1.35fr)_68px] items-center gap-2 py-1.5"><p className="truncate text-[9px] font-medium text-slate-600">{stage.label}</p><div className="grid grid-cols-[30px_minmax(0,1fr)_23px] items-center gap-1"><span className="text-[8px] font-medium text-slate-500">{loading ? "—" : `${stage.complete}/${stage.total}`}</span><span className="h-1.5 overflow-hidden rounded-full bg-slate-200"><span className="block h-full rounded-full bg-blue-500 transition-[width] duration-300" style={{ width: `${loading ? 0 : stage.percent}%` }} /></span><span className="text-right text-[8px] font-semibold text-slate-500">{loading ? "—" : `${stage.percent}%`}</span></div><span className={cn("justify-self-start whitespace-nowrap rounded-full px-2 py-0.5 text-[8px] font-semibold", statusClass[stage.status])}>{stage.status}</span></div>)}</div><div className="border-t border-slate-100 px-3 py-2 text-center"><span className="inline-flex items-center gap-1 text-[8px] font-semibold text-blue-600">View full seasonal checklist <ArrowRight className="h-3 w-3" /></span></div></section><Dialog open={editorOpen} onOpenChange={setEditorOpen}><DialogContent className="sm:max-w-md"><DialogHeader><DialogTitle>{editorMode === "edit" ? "Edit seasonal activity" : "Add seasonal activity"}</DialogTitle><DialogDescription>Set the activity progress for this block and season. The checklist updates as soon as you save.</DialogDescription></DialogHeader><form onSubmit={saveActivity} className="space-y-4"><label className="grid gap-1.5 text-sm font-medium text-slate-700">Activity<select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={form.stage} onChange={(event) => changeStage(event.target.value)}>{SEASON_STAGES.map((stage) => <option key={stage.id} value={stage.id}>{stage.label}</option>)}</select></label><div className="grid gap-4 sm:grid-cols-2"><label className="grid gap-1.5 text-sm font-medium text-slate-700">Total tasks<input className="h-10 rounded-md border border-slate-200 px-3 text-sm" type="number" min="1" value={form.total_tasks} onChange={(event) => setForm((current) => ({ ...current, total_tasks: event.target.value }))} required /></label><label className="grid gap-1.5 text-sm font-medium text-slate-700">Completed tasks<input className="h-10 rounded-md border border-slate-200 px-3 text-sm" type="number" min="0" value={form.completed_tasks} onChange={(event) => setForm((current) => ({ ...current, completed_tasks: event.target.value }))} required /></label></div><label className="grid gap-1.5 text-sm font-medium text-slate-700">Status<select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={form.status} onChange={(event) => setForm((current) => ({ ...current, status: event.target.value }))}><option value="planned">Upcoming</option><option value="in_progress">In progress</option><option value="completed">Completed</option></select></label><div className="grid gap-4 sm:grid-cols-2"><label className="grid gap-1.5 text-sm font-medium text-slate-700">Start date<input className="h-10 rounded-md border border-slate-200 px-3 text-sm" type="date" value={form.start_date} onChange={(event) => setForm((current) => ({ ...current, start_date: event.target.value }))} required /></label><label className="grid gap-1.5 text-sm font-medium text-slate-700">End date<input className="h-10 rounded-md border border-slate-200 px-3 text-sm" type="date" value={form.end_date} onChange={(event) => setForm((current) => ({ ...current, end_date: event.target.value }))} required /></label></div><DialogFooter><Button type="button" variant="outline" onClick={() => setEditorOpen(false)}>Cancel</Button><Button type="submit" disabled={saving}>{saving ? "Saving…" : "Save activity"}</Button></DialogFooter></form></DialogContent></Dialog></>;
+}
+
+function ActivityRecords({ activities = [] }) {
+  const rows = activities.slice(0, 5);
+  return <><Panel title="Activity & field records" icon={Activity}><div className="overflow-x-auto"><table className="w-full min-w-[650px] text-left"><thead className="border-b border-slate-100 bg-slate-50/70 text-[8px] font-bold uppercase tracking-wide text-slate-500"><tr><th className="px-3 py-2 sm:px-4">Date</th><th className="px-3 py-2">Category</th><th className="px-3 py-2">Action / observation</th><th className="px-3 py-2">Responsible</th><th className="px-3 py-2">Follow-up</th></tr></thead><tbody className="divide-y divide-slate-100">{rows.map((item) => <tr key={item.id} className="text-[10px] text-slate-600"><td className="whitespace-nowrap px-3 py-3 font-medium text-slate-700 sm:px-4">{formatDate(item.activity_date)}</td><td className="px-3 py-3"><span className="rounded-full bg-emerald-50 px-2 py-1 text-[9px] font-semibold text-emerald-700">{humanize(item.category)}</span></td><td className="max-w-[230px] truncate px-3 py-3">{textValue(item.title || item.activity_title || item.notes, "No observation recorded")}</td><td className="px-3 py-3">{textValue(item.responsible || item.assigned_workers || item.supervisor_name, "Not recorded")}</td><td className="px-3 py-3 text-slate-500">{item.status || "No follow-up recorded"}</td></tr>)}</tbody></table>{!rows.length ? <div className="grid min-h-28 place-items-center px-4 text-center"><div><Activity className="mx-auto h-5 w-5 text-emerald-700/60" /><p className="mt-2 text-[11px] font-semibold text-slate-700">No daily activity records</p><p className="mt-0.5 text-[10px] text-slate-500">Records entered in Daily Activities will appear here.</p></div></div> : null}</div>{activities.length > rows.length ? <div className="border-t border-slate-100 px-4 py-2 text-center text-[10px] font-semibold text-emerald-700">Showing the latest {rows.length} activity records</div> : null}</Panel><BlockActivityAnalytics activities={activities} /></>;
 }
 
 export default function BlockProfileAdmin() {
-  const { farmId, blockId } = useParams();
-  const { user } = useAuth();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [farm, setFarm] = useState(null);
-  const [block, setBlock] = useState(null);
-  const [start, setStart] = useState(yearStart());
-  const [end, setEnd] = useState(today());
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [editOpen, setEditOpen] = useState(false);
-  const [inventoryOpen, setInventoryOpen] = useState(false);
-  const [selectedInventory, setSelectedInventory] = useState(null);
-  const [activityOpen, setActivityOpen] = useState(false);
-  const [selectedActivity, setSelectedActivity] = useState(null);
-  const [statusAction, setStatusAction] = useState(null);
-  const [saving, setSaving] = useState(false);
-
-  const requestedSection = searchParams.get("tab");
-  const activeSection = SECTIONS.some(
-    (section) => section.id === requestedSection,
-  )
-    ? requestedSection
-    : "overview";
-  const setActiveSection = (section) => {
-    const next = new URLSearchParams(searchParams);
-    if (section === "overview") next.delete("tab");
-    else next.set("tab", section);
-    setSearchParams(next, { replace: true });
+  const { farmId, blockId } = useParams(); const navigate = useNavigate(); const { user } = useAuth();
+  const [farm, setFarm] = useState(null); const [block, setBlock] = useState(null); const [start] = useState(yearStart()); const [end] = useState(today()); const [loading, setLoading] = useState(true); const [error, setError] = useState("");
+  const [editOpen, setEditOpen] = useState(false); const [inventoryOpen, setInventoryOpen] = useState(false); const [selectedInventory, setSelectedInventory] = useState(null); const [statusAction, setStatusAction] = useState(null); const [saving, setSaving] = useState(false);
+  const load = useCallback(async () => { setLoading(true); setError(""); try { const [farmResponse, blockResponse, dailyActivities] = await Promise.all([base44.farms.get(farmId, { start, end }), base44.farms.getBlock(blockId, { start, end }), base44.entities.DailyActivity.listAll('-activity_date')]); const blockActivities = (dailyActivities || []).filter((item) => item.block_id === blockId || (item.block_code === blockResponse.block_code && (!item.farm_id || item.farm_id === farmId)) || (item.block_name === blockResponse.name && (!item.farm_name || item.farm_name === farmResponse.name))); setFarm(farmResponse); setBlock({ ...blockResponse, activity_periods: blockActivities }); } catch (loadError) { setError(loadError.message || "Unable to load this block."); } finally { setLoading(false); } }, [blockId, end, farmId, start]);
+  useEffect(() => { load(); return subscribeToDataChanges(load, ['FarmBlock', 'DailyActivity']); }, [load]);
+  const mutate = async (action, message, close) => { setSaving(true); try { await action(); toast.success(message); close?.(); await load(); return true; } catch (mutationError) { toast.error(mutationError.message || "The change could not be saved"); return false; } finally { setSaving(false); } };
+  const currentInventory = useMemo(() => (block?.inventory || []).filter((entry) => !entry.effective_to), [block]);
+  const saveBlock = async (payload) => {
+    const saved = await mutate(() => base44.farms.updateBlock(block.id, payload), "Block profile updated", () => setEditOpen(false));
+    if (saved && payload.farm_id && payload.farm_id !== farmId) navigate(`/admin/farm-daily-activities/activities/farms/${payload.farm_id}/blocks/${block.id}`);
+    return saved;
   };
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError("");
-    try {
-      const [farmResponse, blockResponse] = await Promise.all([
-        base44.farms.get(farmId, { start, end }),
-        base44.farms.getBlock(blockId, { start, end }),
-      ]);
-      setFarm(farmResponse);
-      setBlock(blockResponse);
-    } catch (loadError) {
-      setError(loadError.message || "Unable to load this block.");
-    } finally {
-      setLoading(false);
-    }
-  }, [blockId, end, farmId, start]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
-  const mutate = async (action, message, close) => {
-    setSaving(true);
-    try {
-      await action();
-      toast.success(message);
-      close?.();
-      await load();
-      return true;
-    } catch (mutationError) {
-      toast.error(mutationError.message || "The change could not be saved");
-      return false;
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const currentInventory = useMemo(
-    () => (block?.inventory || []).filter((entry) => !entry.effective_to),
-    [block],
-  );
-  const latestActivity =
-    block?.activity_periods?.find(
-      (period) => period.status === "in_progress",
-    ) || null;
-  const activeHarvest =
-    block?.harvest_periods?.find((period) => period.status === "active") ||
-    null;
-
-  if (loading && !block)
-    return (
-      <div className="space-y-5">
-        <Skeleton className="h-8 w-64" />
-        <Skeleton className="h-28" />
-        <Skeleton className="h-12" />
-        <Skeleton className="h-80" />
-      </div>
-    );
-  if (error && !block)
-    return (
-      <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-8 text-center">
-        <p className="font-medium text-destructive">
-          This block could not be loaded
-        </p>
-        <p className="mt-1 text-sm text-muted-foreground">{error}</p>
-        <Button className="mt-4" variant="outline" onClick={load}>
-          Try again
-        </Button>
-      </div>
-    );
+  const latestActivity = block?.activity_periods?.find((period) => String(period.status || "").toLowerCase() === "in_progress") || block?.activity_periods?.[0] || null;
+  const activeHarvest = block?.harvest_periods?.find((period) => period.status === "active") || block?.harvest_periods?.[0] || null;
+  if (loading && !block) return <div className="space-y-4"><Skeleton className="h-5 w-48" /><Skeleton className="h-14" /><div className="grid gap-3 md:grid-cols-3 xl:grid-cols-6">{Array.from({ length: 6 }, (_, index) => <Skeleton key={index} className="h-20 rounded-xl" />)}</div><Skeleton className="h-80 rounded-xl" /></div>;
+  if (error && !block) return <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-8 text-center"><p className="font-medium text-destructive">This block could not be loaded</p><p className="mt-1 text-sm text-muted-foreground">{error}</p><Button className="mt-4" variant="outline" onClick={load}>Try again</Button></div>;
   if (!block || !farm) return null;
-
-  const analytics = block.analytics || {};
-  const canEdit = canManageBlocks(user?.role) && block.status !== "merged";
-
-  return (
-    <div className="pb-10">
-      <nav
-        className="mb-3 flex flex-wrap items-center gap-1 text-sm text-muted-foreground"
-        aria-label="Breadcrumb"
-      >
-        <Link to="/admin/farm-daily-activities/activities/farms" className="hover:text-foreground">
-          Farms
-        </Link>
-        <span>/</span>
-        <Link
-          to={`/admin/farm-daily-activities/activities/farms/${farm.id}?tab=blocks`}
-          className="hover:text-foreground"
-        >
-          {farm.name}
-        </Link>
-        <span>/</span>
-        <span className="text-foreground">{block.block_code}</span>
-      </nav>
-      <header className="overflow-hidden rounded-xl border bg-card">
-        <div className="flex flex-col gap-5 px-5 py-5 sm:px-7 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
-                {block.block_code}
-              </span>
-              <EditableStatusBadge
-                status={block.status}
-                canEdit={
-                  canChangeBlockStatus(user?.role) && block.status !== "merged"
-                }
-                entityLabel={block.name}
-                onClick={() =>
-                  setStatusAction(
-                    block.status === "active" ? "deactivate" : "reactivate",
-                  )
-                }
-              />
-            </div>
-            <h1 className="mt-1.5 font-heading text-3xl font-semibold">
-              {block.name}
-            </h1>
-            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1.5">
-                <MapPin className="h-3.5 w-3.5" />
-                {farm.name} ·{" "}
-                {farm.location || farm.region || "Location not recorded"}
-              </span>
-              <span>Updated {formatDate(block.updated_at)}</span>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" asChild>
-              <Link to={`/admin/farm-daily-activities/activities/farms/${farm.id}?tab=blocks`}>
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Farm blocks
-              </Link>
-            </Button>
-            {canEdit ? (
-              <Button onClick={() => setEditOpen(true)}>
-                <Edit3 className="mr-2 h-4 w-4" />
-                Edit block
-              </Button>
-            ) : null}
-            {canChangeBlockStatus(user?.role) && block.status !== "merged" ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    aria-label="More block actions"
-                  >
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    className={
-                      block.status === "active" ? "text-destructive" : ""
-                    }
-                    onClick={() =>
-                      setStatusAction(
-                        block.status === "active" ? "deactivate" : "reactivate",
-                      )
-                    }
-                  >
-                    {block.status === "active"
-                      ? "Deactivate block"
-                      : "Reactivate block"}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : null}
-          </div>
-        </div>
-      </header>
-
-      <SectionNav
-        active={activeSection}
-        counts={{
-          activities:
-            (block.activity_periods?.length || 0) +
-            (block.harvest_periods?.length || 0),
-        }}
-        onChange={setActiveSection}
-      />
-      {block.status === "merged" && block.merge_info ? (
-        <div className="mt-4 flex gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
-          <GitMerge className="h-5 w-5 shrink-0" />
-          <div>
-            <p className="font-medium">
-              Merged on {formatDate(block.merge_info.effective_date)}
-            </p>
-            <p className="mt-1">
-              Historical records remain here. New operations should use the
-              destination block. Reason: {block.merge_info.reason}
-            </p>
-          </div>
-        </div>
-      ) : null}
-      {error ? (
-        <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-          The latest refresh failed: {error}. The last loaded values are still
-          shown.
-        </div>
-      ) : null}
-
-      {activeSection === "overview" ? (
-        <div className="mt-5 animate-in fade-in-0 slide-in-from-bottom-1 duration-200">
-          <section className="grid overflow-hidden rounded-xl border bg-card sm:grid-cols-2 sm:divide-x xl:grid-cols-4">
-            <Metric
-              icon={Ruler}
-              label="Block area"
-              value={
-                block.size_acres == null
-                  ? "No data yet"
-                  : `${formatNumber(block.size_acres)} ac`
-              }
-              detail={
-                block.early_block_classification ||
-                "Classification not recorded"
-              }
-            />
-            <Metric
-              icon={Trees}
-              label="Current trees"
-              value={
-                analytics.inventory_record_count
-                  ? formatNumber(analytics.total_trees, 0)
-                  : "No data yet"
-              }
-              detail={
-                analytics.inventory_record_count
-                  ? `${formatNumber(analytics.productive_trees, 0)} productive`
-                  : "Inventory can be added later"
-              }
-            />
-            <Metric
-              icon={TrendingUp}
-              label="Yield in period"
-              value={
-                analytics.yield_record_count
-                  ? `${formatNumber(analytics.total_yield_kg)} kg`
-                  : "No data yet"
-              }
-              detail={
-                analytics.yield_per_acre == null
-                  ? "Yield per acre unavailable"
-                  : `${formatNumber(analytics.yield_per_acre)} kg per acre`
-              }
-            />
-            <Metric
-              icon={Activity}
-              label="Current stage"
-              value={
-                latestActivity
-                  ? humanize(latestActivity.activity_type)
-                  : "No data yet"
-              }
-              detail={
-                activeHarvest
-                  ? humanize(activeHarvest.harvest_type)
-                  : "No active harvest period"
-              }
-            />
-          </section>
-          <section className="mt-4 flex flex-col gap-3 border-b pb-4 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h2 className="font-heading text-lg font-semibold">
-                Block performance
-              </h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Yield and crop inventory for the selected period.
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <label className="text-[11px] font-medium text-muted-foreground">
-                From
-                <Input
-                  className="mt-1 h-9"
-                  type="date"
-                  value={start}
-                  max={end}
-                  onChange={(event) => setStart(event.target.value)}
-                />
-              </label>
-              <label className="text-[11px] font-medium text-muted-foreground">
-                To
-                <Input
-                  className="mt-1 h-9"
-                  type="date"
-                  value={end}
-                  min={start}
-                  max={today()}
-                  onChange={(event) => setEnd(event.target.value)}
-                />
-              </label>
-            </div>
-          </section>
-          <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.5fr)_minmax(300px,0.8fr)]">
-            <YieldChart
-              records={block.yield_records}
-              title="Block yield trend"
-            />
-            <section className="rounded-xl border bg-card p-5">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <h2 className="font-heading text-lg font-semibold">
-                    Crop inventory
-                  </h2>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Current tree records
-                  </p>
-                </div>
-                {canEdit ? (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      setSelectedInventory(null);
-                      setInventoryOpen(true);
-                    }}
-                  >
-                    <Trees className="mr-2 h-4 w-4" />
-                    Record trees
-                  </Button>
-                ) : null}
-              </div>
-              {currentInventory.length ? (
-                <div className="mt-4 divide-y">
-                  {currentInventory.map((entry) => {
-                    const productivePercent = entry.total_trees
-                      ? (entry.productive_trees / entry.total_trees) * 100
-                      : 0;
-                    return (
-                      <button
-                        type="button"
-                        key={entry.id}
-                        disabled={!canEdit}
-                        onClick={() => {
-                          setSelectedInventory(entry);
-                          setInventoryOpen(true);
-                        }}
-                        className="w-full py-3 text-left disabled:cursor-default"
-                      >
-                        <div className="flex items-center justify-between gap-3">
-                          <div>
-                            <p className="font-medium">{entry.variety_name}</p>
-                            <p className="mt-0.5 text-xs text-muted-foreground">
-                              Planted {formatDate(entry.planting_date)}
-                            </p>
-                          </div>
-                          <span className="text-sm font-semibold">
-                            {formatNumber(entry.total_trees, 0)} trees
-                          </span>
-                        </div>
-                        <Progress
-                          value={productivePercent}
-                          className="mt-2 h-1.5"
-                        />
-                        <p className="mt-1.5 text-xs text-muted-foreground">
-                          {formatNumber(entry.productive_trees, 0)} productive ·{" "}
-                          {formatNumber(entry.non_productive_trees, 0)} young ·{" "}
-                          {formatNumber(entry.dead_trees, 0)} removed
-                        </p>
-                      </button>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="py-10 text-center">
-                  <Leaf className="mx-auto h-7 w-7 text-muted-foreground/60" />
-                  <p className="mt-2 text-sm font-medium">
-                    No inventory recorded
-                  </p>
-                </div>
-              )}
-            </section>
-          </div>
-        </div>
-      ) : null}
-
-      {activeSection === "activities" ? (
-        <div className="mt-5 animate-in fade-in-0 slide-in-from-bottom-1 duration-200">
-          <div className="flex items-end justify-between border-b pb-4">
-            <div>
-              <h2 className="font-heading text-2xl font-semibold">
-                Activities and harvests
-              </h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Work periods and harvest windows for this block.
-              </p>
-            </div>
-            {canEdit ? (
-              <Button
-                onClick={() => {
-                  setSelectedActivity(null);
-                  setActivityOpen(true);
-                }}
-              >
-                <Activity className="mr-2 h-4 w-4" />
-                Record activity
-              </Button>
-            ) : null}
-          </div>
-          <div className="mt-4 grid gap-4 xl:grid-cols-2">
-            <section className="overflow-hidden rounded-xl border bg-card">
-              <div className="border-b px-5 py-4">
-                <h3 className="font-heading text-lg font-semibold">
-                  Land and tree activities
-                </h3>
-              </div>
-              {block.activity_periods?.length ? (
-                <div className="divide-y">
-                  {block.activity_periods.map((period) => (
-                    <button
-                      type="button"
-                      key={period.id}
-                      disabled={!canEdit}
-                      onClick={() => {
-                        setSelectedActivity(period);
-                        setActivityOpen(true);
-                      }}
-                      className="flex w-full items-center gap-4 px-5 py-4 text-left transition hover:bg-muted/30 disabled:cursor-default"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="font-medium">
-                            {humanize(period.activity_type)}
-                          </p>
-                          <StatusBadge status={period.status} />
-                        </div>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          {formatDate(period.planned_start_date)} –{" "}
-                          {formatDate(period.planned_end_date)}
-                        </p>
-                        {period.notes ? (
-                          <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">
-                            {period.notes}
-                          </p>
-                        ) : null}
-                      </div>
-                      <span className="text-sm font-semibold">
-                        {period.completion_percent || 0}%
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div className="p-10 text-center text-sm text-muted-foreground">
-                  No activities recorded for this block.
-                </div>
-              )}
-            </section>
-            <section className="overflow-hidden rounded-xl border bg-card">
-              <div className="flex items-center justify-between border-b px-5 py-4">
-                <h3 className="font-heading text-lg font-semibold">
-                  Harvest periods
-                </h3>
-                <CalendarDays className="h-5 w-5 text-muted-foreground" />
-              </div>
-              {block.harvest_periods?.length ? (
-                <div className="divide-y">
-                  {block.harvest_periods.map((period) => (
-                    <div key={period.id} className="px-5 py-4">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <p className="font-medium">
-                          {humanize(period.harvest_type)}
-                        </p>
-                        <StatusBadge status={period.status} />
-                      </div>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {formatDate(period.expected_start_date)} –{" "}
-                        {formatDate(period.expected_end_date)} ·{" "}
-                        {formatNumber(period.actual_yield_kg || 0)} kg actual
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="p-10 text-center text-sm text-muted-foreground">
-                  No harvest periods recorded for this block.
-                </div>
-              )}
-            </section>
-          </div>
-        </div>
-      ) : null}
-
-      {activeSection === "season" ? (
-        <div className="animate-in fade-in-0 slide-in-from-bottom-1 duration-200">
-          <FarmSeasonChecklist
-            farm={farm}
-            blocks={[block]}
-            initialBlockId={block.id}
-            lockScope
-            canEdit={canEdit}
-            className="mt-5"
-          />
-        </div>
-      ) : null}
-
-      {activeSection === "logs" ? (
-        <div className="animate-in fade-in-0 slide-in-from-bottom-1 duration-200">
-          <FarmFieldLogs
-            farm={farm}
-            blocks={[block]}
-            initialBlockId={block.id}
-            lockScope
-            canCreate={canEdit}
-            className="mt-5"
-          />
-        </div>
-      ) : null}
-
-      {activeSection === "details" ? (
-        <section className="mt-5 animate-in fade-in-0 slide-in-from-bottom-1 duration-200">
-          <div className="flex items-center justify-between border-b pb-4">
-            <div>
-              <h2 className="font-heading text-2xl font-semibold">
-                Block details
-              </h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Farm register, land profile, crop condition, and dates.
-              </p>
-            </div>
-            {canEdit ? (
-              <Button variant="outline" onClick={() => setEditOpen(true)}>
-                <Edit3 className="mr-2 h-4 w-4" />
-                Edit details
-              </Button>
-            ) : null}
-          </div>
-          <div className="mt-3 grid gap-x-10 md:grid-cols-2 xl:grid-cols-4">
-            <dl>
-              <Detail label="Parent farm" value={farm.name} />
-              <Detail label="Block code" value={block.block_code} />
-              <Detail
-                label="Size"
-                value={
-                  block.size_acres == null
-                    ? null
-                    : `${formatNumber(block.size_acres)} acres`
-                }
-              />
-              <Detail
-                label="GPS coordinates"
-                value={
-                  block.latitude != null && block.longitude != null
-                    ? `${block.latitude}, ${block.longitude}`
-                    : null
-                }
-              />
-            </dl>
-            <dl>
-              <Detail
-                label="Early block"
-                value={block.early_block_classification}
-              />
-              <Detail
-                label="Year planted"
-                value={
-                  block.year_planted == null ? null : String(block.year_planted)
-                }
-              />
-              <Detail
-                label="Variety"
-                value={
-                  currentInventory
-                    .map((entry) => entry.variety_name)
-                    .join(", ") || block.variety
-                }
-              />
-              <Detail
-                label="Shoot maturity"
-                value={
-                  block.shoot_maturity == null
-                    ? null
-                    : `${formatNumber(Number(block.shoot_maturity) * 100, 0)}%`
-                }
-              />
-            </dl>
-            <dl>
-              <Detail
-                label="Forecast yield"
-                value={
-                  block.forecast_yield_kg == null
-                    ? null
-                    : `${formatNumber(block.forecast_yield_kg)} kg`
-                }
-              />
-              <Detail
-                label="Actual yield"
-                value={
-                  analytics.yield_record_count
-                    ? `${formatNumber(analytics.total_yield_kg)} kg`
-                    : null
-                }
-              />
-              <Detail
-                label="Fruit fly pressure"
-                value={block.fruit_fly_pressure}
-              />
-              <Detail label="Disease rating" value={block.disease_rating} />
-            </dl>
-            <dl>
-              <Detail
-                label="Soil type / pH"
-                value={`${block.soil_type || "No data yet"}${block.soil_ph == null ? "" : ` · pH ${block.soil_ph}`}`}
-              />
-              <Detail
-                label="Operations started"
-                value={formatDate(block.operations_started_on)}
-              />
-              <Detail
-                label="Planting started"
-                value={formatDate(block.planting_started_on)}
-              />
-              <Detail
-                label="Created / updated"
-                value={`${formatDate(block.created_at)} / ${formatDate(block.updated_at)}`}
-              />
-            </dl>
-          </div>
-          {block.description ? (
-            <div className="mt-5 border-t pt-4">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                Description
-              </p>
-              <p className="mt-2 max-w-4xl text-sm leading-6">
-                {block.description}
-              </p>
-            </div>
-          ) : null}
-          {block.soil_notes ? (
-            <div className="mt-5 border-t pt-4">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                Soil and land notes
-              </p>
-              <p className="mt-2 max-w-4xl text-sm leading-6">
-                {block.soil_notes}
-              </p>
-            </div>
-          ) : null}
-        </section>
-      ) : null}
-
-      <BlockFormDialog
-        open={editOpen}
-        onOpenChange={setEditOpen}
-        block={block}
-        saving={saving}
-        unallocatedAcres={farm.analytics?.unallocatedSizeAcres}
-        onSubmit={(payload) =>
-          mutate(
-            () => base44.farms.updateBlock(block.id, payload),
-            "Block profile updated",
-            () => setEditOpen(false),
-          )
-        }
-      />
-      <InventoryFormDialog
-        open={inventoryOpen}
-        onOpenChange={setInventoryOpen}
-        inventory={selectedInventory}
-        saving={saving}
-        onSubmit={(payload) =>
-          mutate(
-            () =>
-              selectedInventory
-                ? base44.farms.updateInventory(selectedInventory.id, payload)
-                : base44.farms.addInventory(block.id, payload),
-            selectedInventory
-              ? "Tree inventory updated"
-              : "Tree inventory recorded",
-            () => setInventoryOpen(false),
-          )
-        }
-      />
-      <ActivityFormDialog
-        open={activityOpen}
-        onOpenChange={setActivityOpen}
-        activity={selectedActivity}
-        saving={saving}
-        onSubmit={(payload) =>
-          mutate(
-            () =>
-              selectedActivity
-                ? base44.farms.updateActivity(selectedActivity.id, payload)
-                : base44.farms.addActivity(block.id, payload),
-            selectedActivity
-              ? "Activity progress updated"
-              : "Land activity recorded",
-            () => setActivityOpen(false),
-          )
-        }
-      />
-      <StatusActionDialog
-        open={Boolean(statusAction)}
-        onOpenChange={(open) => !open && setStatusAction(null)}
-        entityLabel={block.name}
-        action={statusAction || "deactivate"}
-        saving={saving}
-        onSubmit={(payload) =>
-          mutate(
-            () =>
-              statusAction === "deactivate"
-                ? base44.farms.deactivateBlock(block.id, payload)
-                : base44.farms.reactivateBlock(block.id),
-            `Block ${statusAction === "deactivate" ? "deactivated" : "reactivated"}`,
-            () => setStatusAction(null),
-          )
-        }
-      />
-    </div>
-  );
+  const analytics = block.analytics || {}; const canEdit = canManageBlocks(user?.role) && block.status !== "merged"; const blockTitle = /^block\b/i.test(block.name || "") ? block.name : `Block ${block.name || block.block_code}`; const forecastYield = hasValue(block.forecast_yield_kg) ? `${formatNumber(block.forecast_yield_kg)} kg` : "No data yet"; const lastActivityDate = latestActivity?.activity_date || latestActivity?.actual_start_date || latestActivity?.planned_start_date;
+  return <div className="block-profile-page mx-auto max-w-[1280px] pb-10 text-slate-700"><nav className="mb-3 flex flex-wrap items-center gap-1 text-[10px] font-semibold text-slate-500" aria-label="Breadcrumb"><Link to="/admin/farm-daily-activities/activities/farms" className="hover:text-emerald-800">Farms</Link><span>/</span><Link to={`/admin/farm-daily-activities/activities/farms/${farm.id}?tab=blocks`} className="hover:text-emerald-800">{farm.name}</Link><span>/</span><span className="text-slate-700">{block.block_code}</span></nav>
+    <header className="rounded-xl bg-[#123f12] px-5 py-4 text-white shadow-sm"><div className="grid gap-4 lg:grid-cols-[170px_auto_minmax(0,1fr)] lg:items-center"><div><p className="text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-100/75">{block.block_code}</p><h1 className="mt-1 font-heading text-2xl font-bold tracking-tight">{blockTitle}</h1><div className="mt-1 flex flex-wrap gap-x-3 text-[10px] text-emerald-100/80"><span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{farm.location || farm.region || "Location not recorded"}</span><span>Updated {formatDate(block.updated_at)}</span></div></div><div className="flex gap-2"><Button variant="secondary" size="sm" className="h-8 border-0 bg-white/10 text-[10px] text-white hover:bg-white/20" asChild><Link to={`/admin/farm-daily-activities/activities/farms/${farm.id}?tab=blocks`}><ArrowLeft className="mr-1 h-3.5 w-3.5" />Back to blocks</Link></Button>{(canEdit || (canChangeBlockStatus(user?.role) && block.status !== "merged")) ? <DropdownMenu><DropdownMenuTrigger asChild><Button variant="secondary" size="icon" className="h-8 w-8 border-0 bg-[#4394d1] text-white hover:bg-[#3182bd]" aria-label="More block actions"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end">{canEdit ? <DropdownMenuItem onClick={() => setEditOpen(true)}><Edit3 className="mr-2 h-4 w-4" />Edit block</DropdownMenuItem> : null}{canChangeBlockStatus(user?.role) && block.status !== "merged" ? <DropdownMenuItem className={block.status === "active" ? "text-destructive" : ""} onClick={() => setStatusAction(block.status === "active" ? "deactivate" : "reactivate")}>{block.status === "active" ? "Deactivate block" : "Reactivate block"}</DropdownMenuItem> : null}</DropdownMenuContent></DropdownMenu> : null}</div><div className="grid grid-cols-2 gap-x-4 gap-y-3 border-t border-white/10 pt-3 sm:grid-cols-4 lg:border-l lg:border-t-0 lg:pl-4 lg:pt-0"><div><p className="text-[8px] font-bold uppercase tracking-wide text-emerald-100/65">Block status</p><div className="mt-1"><EditableStatusBadge status={block.status} canEdit={canChangeBlockStatus(user?.role) && block.status !== "merged"} entityLabel={block.name} onClick={() => setStatusAction(block.status === "active" ? "deactivate" : "reactivate")} /></div></div><div><p className="text-[8px] font-bold uppercase tracking-wide text-emerald-100/65">Mango varieties</p><p className="mt-1 truncate text-[11px] font-bold">{currentInventory.map((entry) => entry.variety_name).filter(Boolean).join(", ") || block.variety || "Not recorded"}</p></div><div><p className="text-[8px] font-bold uppercase tracking-wide text-emerald-100/65">Harvest types</p><p className="mt-1 text-[11px] font-bold">{activeHarvest ? humanize(activeHarvest.harvest_type) : "Not scheduled"}</p></div><div><p className="text-[8px] font-bold uppercase tracking-wide text-emerald-100/65">Next harvest</p><p className="mt-1 flex items-center gap-1 text-[11px] font-bold"><CalendarDays className="h-3.5 w-3.5 text-amber-300" />{activeHarvest?.expected_start_date ? formatDate(activeHarvest.expected_start_date) : "Not scheduled"}</p></div></div></div></header>
+    {block.status === "merged" && block.merge_info ? <div className="mt-4 flex gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900"><CheckCircle2 className="h-5 w-5 shrink-0" /><div><p className="font-medium">Merged on {formatDate(block.merge_info.effective_date)}</p><p className="mt-1">Historical records remain here. New operations should use the destination block.</p></div></div> : null}{error ? <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">The latest refresh failed: {error}. The last loaded values are still shown.</div> : null}
+    <section className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6"><MetricCard icon={Ruler} label="Area" value={hasValue(block.size_acres) ? `${formatNumber(block.size_acres)} ac` : "No data yet"} /><MetricCard icon={Trees} label="Trees" value={analytics.inventory_record_count ? formatNumber(analytics.total_trees, 0) : "No data yet"} /><MetricCard icon={TrendingUp} label="Forecast yield" value={forecastYield} /><MetricCard icon={Activity} label="Current stage" value={latestActivity ? humanize(latestActivity.category || latestActivity.activity_type) : "No data yet"} /><MetricCard icon={CalendarDays} label="Harvest window" value={activeHarvest ? humanize(activeHarvest.harvest_type) : "No data yet"} /><MetricCard icon={CalendarCheck2} label="Last activity" value={lastActivityDate ? formatDate(lastActivityDate) : "No data yet"} /></section>
+    <div className="mt-4 grid gap-4 lg:grid-cols-2"><div className="space-y-4"><Panel className="border-l-2 border-l-emerald-700" title="Block profile" icon={Sprout} action={canEdit ? <Button variant="ghost" size="sm" className="h-7 px-2 text-[10px] text-slate-600" onClick={() => setEditOpen(true)}><Edit3 className="mr-1 h-3 w-3" />Edit details</Button> : null}><dl className="grid gap-x-3 gap-y-4 px-3 py-4 sm:grid-cols-5 sm:px-4"><ProfileDatum label="Block code" value={block.block_code} /><ProfileDatum label="Early block" value={block.early_block_classification} /><ProfileDatum label="Variety" value={currentInventory.map((entry) => entry.variety_name).filter(Boolean).join(", ") || block.variety} /><ProfileDatum label="Size" value={hasValue(block.size_acres) ? `${formatNumber(block.size_acres)} acres` : null} /><ProfileDatum label="Soil / pH" value={`${block.soil_type || "No data yet"}${hasValue(block.soil_ph) ? ` · pH ${block.soil_ph}` : ""}`} /><ProfileDatum label="Fruit fly pressure" value={block.fruit_fly_pressure} /><ProfileDatum label="Disease rating" value={block.disease_rating} /><ProfileDatum label="Shoot maturity" value={hasValue(block.shoot_maturity) ? `${formatNumber(Number(block.shoot_maturity) * 100, 0)}%` : null} /><ProfileDatum label="Operations started" value={formatDate(block.operations_started_on)} /><ProfileDatum label="Planting started" value={formatDate(block.planting_started_on)} /></dl><div className="border-t border-slate-100 px-3 py-3 sm:px-4"><p className="text-[8px] font-bold uppercase tracking-wide text-slate-500">Description</p><p className="mt-1 text-[11px] leading-5 text-slate-600">{block.description || block.soil_notes || "No description recorded for this block."}</p></div></Panel><ActivityRecords activities={block.activity_periods || []} canEdit={canEdit} onNew={() => { setSelectedActivity(null); setActivityOpen(true); }} onEdit={(activity) => { setSelectedActivity(activity); setActivityOpen(true); }} /></div>
+      <aside className="space-y-4"><CompactSeasonChecklist farm={farm} block={block} canEdit={canEdit} /><Panel title="Harvest periods" icon={CalendarDays} action={<span className="text-[10px] font-semibold text-emerald-700">{block.harvest_periods?.length ? `${block.harvest_periods.length} recorded` : ""}</span>}>{block.harvest_periods?.length ? <div className="divide-y divide-slate-100">{block.harvest_periods.slice(0, 3).map((period) => <div key={period.id} className="flex items-center justify-between gap-3 px-4 py-3"><div className="min-w-0"><p className="truncate text-[11px] font-semibold text-slate-700">{humanize(period.harvest_type)}</p><p className="mt-0.5 text-[10px] text-slate-500">{formatDate(period.expected_start_date)} – {formatDate(period.expected_end_date)}</p></div><StatusBadge status={period.status} /></div>)}</div> : <div className="grid min-h-20 place-items-center px-4 text-center"><div><CalendarDays className="mx-auto h-5 w-5 text-slate-300" /><p className="mt-1.5 text-[11px] font-semibold text-slate-600">No harvest periods recorded</p><p className="mt-0.5 text-[9px] text-slate-500">Harvest windows will appear here.</p></div></div>}</Panel><Panel title="Crop inventory" icon={Trees} action={canEdit ? <Button variant="ghost" size="sm" className="h-7 px-1.5 text-[10px] text-emerald-700" onClick={() => { setSelectedInventory(null); setInventoryOpen(true); }}>Record inventory</Button> : null}>{currentInventory.length ? <div className="divide-y divide-slate-100">{currentInventory.slice(0, 3).map((entry) => <button type="button" key={entry.id} disabled={!canEdit} onClick={() => { setSelectedInventory(entry); setInventoryOpen(true); }} className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left disabled:cursor-default"><div className="min-w-0"><p className="truncate text-[11px] font-semibold text-slate-700">{entry.variety_name || "Tree inventory"}</p><p className="mt-0.5 text-[10px] text-slate-500">{formatNumber(entry.productive_trees || 0, 0)} productive · planted {formatDate(entry.planting_date)}</p></div><span className="text-[11px] font-bold text-emerald-700">{formatNumber(entry.total_trees || 0, 0)}</span></button>)}</div> : <div className="grid min-h-20 place-items-center px-4 text-center"><div><Trees className="mx-auto h-5 w-5 text-slate-300" /><p className="mt-1.5 text-[11px] font-semibold text-slate-600">No inventory recorded</p><p className="mt-0.5 text-[9px] text-slate-500">Add tree inventory to track stock and usage.</p></div></div>}</Panel><YieldChart records={block.yield_records || []} title="Yield performance" /></aside></div>
+    <BlockFormDialog open={editOpen} onOpenChange={setEditOpen} block={block} parentFarm={farm} saving={saving} unallocatedAcres={farm.analytics?.unallocatedSizeAcres} onSubmit={saveBlock} /><InventoryFormDialog open={inventoryOpen} onOpenChange={setInventoryOpen} inventory={selectedInventory} saving={saving} onSubmit={(payload) => mutate(() => selectedInventory ? base44.farms.updateInventory(selectedInventory.id, payload) : base44.farms.addInventory(block.id, payload), selectedInventory ? "Tree inventory updated" : "Tree inventory recorded", () => setInventoryOpen(false))} /><StatusActionDialog open={Boolean(statusAction)} onOpenChange={(open) => !open && setStatusAction(null)} entityLabel={block.name} action={statusAction || "deactivate"} saving={saving} onSubmit={(payload) => mutate(() => statusAction === "deactivate" ? base44.farms.deactivateBlock(block.id, payload) : base44.farms.reactivateBlock(block.id), `Block ${statusAction === "deactivate" ? "deactivated" : "reactivated"}`, () => setStatusAction(null))} />
+  </div>;
 }

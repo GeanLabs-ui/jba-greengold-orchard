@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+import PageSkeleton from '@/components/shared/PageSkeleton';
 
 export default function News() {
   const [posts, setPosts] = useState([]);
@@ -24,11 +25,7 @@ export default function News() {
 
       <section className="py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          {loading ? (
-            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-              {[1, 2, 3, 4, 5, 6].map((i) => <div key={i} className="h-80 animate-pulse rounded-2xl bg-muted" />)}
-            </div>
-          ) : posts.length > 0 ? (
+          {loading ? <PageSkeleton contentOnly /> : posts.length > 0 ? (
             <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
               {posts.map((post) => (
                 <Link key={post.id} to={`/news/${encodeURIComponent(post.slug)}`} className="group overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-shadow hover:shadow-lg">

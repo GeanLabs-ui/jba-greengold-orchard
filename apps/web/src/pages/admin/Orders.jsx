@@ -2,6 +2,7 @@ import React, { Fragment, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ChevronDown, ChevronUp, Globe2, Loader2, PackageCheck, Search, Truck } from 'lucide-react';
 import PageHeader from '@/components/shared/PageHeader';
+import PageSkeleton from '@/components/shared/PageSkeleton';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { formatCurrency, formatDate } from '@/components/shared/format';
 import { Input } from '@/components/ui/input';
@@ -184,7 +185,7 @@ export default function Orders() {
       </div>
       {error && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
 
-      {loading ? <div className="h-64 animate-pulse rounded-xl bg-muted" /> : (
+      {loading ? <PageSkeleton contentOnly /> : (
         <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
           <table className="w-full min-w-[920px] text-sm">
             <thead><tr className="border-b border-border bg-muted/50">
@@ -193,7 +194,7 @@ export default function Orders() {
               <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Customer</th>
               <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Date</th>
               <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Source</th>
-              <th className="px-4 py-3 text-right font-semibold text-muted-foreground">Total</th>
+              <th className="px-4 py-3 text-right font-semibold text-blue-600">Revenue</th>
               <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Fulfillment status</th>
             </tr></thead>
             <tbody className="divide-y divide-border">
@@ -205,7 +206,7 @@ export default function Orders() {
                     <td className="px-4 py-3"><p>{order.customer_name}</p>{order.contact_phone ? <p className="mt-0.5 text-xs text-muted-foreground">{order.contact_phone}</p> : null}</td>
                     <td className="px-4 py-3 text-muted-foreground">{formatDate(order.order_date)}</td>
                     <td className="px-4 py-3"><span className="inline-flex items-center gap-1.5 capitalize">{order.source === 'website' ? <Globe2 className="h-3.5 w-3.5 text-emerald-700" /> : null}{order.source?.replace('_', ' ') || '—'}</span></td>
-                    <td className="px-4 py-3 text-right font-medium">{formatCurrency(order.total_amount)}</td>
+                    <td className="px-4 py-3 text-right font-medium text-blue-600">{formatCurrency(order.total_amount)}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <StatusBadge status={order.status} />
@@ -220,7 +221,7 @@ export default function Orders() {
                     <tr className="bg-muted/20"><td colSpan={7} className="px-6 py-6">
                       <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr_1fr]">
                         <div><h3 className="flex items-center text-xs font-bold uppercase tracking-wider text-muted-foreground"><PackageCheck className="mr-2 h-4 w-4" /> Products</h3>
-                          <div className="mt-3 space-y-2">{order.items?.length ? order.items.map((item) => <div key={`${order.id}-${item.product_id}`} className="flex justify-between gap-3 rounded-lg border border-border bg-card px-3 py-2"><span><span className="font-medium">{item.product_name}</span><span className="ml-2 text-xs text-muted-foreground">× {item.quantity}</span></span><span className="font-medium">{formatCurrency(item.line_total)}</span></div>) : <p className="text-sm text-muted-foreground">No line items recorded for this order.</p>}</div>
+                          <div className="mt-3 space-y-2">{order.items?.length ? order.items.map((item) => <div key={`${order.id}-${item.product_id}`} className="flex justify-between gap-3 rounded-lg border border-border bg-card px-3 py-2"><span><span className="font-medium">{item.product_name}</span><span className="ml-2 text-xs text-muted-foreground">× {item.quantity}</span></span><span className="font-medium text-blue-600">{formatCurrency(item.line_total)}</span></div>) : <p className="text-sm text-muted-foreground">No line items recorded for this order.</p>}</div>
                         </div>
                         <div><h3 className="flex items-center text-xs font-bold uppercase tracking-wider text-muted-foreground"><Truck className="mr-2 h-4 w-4" /> Delivery and payment</h3>
                           <div className="mt-3 space-y-1 text-sm"><p className="font-medium">{order.shipping_address?.full_name || order.customer_name}</p><p>{order.shipping_address?.address || 'Address not recorded'}</p><p>{[order.shipping_address?.city, order.shipping_address?.region].filter(Boolean).join(', ')}</p><p className="pt-2 text-muted-foreground">{order.contact_email}</p><p className="text-muted-foreground">{order.contact_phone}</p><p className="pt-2 capitalize">Payment: {String(order.payment_method || 'not recorded').replaceAll('_', ' ')}</p></div>

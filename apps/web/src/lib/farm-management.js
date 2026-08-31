@@ -53,11 +53,18 @@ export function groupYieldRecords(records = [], granularity = 'monthly') {
 }
 
 export function farmLocationOptions(farms = []) {
-  return [...new Set(farms.flatMap((farm) => [farm.region, farm.location]).filter(Boolean))]
+  return [...new Set(farms.flatMap((farm) => [
+    farm.region,
+    farm.location,
+    ...(farm.block_locations || []),
+  ]).filter(Boolean))]
     .sort((left, right) => left.localeCompare(right));
 }
 
 export function farmVarietyOptions(farms = []) {
-  return [...new Set(farms.flatMap((farm) => Object.keys(farm.variety_totals || {})))]
+  return [...new Set(farms.flatMap((farm) => [
+    ...Object.keys(farm.variety_totals || {}),
+    ...(farm.block_varieties || []),
+  ]))]
     .sort((left, right) => left.localeCompare(right));
 }

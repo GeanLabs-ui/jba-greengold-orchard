@@ -7,6 +7,7 @@ import {
   Area, AreaChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
 import PageHeader from '@/components/shared/PageHeader';
+import PageSkeleton from '@/components/shared/PageSkeleton';
 import StatusBadge from '@/components/shared/StatusBadge';
 import BrandLogo from '@/components/shared/BrandLogo';
 import { formatDate } from '@/components/shared/format';
@@ -717,7 +718,7 @@ export default function HR() {
         <TabsList className="h-auto flex-wrap"><TabsTrigger value="staff">Staff</TabsTrigger><TabsTrigger value="departments">Departments</TabsTrigger>{canManage && <TabsTrigger value="access">Access</TabsTrigger>}<TabsTrigger value="attendance">Attendance</TabsTrigger></TabsList>
 
         <TabsContent value="staff" className="mt-5">
-          {loading ? <div className="h-64 animate-pulse rounded-xl bg-muted" /> : employees.length ? (
+          {loading ? <PageSkeleton contentOnly /> : employees.length ? (
             <div className="divide-y rounded-xl border border-border bg-card">
               {employees.map((employee) => {
                 const manager = managerById.get(employee.reports_to_employee_id);
@@ -731,7 +732,7 @@ export default function HR() {
         </TabsContent>
 
         <TabsContent value="departments" className="mt-5">
-          {loading ? <div className="h-64 animate-pulse rounded-xl bg-muted" /> : mainDepartments.length ? <div className="space-y-4">{mainDepartments.map((department) => {
+          {loading ? <PageSkeleton contentOnly /> : mainDepartments.length ? <div className="space-y-4">{mainDepartments.map((department) => {
             const children = departments.filter((item) => item.parent_department_id === department.id);
             const directCount = employees.filter((item) => item.department_id === department.id).length;
             return <section key={department.id} className="rounded-xl border border-border bg-card"><div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4"><div><div className="flex items-center gap-2"><Building2 className="h-4 w-4 text-primary" /><p className="font-semibold">{department.name}</p><span className="rounded bg-muted px-2 py-0.5 font-mono text-[10px]">{department.code}</span></div><p className="mt-1 text-xs text-muted-foreground">{directCount} staff · {children.length} sub-departments</p></div>{canManage && <DepartmentDialog departments={departments} parentId={department.id} onSaved={load} trigger={<Button size="sm" variant="outline"><Plus className="mr-2 h-4 w-4" />Add sub-department</Button>} />}</div><div className="divide-y">{children.length ? children.map((child) => <div key={child.id} className="flex items-center gap-3 px-5 py-3 text-sm"><ChevronRight className="h-4 w-4 text-muted-foreground" /><span className="font-medium">{child.name}</span><span className="font-mono text-xs text-muted-foreground">{child.code}</span><span className="ml-auto text-xs text-muted-foreground">{employees.filter((item) => item.sub_department_id === child.id).length} staff</span></div>) : <p className="px-5 py-4 text-sm text-muted-foreground">No sub-departments yet.</p>}</div></section>;
@@ -745,7 +746,7 @@ export default function HR() {
           return <div key={profile.employee.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center"><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><p className="font-semibold">{nameOf(profile.employee)}</p><StatusBadge status={state} /></div><p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground"><Mail className="h-3.5 w-3.5" />{profile.employee.email}</p><p className="mt-1 text-xs text-muted-foreground">{roleLabel(role)} · {enabled} pages enabled</p></div><AccessDialog profile={profile} currentUser={user} onSaved={async () => { await load(); if (profile.account?.id === user.id) await checkUserAuth(); }} trigger={<Button size="sm" variant="outline"><UserRoundCog className="mr-2 h-4 w-4" />Manage access</Button>} /></div>;
         })}</div></TabsContent>}
 
-        <TabsContent value="attendance" className="mt-5">{loading ? <div className="h-64 animate-pulse rounded-xl bg-muted" /> : <AttendanceDashboard attendance={attendance} employees={employees} departments={departments} />}</TabsContent>
+        <TabsContent value="attendance" className="mt-5">{loading ? <PageSkeleton contentOnly /> : <AttendanceDashboard attendance={attendance} employees={employees} departments={departments} />}</TabsContent>
       </Tabs>
     </div>
   );

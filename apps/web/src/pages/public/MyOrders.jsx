@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Check, Circle, Loader2, LockKeyhole, PackageCheck, PackageSearch, RefreshCw, Truck } from 'lucide-react';
+import { Check, Circle, LockKeyhole, PackageCheck, PackageSearch, RefreshCw, Truck } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { formatProductPrice } from '@/data/productCatalog';
+import PageSkeleton from '@/components/shared/PageSkeleton';
 
 const progressSteps = [
   { id: 'confirmed', label: 'Received' },
@@ -96,7 +97,7 @@ export default function MyOrders() {
 
         {error && <div role="alert" className="mt-8 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>}
         {loading ? (
-          <div className="mt-12 flex items-center justify-center py-20 text-sm text-[#68756e]"><Loader2 className="mr-3 h-5 w-5 animate-spin" /> Loading your orders...</div>
+          <PageSkeleton contentOnly className="mt-10" />
         ) : !orders.length ? (
           <div className="mt-10 rounded-2xl border border-[#0b432f]/10 bg-white px-6 py-16 text-center">
             <PackageSearch className="mx-auto h-10 w-10 text-[#0b432f]" strokeWidth={1.4} />

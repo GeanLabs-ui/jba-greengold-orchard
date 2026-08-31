@@ -54,6 +54,15 @@ const apiUnavailableError = (cause) => {
   return error;
 };
 
+const recordClientError = ({ path, error }) => {
+  if (path.startsWith('/activity-log/')) return;
+  void fetch(`${API_BASE_URL}/activity-log/errors`, {
+    method: 'POST', credentials: 'include',
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json', ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}) },
+    body: JSON.stringify({ path, error_code: error?.code || 'CLIENT_ERROR', error_message: error?.message || 'Unknown client error', status: error?.status || null }),
+  }).catch(() => {});
+};
+
 const refreshCsrf = async () => {
   let response;
   try {
@@ -100,7 +109,13 @@ const request = async (path, options = {}) => {
   } catch (cause) {
     throw apiUnavailableError(cause);
   }
-  const payload = await parsePayload(response);
+  let payload;
+  try {
+    payload = await parsePayload(response);
+  } catch (error) {
+    recordClientError({ path, error });
+    throw error;
+  }
   return includeMeta ? payload : payload.data;
 };
 
@@ -503,7 +518,12 @@ const farms = {
   },
 };
 
-const apiBase44 = { auth, entities, applications, commerce, files, farms, staff };
+const activityLog = {
+  list: (limit = 200) => request(`/activity-log?limit=${Math.min(limit, 500)}`),
+  delete: (id) => request(`/activity-log/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  deleteMany: (ids) => request('/activity-log/bulk-delete', { method: 'POST', body: { ids } }),
+};
+const apiBase44 = { auth, entities, applications, commerce, files, farms, staff, activityLog };
 
 // The demo/preview client (and its seeded demo credentials) is only pulled into the
 // bundle when demo mode is actually enabled at build/runtime, via a dynamic import.

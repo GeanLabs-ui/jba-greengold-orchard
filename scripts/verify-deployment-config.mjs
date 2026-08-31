@@ -29,7 +29,7 @@ function requiredEnvironmentValue(name) {
 }
 
 const appUrl = requiredEnvironmentValue('APP_URL');
-const googleClientId = process.env.GOOGLE_CLIENT_ID?.trim() || '';
+const googleClientId = requiredEnvironmentValue('GOOGLE_CLIENT_ID');
 const turnstileSiteKey = requiredEnvironmentValue('TURNSTILE_SITE_KEY');
 const turnstileSecretKey = requiredEnvironmentValue('TURNSTILE_SECRET_KEY');
 const accountId = requiredEnvironmentValue('CLOUDFLARE_ACCOUNT_ID');

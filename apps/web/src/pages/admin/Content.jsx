@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { FileText, Newspaper } from 'lucide-react';
 import PageHeader from '@/components/shared/PageHeader';
+import PageSkeleton from '@/components/shared/PageSkeleton';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { formatDate, timeAgo } from '@/components/shared/format';
 import DataTable from '@/components/shared/DataTable';
@@ -62,13 +63,13 @@ export default function Content() {
           <TabsTrigger value="pages"><FileText className="mr-1 h-4 w-4" /> Pages</TabsTrigger>
         </TabsList>
         <TabsContent value="posts" className="mt-4">
-          {loading ? <div className="h-64 animate-pulse rounded-xl bg-muted" /> : <DataTable items={posts} columns={[
+          {loading ? <PageSkeleton variant="table" contentOnly /> : <DataTable items={posts} columns={[
             { key: 'title', label: 'Title' }, { key: 'category', label: 'Category' }, { key: 'author_name', label: 'Author' },
             { key: 'published_at', label: 'Published', format: formatDate }, { key: 'status', label: 'Status', render: (value) => <StatusBadge status={value} /> },
           ]} />}
         </TabsContent>
         <TabsContent value="pages" className="mt-4">
-          {loading ? <div className="h-64 animate-pulse rounded-xl bg-muted" /> : <DataTable items={pages} columns={[
+          {loading ? <PageSkeleton variant="table" contentOnly /> : <DataTable items={pages} columns={[
             { key: 'title', label: 'Title' }, { key: 'page_type', label: 'Type' }, { key: 'slug', label: 'Slug' },
             { key: 'updated_date', label: 'Updated', format: timeAgo }, { key: 'is_published', label: 'Published', render: (value) => value ? <StatusBadge status="published" /> : <StatusBadge status="draft" /> },
           ]} />}

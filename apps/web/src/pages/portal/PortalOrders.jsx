@@ -6,6 +6,7 @@ import StatusBadge from '@/components/shared/StatusBadge';
 import { formatCurrency, formatDate } from '@/components/shared/format';
 import { Input } from '@/components/ui/input';
 import DataTable from '@/components/shared/DataTable';
+import PageSkeleton from '@/components/shared/PageSkeleton';
 import { base44 } from '@/api/base44Client';
 
 export default function PortalOrders() {
@@ -28,7 +29,7 @@ export default function PortalOrders() {
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input placeholder="Search orders..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
       </div>
-      {loading ? <div className="h-64 animate-pulse rounded-xl bg-muted" /> : (
+      {loading ? <PageSkeleton contentOnly /> : (
         <DataTable items={orders.filter((o) => !search || o.order_number?.toLowerCase().includes(search.toLowerCase()))} columns={[
           { key: 'order_number', label: 'Order #' },
           { key: 'order_date', label: 'Date', format: formatDate },

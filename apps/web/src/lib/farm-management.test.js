@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { canChangeBlockStatus, canManageBlocks, canManageFarms, canMergeBlocks, groupYieldRecords } from './farm-management';
+import {
+  canChangeBlockStatus,
+  canManageBlocks,
+  canManageFarms,
+  canMergeBlocks,
+  farmLocationOptions,
+  farmVarietyOptions,
+  groupYieldRecords,
+} from './farm-management';
 
 describe('farm management helpers', () => {
   it('groups normalized yield records without duplicating totals', () => {
@@ -30,5 +38,19 @@ describe('farm management helpers', () => {
     expect(canChangeBlockStatus('farm_supervisor')).toBe(false);
     expect(canMergeBlocks('farm_manager')).toBe(false);
     expect(canMergeBlocks('admin')).toBe(true);
+  });
+
+  it('builds complete farm and block location filter options', () => {
+    expect(farmLocationOptions([
+      { location: 'Keta', region: 'Volta', block_locations: ['Anloga', 'Keta'] },
+      { location: 'Ada', region: 'Greater Accra', block_locations: ['Big Ada'] },
+    ])).toEqual(['Ada', 'Anloga', 'Big Ada', 'Greater Accra', 'Keta', 'Volta']);
+  });
+
+  it('combines normalized inventory and legacy block variety options', () => {
+    expect(farmVarietyOptions([
+      { variety_totals: { Kent: 120 }, block_varieties: ['Keitt', 'Kent'] },
+      { variety_totals: {}, block_varieties: ['Black Pearl'] },
+    ])).toEqual(['Black Pearl', 'Keitt', 'Kent']);
   });
 });

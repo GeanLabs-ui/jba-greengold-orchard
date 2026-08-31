@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+import PageSkeleton from '@/components/shared/PageSkeleton';
 import MasterScheduleView, {
   isMasterScheduleOverdue,
   normalizeMasterScheduleStatus,
@@ -18,7 +17,6 @@ const taskBasePath = '/admin/farm-daily-activities/activities/master-schedule';
 
 export default function FarmDailyMasterSchedule() {
   const { toast } = useToast();
-  const navigate = useNavigate();
   const [projects, setProjects] = useState([]);
   const [subtasks, setSubtasks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -74,13 +72,14 @@ export default function FarmDailyMasterSchedule() {
     if (filterRange.start && dates.length && !dates.some((value) => value >= filterRange.start && value <= filterRange.end)) return false;
     return !(filterRange.end && dates.length && !dates.some((value) => value <= filterRange.end));
   }), [allScheduleProjects, filterRange, scheduleFilter, subtasks]);
+  const trackedScheduleProjects = useMemo(() => filteredScheduleProjects.filter((item) => item.is_enabled !== false), [filteredScheduleProjects]);
   const filteredSummary = useMemo(() => ({
-    total: filteredScheduleProjects.length,
-    active: filteredScheduleProjects.filter((item) => normalizeMasterScheduleStatus(item.status) === 'in_progress').length,
-    completed: filteredScheduleProjects.filter((item) => normalizeMasterScheduleStatus(item.status) === 'completed').length,
-    overdue: filteredScheduleProjects.filter((item) => item.overdue || isMasterScheduleOverdue(item)).length,
-    progress: Math.round(filteredScheduleProjects.reduce((sum, item) => sum + Number(item.progress_percent || 0), 0) / (filteredScheduleProjects.length || 1)),
-  }), [filteredScheduleProjects]);
+    total: trackedScheduleProjects.length,
+    active: trackedScheduleProjects.filter((item) => normalizeMasterScheduleStatus(item.status) === 'in_progress').length,
+    completed: trackedScheduleProjects.filter((item) => normalizeMasterScheduleStatus(item.status) === 'completed').length,
+    overdue: trackedScheduleProjects.filter((item) => item.overdue || isMasterScheduleOverdue(item)).length,
+    progress: Math.round(trackedScheduleProjects.reduce((sum, item) => sum + Number(item.progress_percent || 0), 0) / (trackedScheduleProjects.length || 1)),
+  }), [trackedScheduleProjects]);
 
   const toggleProjectEnabled = async (project) => {
     const isEnabled = project.is_enabled === false;
@@ -124,15 +123,16 @@ export default function FarmDailyMasterSchedule() {
       setShowNewMasterTask(false);
       setNewMasterTask(emptyTask());
       toast({ title: 'Master task created', description: 'Add its checklist and field updates from the task workspace.' });
-      navigate(`${taskBasePath}/${encodeURIComponent(created.id)}`);
+      return created;
     } catch (error) {
       toast({ title: 'Master task could not be created', description: error.message, variant: 'destructive' });
+      return null;
     } finally {
       setBusyKey('');
     }
   };
 
-  if (loading && !projects.length) return <div className="flex min-h-64 items-center justify-center gap-3 text-muted-foreground"><Loader2 className="h-5 w-5 animate-spin" />Loading Main Activities…</div>;
+  if (loading && !projects.length) return <PageSkeleton variant="schedule" />;
 
   return <div className="drc-page drc-embedded-schedule"><MasterScheduleView embedded busyKey={busyKey} createMasterTask={createMasterTask} filteredScheduleProjects={filteredScheduleProjects} filteredSummary={filteredSummary} newMasterTask={newMasterTask} scheduleFilter={scheduleFilter} setNewMasterTask={setNewMasterTask} setScheduleFilter={setScheduleFilter} setShowNewMasterTask={setShowNewMasterTask} showNewMasterTask={showNewMasterTask} taskBasePath={taskBasePath} toggleProjectEnabled={toggleProjectEnabled} /></div>;
 }

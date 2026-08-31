@@ -38,6 +38,13 @@ function textValue(value: unknown): string | null {
   return trimmed || null;
 }
 
+function imagePreviewUrl(value: unknown): string | null {
+  const url = textValue(value);
+  return url && /^\/api\/v1\/files\/[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}\?preview=1$/i.test(url)
+    ? url
+    : null;
+}
+
 function numberValue(value: unknown, fallback = 0): number {
   const parsed = typeof value === 'number' ? value : Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
@@ -123,6 +130,7 @@ function blockRecord(row: Record<string, unknown>): Record<string, unknown> {
     early_block_classification: row.early_block_classification,
     year_planted: row.year_planted,
     variety: row.variety || row.inventory_varieties || null,
+    mango_variety: row.variety || row.inventory_varieties || null,
     tree_count: inventoryTotal ?? row.tree_count ?? 0,
     status: row.status,
     organization_id: row.organization_id,
@@ -131,8 +139,10 @@ function blockRecord(row: Record<string, unknown>): Record<string, unknown> {
     early_harvest: Boolean(row.early_harvest),
     shoot_maturity: row.shoot_maturity ?? 0,
     forecast_yield_kg: row.forecast_yield_kg,
+    actual_yield_kg: row.actual_yield_kg,
     fruit_fly_pressure: row.fruit_fly_pressure,
     disease_rating: row.disease_rating,
+    disease_severity: row.disease_severity,
     operations_started_on: row.operations_started_on,
     planting_started_on: row.planting_started_on,
     merged_into_block_id: row.merged_into_block_id,
@@ -272,7 +282,7 @@ export async function createCanonicalFarmEntity(
         ${textValue(payload.owner_name)}, ${Math.trunc(nonNegative(payload.tree_count))},
         ${Math.trunc(nonNegative(payload.production_capacity_kg))},
         ${canonicalStatus(payload.status, ['active', 'inactive', 'archived'], 'active')},
-        ${textValue(payload.image_url)}, ${textValue(payload.description)}, ${textValue(payload.notes)},
+        ${imagePreviewUrl(payload.image_url)}, ${textValue(payload.description)}, ${textValue(payload.notes)},
         ${user.organizationId}, ${textValue(payload.operations_started_on)}, ${textValue(payload.planting_started_on)},
         ${user.id}, ${user.id}
       ) RETURNING *
@@ -288,14 +298,14 @@ export async function createCanonicalFarmEntity(
   if (duplicate[0]) throw new CanonicalEntityError('DUPLICATE_CODE', 'A block with this code already exists on this farm', 409);
 
   const id = crypto.randomUUID();
-  const variety = textValue(payload.variety);
+  const variety = textValue(payload.mango_variety ?? payload.variety);
   const rows = await sql`
     INSERT INTO farm_blocks (
       id, farm_id, block_code, name, description, early_block_classification, year_planted,
       size_acres, latitude, longitude, soil_type, soil_ph, soil_notes,
       variety, tree_count, status, organization_id,
-      programme_code, source, early_harvest, shoot_maturity, forecast_yield_kg,
-      fruit_fly_pressure, disease_rating, operations_started_on, planting_started_on, created_by, updated_by
+      programme_code, source, early_harvest, shoot_maturity, forecast_yield_kg, actual_yield_kg,
+      fruit_fly_pressure, disease_rating, disease_severity, operations_started_on, planting_started_on, created_by, updated_by
     ) VALUES (
       ${id}, ${farm.id}, ${blockCode}, ${textValue(payload.name) || blockCode},
       ${textValue(payload.description)}, ${textValue(payload.early_block_classification)},
@@ -307,8 +317,8 @@ export async function createCanonicalFarmEntity(
       ${canonicalStatus(payload.status, ['active', 'inactive'], 'active')}, ${farm.organization_id ?? user.organizationId},
       ${textValue(payload.programme_code)}, ${textValue(payload.source)},
       ${textValue(payload.early_block_classification) === 'Yes' || booleanValue(payload.early_harvest)},
-      ${nonNegative(payload.shoot_maturity)}, ${nonNegativeOrNull(payload.forecast_yield_kg)},
-      ${textValue(payload.fruit_fly_pressure)}, ${textValue(payload.disease_rating)},
+      ${nonNegative(payload.shoot_maturity)}, ${nonNegativeOrNull(payload.forecast_yield_kg)}, ${nonNegativeOrNull(payload.actual_yield_kg)},
+      ${textValue(payload.fruit_fly_pressure)}, ${textValue(payload.disease_rating)}, ${textValue(payload.disease_severity)},
       ${textValue(payload.operations_started_on)}, ${textValue(payload.planting_started_on)}, ${user.id}, ${user.id}
     ) RETURNING *
   `;
@@ -371,7 +381,7 @@ export async function updateCanonicalFarmEntity(
         tree_count = ${Math.trunc(nextNumber(payload, 'tree_count', existing.tree_count))},
         production_capacity_kg = ${Math.trunc(nextNumber(payload, 'production_capacity_kg', existing.production_capacity_kg))},
         status = ${canonicalStatus(payload.status, ['active', 'inactive', 'archived'], existing.status)},
-        image_url = ${nextText(payload, 'image_url', existing.image_url)}, description = ${nextText(payload, 'description', existing.description)},
+        image_url = ${'image_url' in payload ? imagePreviewUrl(payload.image_url) : existing.image_url}, description = ${nextText(payload, 'description', existing.description)},
         notes = ${nextText(payload, 'notes', existing.notes)}, operations_started_on = ${nextText(payload, 'operations_started_on', existing.operations_started_on)},
         planting_started_on = ${nextText(payload, 'planting_started_on', existing.planting_started_on)},
         updated_by = ${user.id}, updated_at = now()
@@ -384,15 +394,25 @@ export async function updateCanonicalFarmEntity(
   const existing = await loadBlockForWrite(sql, id, user);
   if (!existing) throw new CanonicalEntityError('NOT_FOUND', 'Block not found', 404);
   if (existing.status === 'merged') throw new CanonicalEntityError('BLOCK_MERGED', 'A merged block cannot be edited', 422);
+  const requestedFarmId = textValue(payload.farm_id);
+  const targetFarm = requestedFarmId && requestedFarmId !== existing.farm_id
+    ? await loadFarmForWrite(sql, requestedFarmId, user)
+    : null;
+  if (requestedFarmId && requestedFarmId !== existing.farm_id && !targetFarm)
+    throw new CanonicalEntityError('NOT_FOUND', 'The selected parent farm was not found', 404);
+  const nextFarmId = targetFarm?.id || existing.farm_id;
   const nextCode = nextText(payload, 'block_code', existing.block_code) || nextText(payload, 'code', existing.block_code) || existing.block_code;
-  if (nextCode !== existing.block_code) {
-    const duplicate = await sql`SELECT id FROM farm_blocks WHERE farm_id = ${existing.farm_id} AND lower(block_code) = lower(${nextCode}) AND id != ${id}`;
+  if (nextCode !== existing.block_code || nextFarmId !== existing.farm_id) {
+    const duplicate = await sql`SELECT id FROM farm_blocks WHERE farm_id = ${nextFarmId} AND lower(block_code) = lower(${nextCode}) AND id != ${id}`;
     if (duplicate[0]) throw new CanonicalEntityError('DUPLICATE_CODE', 'A block with this code already exists on this farm', 409);
   }
   const sizeChanged = 'size_acres' in payload || 'acres' in payload || 'area_acres' in payload;
+  const nextVariety = 'mango_variety' in payload
+    ? textValue(payload.mango_variety)
+    : nextText(payload, 'variety', existing.variety);
   const rows = await sql`
     UPDATE farm_blocks SET
-      block_code = ${nextCode}, name = ${nextText(payload, 'name', existing.name) || existing.name},
+      farm_id = ${nextFarmId}, block_code = ${nextCode}, name = ${nextText(payload, 'name', existing.name) || existing.name},
       description = ${nextText(payload, 'description', existing.description)},
       early_block_classification = ${nextText(payload, 'early_block_classification', existing.early_block_classification)},
       year_planted = ${'year_planted' in payload ? (payload.year_planted == null ? null : Math.trunc(numberValue(payload.year_planted))) : existing.year_planted},
@@ -402,7 +422,7 @@ export async function updateCanonicalFarmEntity(
       soil_type = ${nextText(payload, 'soil_type', existing.soil_type)},
       soil_ph = ${'soil_ph' in payload ? (payload.soil_ph == null ? null : numberValue(payload.soil_ph)) : existing.soil_ph},
       soil_notes = ${nextText(payload, 'soil_notes', existing.soil_notes)},
-      variety = ${nextText(payload, 'variety', existing.variety)},
+      variety = ${nextVariety},
       tree_count = ${Math.trunc(nextNumber(payload, 'tree_count', existing.tree_count))},
       status = ${canonicalStatus(payload.status, ['active', 'inactive', 'archived'], existing.status)},
       programme_code = ${nextText(payload, 'programme_code', existing.programme_code)}, source = ${nextText(payload, 'source', existing.source)},
@@ -411,8 +431,10 @@ export async function updateCanonicalFarmEntity(
         : ('early_harvest' in payload ? booleanValue(payload.early_harvest, existing.early_harvest) : existing.early_harvest)},
       shoot_maturity = ${nextNumber(payload, 'shoot_maturity', existing.shoot_maturity)},
       forecast_yield_kg = ${'forecast_yield_kg' in payload ? nonNegativeOrNull(payload.forecast_yield_kg) : existing.forecast_yield_kg},
+      actual_yield_kg = ${'actual_yield_kg' in payload ? nonNegativeOrNull(payload.actual_yield_kg) : existing.actual_yield_kg},
       fruit_fly_pressure = ${nextText(payload, 'fruit_fly_pressure', existing.fruit_fly_pressure)},
       disease_rating = ${nextText(payload, 'disease_rating', existing.disease_rating)},
+      disease_severity = ${nextText(payload, 'disease_severity', existing.disease_severity)},
       operations_started_on = ${nextText(payload, 'operations_started_on', existing.operations_started_on)},
       planting_started_on = ${nextText(payload, 'planting_started_on', existing.planting_started_on)},
       updated_by = ${user.id}, updated_at = now()
@@ -421,7 +443,7 @@ export async function updateCanonicalFarmEntity(
   const variety = textValue(rows[0].variety);
   if (variety) await ensureInventory(sql, rows[0], variety, user);
   await sql`INSERT INTO audit_events (id, user_id, action, target_table, record_id, old_values, new_values, ip_address) VALUES (${crypto.randomUUID()}, ${user.id}, 'update', 'farm_blocks', ${id}, ${sql.json(existing)}, ${sql.json(payload)}, ${ipAddress})`;
-  return blockRecord({ ...rows[0], farm_name: existing.farm_name });
+  return blockRecord({ ...rows[0], farm_name: targetFarm?.name || existing.farm_name });
 }
 
 export async function archiveCanonicalFarmEntity(

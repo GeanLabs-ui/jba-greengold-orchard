@@ -1,4 +1,5 @@
-import { CheckCircle2, CircleDollarSign, CloudSun, Loader2, Plus, Sprout, Target } from 'lucide-react';
+import { CheckCircle2, CloudSun, Loader2, Plus, Sprout, Target } from 'lucide-react';
+import CircleCediSign from '@/components/icons/CircleCediSign';
 import '@/pages/admin/DailyRoutineCheck.css';
 
 const displayDate = (value) => {
@@ -8,10 +9,13 @@ const displayDate = (value) => {
     ? String(value)
     : parsed.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 };
-const money = (value) => `GHS ${Number(value || 0).toLocaleString('en-GH', { maximumFractionDigits: 0 })}`;
+const money = (value) => `₵ ${Number(value || 0).toLocaleString('en-GH', { maximumFractionDigits: 0 })}`;
 const PageHead = ({ right }) => <div className="drc-page-head drc-page-actions">{right}</div>;
 const PanelHead = ({ title, copy }) => <div className="drc-panel-head"><div><h2>{title}</h2><p>{copy}</p></div></div>;
-const FinanceRow = ({ label, value, icon: Icon }) => <div className="drc-finance-row"><Icon /><span>{label}</span><b>{value}</b></div>;
+const FinanceRow = ({ label, value, icon: Icon }) => {
+  const tone = /revenue/i.test(label) ? 'revenue' : /harvest|grade/i.test(label) ? 'yield' : 'cost';
+  return <div className={`drc-finance-row drc-${tone}`}><Icon /><span>{label}</span><b>{value}</b></div>;
+};
 const Empty = ({ title, copy }) => <div className="drc-empty"><CloudSun /><b>{title}</b><p>{copy}</p></div>;
 const Field = ({ label, children }) => <label className="drc-field"><span>{label}</span>{children}</label>;
 
@@ -42,22 +46,22 @@ export default function BudgetHarvestView({
         <PageHead right={<button type="button" className="drc-primary gold" onClick={() => harvestDialog.current?.showModal()}><Plus /> Record harvest</button>} />
         <div className="drc-finance-grid">
           <div className="drc-table-shell">
-            <table className="drc-table">
+            <table className="drc-table drc-cost-table">
               <thead><tr><th>Cost category</th><th>Planned</th><th>Actual</th><th>Variance</th></tr></thead>
               <tbody>{financeRecords.map((record) => {
                 const planned = Number(record.planned_amount || record.amount || 0);
                 const actual = Number(record.actual_amount || 0);
-                return <tr key={record.id}><td><b>{record.category}</b></td><td>{money(planned)}</td><td><input className="drc-inline drc-money" type="number" min="0" defaultValue={actual} onBlur={(event) => Number(event.target.value) !== actual && onUpdateBudget(record, event.target.value)} /></td><td className={planned - actual < 0 ? 'negative' : 'positive'}>{money(planned - actual)}</td></tr>;
+                return <tr key={record.id}><td><b>{record.category}</b></td><td className="drc-cost">{money(planned)}</td><td><input className="drc-inline drc-money drc-cost" type="number" min="0" defaultValue={actual} onBlur={(event) => Number(event.target.value) !== actual && onUpdateBudget(record, event.target.value)} /></td><td className={planned - actual < 0 ? 'negative' : 'positive'}>{money(planned - actual)}</td></tr>;
               })}</tbody>
             </table>
           </div>
           <aside className="drc-finance-summary">
             <span>Remaining budget</span><strong>{money(finance.planned - finance.actual)}</strong>
             <FinanceRow label="Planned" value={money(finance.planned)} icon={Target} />
-            <FinanceRow label="Actual" value={money(finance.actual)} icon={CircleDollarSign} />
+            <FinanceRow label="Actual" value={money(finance.actual)} icon={CircleCediSign} />
             <FinanceRow label="Harvested" value={`${finance.kg.toLocaleString()} kg`} icon={Sprout} />
             <FinanceRow label="Grade A" value={`${finance.gradePct}%`} icon={CheckCircle2} />
-            <FinanceRow label="Revenue" value={money(finance.revenue)} icon={CircleDollarSign} />
+            <FinanceRow label="Revenue" value={money(finance.revenue)} icon={CircleCediSign} />
           </aside>
         </div>
         <div className="drc-panel drc-harvest-panel">
@@ -68,7 +72,7 @@ export default function BudgetHarvestView({
               <tbody>{harvests.map((harvest) => {
                 const harvested = Number(harvest.quantity_harvested_kg || 0);
                 const gradeA = Number(harvest.grade_a_kg || 0);
-                return <tr key={harvest.id}><td>{displayDate(harvest.harvest_date)}</td><td>{harvest.lot_code || harvest.batch_number}</td><td>{harvest.block_name}</td><td>{harvest.variety || harvest.mango_variety}</td><td>{harvested} kg</td><td>{gradeA} kg</td><td>{harvested ? Math.round((gradeA / harvested) * 100) : 0}%</td><td>{harvest.buyer}</td><td>{money(harvested * Number(harvest.price_per_kg || 0))}</td></tr>;
+                return <tr key={harvest.id}><td>{displayDate(harvest.harvest_date)}</td><td>{harvest.lot_code || harvest.batch_number}</td><td>{harvest.block_name}</td><td>{harvest.variety || harvest.mango_variety}</td><td className="drc-yield">{harvested} kg</td><td className="drc-yield">{gradeA} kg</td><td className="drc-yield">{harvested ? Math.round((gradeA / harvested) * 100) : 0}%</td><td>{harvest.buyer}</td><td className="drc-revenue">{money(harvested * Number(harvest.price_per_kg || 0))}</td></tr>;
               })}</tbody>
             </table>
           ) : <Empty title="No harvest lots recorded" copy="Grade A performance and revenue will appear here." />}</div>
@@ -84,7 +88,7 @@ export default function BudgetHarvestView({
           <Field label="Lot code"><input name="lot_code" required maxLength="80" /></Field>
           <Field label="Harvested kg"><input name="harvested_kg" type="number" min="0.01" step="0.01" required /></Field>
           <Field label="Grade A kg"><input name="grade_a_kg" type="number" min="0" step="0.01" required /></Field>
-          <Field label="Price per kg (GHS)"><input name="price_per_kg" type="number" min="0" step="0.01" required /></Field>
+          <Field label="Price per kg (₵)"><input name="price_per_kg" type="number" min="0" step="0.01" required /></Field>
           <Field label="Buyer"><input name="buyer" required maxLength="180" /></Field>
           <div className="drc-form-actions"><button type="button" className="drc-btn" onClick={() => harvestDialog.current?.close()}>Cancel</button><button className="drc-primary" disabled={busyKey === 'harvest'}>{busyKey === 'harvest' ? <Loader2 className="drc-spin" /> : null} Save harvest</button></div>
         </form>

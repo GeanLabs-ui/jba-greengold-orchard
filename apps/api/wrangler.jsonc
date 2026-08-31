@@ -19,7 +19,7 @@
     {
       "binding": "HYPERDRIVE",
       "id": "00000000000000000000000000000000",
-      "localConnectionString": "postgresql://mango_farm:mango_farm_local_only@127.0.0.1:54329/mango_farm"
+      "localConnectionString": "postgresql://mango_farm:mango_farm_local_only@127.0.0.1:55432/mango_farm"
     }
   ],
   "r2_buckets": [
