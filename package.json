@@ -6,9 +6,11 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "npm run dev:all",
-    "predev:all": "npm run db:migrate",
+    "dev": "npm run dev:local",
     "dev:all": "concurrently --kill-others-on-fail --names web,api --prefix-colors cyan,green \"npm run dev:web\" \"npm run dev:api\"",
+    "dev:local": "node scripts/run-local-dev.mjs",
+    "dev:setup": "node scripts/prepare-local-dev.mjs",
+    "dev:seed": "node --env-file=.env --env-file-if-exists=apps/api/.dev.vars scripts/seed-local-test-accounts.mjs",
     "dev:web": "npm run dev -w apps/web -- --host 127.0.0.1",
     "build": "npm run build:web && npm run typecheck:api",
     "build:web": "npm run build -w apps/web",
@@ -22,6 +24,7 @@
     "check": "npm run lint && npm run typecheck && npm run test && npm run build:web",
     "dev:api": "npm run dev -w apps/api",
     "db:migrate": "node --env-file-if-exists=.env packages/database/scripts/migrate.mjs",
+    "db:backup": "node --env-file-if-exists=.env scripts/backup-local-database.mjs",
     "db:check-migrations": "node packages/database/scripts/check-migrations.mjs",
     "db:inspect": "node --env-file-if-exists=.env scripts/inspect-database.mjs",
     "db:consolidate:local": "node --env-file-if-exists=.env scripts/consolidate-local-databases.mjs",

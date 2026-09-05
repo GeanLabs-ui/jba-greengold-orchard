@@ -8,9 +8,12 @@ import entitiesRouter from './modules/entities.js';
 import applicationsRouter from './modules/applications.js';
 import filesRouter from './modules/files.js';
 import commerceRouter from './modules/commerce.js';
+import paymentsRouter from './modules/payments.js';
 import calendarRouter from './modules/calendar.js';
 import farmsRouter from './modules/farms.js';
 import activityLogRouter from './modules/activity-log.js';
+import supportRouter from './modules/support.js';
+import accountRouter from './modules/account.js';
 import { runCalendarReminders } from './calendar-reminders.js';
 import { purgeExpiredRateLimitWindows, purgeExpiredVerificationTokens } from './maintenance.js';
 
@@ -60,7 +63,7 @@ app.use('*', async (c, next) => {
     return c.json({ error: { code: 'LENGTH_REQUIRED', message: 'Chunked request bodies are not supported' }, requestId: c.get('requestId') }, 411);
   }
   const contentLength = Number(contentLengthHeader || 0);
-  const maxBytes = ['/api/v1/applications', '/api/v1/files'].includes(c.req.path) ? 7 * 1024 * 1024 : 256 * 1024;
+  const maxBytes = ['/api/v1/applications', '/api/v1/files', '/api/v1/account/files'].includes(c.req.path) ? 7 * 1024 * 1024 : 256 * 1024;
   if (contentLength > maxBytes) return c.json({ error: { code: 'PAYLOAD_TOO_LARGE', message: 'Request body is too large' }, requestId: c.get('requestId') }, 413);
   await next();
 });
@@ -81,8 +84,11 @@ api.route('/entities', entitiesRouter);
 api.route('/applications', applicationsRouter);
 api.route('/files', filesRouter);
 api.route('/commerce', commerceRouter);
+api.route('/payments', paymentsRouter);
 api.route('/calendar', calendarRouter);
 api.route('/activity-log', activityLogRouter);
+api.route('/support', supportRouter);
+api.route('/account', accountRouter);
 
 // Public deployment probes must be registered before the authenticated farms router,
 // which is mounted at the API root and otherwise intercepts every remaining path.

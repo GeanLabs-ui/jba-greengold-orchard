@@ -2,6 +2,9 @@ export function resolveSkeleton(pathname = '/') {
   const path = pathname.split('?')[0].replace(/\/$/, '') || '/';
   if (['/login', '/register', '/forgot-password', '/reset-password', '/verify-email', '/accept-staff-invite'].includes(path)) return { area: 'auth', template: 'auth', label: 'account access' };
   if (path === '/portal') return { area: 'portal', template: 'portal-dashboard', label: 'customer dashboard' };
+  if (path === '/portal/products') return { area: 'portal', template: 'portal-products', label: 'customer products' };
+  if (path === '/portal/checkout') return { area: 'portal', template: 'portal-checkout', label: 'customer checkout' };
+  if (path === '/portal/tracking') return { area: 'portal', template: 'portal-tracking', label: 'delivery tracking' };
   if (path === '/portal/orders') return { area: 'portal', template: 'portal-orders', label: 'customer orders' };
   if (path === '/portal/payments') return { area: 'portal', template: 'portal-payments', label: 'payments and invoices' };
   if (path === '/portal/documents') return { area: 'portal', template: 'portal-documents', label: 'customer documents' };
@@ -47,6 +50,7 @@ export function resolveSkeleton(pathname = '/') {
   if (path === '/my-orders') return { area: 'public', template: 'orders', label: 'order tracking' };
   if (path === '/farms') return { area: 'public', template: 'farms', label: 'farms page' };
   if (path.startsWith('/farms/')) return { area: 'public', template: 'farm-detail', label: 'farm details' };
+  if (path === '/supply') return { area: 'public', template: 'supply', label: 'supply options' };
   if (path === '/export') return { area: 'public', template: 'export', label: 'export services' };
   if (path === '/news') return { area: 'public', template: 'news', label: 'news' };
   if (path.startsWith('/news/')) return { area: 'public', template: 'article', label: 'news article' };

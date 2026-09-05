@@ -459,21 +459,21 @@ const removedSectionPaths = [
 ];
 
 const activityLogColumns = [
-  { key: 'activity_date', label: 'Date', className: 'w-[92px]', headerClassName: 'bg-[#eff9ee] text-[#167329]', render: (item) => formatDate(item.activity_date) },
-  { key: 'title', label: 'Task Description', className: 'w-[168px]', headerClassName: 'bg-[#eff9ee] text-[#167329]', render: (item) => item.title || item.activity_title || item.description },
-  { key: 'status', label: 'Status', className: 'w-[96px]', headerClassName: 'bg-[#eff9ee] text-[#167329]' },
-  { key: 'category', label: 'Activity Type', className: 'w-[110px]', headerClassName: 'bg-[#eff9ee] text-[#167329]', render: (item) => item.category },
-  { key: 'item_tag', label: 'Item Tag', className: 'w-[92px]', headerClassName: 'bg-[#f1f6ff] text-[#3b6fc9]', render: (item) => item.item_tag || item.input_name || item.equipment_used },
-  { key: 'quantity', label: 'Quantity', className: 'w-[72px] text-center', headerClassName: 'bg-[#f1f6ff] text-[#3b6fc9]', render: (item) => formatNumber(item.quantity_used ?? item.harvest_quantity ?? item.crates_used) },
-  { key: 'responsible', label: 'Responsible', className: 'w-[116px]', headerClassName: 'bg-[#f1f6ff] text-[#3b6fc9]', render: (item) => item.responsible || item.assigned_workers || item.supervisor_name },
-  { key: 'contact', label: 'Contact', className: 'w-[92px]', headerClassName: 'bg-[#f1f6ff] text-[#3b6fc9]', render: (item) => item.contact },
-  { key: 'block_name', label: 'Farm Block', className: 'w-[102px]', headerClassName: 'bg-[#f1f6ff] text-[#3b6fc9]', render: (item) => item.block_name || item.block_code },
-  { key: 'projected_cost', label: 'Projected Cost', className: 'w-[96px] text-center', headerClassName: 'bg-[#fff2f3] text-[#e14b5a]', render: (item) => <span className="font-semibold text-rose-600">{formatCurrency(item.projected_cost)}</span> },
-  { key: 'actual_cost', label: 'Actual Cost', className: 'w-[96px] text-center', headerClassName: 'bg-[#fff2f3] text-[#e14b5a]', render: (item) => <span className="font-semibold text-rose-600">{formatCurrency(item.actual_cost ?? item.cost)}</span> },
-  { key: 'revenue', label: 'Actual Revenue', className: 'w-[84px] text-center', headerClassName: 'bg-[#fff2f3] text-[#e14b5a]', render: (item) => <span className="font-semibold text-blue-600">{formatCurrency(item.actual_revenue ?? item.revenue)}</span> },
-  { key: 'output_quantity_kg', label: 'Harvest / Output kg', className: 'w-[104px] text-center', headerClassName: 'bg-[#fff2f3] text-[#e14b5a]', render: (item) => <span className="font-semibold text-emerald-700">{formatNumber(item.harvest_quantity ?? item.output_quantity_kg)} kg</span> },
-  { key: 'cost_type', label: 'Type of Cost', className: 'w-[86px] text-center', headerClassName: 'bg-[#f8f3ff] text-[#805ad5]', render: (item) => item.cost_type },
-  { key: 'notes', label: 'Notes', className: 'w-[170px]', headerClassName: 'bg-[#f8f3ff] text-[#805ad5]', render: (item) => item.notes },
+  { key: 'activity_date', label: 'Date', className: 'w-[92px]', headerClassName: 'bg-[#ecf0f1] text-[#407933]', render: (item) => formatDate(item.activity_date) },
+  { key: 'title', label: 'Task Description', className: 'w-[168px]', headerClassName: 'bg-[#ecf0f1] text-[#407933]', render: (item) => item.title || item.activity_title || item.description },
+  { key: 'status', label: 'Status', className: 'w-[96px]', headerClassName: 'bg-[#ecf0f1] text-[#407933]' },
+  { key: 'category', label: 'Activity Type', className: 'w-[110px]', headerClassName: 'bg-[#ecf0f1] text-[#407933]', render: (item) => item.category },
+  { key: 'item_tag', label: 'Item Tag', className: 'w-[92px]', headerClassName: 'bg-[#ecf0f1] text-[#407933]', render: (item) => item.item_tag || item.input_name || item.equipment_used },
+  { key: 'quantity', label: 'Quantity', className: 'w-[72px] text-center', headerClassName: 'bg-[#ecf0f1] text-[#407933]', render: (item) => formatNumber(item.quantity_used ?? item.harvest_quantity ?? item.crates_used) },
+  { key: 'responsible', label: 'Responsible', className: 'w-[116px]', headerClassName: 'bg-[#ecf0f1] text-[#407933]', render: (item) => item.responsible || item.assigned_workers || item.supervisor_name },
+  { key: 'contact', label: 'Contact', className: 'w-[92px]', headerClassName: 'bg-[#ecf0f1] text-[#407933]', render: (item) => item.contact },
+  { key: 'block_name', label: 'Farm Block', className: 'w-[102px]', headerClassName: 'bg-[#ecf0f1] text-[#407933]', render: (item) => item.block_name || item.block_code },
+  { key: 'projected_cost', label: 'Projected Cost', className: 'w-[96px] text-center', headerClassName: 'bg-[#ecf0f1] text-[#407933]', render: (item) => <span className="font-semibold text-[#407933]">{formatCurrency(item.projected_cost)}</span> },
+  { key: 'actual_cost', label: 'Actual Cost', className: 'w-[96px] text-center', headerClassName: 'bg-[#ecf0f1] text-[#407933]', render: (item) => <span className="font-semibold text-[#407933]">{formatCurrency(item.actual_cost ?? item.cost)}</span> },
+  { key: 'revenue', label: 'Actual Revenue', className: 'w-[84px] text-center', headerClassName: 'bg-[#ecf0f1] text-[#407933]', render: (item) => <span className="font-semibold text-[#407933]">{formatCurrency(item.actual_revenue ?? item.revenue)}</span> },
+  { key: 'output_quantity_kg', label: 'Harvest / Output kg', className: 'w-[104px] text-center', headerClassName: 'bg-[#ecf0f1] text-[#407933]', render: (item) => <span className="font-semibold text-[#407933]">{formatNumber(item.harvest_quantity ?? item.output_quantity_kg)} kg</span> },
+  { key: 'cost_type', label: 'Type of Cost', className: 'w-[86px] text-center', headerClassName: 'bg-[#ecf0f1] text-[#407933]', render: (item) => item.cost_type },
+  { key: 'notes', label: 'Notes', className: 'w-[170px]', headerClassName: 'bg-[#ecf0f1] text-[#407933]', render: (item) => item.notes },
 ];
 
 const activityStatusFilterOptions = ['All', 'Completed', 'Pending', 'In Progress'];
@@ -2512,8 +2512,9 @@ export default function FarmDailyActivities() {
       fields={fields}
       onCreate={onCreate}
       onCreated={load}
-      submitLabel="Save"
+      submitLabel={title === 'Add Daily Activity' ? 'Save Activity' : 'Save'}
       buttonClassName={buttonClassName}
+      formVariant={title === 'Add Daily Activity' ? 'daily-activity-log' : undefined}
     />
   );
 

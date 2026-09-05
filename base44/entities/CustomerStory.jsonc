@@ -1,0 +1,15 @@
+{
+  "name": "CustomerStory",
+  "type": "object",
+  "properties": {
+    "name": { "type": "string", "title": "Customer Name" },
+    "email": { "type": "string", "title": "Contact Email", "format": "email" },
+    "company": { "type": "string", "title": "Company or Role" },
+    "title": { "type": "string", "title": "Story Headline" },
+    "quote": { "type": "string", "title": "Customer Story" },
+    "result": { "type": "string", "title": "Result" },
+    "status": { "type": "string", "title": "Publication Status", "default": "published" },
+    "source_page": { "type": "string", "title": "Source Page" }
+  },
+  "required": ["name", "email", "title", "quote"]
+}

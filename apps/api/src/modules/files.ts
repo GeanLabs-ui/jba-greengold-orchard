@@ -23,7 +23,7 @@ router.get('/:id', requireRole('super_admin', 'admin', 'farm_manager', 'farm_sup
 router.get('/:id', async (c) => {
   const sql = createDatabase(c.env);
   try {
-    const rows = await sql<{ object_key: string; original_name: string; content_type: string; status: string }[]>`SELECT object_key, original_name, content_type, status FROM file_objects WHERE id = ${c.req.param('id')} LIMIT 1`;
+    const rows = await sql<{ object_key: string; original_name: string; content_type: string; status: string }[]>`SELECT object_key, original_name, content_type, status FROM file_objects WHERE id = ${c.req.param('id')} AND object_key NOT LIKE 'account/%' LIMIT 1`;
     const file = rows[0];
     if (!file || file.status !== 'active') return c.json({ error: { code: 'NOT_FOUND', message: 'File not found' }, requestId: c.get('requestId') }, 404);
     let object = await c.env.PRIVATE_FILES.get(file.object_key);

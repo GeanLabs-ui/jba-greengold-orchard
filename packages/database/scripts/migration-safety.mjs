@@ -2,7 +2,7 @@ const destructivePatterns = [
   { label: 'TRUNCATE', pattern: /\bTRUNCATE\b/i },
   { label: 'DELETE FROM', pattern: /\bDELETE\s+FROM\b/i },
   { label: 'DROP SCHEMA', pattern: /\bDROP\s+SCHEMA\b/i },
-  { label: 'ALTER TABLE ... DROP COLUMN', pattern: /\bALTER\s+TABLE\b[\s\S]*\bDROP\s+COLUMN\b/i },
+  { label: 'ALTER TABLE ... DROP COLUMN', pattern: /\bALTER TABLE\b[\s\S]*\bDROP\s+COLUMN\b/i },
 ];
 
 function stripCommentsAndStrings(source) {
@@ -32,7 +32,6 @@ export function findDestructiveMigrationStatements(source) {
     if (/^DROP\s+TABLE\b/i.test(statement) && !isTemporaryMigrationTableDrop(statement)) {
       return [{ label: 'DROP TABLE', statement }];
     }
-
     return destructivePatterns
       .filter(({ pattern }) => pattern.test(statement))
       .map(({ label }) => ({ label, statement }));
@@ -42,7 +41,6 @@ export function findDestructiveMigrationStatements(source) {
 export function assertMigrationIsNonDestructive(file, source) {
   const violations = findDestructiveMigrationStatements(source);
   if (violations.length === 0) return;
-
   const operations = [...new Set(violations.map(({ label }) => label))].join(', ');
   throw new Error(
     `Blocked destructive migration ${file}: ${operations}. ` +

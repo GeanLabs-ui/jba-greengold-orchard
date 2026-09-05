@@ -1,3 +1,5 @@
+name: farmactualproject
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -6,7 +8,7 @@ services:
       POSTGRES_USER: mango_farm
       POSTGRES_PASSWORD: mango_farm_local_only
     ports:
-      - "55432:5432"
+      - "54329:5432"
     volumes:
       - mango_farm_postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -17,3 +19,5 @@ services:
 
 volumes:
   mango_farm_postgres_data:
+    name: farmactualproject_mango_farm_postgres_data
+    external: true

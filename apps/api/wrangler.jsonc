@@ -11,7 +11,8 @@
   },
   "vars": {
     "APP_ENV": "local",
-    "ALLOWED_ORIGINS": "http://localhost:5173,http://localhost:8788",
+    "LOCAL_TEST_LOGIN_ENABLED": "true",
+    "ALLOWED_ORIGINS": "http://localhost:5173,http://127.0.0.1:5173,http://localhost:8788",
     "PASSWORD_RESET_URL": "http://localhost:5173/reset-password",
     "EMAIL_FROM": "JBA GreenGold Orchard <noreply@jbagreengoldorchard.farm>"
   },
@@ -19,7 +20,7 @@
     {
       "binding": "HYPERDRIVE",
       "id": "00000000000000000000000000000000",
-      "localConnectionString": "postgresql://mango_farm:mango_farm_local_only@127.0.0.1:55432/mango_farm"
+      "localConnectionString": "postgresql://mango_farm:mango_farm_local_only@127.0.0.1:54329/mango_farm"
     }
   ],
   "r2_buckets": [
@@ -46,6 +47,7 @@
       "version_metadata": { "binding": "CF_VERSION_METADATA" },
       "vars": {
         "APP_ENV": "staging",
+        "LOCAL_TEST_LOGIN_ENABLED": "false",
         "ALLOWED_ORIGINS": "https://staging.jba-greengold-orchard.pages.dev,https://staging.jbagreengoldorchard.farm",
         "PASSWORD_RESET_URL": "https://staging.jba-greengold-orchard.pages.dev/reset-password",
         "EMAIL_FROM": "JBA GreenGold Orchard <noreply@jbagreengoldorchard.farm>"
@@ -78,6 +80,7 @@
       "version_metadata": { "binding": "CF_VERSION_METADATA" },
       "vars": {
         "APP_ENV": "production",
+        "LOCAL_TEST_LOGIN_ENABLED": "false",
         "ALLOWED_ORIGINS": "https://jbagreengoldorchard.farm,https://www.jbagreengoldorchard.farm",
         "PASSWORD_RESET_URL": "https://jbagreengoldorchard.farm/reset-password",
         "EMAIL_FROM": "JBA GreenGold Orchard <noreply@jbagreengoldorchard.farm>"

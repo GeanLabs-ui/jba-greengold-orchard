@@ -1,8 +1,9 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
 import { closeDatabase, createDatabase } from '../db.js';
-import { requireAuth, requireCsrf, type AppVariables } from '../middleware/auth.js';
+import { requireRole, requireCsrf, type AppVariables } from '../middleware/auth.js';
 import { checkRateLimit, requestIp } from '../rate-limit.js';
+import { assertPaymentOption, PaymentError } from './payment-gateways.js';
 
 export const COMMERCE_CATALOG = {
   'dried-mango': { name: 'Dried Mango', price: 25, image: '/products/catalog-dried-mango.webp' },
@@ -22,6 +23,7 @@ export const COMMERCE_CATALOG = {
 type ProductId = keyof typeof COMMERCE_CATALOG;
 
 const checkoutSchema = z.object({
+  checkout_key: z.string().uuid().optional(),
   items: z.array(z.object({
     product_id: z.enum(Object.keys(COMMERCE_CATALOG) as [ProductId, ...ProductId[]]),
     quantity: z.coerce.number().int().min(1).max(99),
@@ -34,9 +36,34 @@ const checkoutSchema = z.object({
     city: z.string().trim().min(2).max(100),
     region: z.string().trim().min(2).max(100),
   }),
-  payment_method: z.enum(['cash_on_delivery', 'mobile_money_on_confirmation', 'bank_transfer']),
+  payment_method: z.enum(['cash_on_delivery', 'mobile_money_on_confirmation', 'bank_transfer', 'paystack:card', 'paystack:mobile_money', 'paystack:bank_payment', 'stripe:card', 'stripe:digital_wallet']),
+  payment_country: z.string().regex(/^[A-Z]{2}$/).default('GH'),
   notes: z.string().trim().max(1_000).optional().default(''),
 });
+
+const guestTrackingSchema = z.object({
+  order_number: z.string().trim().toUpperCase().regex(/^JBA-\d{8}-[A-Z0-9]{6}$/),
+});
+
+type StoredOrder = Record<string, any>;
+
+// A guest lookup deliberately returns less than the authenticated order view.
+// The public result is status-only because the order reference is the sole
+// lookup factor. Customer, product, address, payment, and note data stay private.
+export function publicOrderTrackingView(order: StoredOrder, createdAt: Date, updatedAt: Date) {
+  return {
+    order_number: order.order_number,
+    order_date: order.order_date || createdAt.toISOString(),
+    updated_date: updatedAt.toISOString(),
+    status: order.status,
+    status_history: Array.isArray(order.status_history) ? order.status_history.map((entry: StoredOrder) => ({
+      status: entry.status,
+      label: entry.label,
+      timestamp: entry.timestamp,
+    })) : [],
+    estimated_delivery: order.estimated_delivery || null,
+  };
+}
 
 export function priceOrder(items: Array<{ product_id: ProductId; quantity: number }>) {
   const lines = items.map((item) => {
@@ -57,9 +84,50 @@ export function priceOrder(items: Array<{ product_id: ProductId; quantity: numbe
 }
 
 const router = new Hono<{ Bindings: Env; Variables: AppVariables }>();
-router.use('*', requireAuth());
 
-router.get('/orders', async (c) => {
+router.post('/orders/track', async (c) => {
+  const parsed = guestTrackingSchema.safeParse(await c.req.json().catch(() => null));
+  if (!parsed.success) {
+    return c.json({
+      error: { code: 'VALIDATION_ERROR', message: 'Enter a valid order ID.' },
+      requestId: c.get('requestId'),
+    }, 422);
+  }
+
+  const sql = createDatabase(c.env);
+  try {
+    const rate = await checkRateLimit(sql, 'guest-order-tracking', requestIp(c.req.raw), 10, 900);
+    if (!rate.allowed) {
+      c.header('Retry-After', String(rate.retryAfter));
+      return c.json({
+        error: { code: 'RATE_LIMITED', message: 'Too many tracking attempts. Please try again later.' },
+        requestId: c.get('requestId'),
+      }, 429);
+    }
+
+    const rows = await sql<{ data: StoredOrder; created_at: Date; updated_at: Date }[]>`
+      SELECT data, created_at, updated_at
+      FROM entity_records
+      WHERE entity_name = 'Order'
+        AND upper(data->>'order_number') = ${parsed.data.order_number}
+      LIMIT 1
+    `;
+    const row = rows[0];
+    if (!row) {
+      return c.json({
+        error: { code: 'ORDER_NOT_FOUND', message: 'We could not find an order with that ID.' },
+        requestId: c.get('requestId'),
+      }, 404);
+    }
+
+    c.header('Cache-Control', 'private, no-store');
+    return c.json({ data: publicOrderTrackingView(row.data, row.created_at, row.updated_at), requestId: c.get('requestId') });
+  } finally {
+    await closeDatabase(sql);
+  }
+});
+
+router.get('/orders', requireRole('customer'), async (c) => {
   const user = c.get('user')!;
   const sql = createDatabase(c.env);
   try {
@@ -84,7 +152,7 @@ router.get('/orders', async (c) => {
   }
 });
 
-router.post('/orders', requireCsrf(), async (c) => {
+router.post('/orders', requireRole('customer'), requireCsrf(), async (c) => {
   const user = c.get('user')!;
   const parsed = checkoutSchema.safeParse(await c.req.json().catch(() => null));
   if (!parsed.success) {
@@ -113,6 +181,8 @@ router.post('/orders', requireCsrf(), async (c) => {
     const invoiceId = crypto.randomUUID();
     const invoiceNumber = `INV-${datePart}-${orderNumber.slice(-6)}`;
     const orderData = {
+      checkout_key: parsed.data.checkout_key || null,
+      payment_country: parsed.data.payment_country,
       order_number: orderNumber,
       customer_id: user.id,
       customer_name: parsed.data.shipping.full_name,
@@ -161,7 +231,16 @@ router.post('/orders', requireCsrf(), async (c) => {
       status: 'unpaid',
     };
 
-    await sql.begin(async (transaction) => {
+    const savedOrder = await sql.begin(async (transaction) => {
+      if (parsed.data.checkout_key) {
+        await transaction`SELECT pg_advisory_xact_lock(hashtextextended(${`${user.id}:${parsed.data.checkout_key}`}, 0))`;
+        const existing = await transaction<{ id: string; data: typeof orderData }[]>`SELECT id, data FROM entity_records WHERE entity_name = 'Order' AND owner_user_id = ${user.id} AND data->>'checkout_key' = ${parsed.data.checkout_key} LIMIT 1`;
+        if (existing[0]) return { ...existing[0].data, id: existing[0].id };
+      }
+      if (parsed.data.payment_method.includes(':')) {
+        const [provider, method] = parsed.data.payment_method.split(':');
+        assertPaymentOption(c.env, provider as 'stripe' | 'paystack', method as 'card' | 'mobile_money' | 'bank_payment' | 'digital_wallet', parsed.data.payment_country, 'GHS');
+      }
       await transaction`
         INSERT INTO entity_records (
           id, entity_name, organization_id, owner_user_id, data,
@@ -248,12 +327,16 @@ router.post('/orders', requireCsrf(), async (c) => {
           ${requestIp(c.req.raw)}
         )
       `;
+      return { ...orderData, id: orderId, invoice_number: invoiceNumber, created_date: now.toISOString(), updated_date: now.toISOString() };
     });
 
     return c.json({
-      data: { ...orderData, id: orderId, invoice_number: invoiceNumber, created_date: now.toISOString(), updated_date: now.toISOString() },
+      data: savedOrder,
       requestId: c.get('requestId'),
     }, 201);
+  } catch (error) {
+    if (error instanceof PaymentError) return c.json({ error: { code: 'PAYMENT_UNAVAILABLE', message: error.message } }, error.status);
+    throw error;
   } finally {
     await closeDatabase(sql);
   }

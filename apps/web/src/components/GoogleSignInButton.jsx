@@ -1,21 +1,21 @@
 import React, { useEffect, useRef, useState } from "react";
 import { loadGoogleIdentityServices } from '@/lib/google-identity';
-
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+import { useGoogleClientId } from '@/lib/use-google-client-id';
 
 export default function GoogleSignInButton({ onCredential, onError }) {
   const buttonRef = useRef(null);
-  const [available, setAvailable] = useState(Boolean(GOOGLE_CLIENT_ID));
+  const { clientId, loading } = useGoogleClientId();
+  const [available, setAvailable] = useState(true);
 
   useEffect(() => {
-    if (!GOOGLE_CLIENT_ID || !buttonRef.current) return undefined;
+    if (!clientId || !buttonRef.current) return undefined;
     let active = true;
 
     loadGoogleIdentityServices()
       .then((google) => {
         if (!active || !google?.accounts?.id || !buttonRef.current) return;
         google.accounts.id.initialize({
-          client_id: GOOGLE_CLIENT_ID,
+          client_id: clientId,
           callback: (response) => {
             if (response?.credential) onCredential(response.credential);
             else onError?.(new Error("Google sign-in did not return a credential"));
@@ -39,8 +39,9 @@ export default function GoogleSignInButton({ onCredential, onError }) {
     return () => {
       active = false;
     };
-  }, [onCredential, onError]);
+  }, [clientId, onCredential, onError]);
 
-  if (!available) return null;
+  if (loading) return <p role="status" className="text-sm text-muted-foreground">Loading Google sign-in...</p>;
+  if (!clientId || !available) return <p role="status" className="text-sm text-muted-foreground">Google sign-in is unavailable. Please contact the administrator.</p>;
   return <div ref={buttonRef} className="flex min-h-10 w-full justify-center" />;
 }

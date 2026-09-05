@@ -71,9 +71,10 @@ export default function PortalDashboard() {
         </div>
       </div>
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-3">
+      <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {[
-          { icon: Package, title: 'Track Orders', desc: 'View order status and delivery progress', path: '/portal/orders' },
+          { icon: ShoppingCart, title: 'Shop Products', desc: 'Browse products and add them to your basket', path: '/portal/products' },
+          { icon: Package, title: 'Track Orders', desc: 'View order status and delivery progress', path: '/portal/tracking' },
           { icon: CreditCard, title: 'Make Payment', desc: 'View invoices and payment history', path: '/portal/payments' },
           { icon: FileText, title: 'Download Documents', desc: 'Access invoices, receipts, and statements', path: '/portal/documents' },
         ].map((item) => (

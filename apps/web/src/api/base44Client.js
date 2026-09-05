@@ -5,6 +5,18 @@ const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "/api/v1").replace(
   "",
 );
 let csrfToken = null;
+let csrfUserId = null;
+
+const rememberSession = (data) => {
+  csrfToken = data.csrf_token;
+  csrfUserId = data.user?.id || null;
+};
+
+const sessionChangedError = () => {
+  const error = new Error('Your signed-in account changed in another tab. Sign back in to this account before submitting.');
+  error.code = 'SESSION_CHANGED';
+  return error;
+};
 
 const compareValue = (value) => {
   if (value === undefined || value === null) return "";
@@ -63,40 +75,43 @@ const recordClientError = ({ path, error }) => {
   }).catch(() => {});
 };
 
-const refreshCsrf = async () => {
+const refreshCsrf = async (expectedUserId = csrfUserId) => {
   let response;
   try {
-    response = await fetch(`${API_BASE_URL}/auth/csrf`, {
+    // Read the token and its account together so a retry cannot silently switch owners.
+    response = await fetch(`${API_BASE_URL}/auth/me`, {
       credentials: "include",
       headers: { Accept: "application/json" },
+      cache: "no-store",
     });
   } catch (cause) {
     throw apiUnavailableError(cause);
   }
   const data = await parseResponse(response);
-  csrfToken = data.csrf_token;
+  if (expectedUserId && data.user?.id !== expectedUserId) {
+    throw sessionChangedError();
+  }
+  rememberSession(data);
   return csrfToken;
 };
 
 const request = async (path, options = {}) => {
-  const { includeMeta = false, publicRequest = false, ...fetchOptions } = options;
+  const { includeMeta = false, publicRequest = false, accountUserId, ...fetchOptions } = options;
   const method = (fetchOptions.method || "GET").toUpperCase();
+  const protectedMutation = !["GET", "HEAD", "OPTIONS"].includes(method) && !publicRequest;
+  const expectedUserId = accountUserId || csrfUserId;
+  if (protectedMutation && expectedUserId && csrfUserId && expectedUserId !== csrfUserId)
+    throw sessionChangedError();
   const headers = new Headers(fetchOptions.headers || {});
   headers.set("Accept", "application/json");
   const isFormData = fetchOptions.body instanceof FormData;
   if (fetchOptions.body && !isFormData)
     headers.set("Content-Type", "application/json");
-  if (
-    !["GET", "HEAD", "OPTIONS"].includes(method) &&
-    !csrfToken &&
-    !publicRequest
-  )
-    await refreshCsrf();
+  if (protectedMutation && !csrfToken)
+    await refreshCsrf(expectedUserId);
   if (csrfToken && !["GET", "HEAD", "OPTIONS"].includes(method))
     headers.set("X-CSRF-Token", csrfToken);
-  let response;
-  try {
-    response = await fetch(`${API_BASE_URL}${path}`, {
+  const requestOptions = {
       ...fetchOptions,
       method,
       headers,
@@ -105,18 +120,31 @@ const request = async (path, options = {}) => {
         fetchOptions.body && !isFormData
           ? JSON.stringify(fetchOptions.body)
           : fetchOptions.body,
-    });
-  } catch (cause) {
-    throw apiUnavailableError(cause);
+  };
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    let response;
+    try {
+      response = await fetch(`${API_BASE_URL}${path}`, requestOptions);
+    } catch (cause) {
+      throw apiUnavailableError(cause);
+    }
+    try {
+      const payload = await parsePayload(response);
+      return includeMeta ? payload : payload.data;
+    } catch (error) {
+      // CSRF rejection happens before the handler writes anything. Only that
+      // explicit rejection is safe to replay, including multipart document uploads.
+      if (protectedMutation && error.status === 403 && error.code === 'CSRF_INVALID') {
+        csrfToken = null;
+        if (attempt === 0) {
+          headers.set('X-CSRF-Token', await refreshCsrf(expectedUserId || csrfUserId));
+          continue;
+        }
+      }
+      recordClientError({ path, error });
+      throw error;
+    }
   }
-  let payload;
-  try {
-    payload = await parsePayload(response);
-  } catch (error) {
-    recordClientError({ path, error });
-    throw error;
-  }
-  return includeMeta ? payload : payload.data;
 };
 
 const createEntityApi = (entityName) => ({
@@ -183,7 +211,7 @@ const createEntityApi = (entityName) => ({
       {
         method: "POST",
         body: payload,
-        publicRequest: entityName === "Inquiry",
+        publicRequest: ["Inquiry", "CustomerStory"].includes(entityName),
       },
     );
     publishDataChange(entityName, "create", record?.id);
@@ -221,9 +249,23 @@ const entities = new Proxy(
 );
 
 const auth = {
+  async registerLocalCustomer({ fullName, email, password }) {
+    const data = await request('/auth/local-register', { method: 'POST', body: { fullName, email, password }, publicRequest: true });
+    rememberSession(data);
+    return data.user;
+  },
+  async loginLocalTestAccount(account, audience) {
+    const data = await request('/auth/local-login', { method: 'POST', body: { account, audience }, publicRequest: true });
+    rememberSession(data);
+    return data.user;
+  },
   async me() {
     const data = await request("/auth/me");
-    csrfToken = data.csrf_token;
+    rememberSession(data);
+    return data.user;
+  },
+  async updateProfile({ fullName }) {
+    const data = await request('/auth/me', { method: 'PATCH', body: { fullName } });
     return data.user;
   },
   async register({ email, password }) {
@@ -232,25 +274,25 @@ const auth = {
       body: { email, password },
       publicRequest: true,
     });
-    csrfToken = data.csrf_token;
+    rememberSession(data);
     return data;
   },
-  async loginViaEmailPassword(email, password) {
+  async loginViaEmailPassword(email, password, audience = 'customer') {
     const data = await request("/auth/login", {
       method: "POST",
-      body: { email, password },
+      body: { email, password, audience },
       publicRequest: true,
     });
-    csrfToken = data.csrf_token;
+    rememberSession(data);
     return data.user;
   },
-  async loginViaGoogle(credential) {
+  async loginViaGoogle(credential, audience = 'customer') {
     const data = await request("/auth/google", {
       method: "POST",
-      body: { credential },
+      body: { credential, audience },
       publicRequest: true,
     });
-    csrfToken = data.csrf_token;
+    rememberSession(data);
     return data.user;
   },
   async resetPasswordRequest(email) {
@@ -278,12 +320,10 @@ const auth = {
     return request("/auth/verify-email/resend", { method: "POST" });
   },
   async logout(redirectTo) {
-    try {
-      await request("/auth/logout", { method: "POST" });
-    } finally {
-      csrfToken = null;
-      if (redirectTo) window.location.assign("/");
-    }
+    await request("/auth/logout", { method: "POST" });
+    csrfToken = null;
+    csrfUserId = null;
+    if (redirectTo) window.location.assign("/");
   },
   redirectToLogin(fromUrl = window.location.href) {
     const target = new URL("/login", window.location.origin);
@@ -338,6 +378,15 @@ const files = {
 };
 
 const commerce = {
+  paymentOptions(country = 'GH') {
+    return request(`/payments/options?country=${encodeURIComponent(country)}`);
+  },
+  startPayment(orderId, selection) {
+    return request(`/payments/orders/${encodeURIComponent(orderId)}/session`, { method: 'POST', body: selection });
+  },
+  verifyPayment(reference) {
+    return request(`/payments/attempts/${encodeURIComponent(reference)}/verify`, { method: 'POST' });
+  },
   async checkoutOrder(payload) {
     const order = await request("/commerce/orders", {
       method: "POST",
@@ -350,6 +399,13 @@ const commerce = {
   },
   myOrders() {
     return request("/commerce/orders");
+  },
+  trackOrder(orderNumber) {
+    return request("/commerce/orders/track", {
+      method: "POST",
+      body: { order_number: orderNumber },
+      publicRequest: true,
+    });
   },
 };
 
@@ -523,7 +579,22 @@ const activityLog = {
   delete: (id) => request(`/activity-log/${encodeURIComponent(id)}`, { method: 'DELETE' }),
   deleteMany: (ids) => request('/activity-log/bulk-delete', { method: 'POST', body: { ids } }),
 };
-const apiBase44 = { auth, entities, applications, commerce, files, farms, staff, activityLog };
+const account = {
+  get: () => request('/account'),
+  upload: (file, purpose, accountUserId) => {
+    const form = new FormData();
+    form.set('file', file);
+    form.set('purpose', purpose);
+    return request('/account/files', { method: 'POST', body: form, accountUserId });
+  },
+  fileUrl: (id) => `${API_BASE_URL}/account/files/${encodeURIComponent(id)}`,
+  submit: (payload, accountUserId) => request('/account/verification', { method: 'POST', body: payload, accountUserId }),
+  refresh: (accountUserId) => request('/account/verification/refresh', { method: 'POST', accountUserId }),
+  requestChange: (reason, accountUserId) => request('/account/change-requests', { method: 'POST', body: { reason }, accountUserId }),
+  reviews: () => request('/account/admin/reviews'),
+  review: (id, payload) => request(`/account/admin/reviews/${encodeURIComponent(id)}`, { method: 'POST', body: payload }),
+};
+const apiBase44 = { auth, entities, applications, commerce, files, farms, staff, activityLog, account };
 
 // The demo/preview client (and its seeded demo credentials) is only pulled into the
 // bundle when demo mode is actually enabled at build/runtime, via a dynamic import.

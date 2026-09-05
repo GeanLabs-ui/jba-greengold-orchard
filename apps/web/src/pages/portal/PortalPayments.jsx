@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { CreditCard, Wallet } from 'lucide-react';
 import PageHeader from '@/components/shared/PageHeader';
 import StatusBadge from '@/components/shared/StatusBadge';
@@ -40,7 +41,7 @@ export default function PortalPayments() {
         <TabsList><TabsTrigger value="invoices">Invoices</TabsTrigger><TabsTrigger value="payments">Payment History</TabsTrigger></TabsList>
         <TabsContent value="invoices" className="mt-4">
           {loading ? <PageSkeleton contentOnly /> : (
-            <DataTable items={invoices} columns={[
+            <DataTable items={invoices} rowActions={(invoice) => invoice.source === 'website' && invoice.order_id && invoice.status !== 'paid' ? <Link className="font-semibold text-primary underline" to={`/portal/payments/return?order=${encodeURIComponent(invoice.order_id)}`}>Pay invoice</Link> : null} columns={[
               { key: 'invoice_number', label: 'Invoice #' },
               { key: 'invoice_date', label: 'Date', format: formatDate },
               { key: 'due_date', label: 'Due', format: formatDate },

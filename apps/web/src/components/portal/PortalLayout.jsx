@@ -1,80 +1,55 @@
-import React, { useState } from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, ShoppingCart, CreditCard, FileText, LogOut, Menu, Bell } from 'lucide-react';
+import React from 'react';
+import { Outlet, Link, NavLink } from 'react-router-dom';
+import { LayoutDashboard, ShoppingCart, ShoppingBag, Truck, CreditCard, FileText, LogOut, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import BrandLogo from '@/components/shared/BrandLogo';
+import AccountMenu from './AccountMenu';
+import { useCart } from '@/lib/CartContext';
+import CartDrawer from '@/components/commerce/CartDrawer';
+import './portal-layout.css';
 
 const navItems = [
   { label: 'Dashboard', path: '/portal', icon: LayoutDashboard },
+  { label: 'Products', path: '/portal/products', icon: ShoppingBag },
   { label: 'My Orders', path: '/portal/orders', icon: ShoppingCart },
+  { label: 'Tracking', path: '/portal/tracking', icon: Truck },
   { label: 'Payments', path: '/portal/payments', icon: CreditCard },
   { label: 'Documents', path: '/portal/documents', icon: FileText },
 ];
 
-function SidebarContent({ onNavigate }) {
-  const location = useLocation();
-  return (
-    <nav className="flex flex-col gap-1 p-3">
-      {navItems.map((item) => {
-        const isActive = location.pathname === item.path;
-        return (
-          <Link key={item.path} to={item.path} onClick={onNavigate} className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${isActive ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
-            <item.icon className="h-4 w-4" />
-            {item.label}
-          </Link>
-        );
-      })}
-    </nav>
-  );
-}
-
-function PortalMobileNav({ onMore }) {
-  const location = useLocation();
-  return (
-    <nav className="fixed inset-x-0 bottom-0 z-[70] grid grid-cols-5 border-t border-border bg-card/95 px-2 pb-[max(0.4rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl lg:hidden" aria-label="Customer portal navigation">
-      {navItems.map((item) => {
-        const active = location.pathname === item.path;
-        const Icon = item.icon;
-        return <Link key={item.path} to={item.path} aria-current={active ? 'page' : undefined} className={`flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[10px] font-semibold transition-colors ${active ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}><Icon className="h-4 w-4" /><span>{item.label.replace('My ', '')}</span></Link>;
-      })}
-      <button type="button" onClick={onMore} className="flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[10px] font-semibold text-muted-foreground hover:bg-muted" aria-label="Open portal navigation"><Menu className="h-5 w-5" /><span>More</span></button>
-    </nav>
-  );
-}
-
 export default function PortalLayout() {
-  const [open, setOpen] = useState(false);
+  const { itemCount, openCart } = useCart();
 
   return (
-    <div className="flex min-h-dvh bg-muted/30">
-      <aside className="hidden w-64 shrink-0 flex-col border-r border-border bg-card lg:flex">
-        <div className="flex h-16 items-center gap-2 border-b border-border px-4">
-          <BrandLogo className="h-16" />
-        </div>
-        <div className="flex-1"><SidebarContent /></div>
-        <div className="border-t border-border p-3">
-          <Link to="/" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
-            <LogOut className="h-4 w-4" /> Back to Website
-          </Link>
-        </div>
-      </aside>
-
-      <div className="flex flex-1 flex-col">
-        <header className="flex h-16 items-center gap-3 border-b border-border bg-card px-4 md:px-6">
-          <Sheet open={open} onOpenChange={setOpen}>
-            <SheetTrigger asChild><button className="lg:hidden"><Menu className="h-5 w-5" /></button></SheetTrigger>
-            <SheetContent side="left" className="w-[min(19rem,86vw)] p-0"><div className="flex h-16 items-center gap-2 border-b border-border px-4"><BrandLogo className="h-16" /></div><SidebarContent onNavigate={() => setOpen(false)} /></SheetContent>
-          </Sheet>
-          <h1 className="font-heading text-lg font-semibold">My Account</h1>
-          <div className="ml-auto flex items-center gap-3">
-            <Button variant="ghost" size="icon"><Bell className="h-5 w-5" /></Button>
-            <div className="flex h-9 w-9 items-center justify-center rounded-full gradient-mango text-sm font-semibold text-white">C</div>
+    <div className="portal-shell app-surface flex min-h-dvh min-w-0 flex-col bg-muted/30">
+      <header className="sticky top-0 z-40 border-b border-border bg-card">
+        <div className="flex min-h-16 items-center gap-3 px-4 md:gap-6 md:px-6">
+          <Link to="/" aria-label="JBA GreenGold Orchard home" className="shrink-0"><BrandLogo className="h-12 md:h-16" imageClassName="h-10 w-20 sm:h-12 sm:w-28" /></Link>
+          <h1 className="border-l border-border pl-3 font-heading text-base font-semibold md:pl-6 md:text-lg">My Account</h1>
+          <div className="ml-auto flex shrink-0 items-center gap-2 md:gap-3">
+            <Link to="/" className="hidden items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:flex">
+              <LogOut className="h-4 w-4" aria-hidden="true" /> Back to Website
+            </Link>
+            <Button variant="ghost" size="icon" aria-label="Notifications"><Bell className="h-5 w-5" /></Button>
+            <AccountMenu />
           </div>
-        </header>
-        <main className="flex-1 p-4 pb-24 md:p-6"><Outlet /></main>
-      </div>
-      <PortalMobileNav onMore={() => setOpen(true)} />
+        </div>
+        <nav className="portal-horizontal-menu flex gap-1 overflow-x-auto px-3 py-2 md:px-6" aria-label="Customer portal navigation">
+          {navItems.map(({ label, path, icon: Icon }) => (
+            <NavLink key={path} to={path} end={path === '/portal'} className="portal-nav-link flex min-h-11 shrink-0 items-center gap-2 rounded-lg px-3 text-sm font-semibold transition-colors motion-reduce:transition-none md:px-4">
+              <Icon className="h-4 w-4" aria-hidden="true" />{label}
+            </NavLink>
+          ))}
+          <button type="button" onClick={openCart} className="portal-nav-link ml-auto flex min-h-11 shrink-0 items-center gap-2 rounded-lg px-3 text-sm font-semibold transition-colors motion-reduce:transition-none" aria-label={`Open basket, ${itemCount} items`}>
+            <ShoppingCart className="h-4 w-4" aria-hidden="true" /><span aria-live="polite" aria-atomic="true">Basket ({itemCount})</span>
+          </button>
+          <Link to="/" className="portal-nav-link flex min-h-11 shrink-0 items-center gap-2 rounded-lg px-3 text-sm font-semibold transition-colors motion-reduce:transition-none md:hidden">
+            <LogOut className="h-4 w-4" aria-hidden="true" /> Back to Website
+          </Link>
+        </nav>
+      </header>
+      <main className="min-w-0 flex-1 p-4 pb-24 md:p-6"><Outlet /></main>
+      <CartDrawer />
     </div>
   );
 }

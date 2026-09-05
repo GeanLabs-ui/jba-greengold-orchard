@@ -128,10 +128,10 @@ export default function AdminDashboard() {
         <section className="rounded-xl border border-border bg-card p-5 shadow-sm lg:col-span-2">
           <div><h2 className="font-heading font-semibold">Sales and payments</h2><p className="text-xs text-muted-foreground">Rolling six-month value in Ghana cedis (₵), calculated from live orders and receipts.</p></div>
           <ResponsiveContainer width="100%" height={280} className="mt-4"><AreaChart data={monthlyTrend}>
-            <defs><linearGradient id="salesFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#2563eb" stopOpacity={0.28} /><stop offset="100%" stopColor="#2563eb" stopOpacity={0} /></linearGradient></defs>
+            <defs><linearGradient id="salesFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#2E7D32" stopOpacity={0.28} /><stop offset="100%" stopColor="#2E7D32" stopOpacity={0} /></linearGradient></defs>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" /><XAxis dataKey="month" fontSize={12} /><YAxis fontSize={12} tickFormatter={compactAmount} />
             <Tooltip formatter={(value, name) => [formatCurrency(value), name === 'sales' ? 'Sales value' : 'Payments']} contentStyle={{ borderRadius: 10, border: '1px solid hsl(var(--border))' }} />
-            <Area type="monotone" dataKey="sales" stroke="#2563eb" strokeWidth={2} fill="url(#salesFill)" /><Area type="monotone" dataKey="payments" stroke="#2E7D32" strokeWidth={2} fillOpacity={0} />
+            <Area type="monotone" dataKey="sales" stroke="#2E7D32" strokeWidth={2} fill="url(#salesFill)" /><Area type="monotone" dataKey="payments" stroke="#4CAF50" strokeWidth={2} fillOpacity={0} />
           </AreaChart></ResponsiveContainer>
         </section>
         <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
@@ -195,7 +195,7 @@ function buildHarvestQuality(harvests, harvestGrades) {
   const totals = new Map();
   harvestGrades.forEach((grade) => totals.set(grade.grade || grade.quality_grade || 'Unspecified', (totals.get(grade.grade || grade.quality_grade || 'Unspecified') || 0) + asAmount(grade.quantity_kg || grade.total_quantity || 1)));
   harvests.forEach((harvest) => { if (harvest.quality_grade) totals.set(harvest.quality_grade, (totals.get(harvest.quality_grade) || 0) + asAmount(harvest.total_quantity || harvest.quantity_kg || 1)); });
-  const colors = ['#D4A017', '#2E7D32', '#F2C94C', '#2196C9', '#795548'];
+  const colors = ['#2E7D32', '#4CAF50', '#66BB6A', '#9ACD32', '#A1B1BC'];
   return [...totals.entries()].map(([name, value], index) => ({ name, value, color: colors[index % colors.length] })).filter((item) => item.value > 0);
 }
 function compactAmount(value) { return value >= 1_000_000 ? `₵${Math.round(value / 1_000_000)}M` : value >= 1_000 ? `₵${Math.round(value / 1_000)}K` : `₵${value}`; }
