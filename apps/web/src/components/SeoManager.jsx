@@ -11,6 +11,7 @@ const pages = {
   '/my-orders': ['Track My Orders', 'Follow the fulfillment and delivery progress of your orders.'],
   '/farms': ['Our Mango Farms', 'Discover our managed mango farms and production capabilities.'],
   '/sustainability': ['Sustainable Mango Farming', 'Our approach to responsible farming, people, and the environment.'],
+  '/supply': ['Mango Supply', 'Choose reliable local mango delivery in Ghana or compliant export supply for international markets.'],
   '/export': ['Mango Export Services', 'Export-ready Ghanaian mango products, quality controls, and logistics.'],
   '/local-supply': ['Local Mango Supply', 'Reliable mango supply for retailers, wholesalers, and food businesses.'],
   '/news': ['Orchard News', 'Updates from JBA GreenGold Orchard farms and operations.'],
@@ -22,7 +23,10 @@ export default function SeoManager() {
   const { pathname } = useLocation();
   useEffect(() => {
     const isPrivate = /^\/(admin|portal|checkout|my-orders|login|register|forgot-password|reset-password)/.test(pathname);
-    const [title, description] = pages[pathname] || ['JBA GreenGold Orchard', 'Premium mango production, local supply, and export from Ghana.'];
+    const isDeliveryLogistics = pathname === '/supply';
+    const [title, description] = isDeliveryLogistics
+      ? ['Delivery & Logistics | JBA GreenGold Orchard', 'Reliable local delivery, export logistics, cold-chain transport, warehousing, and traceable mango shipments.']
+      : pages[pathname] || ['JBA GreenGold Orchard', 'Premium mango production, local supply, and export from Ghana.'];
     document.title = title;
     const setMeta = (selector, attribute, value) => {
       const element = document.querySelector(selector);

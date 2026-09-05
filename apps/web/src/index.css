@@ -1,37 +1,39 @@
+@import url('https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&family=Roboto:wght@400;500;700;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 3.9%;
+    --background: 0 0% 97.3%;
+    --foreground: 0 0% 20.4%;
     --card: 0 0% 100%;
     --card-foreground: 0 0% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 3.9%;
-    --primary: 33 95% 52%;
+    --primary: 122 46% 34%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 150 30% 96%;
-    --secondary-foreground: 150 40% 20%;
-    --muted: 40 20% 96%;
-    --muted-foreground: 40 5% 45%;
-    --accent: 150 45% 42%;
-    --accent-foreground: 0 0% 100%;
+    --secondary: 122 36% 84%;
+    --secondary-foreground: 122 46% 25%;
+    --muted: 0 0% 94.9%;
+    --muted-foreground: 0 0% 34.1%;
+    --accent: 79 61% 50%;
+    --accent-foreground: 122 46% 20%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 98%;
-    --border: 40 15% 90%;
-    --input: 40 15% 90%;
-    --ring: 33 95% 52%;
-    --chart-1: 33 95% 52%;
-    --chart-2: 150 45% 42%;
-    --chart-3: 35 60% 55%;
-    --chart-4: 190 60% 45%;
-    --chart-5: 280 50% 55%;
-    --radius: 0.75rem;
-    --font-heading: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
-    --font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
-    --font-display: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+    --border: 0 0% 92.2%;
+    --input: 0 0% 92.2%;
+    --ring: 79 61% 50%;
+    --chart-1: 122 46% 34%;
+    --chart-2: 122 39% 49%;
+    --chart-3: 123 39% 57%;
+    --chart-4: 79 61% 50%;
+    --chart-5: 123 42% 64%;
+    --radius: 0.375rem;
+    --font-heading: 'Roboto', Arial, sans-serif;
+    --font-body: 'Lato', Arial, sans-serif;
+    --font-display: 'Roboto', Arial, sans-serif;
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -91,11 +93,22 @@
     min-width: 320px;
     overflow-x: hidden;
     -webkit-tap-highlight-color: transparent;
+    font-size: 15px;
+    line-height: 1.55;
   }
 
   h1, h2, h3, h4, h5, h6 {
     @apply font-heading;
+    font-weight: 500;
+    letter-spacing: -0.025em;
   }
+
+  h1 { font-size: clamp(2rem, 4vw, 3.75rem); line-height: 1.04; }
+  h2 { font-size: clamp(1.75rem, 3vw, 2.5rem); line-height: 1.12; }
+  h3 { font-size: 1.25rem; line-height: 1.25; font-weight: 700; }
+  p { line-height: 1.5; }
+
+  button, input, select, textarea { font-family: inherit; }
 }
 
 /* Mobile shell defaults. These only apply below the tablet breakpoint, leaving
@@ -174,58 +187,117 @@
     border-radius: 3px;
   }
   .glass {
-    background: rgba(255, 255, 255, 0.8);
+    background: rgb(255 255 255 / 0.92);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
   }
   .gradient-mango {
-    background: linear-gradient(135deg, hsl(33 95% 52%) 0%, hsl(18 85% 50%) 100%);
+    background: #2e7d32;
   }
   .gradient-leaf {
-    background: linear-gradient(135deg, hsl(150 45% 42%) 0%, hsl(150 35% 30%) 100%);
+    background: #2f6b36;
   }
 }
+
+/* AGRIVI-inspired system: sober editorial type, a single agricultural green,
+   and light structural surfaces. It deliberately applies to reusable UI so
+   every public, portal, and admin route shares the same visual language. */
+.public-shell { background: #fff; }
+.public-shell main { background: #fff; }
+.public-shell section { position: relative; }
+.public-shell [class*="rounded-2xl"],
+.public-shell [class*="rounded-3xl"] { border-radius: 0.375rem; }
+.public-shell [class*="shadow-sm"],
+.public-shell [class*="shadow-md"],
+.public-shell [class*="shadow-lg"] { box-shadow: none; }
+.public-shell [class*="bg-muted/30"] { background-color: #f5f6f7; }
+.public-shell [class*="text-primary"] { color: #2e7d32; }
+.public-shell [class*="bg-primary"] { background-color: #2e7d32; }
+.public-shell [class*="text-amber-"] { color: #2e7d32 !important; }
+.public-shell [class*="bg-amber-"] { background-color: #c8e6c9 !important; }
+.public-shell [class*="border-amber-"] { border-color: #a9c8a3 !important; }
+.public-shell [class*="from-amber-"],
+.public-shell [class*="to-amber-"],
+.public-shell [class*="from-orange-"],
+.public-shell [class*="to-orange-"] { --tw-gradient-from: #2e7d32 var(--tw-gradient-from-position) !important; --tw-gradient-to: #2f6b36 var(--tw-gradient-to-position) !important; }
+.public-shell [class*="text-emerald-"] { color: #2e7d32; }
+.public-shell [class*="bg-emerald-"] { background-color: #c8e6c9; }
+.public-shell [class*="border-emerald-"] { border-color: #a9c8a3; }
+
+.app-surface :is(input, textarea, select, [role="combobox"]) {
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  border-radius: 0.25rem;
+  box-shadow: none;
+}
+.app-surface :is(input, textarea, select):focus { border-color: #9acd32; }
+.app-surface [data-radix-popper-content-wrapper] { font-family: var(--font-body); }
+
+.app-surface table thead { background: #f5f6f7; }
+.app-surface table th { font-family: var(--font-heading); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.075em; text-transform: uppercase; }
+.app-surface table tr { border-color: #e5e7e8; }
+
+/* Shared AGRIVI type scale. Public pages keep the editorial display range;
+   admin and customer workspaces use the compact end of the same system. */
+.public-shell nav { font-family: var(--font-heading); font-size: 0.9375rem; font-weight: 700; }
+.public-shell main > section > div > p { font-size: clamp(1rem, 1.25vw, 1.25rem); font-weight: 300; line-height: 1.8; }
+.public-shell :is(label, .page-eyebrow) { font-family: var(--font-heading); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+.app-surface :is(nav, button, label, th) { font-family: var(--font-heading); }
+.app-surface label { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+.admin-shell main h1, .app-surface:not(.public-shell) main h1 { font-size: clamp(1.5rem, 2.2vw, 2rem); line-height: 1.15; }
+.admin-shell main h2, .app-surface:not(.public-shell) main h2 { font-size: 1.25rem; line-height: 1.25; }
+.admin-shell main h3, .app-surface:not(.public-shell) main h3 { font-size: 1rem; line-height: 1.3; }
+.admin-shell main :is(p, li, td), .app-surface:not(.public-shell) main :is(p, li, td) { font-size: 0.875rem; }
+.admin-shell main .text-xs, .app-surface:not(.public-shell) main .text-xs { font-size: 0.75rem; }
+
+.app-surface .rounded-xl,
+.app-surface .rounded-2xl,
+.app-surface .rounded-3xl { border-radius: 0.375rem; }
+.app-surface .shadow-sm,
+.app-surface .shadow-md { box-shadow: none; }
+
+.page-eyebrow { color: #2e7d32; font-family: var(--font-heading); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
 
 /* Admin-only JBA GreenGold color system. The class is mounted by AdminLayout so
    Radix portals (dialogs, menus, sheets) inherit the same palette as the page. */
 .admin-theme {
   --brand-green: #2e7d32;
-  --brand-deep-green: #1b5e20;
-  --brand-leaf: #43a047;
-  --brand-gold: #d4a017;
-  --brand-blue: #2196c9;
+  --brand-deep-green: #2f6b36;
+  --brand-leaf: #66bb6a;
+  --brand-gold: #9acd32;
+  --brand-blue: #4caf50;
   --brand-earth: #795548;
-  --brand-cream: #f8f5e8;
-  --brand-neutral: #f4f7f4;
-  --brand-gray: #607067;
-  --brand-charcoal: #263238;
-  --status-success: #2eb857;
+  --brand-cream: #f5f6f7;
+  --brand-neutral: #f5f6f7;
+  --brand-gray: #70777a;
+  --brand-charcoal: #343434;
+  --status-success: #4caf50;
   --status-warning: #e0a800;
   --status-error: #d64545;
-  --background: 120 15.8% 96.3%;
-  --foreground: 200 19.1% 18.4%;
+  --background: 210 17% 98%;
+  --foreground: 0 0% 20%;
   --card: 0 0% 100%;
   --card-foreground: 200 19.1% 18.4%;
   --popover: 0 0% 100%;
   --popover-foreground: 200 19.1% 18.4%;
-  --primary: 123 46.2% 33.5%;
+  --primary: 104 40% 34%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 198.2 71.8% 45.9%;
-  --secondary-foreground: 0 0% 100%;
-  --muted: 120 33.3% 95.9%;
-  --muted-foreground: 146.3 7.7% 40.8%;
-  --accent: 120 33.3% 95.9%;
-  --accent-foreground: 124.5 55.4% 23.7%;
+  --secondary: 104 24% 94%;
+  --secondary-foreground: 104 40% 24%;
+  --muted: 210 17% 96%;
+  --muted-foreground: 210 5% 48%;
+  --accent: 104 24% 94%;
+  --accent-foreground: 104 40% 24%;
   --destructive: 0 63.9% 55.5%;
   --destructive-foreground: 0 0% 100%;
-  --border: 132 11.6% 91.6%;
-  --input: 132 11.6% 91.6%;
-  --ring: 123 46.2% 33.5%;
-  --chart-1: 123 46.2% 33.5%;
-  --chart-2: 43.5 80.4% 46.1%;
-  --chart-3: 198.2 71.8% 45.9%;
-  --chart-4: 15.9 25.4% 37.8%;
-  --chart-5: 122.6 41% 44.5%;
+  --border: 210 11% 88%;
+  --input: 210 11% 84%;
+  --ring: 104 40% 34%;
+  --chart-1: 104 40% 34%;
+  --chart-2: 104 32% 48%;
+  --chart-3: 104 24% 63%;
+  --chart-4: 104 18% 73%;
+  --chart-5: 104 14% 82%;
   color-scheme: light;
 }
 
@@ -237,8 +309,8 @@
   --primary: 43.5 80.4% 46.1%;
   --primary-foreground: 125.3 55.6% 15.9%;
   --border: 124.2 46.3% 24.1%;
-  background-color: #1b5e20;
-  background-image: linear-gradient(165deg, #155a20 0%, #176b27 52%, #116123 100%);
+  background-color: #2f6b36;
+  background-image: none;
   color: hsl(var(--foreground));
   box-shadow: 8px 0 24px rgb(18 63 22 / 0.08);
 }
@@ -249,8 +321,8 @@
   --muted-foreground: 114.3 39.6% 79.2%;
   --primary: 43.5 80.4% 46.1%;
   --primary-foreground: 125.3 55.6% 15.9%;
-  background-color: #1b5e20;
-  background-image: linear-gradient(135deg, #155a20 0%, #176b27 58%, #116123 100%);
+  background-color: #2f6b36;
+  background-image: none;
   color: hsl(var(--foreground));
   box-shadow: 0 8px 22px rgb(18 63 22 / 0.12);
 }
@@ -380,6 +452,125 @@
 .admin-theme .text-slate-800,
 .admin-theme .text-slate-900 { color: #263238; }
 .admin-theme .accent-orange-600 { accent-color: #2e7d32; }
+
+/* AGRIVI monochrome admin system. These rules intentionally sit after the
+   legacy utility normalizers, giving every loaded admin route and sub-route
+   the same restrained green/gray visual language without changing its data
+   model or interactions. */
+.admin-theme {
+  --agrivi-primary: #2e7d32;
+  --agrivi-secondary: #4caf50;
+  --agrivi-leaf: #66bb6a;
+  --agrivi-bright-leaf: #9acd32;
+  --agrivi-paper: #f7f7f7;
+  --agrivi-surface: #ffffff;
+  --agrivi-line: #ebebeb;
+  --agrivi-ink: #343434;
+  --agrivi-muted: #575757;
+  --brand-green: #2e7d32;
+  --brand-deep-green: #2f6b36;
+  --brand-leaf: #66bb6a;
+  --brand-gold: #9acd32;
+  --brand-blue: #4caf50;
+  --brand-cream: #f7f7f7;
+  --brand-neutral: #f7f7f7;
+  --brand-gray: #575757;
+  --brand-charcoal: #343434;
+  --background: 0 0% 97.3%;
+  --foreground: 0 0% 20.4%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 20.4%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 20.4%;
+  --primary: 104 40% 34%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 104 35% 93%;
+  --secondary-foreground: 104 40% 27%;
+  --muted: 210 17% 96.1%;
+  --muted-foreground: 0 0% 34.1%;
+  --accent: 104 35% 93%;
+  --accent-foreground: 104 40% 27%;
+  --border: 0 0% 92.2%;
+  --input: 0 0% 92.2%;
+  --ring: 104 40% 34%;
+  --chart-1: 104 40% 34%;
+  --chart-2: 104 31% 37%;
+  --chart-3: 96 41% 55%;
+  --chart-4: 82 55% 42%;
+  --chart-5: 104 16% 65%;
+}
+
+.admin-theme .admin-sidebar,
+.admin-theme .admin-horizontal-menu {
+  --card: 104 40% 34%;
+  --foreground: 0 0% 100%;
+  --muted: 104 31% 37%;
+  --muted-foreground: 104 41% 82%;
+  --primary: 96 41% 55%;
+  --primary-foreground: 104 40% 20%;
+  --border: 104 31% 37%;
+  background: #2e7d32;
+  box-shadow: none;
+}
+.admin-theme .admin-avatar { background: #9acd32; color: #343434; box-shadow: 0 0 0 3px #ecf0f1; }
+.admin-theme .gradient-mango,
+.admin-theme .gradient-leaf { background: #2e7d32; }
+
+/* All non-semantic legacy accent utilities become AGRIVI green variants. */
+.admin-theme [class*="bg-blue-"], .admin-theme [class*="bg-sky-"],
+.admin-theme [class*="bg-indigo-"], .admin-theme [class*="bg-violet-"],
+.admin-theme [class*="bg-purple-"], .admin-theme [class*="bg-amber-"],
+.admin-theme [class*="bg-yellow-"], .admin-theme [class*="bg-orange-"],
+.admin-theme [class*="bg-teal-"], .admin-theme [class*="bg-cyan-"],
+.admin-theme [class*="bg-red-"], .admin-theme [class*="bg-rose-"] { background-color: #ecf0f1 !important; }
+.admin-theme [class*="bg-blue-500"], .admin-theme [class*="bg-sky-500"],
+.admin-theme [class*="bg-indigo-500"], .admin-theme [class*="bg-violet-500"],
+.admin-theme [class*="bg-purple-500"], .admin-theme [class*="bg-amber-500"],
+.admin-theme [class*="bg-yellow-500"], .admin-theme [class*="bg-orange-500"],
+.admin-theme [class*="bg-teal-500"], .admin-theme [class*="bg-cyan-500"],
+.admin-theme [class*="bg-red-500"], .admin-theme [class*="bg-rose-500"] { background-color: #2e7d32 !important; }
+.admin-theme [class*="text-blue-"], .admin-theme [class*="text-sky-"],
+.admin-theme [class*="text-indigo-"], .admin-theme [class*="text-violet-"],
+.admin-theme [class*="text-purple-"], .admin-theme [class*="text-amber-"],
+.admin-theme [class*="text-yellow-"], .admin-theme [class*="text-orange-"],
+.admin-theme [class*="text-teal-"], .admin-theme [class*="text-cyan-"],
+.admin-theme [class*="text-red-"], .admin-theme [class*="text-rose-"] { color: #2e7d32 !important; }
+.admin-theme [class*="border-blue-"], .admin-theme [class*="border-sky-"],
+.admin-theme [class*="border-indigo-"], .admin-theme [class*="border-violet-"],
+.admin-theme [class*="border-purple-"], .admin-theme [class*="border-amber-"],
+.admin-theme [class*="border-yellow-"], .admin-theme [class*="border-orange-"],
+.admin-theme [class*="border-teal-"], .admin-theme [class*="border-cyan-"],
+.admin-theme [class*="border-red-"], .admin-theme [class*="border-rose-"] { border-color: #ebebeb !important; }
+.admin-theme [class*="ring-blue-"], .admin-theme [class*="ring-sky-"],
+.admin-theme [class*="ring-indigo-"], .admin-theme [class*="ring-violet-"],
+.admin-theme [class*="ring-purple-"], .admin-theme [class*="ring-amber-"],
+.admin-theme [class*="ring-yellow-"], .admin-theme [class*="ring-orange-"],
+.admin-theme [class*="ring-teal-"], .admin-theme [class*="ring-cyan-"] { --tw-ring-color: #9acd32 !important; }
+.admin-theme [class*="from-blue-"], .admin-theme [class*="from-sky-"],
+.admin-theme [class*="from-indigo-"], .admin-theme [class*="from-violet-"],
+.admin-theme [class*="from-purple-"], .admin-theme [class*="from-amber-"],
+.admin-theme [class*="from-yellow-"], .admin-theme [class*="from-orange-"] { --tw-gradient-from: #2e7d32 var(--tw-gradient-from-position) !important; }
+.admin-theme [class*="to-blue-"], .admin-theme [class*="to-sky-"],
+.admin-theme [class*="to-indigo-"], .admin-theme [class*="to-violet-"],
+.admin-theme [class*="to-purple-"], .admin-theme [class*="to-amber-"],
+.admin-theme [class*="to-yellow-"], .admin-theme [class*="to-orange-"] { --tw-gradient-to: #4caf50 var(--tw-gradient-to-position) !important; }
+.admin-theme [class*="bg-emerald-"] { background-color: #ecf0f1 !important; }
+.admin-theme [class*="bg-emerald-500"], .admin-theme [class*="bg-emerald-600"], .admin-theme [class*="bg-emerald-700"], .admin-theme [class*="bg-green-500"], .admin-theme [class*="bg-green-600"], .admin-theme [class*="bg-green-700"] { background-color: #2e7d32 !important; }
+.admin-theme [class*="text-emerald-"], .admin-theme [class*="text-green-"] { color: #2e7d32 !important; }
+.admin-theme [class*="border-emerald-"], .admin-theme [class*="border-green-"] { border-color: #ebebeb !important; }
+.admin-theme [class*="bg-slate-"] { background-color: #f7f7f7 !important; }
+.admin-theme [class*="text-slate-"] { color: #575757 !important; }
+.admin-theme [class*="border-slate-"] { border-color: #ebebeb !important; }
+
+/* Recharts has inline SVG paint attributes, so normalize it separately. */
+.admin-theme .recharts-cartesian-grid line { stroke: #ebebeb !important; }
+.admin-theme .recharts-cartesian-axis-tick-value { fill: #575757 !important; }
+.admin-theme .recharts-line-curve,
+.admin-theme .recharts-area-curve { stroke: #2e7d32 !important; }
+.admin-theme .recharts-area-area { fill: #66bb6a !important; fill-opacity: 0.18; }
+.admin-theme .recharts-bar-rectangle path,
+.admin-theme .recharts-pie-sector path { fill: #4caf50 !important; }
+.admin-theme .recharts-dot { fill: #2e7d32 !important; stroke: #2e7d32 !important; }
 /* Keep the three controls in each block checklist stage compact and aligned. */
 @media (min-width: 640px) {
   div:has(> select[aria-label$=" period"]) {
@@ -445,5 +636,249 @@
   .block-profile-page > div:has(> aside.space-y-4) > div.space-y-4 > .block-activity-analytics {
     grid-column: 1 / -1;
     grid-row: 3;
+  }
+}
+
+/* Supplied platform palette: deep green anchors actions and hierarchy; yellow
+   green is reserved for hover, active, and selected states across every UI. */
+:root {
+  --platform-deep-green: #2e7d32;
+  --platform-medium-green: #4caf50;
+  --platform-fresh-green: #66bb6a;
+  --platform-pastel-green: #81c784;
+  --platform-light-green: #c8e6c9;
+  --platform-forest-green: #2f6b36;
+  --platform-dark-green: #256d32;
+  --platform-yellow-green: #9acd32;
+}
+
+.public-shell [class*="text-primary"],
+.public-shell [class*="text-emerald-"] { color: var(--platform-deep-green) !important; }
+.public-shell [class*="bg-primary"] { background-color: var(--platform-deep-green) !important; }
+.public-shell [class*="bg-emerald-"] { background-color: var(--platform-light-green) !important; }
+.public-shell [class*="border-emerald-"] { border-color: var(--platform-pastel-green) !important; }
+.public-shell .gradient-mango,
+.public-shell .gradient-leaf { background: var(--platform-deep-green); }
+
+.admin-theme {
+  --agrivi-primary: var(--platform-deep-green);
+  --agrivi-secondary: var(--platform-medium-green);
+  --agrivi-leaf: var(--platform-fresh-green);
+  --agrivi-bright-leaf: var(--platform-yellow-green);
+  --brand-green: var(--platform-deep-green);
+  --brand-deep-green: var(--platform-forest-green);
+  --brand-leaf: var(--platform-fresh-green);
+  --brand-gold: var(--platform-yellow-green);
+  --brand-blue: var(--platform-medium-green);
+  --status-success: var(--platform-medium-green);
+  --primary: 122 46% 34%;
+  --secondary: 122 36% 84%;
+  --accent: 79 61% 50%;
+  --accent-foreground: 122 46% 20%;
+  --ring: 79 61% 50%;
+  --chart-1: 122 46% 34%;
+  --chart-2: 122 39% 49%;
+  --chart-3: 123 39% 57%;
+  --chart-4: 79 61% 50%;
+  --chart-5: 123 42% 64%;
+}
+
+.admin-theme .admin-sidebar,
+.admin-theme .admin-horizontal-menu { background: var(--platform-deep-green); }
+.admin-theme .admin-avatar { background: var(--platform-yellow-green); }
+.admin-theme .metric-tone-primary,
+.admin-theme .metric-tone-green,
+.admin-theme .metric-tone-blue,
+.admin-theme .metric-tone-purple,
+.admin-theme .metric-tone-red,
+.admin-theme .metric-tone-amber { color: var(--platform-deep-green); }
+.admin-theme .recharts-line-curve,
+.admin-theme .recharts-area-curve { stroke: var(--platform-deep-green) !important; }
+.admin-theme .recharts-area-area { fill: var(--platform-fresh-green) !important; }
+.admin-theme .recharts-bar-rectangle path,
+.admin-theme .recharts-pie-sector path { fill: var(--platform-medium-green) !important; }
+.admin-theme .recharts-dot { fill: var(--platform-deep-green) !important; stroke: var(--platform-deep-green) !important; }
+
+/* Existing explicit platform colour classes remain compatible with the new
+   exact swatches while pages are progressively composed from design tokens. */
+[class~="bg-[#407933]"] { background-color: var(--platform-deep-green) !important; }
+[class~="text-[#407933]"] { color: var(--platform-deep-green) !important; }
+[class~="border-[#407933]"] { border-color: var(--platform-deep-green) !important; }
+[class~="bg-[#4a803d]"] { background-color: var(--platform-medium-green) !important; }
+[class~="text-[#4a803d]"] { color: var(--platform-medium-green) !important; }
+[class~="bg-[#8abb5c]"] { background-color: var(--platform-fresh-green) !important; }
+[class~="text-[#8abb5c]"] { color: var(--platform-fresh-green) !important; }
+[class~="bg-[#93ca44]"] { background-color: var(--platform-yellow-green) !important; }
+[class~="text-[#93ca44]"] { color: var(--platform-yellow-green) !important; }
+
+:is(.public-shell, .app-surface) :is(button, [role="button"], [role="option"], [role="tab"], a[data-state="active"], [aria-current="page"], [data-selected="true"]):not(:disabled):hover,
+:is(.public-shell, .app-surface) :is([data-state="active"], [aria-current="page"], [data-selected="true"]) {
+  background-color: var(--platform-yellow-green) !important;
+  border-color: var(--platform-yellow-green) !important;
+  color: #173d24 !important;
+}
+
+:is(.public-shell, .app-surface) :is(input, textarea, select, [role="combobox"]):focus {
+  border-color: var(--platform-yellow-green);
+  --tw-ring-color: var(--platform-yellow-green);
+}
+
+/* The public Home support panel needs stable colour and responsive layout even
+   when the active utility stylesheet has not emitted an arbitrary-value class. */
+.public-shell .jba-whatsapp-support {
+  display: grid;
+  gap: 2rem;
+  background: #173d24 !important;
+  box-shadow: 0 18px 42px rgba(23, 61, 36, 0.2);
+}
+
+.public-shell .jba-whatsapp-artwork {
+  width: 100%;
+  max-width: 34rem;
+  padding: 1.25rem 0.75rem;
+  background: #f7faf6 !important;
+  border-bottom: 4px solid #9acd32 !important;
+}
+
+.public-shell .jba-whatsapp-artwork img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 35rem;
+  object-fit: contain;
+}
+
+.public-shell .jba-whatsapp-content { color: #fff !important; }
+.public-shell .jba-whatsapp-content h3 { color: #fff !important; }
+.public-shell .jba-whatsapp-eyebrow { color: #b6e68c !important; }
+.public-shell .jba-whatsapp-copy { color: rgba(255, 255, 255, 0.8) !important; }
+
+.public-shell .jba-whatsapp-primary {
+  background: #9acd32 !important;
+  color: #173d24 !important;
+}
+
+.public-shell .jba-whatsapp-primary:hover { background: #fff !important; }
+
+.public-shell .jba-whatsapp-secondary {
+  border: 1px solid #b6e68c !important;
+  color: #fff !important;
+}
+
+.public-shell .jba-whatsapp-secondary:hover {
+  background: #b6e68c !important;
+  border-color: #b6e68c !important;
+  color: #173d24 !important;
+}
+
+.public-shell .jba-whatsapp-proof { color: #dcefd9 !important; }
+.public-shell .jba-whatsapp-proof span {
+  width: 0.5rem;
+  height: 0.5rem;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: #9acd32 !important;
+}
+
+/* Keep the hero film sharp: contrast comes from a light directional wash,
+   never from a blur applied over the mango-orchard footage. */
+.public-shell .jba-home-hero { background: #173d24 !important; }
+.public-shell .jba-home-hero-video {
+  filter: none !important;
+  -webkit-filter: none !important;
+  opacity: 1 !important;
+}
+
+.public-shell .jba-home-hero-overlay {
+  background: linear-gradient(90deg, rgba(4, 29, 14, 0.76) 0%, rgba(4, 29, 14, 0.68) 42%, rgba(4, 29, 14, 0.38) 63%, rgba(4, 29, 14, 0.12) 100%) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.public-shell .jba-home-hero-shade {
+  background: linear-gradient(0deg, rgba(4, 29, 14, 0.22) 0%, transparent 58%) !important;
+}
+
+.public-shell .jba-home-hero-copy,
+.public-shell .jba-home-hero-aside {
+  background: rgba(8, 45, 25, 0.55) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.public-shell .jba-home-hero-whatsapp {
+  background: rgba(255, 255, 255, 0.12) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+@media (min-width: 768px) {
+  .public-shell .jba-whatsapp-support {
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+    gap: 2.5rem;
+  }
+
+  .public-shell .jba-whatsapp-artwork {
+    padding: 1.25rem 1.5rem;
+    border-right: 4px solid #9acd32 !important;
+    border-bottom: 0 !important;
+  }
+}
+
+/* Product catalogue conveyor: the two matching sets create a seamless loop
+   that travels from left to right and pauses whenever a customer interacts. */
+.jba-product-marquee {
+  overflow: hidden;
+  padding-block: 0.25rem 1.5rem;
+  mask-image: linear-gradient(90deg, transparent, #000 3%, #000 97%, transparent);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 3%, #000 97%, transparent);
+}
+
+.jba-product-marquee-track {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+  animation: jba-products-left-to-right 34s linear infinite;
+}
+
+.jba-product-marquee-set {
+  display: flex;
+  gap: 1rem;
+  padding-right: 1rem;
+}
+
+.jba-product-marquee-card {
+  width: clamp(15.5rem, 22vw, 17rem);
+  flex: 0 0 auto;
+}
+
+.jba-product-marquee:hover .jba-product-marquee-track,
+.jba-product-marquee:focus-within .jba-product-marquee-track {
+  animation-play-state: paused;
+}
+
+@keyframes jba-products-left-to-right {
+  from { transform: translateX(-50%); }
+  to { transform: translateX(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jba-product-marquee {
+    overflow-x: auto;
+    mask-image: none;
+    -webkit-mask-image: none;
+  }
+
+  .jba-product-marquee-track {
+    animation: none;
+    transform: none;
+  }
+
+  .jba-product-marquee-set[aria-hidden="true"] {
+    display: none;
+  }
+
+  .jba-product-marquee-card[aria-hidden="true"] {
+    display: none;
   }
 }

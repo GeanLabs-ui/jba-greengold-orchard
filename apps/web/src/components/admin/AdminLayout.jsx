@@ -21,9 +21,9 @@ export default function AdminLayout() {
   }, []);
 
   return (
-    <div className="admin-shell flex h-[100dvh] overflow-hidden bg-background md:h-screen">
+    <div className="admin-shell app-surface flex h-[100dvh] overflow-hidden bg-background md:h-screen">
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-        <SheetContent side="left" className="flex w-[min(19rem,86vw)] flex-col bg-[#0b432f] p-0 text-white">
+        <SheetContent side="left" className="flex w-[min(19rem,86vw)] flex-col bg-[#2E7D32] p-0 text-white">
           <SheetHeader className="shrink-0 border-b border-white/10 px-4 py-4">
             <SheetTitle className="text-left text-white">Admin navigation</SheetTitle>
           </SheetHeader>

@@ -60,6 +60,92 @@ final result: passed
 
 ---
 
+# Master Schedule add-task dialog design QA — 2026-09-01
+
+- Source visual truth: `C:\Users\USER\AppData\Local\Temp\codex-clipboard-0dcdb1e4-5e27-4915-8fe9-44644332a56b.png`
+- Implementation: `http://localhost:5173/admin/farm-daily-activities/activities/master-schedule`
+- Implementation screenshot: unavailable because the protected local route redirected to sign-in
+- Source pixels: 1090 x 767
+- Implementation pixels/CSS viewport/density: unavailable while authentication blocks the requested dialog state
+- Target state: Master Schedule with the New master task dialog open
+
+## Full-view comparison evidence
+
+The source Add block dialog was opened and inspected. The local implementation route was opened in the in-app browser, but it redirected to `/login` before the Master Schedule or dialog could render. A same-state visual comparison therefore cannot be made yet.
+
+## Focused region comparison evidence
+
+Blocked for the same authentication reason. The intended focused regions are the Basic information card, Dates card, Success criteria card, and footer action row.
+
+## Findings
+
+- [P0] Authenticated rendered evidence is missing.
+  - Location: local Master Schedule route.
+  - Evidence: the browser reached the local sign-in screen instead of the protected schedule.
+  - Impact: visual fidelity and open/cancel interaction cannot be signed off from browser evidence.
+  - Fix: sign in locally, open New master task, then capture and compare the dialog at the same desktop state as the source.
+
+## Static and build verification
+
+- Web lint passed.
+- Web typecheck passed.
+- Production web build passed.
+- No task form was submitted and no records were created, updated, or deleted during verification.
+
+## Comparison history
+
+- Initial pass: blocked at local authentication; no visual fix loop was possible.
+
+## Implementation checklist
+
+- Sign in to the local app.
+- Open New master task.
+- Verify responsive layout, select menu stacking, Cancel, close button, and browser console.
+- Do not submit the form during visual QA unless a disposable test record is explicitly authorized.
+
+final result: blocked
+
+---
+
+# Supply and Contact public-page design QA — 2026-09-04
+
+## Source truth and rendered evidence
+
+- Supply source: `C:\Users\USER\AppData\Local\Temp\codex-clipboard-21f9eaf8-0d56-4d52-896a-09a243df01a0.png` (1024 x 1536 px).
+- Contact source: `C:\Users\USER\AppData\Local\Temp\codex-clipboard-3e44d00c-5633-400b-88f0-487fbd1c735d.png` (1086 x 1448 px).
+- Supply implementation captures: `design-qa-supply-top.png` and `design-qa-supply-bottom.png`.
+- Contact implementation captures: `design-qa-contact-top.png` and `design-qa-contact-bottom.png`.
+- Normalized comparisons: `design-qa-supply-comparison.png` and `design-qa-contact-comparison.png`.
+- Desktop verification viewport: 1503 x 1000 CSS px. Responsive verification viewport: 390 x 844 CSS px.
+- Routes: `http://127.0.0.1:5173/supply` and `http://127.0.0.1:5173/contact`.
+
+## Full-view and focused-region comparison
+
+The combined Supply page reproduces the reference hierarchy: photographic hero, two clear Local Supply and Export Supply cards, process and delivery details, trust strip, partnership callout, and compact supply footer. The Contact page reproduces the hero, two-column form and contact-information layout, mapped office location, quick-contact row, and full footer. The five-item Contact commitment strip visible in the older source was intentionally removed by the user's later instruction, so Quick Contact Options now flows directly into the footer.
+
+The Contact hero uses the woman-and-office artwork cropped directly from the supplied source pixels. It is rendered with proportional containment, not stretching. The focused phone-field check confirms a Ghana flag and +233 default, a dropdown containing 12 named country choices with flag assets and calling codes, and successful selection/restoration of United Kingdom +44 and Ghana +233. The Export Supply CTA opens Contact with Export Supply and Export supply quote preselected.
+
+## Interaction and responsive verification
+
+- `/export` redirects to `/supply#export-supply`; `/local-supply` redirects to `/supply#local-supply`.
+- Supply option CTAs open the correct prefilled Contact inquiry.
+- Country-code selector opens, changes value, and restores Ghana without submitting the form.
+- Desktop and 390 px mobile layouts render without horizontal overflow; cards stack and the phone control remains on one row.
+- Contact hero remains legible on mobile with a protective overlay while retaining the full proportional artwork.
+- No form was submitted and no user data was created during QA.
+- Web lint passed, the production Vite build passed, and 80 route-skeleton tests passed.
+
+## Findings and comparison history
+
+1. The initial Contact hero used a cover crop that hid portions of the artwork at wider viewports.
+2. The hero was increased slightly, changed to proportional containment, and then replaced with the exact right-side artwork from the supplied design.
+3. The requested country-code selector and local flag assets were added, and the Contact commitment strip was removed.
+4. Final desktop/mobile browser comparison found no actionable P0, P1, or P2 visual or interaction mismatch. Map tile styling and the retained site-wide WhatsApp support control are functional project conventions rather than fidelity defects.
+
+final result: passed
+
+---
+
 # Farm profile dashboard design QA
 
 ## Evidence
@@ -98,5 +184,13 @@ The normalized side-by-side comparison confirms the same four-section structure 
 No actionable P0, P1, or P2 visual or interaction mismatch remains. The default image is a project-owned mango harvest photograph until a farm-specific image is uploaded.
 
 ## Final result
+
+final result: passed
+
+---
+
+# Current QA status
+
+The current report is **Supply and Contact public-page design QA — 2026-09-04** above. Its desktop and responsive browser comparison passed; older reports remain as historical records and do not apply to this change.
 
 final result: passed

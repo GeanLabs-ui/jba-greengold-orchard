@@ -3,13 +3,16 @@ import type { Role, Permission } from 'mango-farm-authorization';
 import { hasPermission } from 'mango-farm-authorization';
 import { closeDatabase, createDatabase } from '../db.js';
 import { LOCAL_SESSION_COOKIE, parseCookies, SESSION_COOKIE, sha256, timingSafeEqual } from '../security.js';
+import { isLocalTestAccount, localTestLoginEnabled } from '../modules/local-development.js';
 
 export interface AuthUser {
   id: string;
   email: string;
+  full_name: string | null;
   role: Role;
   pageAccess: string[] | null;
   status: string;
+  email_verified?: boolean;
   organizationId: string | null;
 }
 
@@ -41,13 +44,15 @@ export const loadSession = (): MiddlewareHandler<{ Bindings: Env; Variables: App
       expires_at: Date;
       user_id: string;
       email: string;
+      full_name: string | null;
       role: Role;
       page_access: unknown;
       status: string;
+      email_verified_at: Date | null;
       organization_id: string | null;
     }[]>`
       SELECT s.id AS session_id, s.csrf_token, s.expires_at,
-             u.id AS user_id, u.email, u.role, u.page_access, u.status,
+             u.id AS user_id, u.email, u.full_name, u.role, u.page_access, u.status, u.email_verified_at,
              om.organization_id
       FROM sessions s
       JOIN users u ON u.id = s.user_id
@@ -55,16 +60,20 @@ export const loadSession = (): MiddlewareHandler<{ Bindings: Env; Variables: App
       WHERE s.token_hash = ${tokenHash}
         AND s.expires_at > now()
         AND u.status = 'active'
+        AND (u.role <> 'customer' OR u.email_verified_at IS NOT NULL)
       LIMIT 1
     `;
     const row = rows[0];
-    if (row) {
+    // Copied test records/sessions must not become usable in another environment.
+    if (row && (!isLocalTestAccount(row.user_id) || localTestLoginEnabled(c.env))) {
       c.set('user', {
         id: row.user_id,
         email: row.email,
+        full_name: row.full_name,
         role: row.role,
         pageAccess: Array.isArray(row.page_access) ? row.page_access.filter((item): item is string => typeof item === 'string') : null,
         status: row.status,
+        email_verified: Boolean(row.email_verified_at),
         organizationId: row.organization_id,
       });
       c.set('session', { id: row.session_id, csrfToken: row.csrf_token, expiresAt: row.expires_at });

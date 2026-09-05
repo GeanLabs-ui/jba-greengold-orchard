@@ -22,10 +22,10 @@ import {
   parseRecordDate,
 } from '@/lib/farm-operations-analytics';
 
-const COST = '#e11d48';
-const REVENUE = '#3165f5';
-const YIELD = '#22a447';
-const COST_COLORS = ['#e11d48', '#f43f5e', '#fb7185', '#fda4af', '#be123c', '#fecdd3'];
+const COST = '#2E7D32';
+const REVENUE = '#4CAF50';
+const YIELD = '#66BB6A';
+const COST_COLORS = ['#2E7D32', '#4CAF50', '#66BB6A', '#9ACD32', '#A1B1BC', '#ECF0F1'];
 
 const number = (value) => Number(value || 0);
 const text = (value) => String(value || '').trim();
@@ -121,9 +121,9 @@ function BlockPerformanceChart({ rows, height = 280, metric = 'all' }) {
         <YAxis yAxisId="revenue" hide={!showRevenue || metric === 'all'} tickFormatter={(value) => value >= 1000 ? `₵${Math.round(value / 1000)}k` : `₵${value}`} tick={{ fontSize: 9 }} axisLine={false} tickLine={false} />
         <YAxis yAxisId="yield" orientation="right" hide={!showYield} tickFormatter={(value) => `${formatNumber(value)}t`} tick={{ fontSize: 9 }} axisLine={false} tickLine={false} />
         <Tooltip formatter={(value, name) => name === 'Yield (tonnes)' ? `${formatNumber(value)} tonnes` : formatCedis(value)} labelFormatter={(label, rowsAtLabel) => `${rowsAtLabel?.[0]?.payload?.farmName || 'Farm'} · ${label}`} />
-        {showCost ? <Bar yAxisId="cost" dataKey="cost" name="Cost (₵)" fill="#e11d48" radius={[2, 2, 0, 0]} maxBarSize={30} /> : null}
-        {showRevenue ? <Bar yAxisId="revenue" dataKey="revenue" name="Revenue (₵)" fill="#2563eb" radius={[2, 2, 0, 0]} maxBarSize={30} /> : null}
-        {showYield ? <Line yAxisId="yield" type="monotone" dataKey="yieldTonnes" name="Yield (tonnes)" stroke="#22a447" strokeWidth={2} dot={{ r: 3, fill: '#22a447', strokeWidth: 0 }} activeDot={{ r: 5 }} /> : null}
+        {showCost ? <Bar yAxisId="cost" dataKey="cost" name="Cost (₵)" fill="#2E7D32" radius={[2, 2, 0, 0]} maxBarSize={30} /> : null}
+        {showRevenue ? <Bar yAxisId="revenue" dataKey="revenue" name="Revenue (₵)" fill="#4CAF50" radius={[2, 2, 0, 0]} maxBarSize={30} /> : null}
+        {showYield ? <Line yAxisId="yield" type="monotone" dataKey="yieldTonnes" name="Yield (tonnes)" stroke="#66BB6A" strokeWidth={2} dot={{ r: 3, fill: '#66BB6A', strokeWidth: 0 }} activeDot={{ r: 5 }} /> : null}
       </ComposedChart>
     </ResponsiveContainer>
   </div>;

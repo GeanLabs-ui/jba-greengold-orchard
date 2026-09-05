@@ -3,11 +3,11 @@ import { resolveSkeleton } from './skeleton-routes';
 
 const publicRoutes = [
   '/', '/about', '/products', '/cart', '/checkout', '/my-orders', '/farms', '/farms/akyem-orchard',
-  '/sustainability', '/export', '/local-supply', '/media', '/news', '/news/harvest-update',
+  '/sustainability', '/supply', '/export', '/local-supply', '/media', '/news', '/news/harvest-update',
   '/careers', '/contact', '/privacy', '/terms',
 ];
 
-const portalRoutes = ['/portal', '/portal/orders', '/portal/payments', '/portal/documents'];
+const portalRoutes = ['/portal', '/portal/products', '/portal/checkout', '/portal/tracking', '/portal/orders', '/portal/payments', '/portal/documents'];
 
 const adminRoutes = [
   '/admin', '/admin/crm', '/admin/inquiries', '/admin/sales', '/admin/orders', '/admin/inventory',

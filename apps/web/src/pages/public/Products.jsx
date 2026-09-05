@@ -129,7 +129,7 @@ const heroPromises = [
 
 const serif = { fontFamily: 'Georgia, Cambria, "Times New Roman", serif' };
 
-function ProductCard({ product, reveal }) {
+function ProductCard({ product, reveal, duplicate = false }) {
   const { addItem } = useCart();
   return (
     <motion.article
@@ -154,6 +154,7 @@ function ProductCard({ product, reveal }) {
             type="button"
             onClick={() => addItem(product.id)}
             aria-label={`Add ${product.name} to basket`}
+            tabIndex={duplicate ? -1 : undefined}
             className="flex h-9 items-center justify-center gap-2 rounded-full border border-[#cf9020] px-3 text-[11px] font-bold text-[#bd7b0c] transition-colors hover:bg-[#cf9020] hover:text-white"
           >
             <Plus className="h-4 w-4" />
@@ -165,6 +166,18 @@ function ProductCard({ product, reveal }) {
   );
 }
 
+function ProductMarqueeSet({ products: marqueeProducts, duplicate = false }) {
+  return (
+    <div className="jba-product-marquee-set" aria-hidden={duplicate ? true : undefined}>
+      {marqueeProducts.map(({ product, repeated }, index) => (
+        <div key={`${product.id}-${index}`} className="jba-product-marquee-card" aria-hidden={duplicate || repeated ? true : undefined}>
+          <ProductCard product={product} reveal={{}} duplicate={duplicate || repeated} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function Products() {
   const [activeCategory, setActiveCategory] = useState('all');
   const reduceMotion = useReducedMotion();
@@ -172,6 +185,13 @@ export default function Products() {
     () => products.filter((product) => activeCategory === 'all' || product.category === activeCategory),
     [activeCategory],
   );
+  const marqueeProducts = useMemo(() => {
+    if (!visibleProducts.length) return [];
+    const repeatCount = Math.max(1, Math.ceil(5 / visibleProducts.length));
+    return Array.from({ length: repeatCount }, (_, repeatIndex) => (
+      visibleProducts.map((product) => ({ product, repeated: repeatIndex > 0 }))
+    )).flat();
+  }, [visibleProducts]);
   const reveal = reduceMotion
     ? {}
     : {
@@ -276,11 +296,11 @@ export default function Products() {
             ))}
           </div>
 
-          <motion.div layout className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-            {visibleProducts.map((product) => (
-              <ProductCard key={product.name} product={product} reveal={reveal} />
-            ))}
-
+          <motion.div {...reveal} className="jba-product-marquee mt-12" role="region" aria-label="Moving product showcase">
+            <div key={activeCategory} className="jba-product-marquee-track">
+              <ProductMarqueeSet products={marqueeProducts} duplicate />
+              <ProductMarqueeSet products={marqueeProducts} />
+            </div>
           </motion.div>
 
           <motion.div {...reveal} className="relative mt-12 overflow-hidden rounded-xl bg-[#063c2b] px-7 py-9 text-white sm:px-10 lg:px-14">

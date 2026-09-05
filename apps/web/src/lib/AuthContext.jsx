@@ -40,9 +40,16 @@ export const AuthProvider = ({ children }) => {
   }, [checkAppState]);
 
   const logout = async (shouldRedirect = true) => {
+    await base44.auth.logout();
     setUser(null);
     setIsAuthenticated(false);
-    await base44.auth.logout(shouldRedirect ? window.location.href : undefined);
+    if (shouldRedirect) window.location.assign('/');
+  };
+
+  const updateUserProfile = async ({ fullName }) => {
+    const updatedUser = await base44.auth.updateProfile({ fullName });
+    setUser(updatedUser);
+    return updatedUser;
   };
 
   const navigateToLogin = () => {
@@ -59,6 +66,7 @@ export const AuthProvider = ({ children }) => {
       appPublicSettings,
       authChecked,
       logout,
+      updateUserProfile,
       navigateToLogin,
       checkUserAuth,
       checkAppState,

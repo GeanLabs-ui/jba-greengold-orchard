@@ -73,6 +73,7 @@ const ENTITY_NAMES = new Set([
   "Notification",
   "ContentPage",
   "Inquiry",
+  "CustomerStory",
   "CustomerContract",
   "Attendance",
   "JobApplication",
@@ -81,8 +82,8 @@ const ENTITY_NAMES = new Set([
   "FarmSeasonChecklist",
   "User",
 ]);
-const PUBLIC_READ = new Set(["Product", "NewsPost", "Farm", "ContentPage"]);
-const PUBLIC_CREATE = new Set(["Inquiry"]);
+const PUBLIC_READ = new Set(["Product", "NewsPost", "Farm", "ContentPage", "CustomerStory"]);
+const PUBLIC_CREATE = new Set(["Inquiry", "CustomerStory"]);
 const CUSTOMER_READ = new Set([
   "Order",
   "Invoice",
@@ -285,6 +286,15 @@ const ROLE_WRITE_ENTITIES: Partial<Record<AuthUser["role"], Set<string>>> = {
   content_editor: ROLE_READ_ENTITIES.content_editor,
 };
 const payloadSchema = z.record(z.string().min(1).max(100), z.unknown());
+const customerStorySchema = z.object({
+  name: z.string().trim().min(2).max(80),
+  email: z.string().trim().email().max(254),
+  company: z.string().trim().max(100).optional().default(""),
+  title: z.string().trim().min(5).max(120),
+  quote: z.string().trim().min(20).max(1000),
+  result: z.string().trim().max(160).optional().default(""),
+  source_page: z.string().trim().max(80).optional().default("home"),
+});
 const router = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 type JsonValue =
   null | string | number | boolean | JsonValue[] | { [key: string]: JsonValue };
@@ -305,9 +315,9 @@ function canRead(
 ): boolean {
   if (publicAccess) return true;
   if (!user) return false;
+  if (user.role === "customer") return CUSTOMER_READ.has(name);
   if (isAdmin(user)) return true;
   if (["Department", "Employee"].includes(name) && user.pageAccess?.includes("hr")) return true;
-  if (user.role === "customer") return CUSTOMER_READ.has(name);
   return ROLE_READ_ENTITIES[user.role]?.has(name) ?? false;
 }
 
@@ -358,6 +368,11 @@ function mapRecord(row: {
     created_date: row.created_at.toISOString(),
     updated_date: row.updated_at.toISOString(),
   };
+}
+
+function publicCustomerStory(record: Record<string, unknown>): Record<string, unknown> {
+  const { email: _email, ...story } = record;
+  return story;
 }
 
 router.get("/:entity", async (c) => {
@@ -447,7 +462,12 @@ router.get("/:entity", async (c) => {
       `;
     }
     return c.json({
-      data: rows.map(mapRecord),
+      data: rows.map((row) => {
+        const record = mapRecord(row);
+        return name === "CustomerStory" && !isAdmin(user)
+          ? publicCustomerStory(record)
+          : record;
+      }),
       pagination: { limit, offset, hasMore: rows.length === limit },
       requestId: c.get("requestId"),
     });
@@ -492,7 +512,7 @@ router.post("/:entity", async (c) => {
       },
       403,
     );
-  const payload = safePayload(await c.req.json().catch(() => null));
+  let payload = safePayload(await c.req.json().catch(() => null));
   if (!payload)
     return c.json(
       {
@@ -514,6 +534,25 @@ router.post("/:entity", async (c) => {
       typeof payload.status === "string" ? payload.status : "new";
     payload.source_page =
       typeof payload.source_page === "string" ? payload.source_page : "contact";
+  }
+  if (name === "CustomerStory") {
+    const parsedStory = customerStorySchema.safeParse(payload);
+    if (!parsedStory.success)
+      return c.json(
+        {
+          error: { code: "VALIDATION_ERROR", message: "Please complete your story before publishing." },
+          requestId: c.get("requestId"),
+        },
+        422,
+      );
+    const story = parsedStory.data;
+    payload = {
+      ...story,
+      type: story.company || "JBA GreenGold customer",
+      result: story.result || "A story shared with the JBA GreenGold community",
+      status: "published",
+      source_page: story.source_page || "home",
+    };
   }
   if (name === "Employee") {
     const joiningAt = typeof payload.joining_at === "string" && payload.joining_at
@@ -647,7 +686,12 @@ router.post("/:entity", async (c) => {
     });
     return c.json(
       {
-        data: {
+        data: name === "CustomerStory" ? publicCustomerStory({
+          ...payload,
+          id,
+          created_date: now.toISOString(),
+          updated_date: now.toISOString(),
+        }) : {
           ...payload,
           id,
           created_date: now.toISOString(),

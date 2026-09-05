@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Bell, Menu, RefreshCw, Search, Trash2 } from 'lucide-react';
+import { Bell, LogOut, Menu, RefreshCw, Search, Trash2, UserRoundCog } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import BrandLogo from '@/components/shared/BrandLogo';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,10 @@ import { getSafeRedirectTarget } from '@/lib/safe-redirect';
 import { canAccessAdminPath, defaultAdminPath } from '@/lib/access-control';
 import AdminHorizontalNav from './AdminHorizontalNav';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/components/ui/use-toast';
 
 const adminDestinations = [
   ['Dashboard', '/admin', 'overview summary performance kpi'], ['CRM', '/admin/crm', 'customer contact'],
@@ -27,12 +31,16 @@ const adminDestinations = [
 ];
 
 export default function AdminTopbar({ onMenuClick }) {
-  const { user } = useAuth();
+  const { user, logout, updateUserProfile } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [search, setSearch] = useState('');
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [profileName, setProfileName] = useState('');
+  const [savingProfile, setSavingProfile] = useState(false);
 
   const loadNotifications = () => base44.entities.Notification.list('-created_date', 20).then((items) => setNotifications(items || [])).catch(() => {});
   useEffect(() => {
@@ -82,6 +90,24 @@ export default function AdminTopbar({ onMenuClick }) {
     setNotifications((current) => current.filter((item) => item.id !== notification.id));
     await base44.entities.Notification.delete(notification.id).catch(loadNotifications);
   };
+  const displayName = user?.full_name || user?.email || 'Admin User';
+  const openProfile = () => {
+    setProfileName(user?.full_name || '');
+    setProfileOpen(true);
+  };
+  const saveProfile = async (event) => {
+    event.preventDefault();
+    setSavingProfile(true);
+    try {
+      await updateUserProfile({ fullName: profileName });
+      toast({ title: 'Profile updated' });
+      setProfileOpen(false);
+    } catch (error) {
+      toast({ title: 'Could not update profile', description: error?.message, variant: 'destructive' });
+    } finally {
+      setSavingProfile(false);
+    }
+  };
 
   return (
     <header className="sticky top-0 z-[60] flex h-16 items-center gap-2 border-b border-border bg-card/95 px-3 backdrop-blur sm:gap-3 sm:px-4 md:px-6">
@@ -113,7 +139,20 @@ export default function AdminTopbar({ onMenuClick }) {
             <div className="max-h-80 overflow-y-auto p-2">{notifications.length ? notifications.map((notification) => <div key={notification.id} className={`group flex rounded-md hover:bg-muted ${notification.status === 'read' ? 'opacity-65' : ''}`}><button type="button" onClick={() => openNotification(notification)} className="min-w-0 flex-1 px-3 py-2.5 text-left"><span className="flex items-start justify-between gap-3"><span className="text-sm font-medium">{notification.title}</span>{notification.status !== 'read' && <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-primary" />}</span><span className="mt-1 block text-xs leading-5 text-muted-foreground">{notification.message}</span><span className="mt-1 block text-[11px] text-muted-foreground">{timeAgo(notification.created_date)}</span></button>{notification.status === 'read' && <Button type="button" variant="ghost" size="icon" onClick={() => deleteNotification(notification)} className="mr-1 mt-1.5 h-8 w-8 shrink-0" aria-label={`Delete notification: ${notification.title}`} title="Delete notification"><Trash2 className="h-4 w-4" /></Button>}</div>) : <p className="px-3 py-8 text-center text-sm text-muted-foreground">No notifications yet.</p>}</div>
           </div>}
         </div>
-        <div className="flex items-center gap-2"><div className="admin-avatar flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold">{(user?.full_name || user?.email || 'A')[0].toUpperCase()}</div><div className="hidden md:block"><p className="text-sm font-medium leading-tight">{user?.full_name || user?.email || 'Admin User'}</p><p className="text-xs capitalize text-muted-foreground">{String(user?.role || 'admin').replaceAll('_', ' ')}</p></div></div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button type="button" className="flex items-center gap-2 rounded-lg p-1 text-left outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring" aria-label="Open account menu">
+              <span className="admin-avatar flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold">{displayName[0].toUpperCase()}</span>
+              <span className="hidden md:block"><span className="block text-sm font-medium leading-tight">{displayName}</span><span className="block text-xs capitalize text-muted-foreground">{String(user?.role || 'admin').replaceAll('_', ' ')}</span></span>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-60 p-1.5">
+            <DropdownMenuLabel className="px-2 py-2"><span className="block truncate text-sm font-semibold">{displayName}</span><span className="mt-0.5 block truncate text-xs font-normal text-muted-foreground">{user?.email}</span></DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onSelect={openProfile} className="cursor-pointer py-2"><UserRoundCog className="h-4 w-4 text-emerald-700" />Profile setup</DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => { void logout(); }} className="cursor-pointer py-2 text-destructive focus:bg-destructive/10 focus:text-destructive"><LogOut className="h-4 w-4" />Log out</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
       <Sheet open={mobileSearchOpen} onOpenChange={setMobileSearchOpen}>
         <SheetContent side="bottom" className="max-h-[82dvh] rounded-t-2xl px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-7 md:hidden">
@@ -133,6 +172,28 @@ export default function AdminTopbar({ onMenuClick }) {
           </div>
         </SheetContent>
       </Sheet>
+      <Dialog open={profileOpen} onOpenChange={setProfileOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Profile setup</DialogTitle>
+            <DialogDescription>Set the name shown in your workspace account menu.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={saveProfile} className="space-y-4">
+            <div>
+              <Label htmlFor="profile-full-name">Display name</Label>
+              <Input id="profile-full-name" value={profileName} onChange={(event) => setProfileName(event.target.value)} placeholder="Your name" required autoFocus />
+            </div>
+            <div>
+              <Label htmlFor="profile-email">Email</Label>
+              <Input id="profile-email" value={user?.email || ''} disabled />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setProfileOpen(false)}>Cancel</Button>
+              <Button type="submit" disabled={savingProfile}>{savingProfile ? 'Saving…' : 'Save profile'}</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </header>
   );
 }

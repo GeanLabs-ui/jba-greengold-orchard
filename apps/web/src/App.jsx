@@ -11,7 +11,8 @@ import ScrollToTop from './components/ScrollToTop';
 import SeoManager from './components/SeoManager';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import PageSkeleton from '@/components/shared/PageSkeleton';
-import { hasAdminAccess } from '@/lib/access-control';
+import { hasAdminAccess, hasCustomerAccess } from '@/lib/access-control';
+import CustomerAccessDenied from '@/components/CustomerAccessDenied';
 import { CartProvider } from '@/lib/CartContext';
 import { Button } from '@/components/ui/button';
 import Login from '@/pages/Login';
@@ -26,6 +27,7 @@ import PublicLayout from '@/components/public/PublicLayout';
 import AdminLayout from '@/components/admin/AdminLayout';
 import FarmDailyActivitiesLayout from '@/components/admin/FarmDailyActivitiesLayout';
 import DeploymentRecoveryBoundary from '@/components/shared/DeploymentRecoveryBoundary';
+import WhatsAppSupport from '@/components/shared/WhatsAppSupport';
 // Portal layout
 import PortalLayout from '@/components/portal/PortalLayout';
 // Public pages
@@ -34,12 +36,12 @@ const About = lazy(() => import('@/pages/public/About'));
 const Products = lazy(() => import('@/pages/public/Products'));
 const Cart = lazy(() => import('@/pages/public/Cart'));
 const Checkout = lazy(() => import('@/pages/public/Checkout'));
+const PaymentReturn = lazy(() => import('@/pages/portal/PaymentReturn'));
 const MyOrders = lazy(() => import('@/pages/public/MyOrders'));
 const Farms = lazy(() => import('@/pages/public/Farms'));
 const FarmDetail = lazy(() => import('@/pages/public/FarmDetail'));
 const Sustainability = lazy(() => import('@/pages/public/Sustainability'));
-const ExportPage = lazy(() => import('@/pages/public/Export'));
-const LocalSupply = lazy(() => import('@/pages/public/LocalSupply'));
+const Supply = lazy(() => import('@/pages/public/Supply'));
 const Media = lazy(() => import('@/pages/public/Media'));
 const News = lazy(() => import('@/pages/public/News'));
 const NewsDetail = lazy(() => import('@/pages/public/NewsDetail'));
@@ -72,9 +74,12 @@ const SystemLog = lazy(() => import('@/pages/admin/SystemLog'));
 const SettingsPage = lazy(() => import('@/pages/admin/SettingsPage'));
 // Portal pages
 const PortalDashboard = lazy(() => import('@/pages/portal/PortalDashboard'));
+const PortalProducts = lazy(() => import('@/pages/portal/PortalProducts'));
 const PortalOrders = lazy(() => import('@/pages/portal/PortalOrders'));
 const PortalPayments = lazy(() => import('@/pages/portal/PortalPayments'));
 const PortalDocuments = lazy(() => import('@/pages/portal/PortalDocuments'));
+const AccountSetup = lazy(() => import('@/pages/portal/AccountSetup'));
+const AccountReviews = lazy(() => import('@/pages/admin/AccountReviews'));
 
 const AdminSignInRedirect = () => {
   const { navigateToLogin } = useAuth();
@@ -120,7 +125,6 @@ const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
   const location = useLocation();
   const waitsForIdentity = location.pathname === '/checkout'
-    || location.pathname === '/my-orders'
     || location.pathname.startsWith('/portal')
     || location.pathname.startsWith('/admin');
 
@@ -147,6 +151,7 @@ const AuthenticatedApp = () => {
     <Routes>
       {/* Authentication */}
       <Route path="/login" element={<Login />} />
+      <Route path="/staff-login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
@@ -164,8 +169,9 @@ const AuthenticatedApp = () => {
         <Route path="/farms" element={<Farms />} />
         <Route path="/farms/:slug" element={<FarmDetail />} />
         <Route path="/sustainability" element={<Sustainability />} />
-        <Route path="/export" element={<ExportPage />} />
-        <Route path="/local-supply" element={<LocalSupply />} />
+        <Route path="/supply" element={<Supply />} />
+        <Route path="/export" element={<Navigate to="/supply#export-supply" replace />} />
+        <Route path="/local-supply" element={<Navigate to="/supply#local-supply" replace />} />
         <Route path="/media" element={<Media />} />
         <Route path="/news" element={<News />} />
         <Route path="/news/:slug" element={<NewsDetail />} />
@@ -188,6 +194,7 @@ const AuthenticatedApp = () => {
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<AdminDashboard />} />
           <Route path="crm" element={<CRM />} />
+          <Route path="crm/account-reviews" element={<AccountReviews />} />
           <Route path="inquiries" element={<Inquiries />} />
           <Route path="sales" element={<Sales />} />
           <Route path="orders" element={<Orders />} />
@@ -220,12 +227,17 @@ const AuthenticatedApp = () => {
       </Route>
 
       {/* Customer portal */}
-      <Route element={<ProtectedRoute unauthenticatedElement={<AdminSignInRedirect />} unauthorizedElement={<AdminAccessDenied />} />}>
+      <Route element={<ProtectedRoute canAccess={hasCustomerAccess} unauthenticatedElement={<AdminSignInRedirect />} unauthorizedElement={<CustomerAccessDenied />} />}>
         <Route path="/portal" element={<PortalLayout />}>
           <Route index element={<PortalDashboard />} />
+          <Route path="products" element={<PortalProducts />} />
+            <Route path="checkout" element={<Checkout />} />
+            <Route path="payments/return" element={<PaymentReturn />} />
           <Route path="orders" element={<PortalOrders />} />
+          <Route path="tracking" element={<MyOrders portal />} />
           <Route path="payments" element={<PortalPayments />} />
           <Route path="documents" element={<PortalDocuments />} />
+          <Route path="account" element={<AccountSetup />} />
         </Route>
       </Route>
 
@@ -248,6 +260,7 @@ function App() {
             <DeploymentRecoveryBoundary>
               <AuthenticatedApp />
             </DeploymentRecoveryBoundary>
+            <WhatsAppSupport />
           </Router>
           <Toaster />
           <HotToaster position="top-right" />

@@ -114,6 +114,9 @@ function PublicContent({ template, contentOnly = false }) {
 
 function PortalContent({ template, contentOnly = false }) {
   const heading = !contentOnly && <PageHeading action={template === 'portal-orders'} />;
+  if (template === 'portal-checkout') return <div className="space-y-6">{heading}<div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_24rem]"><FormGrid fields={6} /><div className="space-y-5"><CardList count={3} /><B className="h-12 w-full" /></div></div></div>;
+  if (template === 'portal-products') return <div className="space-y-6">{heading}<Filters count={4} /><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{Array.from({ length: 8 }, (_, i) => <div key={i} className="rounded-xl border bg-card p-4"><B className="h-48 w-full" /><B className="mt-4 h-5 w-3/4" /><Lines count={2} className="mt-3" /><B className="mt-5 h-9 w-full" /></div>)}</div></div>;
+  if (template === 'portal-tracking') return <div className="space-y-6">{heading}<CardList count={3} /><B className="h-24 w-full rounded-xl" /></div>;
   if (template === 'portal-dashboard') return <div className="space-y-6">{heading}<Metrics /><div className="grid gap-6 lg:grid-cols-2"><Table rows={4} columns={3} /><CardList count={4} /></div><div className="grid gap-4 sm:grid-cols-3">{Array.from({ length: 3 }, (_, i) => <B key={i} className="h-24 w-full rounded-xl" />)}</div></div>;
   if (template === 'portal-payments') return contentOnly ? <Table rows={6} columns={6} /> : <div className="space-y-5">{heading}<Metrics count={3} /><Tabs count={2} /><Table rows={6} columns={6} /></div>;
   if (template === 'portal-documents') return <div className="space-y-5">{heading}{!contentOnly && <Metrics count={3} />}<B className="h-5 w-28" /><CardList count={5} /></div>;
@@ -129,7 +132,7 @@ function PublicChrome({ children }) {
 }
 
 function PortalChrome({ children }) {
-  return <div className="skeleton-shell flex min-h-screen bg-muted/30"><aside className="hidden w-64 shrink-0 border-r bg-card p-4 lg:block"><B className="h-12 w-36" /><div className="mt-8 space-y-2">{Array.from({ length: 4 }, (_, index) => <div key={index} className="flex items-center gap-3 rounded-lg p-3"><B className="h-4 w-4" /><B className="h-3 w-24" /></div>)}</div></aside><div className="min-w-0 flex-1"><header className="flex h-16 items-center gap-4 border-b bg-card px-4 md:px-6"><B className="h-5 w-28" /><div className="ml-auto flex items-center gap-3"><B className="h-9 w-9 rounded-full" /><B className="h-9 w-9 rounded-full" /></div></header><main className="p-4 md:p-6">{children}</main></div></div>;
+  return <div className="skeleton-shell min-h-screen bg-muted/30"><header className="border-b bg-card"><div className="flex h-16 items-center gap-4 px-4 md:px-6"><B className="h-11 w-20" /><B className="h-5 w-28" /><B className="ml-auto h-9 w-9 rounded-full" /></div><div className="flex gap-2 overflow-hidden bg-[var(--platform-deep-green)] px-4 py-2 md:px-6">{Array.from({ length: 6 }, (_, index) => <B key={index} className="skeleton-on-dark h-11 w-28 shrink-0 rounded-lg" />)}</div></header><main className="p-4 md:p-6">{children}</main></div>;
 }
 
 function AdminChrome({ children }) {

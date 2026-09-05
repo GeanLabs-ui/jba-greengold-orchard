@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useAuth } from '@/lib/AuthContext';
 import { Plus, Search, Users, Mail, Phone, Building2 } from 'lucide-react';
 import PageHeader from '@/components/shared/PageHeader';
 import PageSkeleton from '@/components/shared/PageSkeleton';
@@ -16,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/components/ui/use-toast';
 
 export default function CRM() {
+  const { user } = useAuth();
   const { toast } = useToast();
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);

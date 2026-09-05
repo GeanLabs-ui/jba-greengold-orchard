@@ -25,11 +25,12 @@ export default function AdminSidebar({ collapsed = false, onToggleCollapsed }) {
       base44.entities.Inquiry.list('-created_date', 250).catch(() => []),
       base44.entities.Order.list('-order_date', 250).catch(() => []),
       base44.entities.CalendarEvent.list('start_at', 250).catch(() => []),
-    ]).then(([inquiries, orders, calendarEvents]) => {
+      base44.account.reviews().catch(() => ({ verifications: [], changes: [] })),
+    ]).then(([inquiries, orders, calendarEvents, accountReviews]) => {
       if (!active) return;
       const now = new Date();
       setAttentionCounts({
-        inquiries: inquiries.filter((item) => item.status === 'new' || !item.status).length,
+        inquiries: inquiries.filter((item) => item.status === 'new' || !item.status).length + (accountReviews.verifications?.length || 0) + (accountReviews.changes?.length || 0),
         orders: orders.filter((item) => item.status === 'confirmed').length,
         calendar: calendarEvents.filter((item) => new Date(item.end_at || item.start_at) < now && !['completed', 'cancelled'].includes(item.status)).length,
       });

@@ -38,6 +38,7 @@ export const ROLE_PAGE_DEFAULTS = {
 };
 
 const normalizeRole = (role) => String(role || '').trim().toLowerCase();
+export const hasCustomerAccess = (user) => user?.role === 'customer' && user?.email_verified === true;
 
 export const hasAdminAccess = (user) => (
   ADMIN_ACCESS_ROLES.includes(normalizeRole(user?.role))

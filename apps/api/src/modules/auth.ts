@@ -6,6 +6,7 @@ import { closeDatabase, createDatabase } from '../db.js';
 import { requireCsrf, requireRole, type AppVariables } from '../middleware/auth.js';
 import { checkRateLimit, requestIp } from '../rate-limit.js';
 import { clearSessionCookie, randomToken, sessionCookie, sha256, timingSafeEqual } from '../security.js';
+import { LOCAL_TEST_ACCOUNTS, LOCAL_CUSTOMER_ID_PREFIX, localTestLoginEnabled, isLocalTestAccount } from './local-development.js';
 
 function sendVerificationEmail(env: Env, ctx: { waitUntil(p: Promise<unknown>): void }, email: string, token: string): void {
   if (!env.RESEND_API_KEY) return;
@@ -23,12 +24,27 @@ function sendVerificationEmail(env: Env, ctx: { waitUntil(p: Promise<unknown>): 
 }
 
 const router = new Hono<{ Bindings: Env; Variables: AppVariables }>();
+router.use('*', async (c, next) => {
+  c.header('Cache-Control', 'private, no-store');
+  if (c.req.method === 'POST' && ['/login', '/local-login', '/local-register', '/google', '/staff-invitations/accept'].some(path => c.req.path.endsWith(path))) {
+    // Prevent cross-site form posts from replacing a browser's signed-in identity.
+    if (c.req.header('Content-Type')?.split(';')[0].trim().toLowerCase() !== 'application/json') return c.json({ error: { code: 'UNSUPPORTED_MEDIA_TYPE', message: 'Send a JSON request.' } }, 415);
+    const origin = c.req.header('Origin');
+    const allowed = (c.env.ALLOWED_ORIGINS || '').split(',').map(value => value.trim());
+    if (origin && !allowed.includes(origin)) return c.json({ error: { code: 'ORIGIN_FORBIDDEN', message: 'Sign-in origin is not allowed.' } }, 403);
+  }
+  await next();
+});
+const audienceSchema = z.enum(['customer', 'staff']).default('customer');
 const credentialsSchema = z.object({
   email: z.string().trim().toLowerCase().email().max(254),
-  password: z.string().min(12).max(128),
+  // Login must accept existing passwords; password creation enforces strength.
+  password: z.string().min(1).max(128),
+  audience: audienceSchema,
 });
 const resetSchema = z.object({ resetToken: z.string().min(32).max(256), newPassword: z.string().min(12).max(128) });
-const googleCredentialSchema = z.object({ credential: z.string().min(100).max(8192) });
+const profileSchema = z.object({ fullName: z.string().trim().min(1).max(200) });
+const googleCredentialSchema = z.object({ credential: z.string().min(100).max(8192), audience: audienceSchema });
 const googleClaimsSchema = z.object({
   sub: z.string().min(1).max(255),
   email: z.string().trim().toLowerCase().email().max(254),
@@ -37,6 +53,12 @@ const googleClaimsSchema = z.object({
 });
 const googleJwks = createRemoteJWKSet(new URL('https://www.googleapis.com/oauth2/v3/certs'));
 const staffRoles = ['admin', 'farm_manager', 'farm_supervisor', 'inventory_officer', 'quality_officer', 'finance_officer', 'hr_officer', 'sales_officer', 'logistics_officer', 'content_editor', 'auditor'] as const;
+function matchesAudience(role: string, audience: 'customer' | 'staff') {
+  return audience === 'customer' ? role === 'customer' : role === 'super_admin' || staffRoles.includes(role as (typeof staffRoles)[number]);
+}
+function wrongAudience(c: AppContext) {
+  return c.json({ error: { code: 'WRONG_ACCOUNT_TYPE', message: 'This account cannot sign in here. Use the correct customer or staff login.' } }, 403);
+}
 const staffPageKeys = ['dashboard', 'crm', 'inquiries', 'sales', 'orders', 'inventory', 'logistics', 'farms', 'calendar', 'farm_daily_activities', 'procurement', 'finance', 'export_ops', 'hr', 'applications', 'content', 'documents', 'reports', 'settings'] as const;
 const pageAccessSchema = z.array(z.enum(staffPageKeys)).max(staffPageKeys.length);
 const staffInvitationSchema = z.object({
@@ -142,11 +164,103 @@ async function createSession(c: AppContext, userId: string) {
   }
 }
 
-router.get('/me', (c) => {
+router.get('/me', async (c) => {
   const user = c.get('user');
   const session = c.get('session');
   if (!user || !session) return c.json({ error: { code: 'UNAUTHORIZED', message: 'Authentication required' }, requestId: c.get('requestId') }, 401);
-  return c.json({ data: { user, csrf_token: session.csrfToken }, requestId: c.get('requestId') });
+  const sql = createDatabase(c.env);
+  try {
+    const [profile] = await sql`SELECT photo_file_id FROM account_profiles WHERE user_id = ${user.id}`;
+    c.header('Cache-Control', 'private, no-store');
+    return c.json({ data: { user: { ...user, photo_file_id: profile?.photo_file_id || null }, csrf_token: session.csrfToken }, requestId: c.get('requestId') });
+  } finally { await closeDatabase(sql); }
+});
+
+// The browser uses the same public client ID that verifies credentials server-side.
+router.get('/config', (c) => {
+  c.header('Cache-Control', 'no-store');
+  return c.json({ data: { googleClientId: c.env.GOOGLE_CLIENT_ID?.trim() || null, localLoginEnabled: localTestLoginEnabled(c.env) } });
+});
+
+const localLoginSchema = z.object({ account: z.enum(['admin', 'customer']), audience: z.enum(['staff', 'customer']) }).strict();
+const localRegisterSchema = z.object({
+  fullName: z.string().trim().min(2).max(200),
+  email: z.string().trim().toLowerCase().email().max(254),
+  password: z.string().min(12).max(128),
+}).strict();
+router.post('/local-register', async (c) => {
+  if (!localTestLoginEnabled(c.env)) return c.json({ error: { code: 'NOT_FOUND', message: 'Resource not found' } }, 404);
+  const origin = c.req.header('Origin');
+  if (origin && !['http://localhost:5173', 'http://127.0.0.1:5173'].includes(origin)) return c.json({ error: { code: 'ORIGIN_FORBIDDEN', message: 'Local development origin required.' } }, 403);
+  const input = localRegisterSchema.safeParse(await c.req.json().catch(() => null));
+  if (!input.success) return c.json({ error: { code: 'VALIDATION_ERROR', message: 'Enter your name, valid email, and a password of at least 12 characters.' } }, 422);
+  const sql = createDatabase(c.env);
+  try {
+    const limit = await checkRateLimit(sql, 'local-test-register', requestIp(c.req.raw), 10, 3600);
+    if (!limit.allowed) return c.json({ error: { code: 'RATE_LIMITED', message: 'Too many local registrations. Please try later.' } }, 429);
+    // A reserved ID marks simulated verification. These accounts and sessions
+    // are rejected outside local development, even if the database is copied.
+    const id = `${LOCAL_CUSTOMER_ID_PREFIX}${crypto.randomUUID()}`;
+    const [user] = await sql<{ id: string; email: string; role: string }[]>`
+      INSERT INTO users (id, email, full_name, password_hash, role, status, email_verified_at)
+      VALUES (${id}, ${input.data.email}, ${input.data.fullName}, crypt(${input.data.password}, gen_salt('bf', 12)), 'customer', 'active', now())
+      ON CONFLICT DO NOTHING RETURNING id, email, role
+    `;
+    if (!user) return c.json({ error: { code: 'ACCOUNT_EXISTS', message: 'That email is already registered. Use the existing account login.' } }, 409);
+    await sql`INSERT INTO audit_events (id, user_id, action, target_table, record_id) VALUES (${crypto.randomUUID()}, ${user.id}, 'local_test_customer_registered', 'users', ${user.id})`;
+    const csrfToken = await createSession(c, user.id);
+    return c.json({ data: { user, csrf_token: csrfToken } }, 201);
+  } finally { await closeDatabase(sql); }
+});
+
+router.post('/local-login', async (c) => {
+  // This is a server gate, independent of the browser, request hostname, or body.
+  if (!localTestLoginEnabled(c.env)) return c.json({ error: { code: 'NOT_FOUND', message: 'Resource not found' } }, 404);
+  const origin = c.req.header('Origin');
+  if (origin && !['http://localhost:5173', 'http://127.0.0.1:5173'].includes(origin)) return c.json({ error: { code: 'ORIGIN_FORBIDDEN', message: 'Local development origin required.' } }, 403);
+  const input = localLoginSchema.safeParse(await c.req.json().catch(() => null));
+  if (!input.success) return c.json({ error: { code: 'VALIDATION_ERROR', message: 'Choose a local test account and login type.' } }, 422);
+  const fixture = LOCAL_TEST_ACCOUNTS[input.data.account];
+  if (fixture.audience !== input.data.audience) return wrongAudience(c);
+  const sql = createDatabase(c.env);
+  try {
+    const limit = await checkRateLimit(sql, 'local-test-login', requestIp(c.req.raw), 30, 900);
+    if (!limit.allowed) return c.json({ error: { code: 'RATE_LIMITED', message: 'Too many local login attempts.' } }, 429);
+    const [user] = await sql<{ id: string; email: string; role: string; status: string; email_verified_at: Date | null }[]>`
+      SELECT id, email, role, status, email_verified_at FROM users WHERE id = ${fixture.id} LIMIT 1
+    `;
+    if (!user) return c.json({ error: { code: 'LOCAL_ACCOUNT_MISSING', message: 'Run npm run dev:seed to create the local test accounts.' } }, 503);
+    if (user.email !== fixture.email || user.role !== fixture.role || user.status !== 'active' || !user.email_verified_at) {
+      return c.json({ error: { code: 'LOCAL_ACCOUNT_UNAVAILABLE', message: 'This local test account is disabled or its role/identity has changed.' } }, 403);
+    }
+    if (!matchesAudience(user.role, input.data.audience)) return wrongAudience(c);
+    await sql`UPDATE users SET last_login_at = now() WHERE id = ${user.id}`;
+    await sql`INSERT INTO audit_events (id, user_id, action, target_table, record_id) VALUES (${crypto.randomUUID()}, ${user.id}, 'local_test_login', 'users', ${user.id})`;
+    const csrfToken = await createSession(c, user.id);
+    return c.json({ data: { user: { id: user.id, email: user.email, role: user.role }, csrf_token: csrfToken } });
+  } finally { await closeDatabase(sql); }
+});
+
+router.patch('/me', requireCsrf(), async (c) => {
+  const user = c.get('user');
+  if (!user) return c.json({ error: { code: 'UNAUTHORIZED', message: 'Authentication required' }, requestId: c.get('requestId') }, 401);
+  const parsed = profileSchema.safeParse(await c.req.json().catch(() => null));
+  if (!parsed.success) return c.json({ error: { code: 'VALIDATION_ERROR', message: 'Provide a display name between 1 and 200 characters' }, requestId: c.get('requestId') }, 422);
+
+  const sql = createDatabase(c.env);
+  try {
+    const updated = await sql.begin(async (tx) => {
+      await tx`SELECT id FROM users WHERE id = ${user.id} FOR UPDATE`;
+      const [locked] = await tx`SELECT id FROM account_verifications WHERE user_id = ${user.id} AND status IN ('pending', 'verified')`;
+      if (locked) return false;
+      await tx`UPDATE users SET full_name = ${parsed.data.fullName}, updated_at = now() WHERE id = ${user.id}`;
+      return true;
+    });
+    if (!updated) return c.json({ error: { code: 'IDENTITY_LOCKED', message: 'Identity details are locked. Request an administrator review from Account Setup.' } }, 409);
+    return c.json({ data: { user: { ...user, full_name: parsed.data.fullName } }, requestId: c.get('requestId') });
+  } finally {
+    await closeDatabase(sql);
+  }
 });
 
 router.get('/csrf', (c) => {
@@ -155,36 +269,10 @@ router.get('/csrf', (c) => {
   return c.json({ data: { csrf_token: session.csrfToken }, requestId: c.get('requestId') });
 });
 
-router.post('/register', async (c) => {
-  const parsed = credentialsSchema.safeParse(await c.req.json().catch(() => null));
-  if (!parsed.success) return c.json({ error: { code: 'VALIDATION_ERROR', message: 'A valid email and a password of at least 12 characters are required' }, requestId: c.get('requestId') }, 422);
-  const sql = createDatabase(c.env);
-  try {
-    const limit = await checkRateLimit(sql, 'register', requestIp(c.req.raw), 5, 3600);
-    if (!limit.allowed) {
-      c.header('Retry-After', String(limit.retryAfter));
-      return c.json({ error: { code: 'RATE_LIMITED', message: 'Too many registration attempts' }, requestId: c.get('requestId') }, 429);
-    }
-    const existing = await sql<{ id: string }[]>`SELECT id FROM users WHERE email = ${parsed.data.email} LIMIT 1`;
-    if (existing.length) return c.json({ error: { code: 'ACCOUNT_EXISTS', message: 'An account with this email already exists' }, requestId: c.get('requestId') }, 409);
-    const userId = crypto.randomUUID();
-    await sql`
-      INSERT INTO users (id, email, password_hash, password_salt, full_name, role, status)
-      VALUES (${userId}, ${parsed.data.email}, crypt(${parsed.data.password}, gen_salt('bf', 12)), NULL, ${parsed.data.email.split('@')[0]}, 'customer', 'active')
-    `;
-    // Issue a verification token and send the verification email (fire-and-forget)
-    const verifyToken = randomToken();
-    const verifyTokenHash = await sha256(verifyToken);
-    await sql`
-      INSERT INTO email_verification_tokens (id, user_id, token_hash, expires_at)
-      VALUES (${crypto.randomUUID()}, ${userId}, ${verifyTokenHash}, ${new Date(Date.now() + 24 * 60 * 60 * 1000)})
-    `;
-    sendVerificationEmail(c.env, c.executionCtx, parsed.data.email, verifyToken);
-    const csrfToken = await createSession(c, userId);
-    return c.json({ data: { user: { id: userId, email: parsed.data.email, role: 'customer' }, csrf_token: csrfToken }, requestId: c.get('requestId') }, 201);
-  } finally {
-    await closeDatabase(sql);
-  }
+// New clients must use a verified Google identity. Existing password accounts
+// retain /login access; no records are migrated or automatically relinked.
+router.post('/register', (c) => {
+  return c.json({ error: { code: 'GOOGLE_SIGNUP_REQUIRED', message: 'Use your Google account to sign up.' }, requestId: c.get('requestId') }, 403);
 });
 
 router.post('/login', async (c) => {
@@ -198,8 +286,8 @@ router.post('/login', async (c) => {
       c.header('Retry-After', String(limit.retryAfter));
       return c.json({ error: { code: 'RATE_LIMITED', message: 'Too many login attempts' }, requestId: c.get('requestId') }, 429);
     }
-    const users = await sql<{ id: string; email: string; password_valid: boolean; role: string; status: string }[]>`
-      SELECT id, email, role, status,
+    const users = await sql<{ id: string; email: string; password_valid: boolean; role: string; status: string; email_verified_at: Date | null }[]>`
+      SELECT id, email, role, status, email_verified_at,
         password_hash IS NOT NULL AND password_hash = crypt(${parsed.data.password}, password_hash) AS password_valid
       FROM users
       WHERE email = ${parsed.data.email}
@@ -207,6 +295,9 @@ router.post('/login', async (c) => {
     `;
     const user = users[0];
     if (!user || !user.password_valid || user.status !== 'active') return c.json({ error: { code: 'INVALID_CREDENTIALS', message: 'Invalid email or password' }, requestId: c.get('requestId') }, 401);
+    if (isLocalTestAccount(user.id) && (!user.id.startsWith(LOCAL_CUSTOMER_ID_PREFIX) || !localTestLoginEnabled(c.env))) return c.json({ error: { code: 'INVALID_CREDENTIALS', message: 'This local test account is unavailable here.' } }, 401);
+    if (!matchesAudience(user.role, parsed.data.audience)) return wrongAudience(c);
+    if (user.role === 'customer' && !user.email_verified_at) return c.json({ error: { code: 'EMAIL_NOT_VERIFIED', message: 'Verify your email address before logging in.' } }, 403);
     await sql`UPDATE users SET last_login_at = now() WHERE id = ${user.id}`;
     const csrfToken = await createSession(c, user.id);
     return c.json({ data: { user: { id: user.id, email: user.email, role: user.role }, csrf_token: csrfToken }, requestId: c.get('requestId') });
@@ -248,28 +339,20 @@ router.post('/google', async (c) => {
     let user = await findGoogleUser();
     const isBootstrapAdmin = bootstrapAdminEmails(c.env).has(claims.email);
 
-    if (isBootstrapAdmin) {
-      if (user?.google_subject && user.google_subject !== claims.sub) {
-        return googleAccountUnavailable(c, 'bootstrap_email_linked_to_another_google_identity');
-      }
-      if (!user) {
-        const userId = crypto.randomUUID();
-        await sql`
-          INSERT INTO users (id, email, google_subject, full_name, role, status, email_verified_at, last_login_at)
-          VALUES (${userId}, ${claims.email}, ${claims.sub}, ${claims.name || claims.email.split('@')[0]}, 'super_admin', 'active', now(), now())
-        `;
-      } else {
-        await sql`
-          UPDATE users
-          SET google_subject = ${claims.sub}, full_name = COALESCE(full_name, ${claims.name || claims.email.split('@')[0]}),
-              role = 'super_admin', status = 'active', email_verified_at = COALESCE(email_verified_at, now()), updated_at = now()
-          WHERE id = ${user.id}
-        `;
-      }
+    if (isBootstrapAdmin && !user && input.data.audience === 'staff') {
+      await sql`
+        INSERT INTO users (id, email, google_subject, full_name, role, status, email_verified_at, last_login_at)
+        VALUES (${crypto.randomUUID()}, ${claims.email}, ${claims.sub}, ${claims.name || claims.email.split('@')[0]}, 'super_admin', 'active', now(), now())
+        ON CONFLICT DO NOTHING
+      `;
       user = await findGoogleUser();
       if (!user) return googleAccountUnavailable(c, 'bootstrap_account_creation_failed');
     }
 
+    // Bootstrap configuration may create a new staff identity, but must never
+    // promote a customer or reactivate/modify an existing account during login.
+    if (user && !matchesAudience(user.role, input.data.audience)) return wrongAudience(c);
+    if (!user && (input.data.audience === 'staff' || isBootstrapAdmin)) return wrongAudience(c);
     if (user && user.google_subject !== claims.sub) {
       return googleAccountUnavailable(c, 'email_account_linked_to_another_google_identity');
     }
@@ -292,11 +375,13 @@ router.post('/google', async (c) => {
       return googleAccountUnavailable(c, 'email_account_linked_to_another_google_identity');
     }
 
+    if (!matchesAudience(user.role, input.data.audience)) return wrongAudience(c);
+
     if (user.status !== 'active') {
       return c.json({ error: { code: 'ACCOUNT_DISABLED', message: 'This account is not active' }, requestId: c.get('requestId') }, 403);
     }
 
-    await sql`UPDATE users SET last_login_at = now(), updated_at = now() WHERE id = ${user.id}`;
+    await sql`UPDATE users SET last_login_at = now(), email_verified_at = COALESCE(email_verified_at, now()), updated_at = now() WHERE id = ${user.id}`;
     const csrfToken = await createSession(c, user.id);
     return c.json({ data: { user: { id: user.id, email: user.email, role: user.role }, csrf_token: csrfToken }, requestId: c.get('requestId') });
   } finally {
@@ -434,6 +519,7 @@ router.patch('/staff-users/:id', requireRole('super_admin', 'hr_officer'), requi
     const targets = await sql<{ id: string; email: string; role: Role }[]>`SELECT id, email, role FROM users WHERE id = ${c.req.param('id')} LIMIT 1`;
     const target = targets[0];
     if (!target) return c.json({ error: { code: 'NOT_FOUND', message: 'Staff account not found' }, requestId: c.get('requestId') }, 404);
+    if (!matchesAudience(target.role, 'staff')) return c.json({ error: { code: 'FORBIDDEN', message: 'Customer accounts cannot be converted through staff access settings.' } }, 403);
     if (target.role === 'super_admin') return c.json({ error: { code: 'FORBIDDEN', message: 'Super Admin access cannot be restricted here' }, requestId: c.get('requestId') }, 403);
     if (actor.role === 'hr_officer' && target.role === 'admin') return c.json({ error: { code: 'FORBIDDEN', message: 'Only a Super Admin can update an administrator' }, requestId: c.get('requestId') }, 403);
     const rows = await sql<{ id: string; email: string; full_name: string | null; role: Role; page_access: unknown; status: string }[]>`
@@ -483,10 +569,11 @@ router.post('/staff-invitations/accept', async (c) => {
       `;
       const invitation = invitations[0];
       if (!invitation || invitation.email !== claims.email) return null;
-      const existingUsers = await transaction<{ id: string; google_subject: string | null }[]>`
-        SELECT id, google_subject FROM users WHERE email = ${claims.email} LIMIT 1 FOR UPDATE
+      const existingUsers = await transaction<{ id: string; google_subject: string | null; role: string; status: string }[]>`
+        SELECT id, google_subject, role, status FROM users WHERE email = ${claims.email} LIMIT 1 FOR UPDATE
       `;
       const existingUser = existingUsers[0];
+      if (existingUser && (!matchesAudience(existingUser.role, 'staff') || existingUser.status !== 'active')) return { conflict: true };
       if (existingUser?.google_subject && existingUser.google_subject !== claims.sub) return { conflict: true };
       const userId = existingUser?.id || crypto.randomUUID();
       const pageAccess = Array.isArray(invitation.page_access)

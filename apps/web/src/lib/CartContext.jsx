@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { PRODUCT_BY_ID } from '@/data/productCatalog';
 
 const STORAGE_KEY = 'jba-storefront-cart-v1';
@@ -38,7 +38,6 @@ export function CartProvider({ children }) {
         : [...current, { productId, quantity: amount }];
     });
     setLastAddedId(productId);
-    setIsCartOpen(true);
     window.setTimeout(() => setLastAddedId(''), 650);
   }, []);
 
