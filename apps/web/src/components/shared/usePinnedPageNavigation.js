@@ -1,8 +1,8 @@
-import { useLayoutEffect } from 'react';
+import { useBrowserLayoutEffect } from '@/lib/use-browser-layout-effect';
 
 // Stack each page's own navigation without assuming fixed toolbar heights.
 export default function usePinnedPageNavigation(rootRef, routeKey) {
-  useLayoutEffect(() => {
+  useBrowserLayoutEffect(() => {
     const root = rootRef.current;
     if (!root) return undefined;
     let frame;
