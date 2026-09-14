@@ -158,7 +158,7 @@ export default function Orders() {
 
   return (
     <div>
-      <PageHeader>
+      <PageHeader title="Orders">
         <AdminCreateDialog title="New Order" description="Create a customer order and add it to the fulfillment pipeline." buttonLabel="New Order" fields={orderFields} onCreate={createOrder} onCreated={load} submitLabel="Create Order" />
       </PageHeader>
 
@@ -220,13 +220,13 @@ export default function Orders() {
                   {expandedId === order.id && (
                     <tr className="bg-muted/20"><td colSpan={7} className="px-6 py-6">
                       <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr_1fr]">
-                        <div><h3 className="flex items-center text-xs font-bold uppercase tracking-wider text-muted-foreground"><PackageCheck className="mr-2 h-4 w-4" /> Products</h3>
+                        <div><h3 className="flex items-center uppercase text-muted-foreground text-card-title"><PackageCheck className="mr-2 h-4 w-4" /> Products</h3>
                           <div className="mt-3 space-y-2">{order.items?.length ? order.items.map((item) => <div key={`${order.id}-${item.product_id}`} className="flex justify-between gap-3 rounded-lg border border-border bg-card px-3 py-2"><span><span className="font-medium">{item.product_name}</span><span className="ml-2 text-xs text-muted-foreground">× {item.quantity}</span></span><span className="font-medium text-blue-600">{formatCurrency(item.line_total)}</span></div>) : <p className="text-sm text-muted-foreground">No line items recorded for this order.</p>}</div>
                         </div>
-                        <div><h3 className="flex items-center text-xs font-bold uppercase tracking-wider text-muted-foreground"><Truck className="mr-2 h-4 w-4" /> Delivery and payment</h3>
+                        <div><h3 className="flex items-center uppercase text-muted-foreground text-card-title"><Truck className="mr-2 h-4 w-4" /> Delivery and payment</h3>
                           <div className="mt-3 space-y-1 text-sm"><p className="font-medium">{order.shipping_address?.full_name || order.customer_name}</p><p>{order.shipping_address?.address || 'Address not recorded'}</p><p>{[order.shipping_address?.city, order.shipping_address?.region].filter(Boolean).join(', ')}</p><p className="pt-2 text-muted-foreground">{order.contact_email}</p><p className="text-muted-foreground">{order.contact_phone}</p><p className="pt-2 capitalize">Payment: {String(order.payment_method || 'not recorded').replaceAll('_', ' ')}</p></div>
                         </div>
-                        <div><h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Customer-visible history</h3>
+                        <div><h3 className="uppercase text-muted-foreground text-card-title">Customer-visible history</h3>
                           <div className="mt-3 max-h-48 space-y-3 overflow-auto">{order.status_history?.length ? [...order.status_history].reverse().map((entry, index) => <div key={`${entry.timestamp}-${index}`} className="border-l-2 border-emerald-700 pl-3"><p className="text-sm font-medium">{entry.label || entry.status}</p><p className="text-xs text-muted-foreground">{displayDateTime(entry.timestamp)}</p><p className="mt-1 text-xs text-muted-foreground">{entry.note}</p></div>) : <p className="text-sm text-muted-foreground">Status updates will appear here.</p>}</div>
                         </div>
                       </div>

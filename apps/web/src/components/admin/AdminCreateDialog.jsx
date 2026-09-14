@@ -88,12 +88,12 @@ export default function AdminCreateDialog({
     const value = values[field.name] ?? '';
     return (
       <div key={field.name} className={className}>
-        <Label htmlFor={field.name} className={formVariant === 'daily-activity-log' ? 'mb-1 block text-[10px] font-semibold text-slate-600' : undefined}>
+        <Label htmlFor={field.name} className={formVariant === 'daily-activity-log' ? 'mb-1 block text-caption font-semibold text-slate-600' : undefined}>
           {field.label}
         </Label>
         {field.type === 'select' ? (
           <Select value={value} onValueChange={(nextValue) => updateValue(field.name, nextValue)}>
-            <SelectTrigger id={field.name} className={formVariant === 'daily-activity-log' ? 'h-8 border-slate-200 bg-white text-[11px] shadow-sm' : undefined}>
+            <SelectTrigger id={field.name} className={formVariant === 'daily-activity-log' ? 'h-8 border-slate-200 bg-white text-caption shadow-sm' : undefined}>
               <SelectValue placeholder={field.placeholder || 'Select'} />
             </SelectTrigger>
             <SelectContent>
@@ -111,7 +111,7 @@ export default function AdminCreateDialog({
             value={value}
             onChange={(event) => updateValue(field.name, event.target.value)}
             placeholder={field.placeholder}
-            className={formVariant === 'daily-activity-log' ? 'min-h-[84px] resize-y border-slate-200 bg-white text-[11px] shadow-sm placeholder:text-slate-400' : undefined}
+            className={formVariant === 'daily-activity-log' ? 'min-h-[84px] resize-y border-slate-200 bg-white text-caption shadow-sm placeholder:text-slate-400' : undefined}
           />
         ) : field.type === 'file' ? (
           <Input
@@ -124,7 +124,7 @@ export default function AdminCreateDialog({
               field.name,
               Array.from(event.target.files || []).map((file) => file.name).join(', '),
             )}
-            className={formVariant === 'daily-activity-log' ? 'h-8 border-slate-200 bg-white text-[11px] shadow-sm' : undefined}
+            className={formVariant === 'daily-activity-log' ? 'h-8 border-slate-200 bg-white text-caption shadow-sm' : undefined}
           />
         ) : (
           <Input
@@ -134,7 +134,7 @@ export default function AdminCreateDialog({
             value={value}
             onChange={(event) => updateValue(field.name, event.target.value)}
             placeholder={field.placeholder}
-            className={formVariant === 'daily-activity-log' ? 'h-8 border-slate-200 bg-white text-[11px] shadow-sm placeholder:text-slate-400' : undefined}
+            className={formVariant === 'daily-activity-log' ? 'h-8 border-slate-200 bg-white text-caption shadow-sm placeholder:text-slate-400' : undefined}
           />
         )}
       </div>
@@ -147,7 +147,7 @@ export default function AdminCreateDialog({
     <section className={`rounded-lg border p-3 ${tone} ${className}`}>
       <div className="mb-2 flex items-center gap-2">
         <Icon className="h-4 w-4" />
-        <h3 className="text-xs font-semibold">{sectionTitle}</h3>
+        <h3 className="text-card-title">{sectionTitle}</h3>
       </div>
       {children}
     </section>
@@ -163,12 +163,12 @@ export default function AdminCreateDialog({
           {buttonLabel}
         </Button>
       </DialogTrigger>
-      <DialogContent className={dailyActivityForm ? 'max-h-[calc(100vh-1rem)] overflow-y-auto border-slate-200 bg-[#fdfefd] p-3 shadow-2xl sm:max-w-[49rem] sm:rounded-xl' : 'max-h-[90vh] overflow-y-auto sm:max-w-xl'}>
+      <DialogContent className={dailyActivityForm ? 'max-h-[calc(100vh-1rem)] overflow-y-auto border-slate-200 bg-[#f9fcfa] p-3 shadow-2xl sm:max-w-[49rem] sm:rounded-xl' : 'max-h-[90vh] overflow-y-auto sm:max-w-xl'}>
         {dailyActivityForm ? (
           <>
             <form onSubmit={handleSubmit} className="space-y-2.5">
               <div className="grid gap-2.5 md:grid-cols-2">
-                <DailySection title="Activity details" icon={CalendarDays} tone="border-[#ebebeb] bg-[#f7f7f7] text-[#2E7D32]">
+                <DailySection title="Activity details" icon={CalendarDays} tone="border-[#e8f5e9] bg-[#f9fcfa] text-[#2e7d32]">
                   <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2">
                     {dailyField('activity_date')}
                     {dailyField('title')}
@@ -176,7 +176,7 @@ export default function AdminCreateDialog({
                     {dailyField('quantity_used')}
                   </div>
                 </DailySection>
-                <DailySection title="Assignment" icon={UserRound} tone="border-[#ebebeb] bg-[#f7f7f7] text-[#2E7D32]">
+                <DailySection title="Assignment" icon={UserRound} tone="border-[#e8f5e9] bg-[#f9fcfa] text-[#2e7d32]">
                   <div className="grid gap-y-3">
                     {dailyField('responsible')}
                     {dailyField('contact')}
@@ -184,7 +184,7 @@ export default function AdminCreateDialog({
                 </DailySection>
               </div>
 
-              <DailySection title="Farm context" icon={Sprout} tone="border-[#ebebeb] bg-[#f7f7f7] text-[#2E7D32]">
+              <DailySection title="Farm context" icon={Sprout} tone="border-[#e8f5e9] bg-[#f9fcfa] text-[#2e7d32]">
                 <div className="grid gap-3 sm:grid-cols-3">
                   {dailyField('block_id')}
                   {dailyField('category')}
@@ -193,7 +193,7 @@ export default function AdminCreateDialog({
               </DailySection>
 
               <div className="grid gap-2.5 md:grid-cols-2">
-                <DailySection title="Financials & output" icon={CircleDollarSign} tone="border-[#ebebeb] bg-[#f7f7f7] text-[#2E7D32]">
+                <DailySection title="Financials & output" icon={CircleDollarSign} tone="border-[#e8f5e9] bg-[#f9fcfa] text-[#2e7d32]">
                   <div className="grid gap-x-3 gap-y-3 sm:grid-cols-3">
                     {dailyField('projected_cost')}
                     {dailyField('actual_cost')}
@@ -202,16 +202,16 @@ export default function AdminCreateDialog({
                     {dailyField('output_quantity_kg')}
                   </div>
                 </DailySection>
-                <DailySection title="Notes" icon={FileText} tone="border-[#ebebeb] bg-[#f7f7f7] text-[#2E7D32]">
+                <DailySection title="Notes" icon={FileText} tone="border-[#e8f5e9] bg-[#f9fcfa] text-[#2e7d32]">
                   {dailyField('notes')}
                 </DailySection>
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-1">
                 <DialogClose asChild>
-                  <Button type="button" variant="outline" className="h-8 border-slate-200 px-4 text-[11px] text-slate-600 hover:bg-slate-50">Cancel</Button>
+                  <Button type="button" variant="outline" className="h-8 border-slate-200 px-4 text-caption text-slate-600 hover:bg-slate-50">Cancel</Button>
                 </DialogClose>
-                <Button type="submit" className="h-8 bg-[#2E7D32] px-4 text-[11px] text-white hover:bg-[#9ACD32] hover:text-[#173d24]" disabled={saving}>
+                <Button type="submit" className="h-8 bg-[#2e7d32] px-4 text-caption text-white hover:bg-[#c8e6c9] hover:text-[#123524]" disabled={saving}>
                   <Save className="mr-2 h-3.5 w-3.5" />
                   {saving ? 'Saving...' : submitLabel}
                 </Button>

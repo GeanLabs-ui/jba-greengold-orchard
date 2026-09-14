@@ -67,7 +67,7 @@ export default class DeploymentRecoveryBoundary extends Component {
 
     return (
       <section className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-center text-amber-950" role="alert">
-        <h1 className="font-heading text-lg font-semibold">
+        <h1 className="text-page-title">
           {preloadFailure ? 'This page needs the latest update' : 'This page could not be displayed'}
         </h1>
         <p className="mx-auto mt-2 max-w-xl text-sm text-amber-900/80">

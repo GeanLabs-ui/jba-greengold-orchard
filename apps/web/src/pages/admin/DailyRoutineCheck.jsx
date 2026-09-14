@@ -1014,9 +1014,9 @@ export default function DailyRoutineCheck({ initialView = 'dashboard', riskOnly 
       <section className={`drc-view ${view === 'blocks' ? 'active' : ''}`}>
         <PageHead right={<button type="button" className="drc-primary gold" onClick={() => setShowNewFarmLand((current) => !current)}><Plus /> Add farm land</button>} />
         {showNewFarmLand && <form className="drc-farm-land-form" onSubmit={createFarmLand}>
-          <label><span>Farm land name</span><input value={newFarmLand.name} onChange={(event) => setNewFarmLand((current) => ({ ...current, name: event.target.value }))} maxLength="100" required /></label>
-          <label><span>Section prefix</span><input value={newFarmLand.code} onChange={(event) => setNewFarmLand((current) => ({ ...current, code: event.target.value.toUpperCase().replace(/[^A-Z]/g, '') }))} maxLength="3" required /></label>
-          <label><span>First-block variety</span><select value={newFarmLand.variety} onChange={(event) => setNewFarmLand((current) => ({ ...current, variety: event.target.value }))}><option>Kent</option><option>Keitt</option><option>Black Pearl</option></select></label>
+          <label className="text-label"><span>Farm land name</span><input value={newFarmLand.name} onChange={(event) => setNewFarmLand((current) => ({ ...current, name: event.target.value }))} maxLength="100" required /></label>
+          <label className="text-label"><span>Section prefix</span><input value={newFarmLand.code} onChange={(event) => setNewFarmLand((current) => ({ ...current, code: event.target.value.toUpperCase().replace(/[^A-Z]/g, '') }))} maxLength="3" required /></label>
+          <label className="text-label"><span>First-block variety</span><select value={newFarmLand.variety} onChange={(event) => setNewFarmLand((current) => ({ ...current, variety: event.target.value }))}><option>Kent</option><option>Keitt</option><option>Black Pearl</option></select></label>
           <div className="drc-form-actions"><button type="button" className="drc-btn" onClick={() => setShowNewFarmLand(false)}>Cancel</button><button className="drc-primary" disabled={busyKey === 'new-farm-land'}>{busyKey === 'new-farm-land' ? <Loader2 className="drc-spin" /> : <Plus />} Create land and first block</button></div>
         </form>}
         <div className="drc-farm-lands">{farmLands.map((farmLand) => (
@@ -1065,7 +1065,7 @@ export default function DailyRoutineCheck({ initialView = 'dashboard', riskOnly 
       <footer className="drc-footer">JBA Green Gold Organic Farms · Daily Routine Check · Synchronized with platform operations</footer>
 
       <dialog className="drc-dialog" ref={fieldDialog}>
-        <div className="drc-modal-head"><div><span className="drc-eyebrow">Operational evidence</span><h2>Add field entry</h2></div><button type="button" onClick={() => fieldDialog.current?.close()}>×</button></div>
+        <div className="drc-modal-head"><div><span className="drc-eyebrow">Operational evidence</span><h2 className="text-section-title">Add field entry</h2></div><button type="button" onClick={() => fieldDialog.current?.close()}>×</button></div>
         <form className="drc-form-grid" onSubmit={addFieldLog}>
           <Field label="Log type"><select name="type" required>{LOG_TYPES.map((type) => <option key={type}>{type}</option>)}</select></Field>
           <Field label="Date"><input name="entry_date" type="date" required defaultValue={TODAY} /></Field>
@@ -1136,15 +1136,15 @@ function RiskRegisterView({ risks, onCreateRisk, onEditRisk, onDeleteRisk, busyK
         </table>
       </div>
       <dialog className="drc-dialog drc-risk-dialog" ref={riskDialog} onClose={resetRiskDialog} aria-labelledby="risk-dialog-title">
-        <div className="drc-modal-head"><div><span className="drc-eyebrow">Risk register</span><h2 id="risk-dialog-title">{riskDialogMode === 'edit' ? 'Edit risk' : 'Add risk'}</h2></div><button type="button" onClick={closeRiskDialog} aria-label="Close risk form">×</button></div>
+        <div className="drc-modal-head"><div><span className="drc-eyebrow">Risk register</span><h2 className="text-section-title" id="risk-dialog-title">{riskDialogMode === 'edit' ? 'Edit risk' : 'Add risk'}</h2></div><button type="button" onClick={closeRiskDialog} aria-label="Close risk form">×</button></div>
         <form key={editingRisk?.id || 'new-risk'} className="drc-master-task-form drc-risk-form" onSubmit={saveRisk}>
-          <label className="wide"><span>Risk title</span><input name="requirement" defaultValue={editingRisk?.requirement || ''} required minLength="3" maxLength="300" /></label>
-          <label><span>Category</span><input name="category" defaultValue={editingRisk?.category || ''} required maxLength="100" /></label>
-          <label><span>Owner</span><input name="owner" defaultValue={editingRisk?.owner || ''} required maxLength="120" /></label>
-          <label><span>Probability</span><select name="probability" defaultValue={editingRisk?.probability || 'Medium'}><option>Low</option><option>Medium</option><option>High</option></select></label>
-          <label><span>Impact</span><select name="impact" defaultValue={editingRisk?.impact || 'Medium'}><option>Low</option><option>Medium</option><option>High</option></select></label>
-          <label><span>Status</span><select name="status" defaultValue={editingRisk?.status || 'Open'}><option>Open</option><option>Monitoring</option><option>Closed</option></select></label>
-          <label className="wide"><span>Mitigation / next action</span><textarea name="mitigation" rows="3" defaultValue={editingRisk?.mitigation || ''} required minLength="3" maxLength="2000" /></label>
+          <label className="wide text-label"><span>Risk title</span><input name="requirement" defaultValue={editingRisk?.requirement || ''} required minLength="3" maxLength="300" /></label>
+          <label className="text-label"><span>Category</span><input name="category" defaultValue={editingRisk?.category || ''} required maxLength="100" /></label>
+          <label className="text-label"><span>Owner</span><input name="owner" defaultValue={editingRisk?.owner || ''} required maxLength="120" /></label>
+          <label className="text-label"><span>Probability</span><select name="probability" defaultValue={editingRisk?.probability || 'Medium'}><option>Low</option><option>Medium</option><option>High</option></select></label>
+          <label className="text-label"><span>Impact</span><select name="impact" defaultValue={editingRisk?.impact || 'Medium'}><option>Low</option><option>Medium</option><option>High</option></select></label>
+          <label className="text-label"><span>Status</span><select name="status" defaultValue={editingRisk?.status || 'Open'}><option>Open</option><option>Monitoring</option><option>Closed</option></select></label>
+          <label className="wide text-label"><span>Mitigation / next action</span><textarea name="mitigation" rows="3" defaultValue={editingRisk?.mitigation || ''} required minLength="3" maxLength="2000" /></label>
           <div className="drc-master-task-actions">
             {editingRisk ? <button type="button" className="drc-btn drc-danger" onClick={removeRisk} disabled={busyKey === editingRisk.id}><Trash2 /> Delete risk</button> : null}
             <div className="drc-risk-form-primary-actions"><button type="button" className="drc-btn" onClick={closeRiskDialog}>Cancel</button><button className="drc-primary" disabled={busyKey === 'new-risk' || busyKey === editingRisk?.id}>{busyKey === 'new-risk' || busyKey === editingRisk?.id ? <Loader2 className="drc-spin" /> : <Plus />}{editingRisk ? 'Save changes' : 'Add risk'}</button></div>

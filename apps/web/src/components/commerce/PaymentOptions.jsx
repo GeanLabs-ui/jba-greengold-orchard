@@ -32,7 +32,7 @@ export default function PaymentOptions({ country, setCountry, value, onChange, d
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [country]);
   return <>
-    <label className="checkout-field checkout-payment-country">Payment country
+    <label className="checkout-field checkout-payment-country text-label">Payment country
       <select value={country} disabled={disabled} onChange={(event) => { onChange('mobile_money_on_confirmation'); setCountry(event.target.value); }}>
         {[...countries, ...additional].map(([code, name]) => <option key={code} value={code}>{name}</option>)}
       </select>
@@ -41,7 +41,7 @@ export default function PaymentOptions({ country, setCountry, value, onChange, d
     {error && <p role="status" className="checkout-payment-help">{error}</p>}
     <fieldset disabled={disabled || loading} aria-busy={loading}>
       <legend className="sr-only">Online payment methods</legend>
-      {options.map((option) => <label className="checkout-payment-option" key={option.id} data-selected={value === option.id} data-unavailable={!option.available}>
+      {options.map((option) => <label className="checkout-payment-option text-label" key={option.id} data-selected={value === option.id} data-unavailable={!option.available}>
         <input type="radio" name="payment_method" value={option.id} checked={value === option.id} disabled={!option.available} onChange={() => onChange(option.id)} />
         <span><strong>{option.label}</strong><small>{option.detail}</small>{!option.available && <em>{option.reason}</em>}</span>
       </label>)}

@@ -1,0 +1,141 @@
+/* This reference palette is intentionally limited to the analytics route. */
+.admin-shell:has(.farm-analytics), .farm-analytics {
+  --background: 210 14% 98%; --foreground: 222 35% 15%;
+  --card: 0 0% 100%; --card-foreground: 222 35% 15%;
+  --border: 220 13% 91%; --muted: 210 20% 96%; --muted-foreground: 220 14% 43%;
+  --company-page: #f8faf9; --company-section: #f3f4f6; --company-border: #e5e7eb;
+  --company-muted: #647084; --company-ink: #172033;
+  color: #172033; background: #f8faf9;
+}
+.admin-shell:has(.farm-analytics) > div > main { --admin-page-inset: 20px; padding: 0 20px 20px; }
+.admin-shell:has(.farm-analytics) .admin-horizontal-menu { background: #237a35; border-radius: 5px; }
+.admin-shell:has(.farm-analytics) .admin-avatar { background: #9acd32; color: #173d1c; }
+.admin-shell:has(.farm-analytics) nav[aria-label="Farm daily activities navigation"] button { border-radius: 4px; font-size: var(--text-button); }
+.admin-shell:has(.farm-analytics) nav[aria-label="Farm daily activities navigation"] [aria-current="page"] { background: #9acd32; color: #163016; }
+.admin-shell:has(.farm-analytics) main > .admin-page-content > .space-y-6 > .space-y-6 { margin-top: 14px; }
+.admin-shell:has(.farm-analytics) main > .admin-page-content > .space-y-6 > .space-y-6 > main { margin-top: 14px; }
+.farm-analytics > section[aria-label="Block Performance"] { margin-top: 16px; }
+.farm-analytics section { border-radius: 5px; box-shadow: none; }
+.farm-analytics section > header { min-height: 38px; padding: 9px 13px; }
+.farm-analytics section > header h2 { font-size: var(--text-section-title); line-height: var(--leading-section-title); color: #075c22; font-weight: var(--weight-section-title); }
+.farm-analytics section[aria-label="Block Performance"] > div:first-child > section:first-child > header h2 { color: #172033; }
+.analytics-kpis { display: grid; grid-template-columns: 1.15fr 1.58fr 1.73fr .8fr; gap: 8px; position: sticky; top: 48px; z-index: 10; padding: 0; background: #f8faf9; }
+.analytics-kpi { min-width: 0; height: 104px; padding: 14px 12px; border-radius: 5px; color: #fff; background: #237a35; display: flex; flex-direction: column; justify-content: center; }
+.analytics-kpi--gold { background: #d9a800; }
+.analytics-kpi--red { background: #d64545; }
+.analytics-kpi--revenue { background: #16a34a; }
+.analytics-kpi--blue { background: #2563eb; }
+.analytics-kpi p { font-size: var(--text-kpi-label); line-height: var(--leading-kpi-label); color: #fff; margin: 0; }
+.analytics-kpi strong { display: block; margin-top: 5px; font-size: var(--text-kpi-value); line-height: var(--leading-kpi-value); color: #fff; font-weight: var(--weight-kpi-value); }
+.analytics-kpi--gold strong { font-size: var(--text-kpi-value); white-space: nowrap; }
+.analytics-kpi-main { display: flex; align-items: center; gap: 13px; }
+.analytics-kpi-symbol { width: 34px; height: 34px; flex-shrink: 0; }
+.analytics-kpi .analytics-kpi-note { display: flex; align-items: center; gap: 4px; margin-top: 14px; font-size: var(--text-caption); }
+.analytics-kpi-merged { flex-direction: row; align-items: stretch; padding: 10px 12px; }
+.analytics-kpi-half { min-width: 0; flex: 1; display: flex; align-items: center; gap: 9px; }
+.analytics-kpi-half + .analytics-kpi-half { border-left: 1px solid #ffffff85; padding-left: 10px; margin-left: 8px; }
+.analytics-kpi-half p { font-size: var(--text-kpi-label); white-space: nowrap; }
+.analytics-kpi-icon { display: grid; place-items: center; width: 45px; height: 45px; border-radius: 50%; background: #ffffff22; flex-shrink: 0; }
+.analytics-legend { display: flex; align-items: center; gap: 16px; font-size: var(--text-caption); color: #536078; white-space: nowrap; }
+.analytics-legend span { display: inline-flex; gap: 6px; align-items: center; }
+.analytics-legend i { width: 10px; height: 10px; }
+.analytics-toolbar select, .farm-analytics select { font-size: var(--text-body); height: 29px; border-radius: 4px; }
+.analytics-toolbar select { min-width: 140px; }
+.analytics-toolbar button { text-transform: uppercase; border-radius: 4px; }
+.farm-analytics .analytics-table { min-width: 620px; font-size: var(--text-body-sm); }
+.farm-analytics .analytics-table th { font-size: var(--text-label); text-transform: uppercase; letter-spacing: var(--tracking-label); padding: 11px 14px; }
+.farm-analytics .analytics-table td { padding: 8px 14px; height: 36px; }
+
+
+.farm-analytics .analytics-table tbody td:last-child span, .analytics-recent article span.rounded-full { background: #e4f4df; color: #17642b; padding: 3px 10px; }
+.analytics-highlight { min-height: 80px; padding: 10px; border-radius: 5px; }
+.analytics-highlight > div > p { font-size: var(--text-body-sm); font-weight: var(--weight-body-sm); }
+.analytics-highlight > div > p:nth-child(2) { font-size: var(--text-body-sm); font-weight: var(--weight-body-sm); }
+.analytics-highlight > span:first-child { width: 48px; height: 48px; }
+.analytics-highlight > span:first-child svg { width: 28px; height: 28px; }
+.analytics-highlight--blue { border-color: #dce7ff; }
+.analytics-highlight--blue > span:first-child { background: #eff6ff; color: #2563eb; }
+.analytics-highlight--red { border-color: #fdecec; }
+.analytics-highlight--red > span:first-child { background: #fdecec; color: #d64545; }
+.analytics-highlight--green { border-color: #dcf1e4; }
+.analytics-highlight--green > span:first-child { background: #ecfdf3; color: #16a34a; }
+.analytics-highlight > span:last-child:not(:first-child) { width: 52px; height: 52px; }
+.analytics-recent article { min-height: 55px; padding: 9px 14px; }
+.analytics-recent article p { font-size: var(--text-body-sm); font-weight: var(--weight-body-sm); }
+.analytics-recent article p + p { font-size: var(--text-body-sm); margin-top: 3px; }
+.analytics-recent article > div:last-child > span:last-child { color: #15803d; font-size: var(--text-body-sm); min-width: 62px; }
+.analytics-cost-breakdown > div { gap: 12px; }
+.analytics-cost-breakdown > div > div:nth-child(2) * { font-size: var(--text-body-sm); }
+.analytics-cost-breakdown > div > div:nth-child(2) :is(strong,span:last-child), .analytics-cost-breakdown > div > div:last-child .text-\[\#d64545\] { color: #15803d; }
+.analytics-cost-breakdown > div > div:last-child { font-size: var(--text-body-sm); }
+.analytics-cost-breakdown > div > div:last-child p { font-size: var(--text-body-sm); }
+.analytics-cost-breakdown > div > div:last-child .rounded-full { background: #fff1c7; color: #d9a800; }
+@media (min-width: 1200px) { .farm-analytics section[aria-label="Block Performance"] { grid-template-columns: minmax(0,2.08fr) minmax(0,1fr); } }
+@media (max-width: 1199px) {
+  .analytics-kpis { grid-template-columns: repeat(6,minmax(0,1fr)); position: static; }
+  .analytics-kpi { grid-column: span 3; }
+  .analytics-kpi-merged { grid-column: span 3; }
+  .analytics-kpi--gold { order: -2; }
+  .analytics-kpi--blue { order: -1; }
+}
+@media (max-width: 639px) {
+  .admin-shell:has(.farm-analytics) > div > main { --admin-page-inset: 12px; padding: 0 12px 90px; }
+  .analytics-kpis { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .analytics-kpi { grid-column: auto; height: 100px; padding: 12px; }
+  .analytics-kpi--gold, .analytics-kpi--blue { grid-column: span 2; }
+  .analytics-kpi-merged { grid-column: span 2; }
+  .analytics-kpi--gold strong { font-size: var(--text-kpi-value); }
+  .analytics-kpi-half p { font-size: var(--text-kpi-label); }
+  .farm-analytics section > header h2 { font-size: var(--text-section-title); }
+  .analytics-toolbar { gap: 6px; }
+  .analytics-toolbar select { min-width: 0; max-width: 160px; }
+  .analytics-highlight svg { max-width: 90px; }
+  .analytics-cost-breakdown > div { grid-template-columns: minmax(120px,.8fr) minmax(0,1.2fr); }
+  .analytics-cost-breakdown > div > div:last-child { grid-column: span 2; }
+  .analytics-recent article { gap: 5px; }
+  .analytics-recent article > div:last-child { flex-direction: column; gap: 4px; align-items: flex-end; }
+}
+/* Override shared admin typography at the density of the supplied reference. */
+.admin-shell .farm-analytics section > header h2 { font-size: var(--text-section-title); line-height: var(--leading-section-title); }
+.admin-shell .farm-analytics .analytics-kpi p { font-size: var(--text-kpi-label); line-height: var(--leading-kpi-label); }
+.admin-shell .farm-analytics .analytics-kpi-half p { font-size: var(--text-kpi-label); }
+.admin-shell .farm-analytics .analytics-table td { font-size: var(--text-body-sm); line-height: var(--leading-body-sm); padding-top: 6px; padding-bottom: 6px; }
+.admin-shell .farm-analytics .analytics-highlight p { font-size: var(--text-body-sm); line-height: var(--leading-body-sm); }
+.admin-shell .farm-analytics .analytics-highlight p:nth-child(2) { font-size: var(--text-body-sm); line-height: var(--leading-body-sm); }
+.admin-shell .farm-analytics .analytics-recent article p { font-size: var(--text-body-sm); line-height: var(--leading-body-sm); }
+.admin-shell .farm-analytics .analytics-recent article p + p { font-size: var(--text-body-sm); line-height: var(--leading-body-sm); }
+.admin-shell .farm-analytics .analytics-cost-breakdown p { font-size: var(--text-body-sm); line-height: var(--leading-body-sm); }
+.admin-shell .farm-analytics .analytics-kpi--blue strong { font-size: var(--text-kpi-value); }
+.admin-shell .farm-analytics .analytics-kpi--blue .analytics-kpi-main { gap: 9px; }
+.admin-shell .farm-analytics .analytics-kpi--blue .analytics-kpi-symbol { width: 28px; }
+.admin-shell:has(.farm-analytics) > div > header { height: 56px; min-height: 56px; }
+.admin-shell:has(.farm-analytics) .admin-horizontal-menu > :is(a,div) > button,
+.admin-shell:has(.farm-analytics) .admin-horizontal-menu > a { padding-left: 10px; padding-right: 10px; font-size: var(--text-button); }
+.admin-shell:has(.farm-analytics) ~ aside button { background: #00be50; }
+.farm-analytics .analytics-cost-breakdown > div > div:first-child { height: 165px; }
+.farm-analytics .analytics-cost-breakdown > div > div:first-child strong { font-size: var(--text-body-sm); }
+.farm-analytics .analytics-cost-breakdown > div > div:first-child span { font-size: var(--text-body-sm); color: #536078; }
+.farm-analytics .analytics-cost-breakdown > div > div:last-child { padding-top: 12px; }
+.farm-analytics .analytics-table th { color: #15803d; }
+.farm-analytics .analytics-table th[data-metric="cost"] { color: #d64545; }
+.farm-analytics .analytics-table th[data-metric="yield"] { color: #2563eb; }
+.farm-analytics > section[aria-label="Block Performance"] > div { min-width: 0; }
+.farm-analytics { min-width: 0; }
+@media (max-width: 639px) {
+ .farm-analytics .analytics-table { min-width: 620px; }
+ .farm-analytics section > header { gap: 8px; }
+ .farm-analytics section > header > h2 { flex-shrink: 1; }
+ .farm-analytics .analytics-table + footer { flex-wrap: wrap; }
+ .farm-analytics .analytics-kpi-half p { white-space: normal; }
+}
+.farm-analytics .analytics-table tbody td:last-child span[data-status-tone="caution"], .analytics-recent article span[data-status-tone="caution"] { background: #fff1c7; color: #8a5700; }
+.farm-analytics .analytics-table tbody td:last-child span[data-status-tone="active"], .analytics-recent article span[data-status-tone="active"] { background: #eff6ff; color: #1d4ed8; }
+
+/* Cover the seam and side gutters beneath the pinned navigation. */
+@media (min-width: 1200px) {
+  .analytics-kpis::before {
+    content: ''; position: absolute; z-index: -1; pointer-events: none;
+    inset: -8px calc(-1 * var(--admin-page-inset)) -4px;
+    background: #f8faf9;
+  }
+}

@@ -84,6 +84,7 @@ export default function Applications() {
 
   return (
     <div>
+      <h1 className="mb-6 text-page-title">Applications</h1>
       <div className="mb-6 grid gap-4 sm:grid-cols-3">
         <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
           <Briefcase className="h-5 w-5 text-primary" />
@@ -103,7 +104,7 @@ export default function Applications() {
       </div>
 
       <div className="mb-5 flex flex-col gap-3 rounded-xl border border-border bg-card p-4 shadow-sm lg:flex-row lg:items-center">
-        <label className="relative flex-1">
+        <label className="relative flex-1 text-label">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
             value={query}
@@ -139,7 +140,7 @@ export default function Applications() {
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
-                          <h2 className="font-heading text-xl font-bold">{application.candidate_name}</h2>
+                          <h2 className="text-section-title">{application.candidate_name}</h2>
                           <StatusBadge status={application.status || 'new'} />
                           <span className="rounded-full bg-primary/10 px-2 py-1 text-xs font-semibold text-primary">
                             {atsLabels[application.ats_status] || 'ATS Review'}

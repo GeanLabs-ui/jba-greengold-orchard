@@ -62,7 +62,7 @@ export default function PaymentReturn() {
   }, [autoStart, order, status, start]);
 
   return <div className="mx-auto max-w-xl rounded-xl border bg-white p-5 sm:p-8">
-    <h1 className="text-2xl font-bold">{status === 'paid' ? 'Payment confirmed' : 'Complete your payment'}</h1>
+    <h1 className="text-page-title">{status === 'paid' ? 'Payment confirmed' : 'Complete your payment'}</h1>
     <p className="my-3 text-sm text-slate-600" role="status">{busy ? 'Checking your payment…' : status === 'paid' ? 'Your payment has been verified and your invoice updated.' : status === 'failed' ? 'This payment did not complete. You can try again below.' : cancelled ? 'You left checkout. We will check whether any payment completed.' : 'Your order is saved. Payment is confirmed only after verification.'}</p>
     {order && <p className="mb-4 text-sm font-semibold">{order.order_number} · {formatProductPrice(order.total_amount)}</p>}
     {error && <p role="alert" className="my-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}

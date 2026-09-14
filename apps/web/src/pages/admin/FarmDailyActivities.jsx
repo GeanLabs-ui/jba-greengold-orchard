@@ -229,7 +229,7 @@ const Panel = ({ title, description, children, action }) => (
   <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
     <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
       <div>
-        <h2 className="font-heading text-lg font-bold">{title}</h2>
+        <h2 className="text-section-title">{title}</h2>
         {description && <p className="text-sm text-muted-foreground">{description}</p>}
       </div>
       {action}
@@ -459,21 +459,21 @@ const removedSectionPaths = [
 ];
 
 const activityLogColumns = [
-  { key: 'activity_date', label: 'Date', className: 'w-[92px]', headerClassName: 'bg-[#ecf0f1] text-[#407933]', render: (item) => formatDate(item.activity_date) },
-  { key: 'title', label: 'Task Description', className: 'w-[168px]', headerClassName: 'bg-[#ecf0f1] text-[#407933]', render: (item) => item.title || item.activity_title || item.description },
-  { key: 'status', label: 'Status', className: 'w-[96px]', headerClassName: 'bg-[#ecf0f1] text-[#407933]' },
-  { key: 'category', label: 'Activity Type', className: 'w-[110px]', headerClassName: 'bg-[#ecf0f1] text-[#407933]', render: (item) => item.category },
-  { key: 'item_tag', label: 'Item Tag', className: 'w-[92px]', headerClassName: 'bg-[#ecf0f1] text-[#407933]', render: (item) => item.item_tag || item.input_name || item.equipment_used },
-  { key: 'quantity', label: 'Quantity', className: 'w-[72px] text-center', headerClassName: 'bg-[#ecf0f1] text-[#407933]', render: (item) => formatNumber(item.quantity_used ?? item.harvest_quantity ?? item.crates_used) },
-  { key: 'responsible', label: 'Responsible', className: 'w-[116px]', headerClassName: 'bg-[#ecf0f1] text-[#407933]', render: (item) => item.responsible || item.assigned_workers || item.supervisor_name },
-  { key: 'contact', label: 'Contact', className: 'w-[92px]', headerClassName: 'bg-[#ecf0f1] text-[#407933]', render: (item) => item.contact },
-  { key: 'block_name', label: 'Farm Block', className: 'w-[102px]', headerClassName: 'bg-[#ecf0f1] text-[#407933]', render: (item) => item.block_name || item.block_code },
-  { key: 'projected_cost', label: 'Projected Cost', className: 'w-[96px] text-center', headerClassName: 'bg-[#ecf0f1] text-[#407933]', render: (item) => <span className="font-semibold text-[#407933]">{formatCurrency(item.projected_cost)}</span> },
-  { key: 'actual_cost', label: 'Actual Cost', className: 'w-[96px] text-center', headerClassName: 'bg-[#ecf0f1] text-[#407933]', render: (item) => <span className="font-semibold text-[#407933]">{formatCurrency(item.actual_cost ?? item.cost)}</span> },
-  { key: 'revenue', label: 'Actual Revenue', className: 'w-[84px] text-center', headerClassName: 'bg-[#ecf0f1] text-[#407933]', render: (item) => <span className="font-semibold text-[#407933]">{formatCurrency(item.actual_revenue ?? item.revenue)}</span> },
-  { key: 'output_quantity_kg', label: 'Harvest / Output kg', className: 'w-[104px] text-center', headerClassName: 'bg-[#ecf0f1] text-[#407933]', render: (item) => <span className="font-semibold text-[#407933]">{formatNumber(item.harvest_quantity ?? item.output_quantity_kg)} kg</span> },
-  { key: 'cost_type', label: 'Type of Cost', className: 'w-[86px] text-center', headerClassName: 'bg-[#ecf0f1] text-[#407933]', render: (item) => item.cost_type },
-  { key: 'notes', label: 'Notes', className: 'w-[170px]', headerClassName: 'bg-[#ecf0f1] text-[#407933]', render: (item) => item.notes },
+  { key: 'activity_date', label: 'Date', className: 'w-[92px]', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => formatDate(item.activity_date) },
+  { key: 'title', label: 'Task Description', className: 'w-[168px]', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => item.title || item.activity_title || item.description },
+  { key: 'status', label: 'Status', className: 'w-[96px]', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]' },
+  { key: 'category', label: 'Activity Type', className: 'w-[110px]', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => item.category },
+  { key: 'item_tag', label: 'Item Tag', className: 'w-[92px]', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => item.item_tag || item.input_name || item.equipment_used },
+  { key: 'quantity', label: 'Quantity', className: 'w-[72px] text-center', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => formatNumber(item.quantity_used ?? item.harvest_quantity ?? item.crates_used) },
+  { key: 'responsible', label: 'Responsible', className: 'w-[116px]', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => item.responsible || item.assigned_workers || item.supervisor_name },
+  { key: 'contact', label: 'Contact', className: 'w-[92px]', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => item.contact },
+  { key: 'block_name', label: 'Farm Block', className: 'w-[102px]', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => item.block_name || item.block_code },
+  { key: 'projected_cost', label: 'Projected Cost', className: 'w-[96px] text-center', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => <span className="font-semibold text-[#2e7d32]">{formatCurrency(item.projected_cost)}</span> },
+  { key: 'actual_cost', label: 'Actual Cost', className: 'w-[96px] text-center', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => <span className="font-semibold text-[#2e7d32]">{formatCurrency(item.actual_cost ?? item.cost)}</span> },
+  { key: 'revenue', label: 'Actual Revenue', className: 'w-[84px] text-center', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => <span className="font-semibold text-[#2e7d32]">{formatCurrency(item.actual_revenue ?? item.revenue)}</span> },
+  { key: 'output_quantity_kg', label: 'Harvest / Output kg', className: 'w-[104px] text-center', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => <span className="font-semibold text-[#2e7d32]">{formatNumber(item.harvest_quantity ?? item.output_quantity_kg)} kg</span> },
+  { key: 'cost_type', label: 'Type of Cost', className: 'w-[86px] text-center', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => item.cost_type },
+  { key: 'notes', label: 'Notes', className: 'w-[170px]', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => item.notes },
 ];
 
 const activityStatusFilterOptions = ['All', 'Completed', 'Pending', 'In Progress'];
@@ -765,14 +765,14 @@ const DailyActivityLog = ({
       onPointerLeave={(event) => closePreview(itemId, event)}
     >
       <div className="flex items-center justify-between">
-        <h3 className="text-xs font-semibold text-slate-900">Activity Details</h3>
+        <h3 className="text-slate-900 text-card-title">Activity Details</h3>
         <button type="button" onClick={(event) => closeDetails(event)} className="rounded p-1 text-slate-600 hover:bg-slate-100" aria-label="Close activity details">
           <X className="h-4 w-4" />
         </button>
       </div>
-      <div className="mt-2 grid gap-0 text-[11px] leading-5 md:grid-cols-2 xl:grid-cols-4">
+      <div className="mt-2 grid gap-0 text-caption leading-5 md:grid-cols-2 xl:grid-cols-4">
         <div className="pr-6 xl:border-r xl:border-slate-200">
-          <p className="mb-1 font-semibold text-[#167329]">Details</p>
+          <p className="mb-1 font-semibold text-[#256b2a]">Details</p>
           {[
             ['Date', formatDate(item.activity_date)],
             ['Activity Type', item.category],
@@ -783,7 +783,7 @@ const DailyActivityLog = ({
           ].map(([label, value]) => <p key={label} className="grid grid-cols-[118px_1fr] gap-3"><span className="text-slate-600">{label}</span><span>{displayValue(value)}</span></p>)}
         </div>
         <div className="px-0 pt-4 md:pl-6 md:pt-0 xl:border-r xl:border-slate-200 xl:pr-6">
-          <p className="mb-1 font-semibold text-[#167329]">Financials</p>
+          <p className="mb-1 font-semibold text-[#256b2a]">Financials</p>
           {[
             ['Projected Cost', formatCurrency(item.projected_cost)],
             ['Actual Cost', formatCurrency(item.actual_cost ?? item.cost)],
@@ -792,7 +792,7 @@ const DailyActivityLog = ({
           ].map(([label, value]) => <p key={label} className="grid grid-cols-[132px_1fr] gap-3"><span className={label.includes('Revenue') ? 'text-blue-600' : 'text-rose-600'}>{label}</span><span className={label.includes('Revenue') ? 'font-semibold text-blue-600' : 'font-semibold text-rose-600'}>{value}</span></p>)}
         </div>
         <div className="px-0 pt-4 md:pr-6 xl:border-r xl:border-slate-200 xl:pl-6 xl:pt-0">
-          <p className="mb-1 font-semibold text-[#167329]">Production</p>
+          <p className="mb-1 font-semibold text-[#256b2a]">Production</p>
           {[
             ['Harvest / Output', `${formatNumber(item.harvest_quantity ?? item.output_quantity_kg)} kg`],
             ['Farm Block', item.block_name || item.block_code],
@@ -800,7 +800,7 @@ const DailyActivityLog = ({
           ].map(([label, value]) => <p key={label} className="grid grid-cols-[132px_1fr] gap-3"><span className={label === 'Harvest / Output' ? 'text-emerald-700' : 'text-slate-600'}>{label}</span><span className={label === 'Harvest / Output' ? 'font-semibold text-emerald-700' : ''}>{displayValue(value)}</span></p>)}
         </div>
         <div className="flex min-h-32 flex-col pl-0 pt-4 md:pl-6 xl:pt-0">
-          <p className="mb-1 font-semibold text-[#167329]">Notes</p>
+          <p className="mb-1 font-semibold text-[#256b2a]">Notes</p>
           <p className="max-w-xs leading-5 text-slate-700">{displayValue(item.notes)}</p>
           <div className="mt-auto flex justify-end gap-3 pt-4">
             {renderEditAction?.(item)}
@@ -821,12 +821,12 @@ const DailyActivityLog = ({
   );
 
   const renderActivityLogColumnHeader = (column) => {
-    const selectClassName = 'w-full cursor-pointer bg-transparent text-center text-[10px] font-semibold text-current outline-none';
+    const selectClassName = 'w-full cursor-pointer bg-transparent text-center text-caption font-semibold text-current outline-none';
 
     if (column.key === 'activity_date') {
       return (
         <div className="relative">
-          <label className="flex items-center justify-center gap-1">
+          <label className="flex items-center justify-center gap-1 text-label">
             <CalendarDays className="h-3 w-3 shrink-0" />
             <span className="sr-only">Filter activities by date</span>
             <select value={dateFilter} onChange={(event) => setDateFilter(event.target.value)} className={selectClassName} aria-label="Filter activities by date">
@@ -838,12 +838,12 @@ const DailyActivityLog = ({
             </select>
           </label>
           {dateFilter === 'custom' ? (
-            <div className="absolute left-0 top-full z-50 mt-1 grid w-64 gap-2 rounded-md border border-slate-200 bg-white p-3 text-left text-[10px] text-slate-600 shadow-lg">
-              <label className="grid gap-1">From
-                <Input type="date" value={customStartDate} onChange={(event) => setCustomStartDate(event.target.value)} className="h-8 bg-white text-[10px]" aria-label="Custom date range start" />
+            <div className="absolute left-0 top-full z-50 mt-1 grid w-64 gap-2 rounded-md border border-slate-200 bg-white p-3 text-left text-caption text-slate-600 shadow-lg">
+              <label className="grid gap-1 text-label">From
+                <Input type="date" value={customStartDate} onChange={(event) => setCustomStartDate(event.target.value)} className="h-8 bg-white text-caption" aria-label="Custom date range start" />
               </label>
-              <label className="grid gap-1">To
-                <Input type="date" value={customEndDate} onChange={(event) => setCustomEndDate(event.target.value)} className="h-8 bg-white text-[10px]" aria-label="Custom date range end" />
+              <label className="grid gap-1 text-label">To
+                <Input type="date" value={customEndDate} onChange={(event) => setCustomEndDate(event.target.value)} className="h-8 bg-white text-caption" aria-label="Custom date range end" />
               </label>
             </div>
           ) : null}
@@ -852,15 +852,15 @@ const DailyActivityLog = ({
     }
 
     if (column.key === 'block_name') {
-      return <label className="block"><span className="sr-only">Filter activities by farm block</span><select value={farmBlockFilter} onChange={(event) => onFarmBlockFilterChange(event.target.value)} className={selectClassName} aria-label="Filter activities by farm block">{farmBlockFilterOptions.map((option) => <option key={option.value} value={option.value}>{option.value === 'All' ? 'Farm Block' : option.label}</option>)}</select></label>;
+      return <label className="block text-label"><span className="sr-only">Filter activities by farm block</span><select value={farmBlockFilter} onChange={(event) => onFarmBlockFilterChange(event.target.value)} className={selectClassName} aria-label="Filter activities by farm block">{farmBlockFilterOptions.map((option) => <option key={option.value} value={option.value}>{option.value === 'All' ? 'Farm Block' : option.label}</option>)}</select></label>;
     }
 
     if (column.key === 'category') {
-      return <label className="block"><span className="sr-only">Filter activities by type</span><select value={activityTypeFilter} onChange={(event) => onActivityTypeFilterChange(event.target.value)} className={selectClassName} aria-label="Filter activities by type">{activityTypeFilterOptions.map((activityType) => <option key={activityType} value={activityType}>{activityType === 'All' ? 'Activity Type' : activityType}</option>)}</select></label>;
+      return <label className="block text-label"><span className="sr-only">Filter activities by type</span><select value={activityTypeFilter} onChange={(event) => onActivityTypeFilterChange(event.target.value)} className={selectClassName} aria-label="Filter activities by type">{activityTypeFilterOptions.map((activityType) => <option key={activityType} value={activityType}>{activityType === 'All' ? 'Activity Type' : activityType}</option>)}</select></label>;
     }
 
     if (column.key === 'status') {
-      return <label className="block"><span className="sr-only">Filter activities by status</span><select value={statusFilter} onChange={(event) => onStatusFilterChange(event.target.value)} className={selectClassName} aria-label="Filter activities by status">{activityStatusFilterOptions.map((status) => <option key={status} value={status}>{status === 'All' ? 'Status' : status}</option>)}</select></label>;
+      return <label className="block text-label"><span className="sr-only">Filter activities by status</span><select value={statusFilter} onChange={(event) => onStatusFilterChange(event.target.value)} className={selectClassName} aria-label="Filter activities by status">{activityStatusFilterOptions.map((status) => <option key={status} value={status}>{status === 'All' ? 'Status' : status}</option>)}</select></label>;
     }
 
     return <span>{column.label}</span>;
@@ -870,17 +870,17 @@ const DailyActivityLog = ({
     <div className="space-y-3">
       <div className="flex justify-end">
         <div className="flex w-full items-center gap-2 sm:w-auto">
-          <label className="relative min-w-0 flex-1 sm:w-56 sm:flex-none">
+          <label className="relative min-w-0 flex-1 sm:w-56 sm:flex-none text-label">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
             <Input
               value={search}
               onChange={(event) => onSearchChange(event.target.value)}
               placeholder="Search activity logs..."
-              className="h-9 border-slate-200 bg-white pl-8 text-[11px] shadow-none placeholder:text-slate-400"
+              className="h-9 border-slate-200 bg-white pl-8 text-caption shadow-none placeholder:text-slate-400"
               aria-label="Search activity logs"
             />
           </label>
-          <Button type="button" variant="outline" onClick={exportActivityLogPdf} className="h-9 border-slate-200 bg-white px-3 text-[11px] font-semibold text-slate-600 shadow-sm hover:bg-slate-50 hover:text-slate-900">
+          <Button type="button" variant="outline" onClick={exportActivityLogPdf} className="h-9 border-slate-200 bg-white px-3 text-caption font-semibold text-slate-600 shadow-sm hover:bg-slate-50 hover:text-slate-900">
             <Download className="mr-1.5 h-3.5 w-3.5" />Export
           </Button>
           {renderCreateAction}
@@ -890,40 +890,40 @@ const DailyActivityLog = ({
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         <section className="min-h-[92px] rounded-lg border border-emerald-100 bg-white px-4 py-3 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
           <div className="flex h-full items-center gap-3">
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#e7f5e4] text-[#167329]">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#f4fbf5] text-[#256b2a]">
               <ClipboardList className="h-5 w-5" />
             </span>
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Total Activities</p>
+              <p className="text-caption font-semibold uppercase tracking-wide text-slate-500">Total Activities</p>
               <p className="mt-1 text-xl font-bold leading-none text-slate-900">{formatNumber(visibleItems.length)}</p>
-              <p className="mt-1 text-[10px] text-slate-500">Current selection</p>
+              <p className="mt-1 text-caption text-slate-500">Current selection</p>
             </div>
           </div>
         </section>
 
         <section className="min-h-[92px] rounded-lg border border-rose-100 bg-[linear-gradient(135deg,#fff_0%,#fff8f8_100%)] px-4 py-3 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-          <p className="text-center text-[10px] font-semibold text-rose-600">Total Cost</p>
+          <p className="text-center text-caption font-semibold text-rose-600">Total Cost</p>
           <div className="mt-2 grid grid-cols-2 divide-x divide-rose-100">
             <div className="pr-3">
-              <p className="text-[9px] text-slate-500">Projected Cost</p>
+              <p className="text-caption text-slate-500">Projected Cost</p>
               <p className="mt-1 whitespace-nowrap text-sm font-bold text-rose-600">{formatCurrency(totalProjectedCost)}</p>
             </div>
             <div className="pl-3">
-              <p className="text-[9px] text-slate-500">Actual Cost</p>
+              <p className="text-caption text-slate-500">Actual Cost</p>
               <p className="mt-1 whitespace-nowrap text-sm font-bold text-rose-600">{formatCurrency(totalActualCost)}</p>
             </div>
           </div>
         </section>
 
         <section className="min-h-[92px] rounded-lg border border-blue-100 bg-[linear-gradient(135deg,#fff_0%,#f5f9ff_100%)] px-4 py-3 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-          <p className="text-center text-[10px] font-semibold text-blue-600">Total Revenue</p>
+          <p className="text-center text-caption font-semibold text-blue-600">Total Revenue</p>
           <div className="mt-2 grid grid-cols-2 divide-x divide-blue-100">
             <div className="pr-3">
-              <p className="text-[9px] text-slate-500">Projected Revenue</p>
+              <p className="text-caption text-slate-500">Projected Revenue</p>
               <p className="mt-1 whitespace-nowrap text-sm font-bold text-blue-600">{formatCurrency(totalProjectedRevenue)}</p>
             </div>
             <div className="pl-3">
-              <p className="text-[9px] text-slate-500">Actual Revenue</p>
+              <p className="text-caption text-slate-500">Actual Revenue</p>
               <p className="mt-1 whitespace-nowrap text-sm font-bold text-blue-600">{formatCurrency(totalActualRevenue)}</p>
             </div>
           </div>
@@ -935,9 +935,9 @@ const DailyActivityLog = ({
               <Leaf className="h-5 w-5" />
             </span>
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-amber-700">Total Harvest Output</p>
+              <p className="text-caption font-semibold uppercase tracking-wide text-amber-700">Total Harvest Output</p>
               <p className="mt-1 text-xl font-bold leading-none text-slate-900">{formatNumber(totalOutput)} <small className="text-xs font-semibold text-slate-500">kg</small></p>
-              <p className="mt-1 text-[10px] text-slate-500">Current selection</p>
+              <p className="mt-1 text-caption text-slate-500">Current selection</p>
             </div>
           </div>
         </section>
@@ -948,9 +948,9 @@ const DailyActivityLog = ({
               <CheckCircle2 className="h-5 w-5" />
             </span>
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-violet-700">Completion Rate</p>
+              <p className="text-caption font-semibold uppercase tracking-wide text-violet-700">Completion Rate</p>
               <p className="mt-1 text-xl font-bold leading-none text-violet-600">{completedPercent}%</p>
-              <p className="mt-1 text-[10px] text-slate-500">Completed</p>
+              <p className="mt-1 text-caption text-slate-500">Completed</p>
             </div>
           </div>
         </section>
@@ -958,20 +958,20 @@ const DailyActivityLog = ({
 
       <section className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
       <div className="max-h-[calc(100vh-12rem)] overflow-auto">
-        <table className="w-full min-w-[1320px] table-fixed border-collapse text-[11px] leading-4 text-slate-800">
+        <table className="w-full min-w-[1320px] table-fixed border-collapse text-caption leading-4 text-slate-800">
           <thead>
             <tr className="h-8">
-              <th colSpan={4} className="sticky top-0 z-30 h-8 border border-slate-100 bg-[#eaf8e8] px-2 py-1 text-center text-[10px] font-semibold text-[#167329]">Activity</th>
-              <th colSpan={5} className="sticky top-0 z-30 h-8 border border-slate-100 bg-[#edf4ff] px-2 py-1 text-center text-[10px] font-semibold text-[#3b6fc9]">Assignment &amp; Inputs</th>
-              <th colSpan={5} className="sticky top-0 z-30 h-8 border border-slate-100 bg-[#fff0f2] px-2 py-1 text-center text-[10px] font-semibold text-[#e14b5a]">Financials &amp; Output</th>
-              <th colSpan={1} className="sticky top-0 z-30 h-8 border border-slate-100 bg-[#f6f0ff] px-2 py-1 text-center text-[10px] font-semibold text-[#805ad5]">Record</th>
+              <th colSpan={4} className="sticky top-0 z-30 h-8 border border-slate-100 bg-[#f4fbf5] px-2 py-1 text-center text-caption font-semibold text-[#256b2a]">Activity</th>
+              <th colSpan={5} className="sticky top-0 z-30 h-8 border border-slate-100 bg-[#f4fbf5] px-2 py-1 text-center text-caption font-semibold text-[#3b7a57]">Assignment &amp; Inputs</th>
+              <th colSpan={5} className="sticky top-0 z-30 h-8 border border-slate-100 bg-[#f4fbf5] px-2 py-1 text-center text-caption font-semibold text-[#355e3b]">Financials &amp; Output</th>
+              <th colSpan={1} className="sticky top-0 z-30 h-8 border border-slate-100 bg-[#f4fbf5] px-2 py-1 text-center text-caption font-semibold text-[#3b7a57]">Record</th>
             </tr>
             <tr className="h-14">
               {activityLogColumns.map((column) => (
                 <th
                   key={column.key}
                   scope="col"
-                  className={`sticky top-8 z-30 h-14 border border-slate-100 px-3 py-2 text-center text-[10px] font-semibold ${column.headerClassName || 'bg-[#eff9ee] text-[#167329]'} ${column.className || ''}`}
+                  className={`sticky top-8 z-30 h-14 border border-slate-100 px-3 py-2 text-center text-caption font-semibold ${column.headerClassName || 'bg-[#f9fcfa] text-[#256b2a]'} ${column.className || ''}`}
                 >
                   {renderActivityLogColumnHeader(column)}
                 </th>
@@ -1000,11 +1000,11 @@ const DailyActivityLog = ({
                 }}
                 tabIndex={0}
                 aria-selected={isSelected}
-                className={`h-16 cursor-pointer transition-colors hover:bg-[#f3faf2] ${isSelected ? 'bg-[#eff8ef]' : 'bg-white'}`}
+                className={`h-16 cursor-pointer transition-colors hover:bg-[#f9fcfa] ${isSelected ? 'bg-[#f4fbf5]' : 'bg-white'}`}
               >
                 {activityLogColumns.map((column) => {
                   const value = column.key === 'status' ? (
-                    <span className="inline-flex rounded-sm bg-[#dff1d8] px-2 py-0.5 text-[10px] font-medium text-[#167329]">
+                    <span className="inline-flex rounded-sm bg-[#e8f5e9] px-2 py-0.5 text-caption font-medium text-[#256b2a]">
                       {item.status || 'Pending'}
                     </span>
                   ) : column.render ? column.render(item) : item[column.key];
@@ -1018,7 +1018,7 @@ const DailyActivityLog = ({
                 })}
               </tr>
               {isSelected && (
-                <tr className="bg-[#f8fbf8]">
+                <tr className="bg-[#f9fcfa]">
                   <td colSpan={activityLogColumns.length} className="border border-slate-200 p-0 align-top">
                     {renderActivityDetails(item, itemId)}
                   </td>
@@ -1032,20 +1032,20 @@ const DailyActivityLog = ({
       </div>
       </section>
 
-      <footer className="grid items-center gap-4 border-t border-slate-200 px-5 py-4 text-[11px] text-slate-600 md:grid-cols-3">
+      <footer className="grid items-center gap-4 border-t border-slate-200 px-5 py-4 text-caption text-slate-600 md:grid-cols-3">
         <p>Showing {visibleItems.length ? pageStart + 1 : 0}–{Math.min(pageStart + rowsPerPage, visibleItems.length)} of {visibleItems.length}</p>
-        <label className="flex items-center justify-center gap-3">
+        <label className="flex items-center justify-center gap-3 text-label">
           <span>Rows per page:</span>
           <select
             value={rowsPerPage}
             onChange={(event) => setRowsPerPage(Number(event.target.value))}
-            className="h-8 rounded-md border border-slate-200 bg-white px-3 text-xs text-slate-800 outline-none focus:border-[#167329]"
+            className="h-8 rounded-md border border-slate-200 bg-white px-3 text-xs text-slate-800 outline-none focus:border-[#256b2a]"
           >
             {[10, 20, 50].map((size) => <option key={size} value={size}>{size}</option>)}
           </select>
         </label>
         <nav className="flex items-center justify-end gap-2" aria-label="Activity log pagination">
-          <Button type="button" variant="outline" size="sm" disabled={safePage === 1} onClick={() => setCurrentPage((page) => Math.max(1, page - 1))} className="h-8 px-3 text-[11px]">
+          <Button type="button" variant="outline" size="sm" disabled={safePage === 1} onClick={() => setCurrentPage((page) => Math.max(1, page - 1))} className="h-8 px-3 text-caption">
             <ChevronLeft className="mr-1 h-3.5 w-3.5" />Previous
           </Button>
           {Array.from({ length: pageCount }, (_, index) => index + 1).map((page) => (
@@ -1055,12 +1055,12 @@ const DailyActivityLog = ({
               variant={page === safePage ? 'default' : 'outline'}
               size="sm"
               onClick={() => setCurrentPage(page)}
-              className={`h-8 min-w-8 px-2 text-[11px] ${page === safePage ? 'bg-[#116b25] text-white hover:bg-[#0d5c1f]' : ''}`}
+              className={`h-8 min-w-8 px-2 text-caption ${page === safePage ? 'bg-[#256b2a] text-white hover:bg-[#1b5e20]' : ''}`}
             >
               {page}
             </Button>
           ))}
-          <Button type="button" variant="outline" size="sm" disabled={safePage === pageCount} onClick={() => setCurrentPage((page) => Math.min(pageCount, page + 1))} className="h-8 px-3 text-[11px]">
+          <Button type="button" variant="outline" size="sm" disabled={safePage === pageCount} onClick={() => setCurrentPage((page) => Math.min(pageCount, page + 1))} className="h-8 px-3 text-caption">
             Next<ChevronRight className="ml-1 h-3.5 w-3.5" />
           </Button>
         </nav>
@@ -2492,9 +2492,9 @@ export default function FarmDailyActivities() {
   ];
 
   const gradePie = [
-    { name: 'Grade A', value: (data.harvestBatches || []).reduce((sum, item) => sum + asNumber(item.grade_a_kg), 0), color: 'hsl(150 45% 42%)' },
-    { name: 'Grade B', value: (data.harvestBatches || []).reduce((sum, item) => sum + asNumber(item.grade_b_kg), 0), color: 'hsl(33 95% 52%)' },
-    { name: 'Rejected', value: (data.harvestBatches || []).reduce((sum, item) => sum + asNumber(item.rejected_kg), 0), color: 'hsl(0 72% 51%)' },
+    { name: 'Grade A', value: (data.harvestBatches || []).reduce((sum, item) => sum + asNumber(item.grade_a_kg), 0), color: '#2e7d32' },
+    { name: 'Grade B', value: (data.harvestBatches || []).reduce((sum, item) => sum + asNumber(item.grade_b_kg), 0), color: '#6b8e23' },
+    { name: 'Rejected', value: (data.harvestBatches || []).reduce((sum, item) => sum + asNumber(item.rejected_kg), 0), color: '#355e3b' },
   ];
 
   const harvestByFarm = groupSum(data.harvestBatches || [], 'farm_name', 'quantity_harvested_kg');
@@ -2708,17 +2708,17 @@ export default function FarmDailyActivities() {
         {type === 'pie' ? (
           <PieChart>
             <Pie data={chartData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} label>
-              {chartData.map((entry) => <Cell key={entry.name} fill={entry.color || 'hsl(33 95% 52%)'} />)}
+              {chartData.map((entry) => <Cell key={entry.name} fill={entry.color || '#6b8e23'} />)}
             </Pie>
             <Tooltip />
           </PieChart>
         ) : (
           <BarChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-            <XAxis dataKey="name" fontSize={12} />
-            <YAxis fontSize={12} />
+            <XAxis dataKey="name" fontSize="var(--text-caption)" />
+            <YAxis fontSize="var(--text-caption)" />
             <Tooltip />
-            <Bar dataKey="value" fill="hsl(33 95% 52%)" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="value" fill="#6b8e23" radius={[4, 4, 0, 0]} />
           </BarChart>
         )}
       </ResponsiveContainer>
@@ -2795,7 +2795,7 @@ export default function FarmDailyActivities() {
             onActivityTypeFilterChange={setActivityTypeFilter}
             search={search}
             onSearchChange={setSearch}
-            renderCreateAction={createAction('Add Daily Activity', dailyActivityLogFields, createDailyLogEntry, 'Add Log Entry', 'h-9 bg-[#0d5b1c] px-4 text-[11px] text-white hover:bg-[#083f13]')}
+            renderCreateAction={createAction('Add Daily Activity', dailyActivityLogFields, createDailyLogEntry, 'Add Log Entry', 'h-9 bg-[#1b5e20] px-4 text-caption text-white hover:bg-[#123524]')}
             deletingId={deletingActivityId}
             onDelete={deleteDailyLogEntry}
             renderEditAction={(item) => editAction(
@@ -3163,7 +3163,8 @@ export default function FarmDailyActivities() {
   const pageInfo = getPageInfo();
   return (
     <div className="space-y-6">
-      {activeScreen !== 'Daily Activity Log' ? <div className="-mt-3 border-b border-border pb-3">
+      <h1 className="text-page-title">{activeScreen === 'Operations Analytics Overview' ? 'Analytics Overview' : activeScreen}</h1>
+      {activeScreen !== 'Daily Activity Log' ? <div data-page-navigation className="-mt-3 border-b border-border pb-3">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-end">
           <div className="flex flex-wrap items-center gap-2">
             {!pageInfo.hideSearch ? (

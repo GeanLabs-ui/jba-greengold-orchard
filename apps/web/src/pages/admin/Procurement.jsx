@@ -54,7 +54,7 @@ export default function Procurement() {
 
   return (
     <div>
-      <PageHeader>
+      <PageHeader title="Procurement">
         <AdminCreateDialog
           title="New Purchase Order"
           description="Create a supplier purchase order."

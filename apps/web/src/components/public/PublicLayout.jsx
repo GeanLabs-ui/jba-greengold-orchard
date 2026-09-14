@@ -7,6 +7,9 @@ import CartDrawer from '@/components/commerce/CartDrawer';
 export default function PublicLayout() {
   const location = useLocation();
   const isDeliveryReference = location.pathname === '/supply';
+  if (location.pathname === '/about') {
+    return <div className="public-shell about-reference-shell"><PublicNavbar /><main><Outlet /></main><PublicFooter /><CartDrawer /></div>;
+  }
 
   if (isDeliveryReference) {
     return (
@@ -15,18 +18,19 @@ export default function PublicLayout() {
         <main>
           <Outlet />
         </main>
+        <PublicFooter />
         <CartDrawer />
       </div>
     );
   }
 
   return (
-    <div className="public-shell app-surface flex min-h-screen flex-col">
+    <div className={`public-shell app-surface flex min-h-screen flex-col ${location.pathname === '/sustainability' ? 'sustainability-shell' : ''}`}>
       <PublicNavbar />
       <main className="flex-1">
         <Outlet />
       </main>
-      <PublicFooter />
+      <PublicFooter workingLinks={location.pathname === '/sustainability'} />
       <CartDrawer />
     </div>
   );

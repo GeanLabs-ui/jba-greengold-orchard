@@ -66,28 +66,28 @@ const SchedulePill = ({ value }) => <span className={`drc-pill ${value || ''}`}>
 
 const MasterTaskField = ({ label, children }) => (
   <div className="space-y-1.5">
-    <Label className="text-xs font-medium text-slate-700">{label}</Label>
+    <Label className="text-slate-700 text-label">{label}</Label>
     {children}
   </div>
 );
 
 const MasterTaskSection = ({ icon: Icon, title, children }) => (
   <section className="rounded-xl border border-slate-200/90 bg-white p-3">
-    <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-[#316f2b]"><Icon className="h-[18px] w-[18px]" strokeWidth={1.9} />{title}</h3>
+    <h3 className="mb-2 flex items-center gap-2 text-[#256b2a] text-card-title"><Icon className="h-[18px] w-[18px]" strokeWidth={1.9} />{title}</h3>
     {children}
   </section>
 );
 
 const NewMasterTaskDialog = ({ busy, form, onChange, onOpenChange, onSubmit, open }) => (
   <Dialog open={open} onOpenChange={onOpenChange}>
-    <DialogContent className="z-[70] max-h-[calc(100vh-1rem)] w-[calc(100vw-1rem)] max-w-none gap-0 overflow-y-auto rounded-xl border border-slate-200 bg-[#fdfdfc] p-0 shadow-[0_24px_80px_rgba(0,0,0,0.38)] sm:max-w-[1080px] [&>button]:right-3 [&>button]:top-3 [&>button]:grid [&>button]:h-8 [&>button]:w-8 [&>button]:place-items-center [&>button]:rounded-md [&>button]:bg-slate-100 [&>button]:text-slate-600 [&>button]:opacity-100 [&>button:hover]:bg-slate-200 [&>button_svg]:h-[18px] [&>button_svg]:w-[18px]">
+    <DialogContent className="z-[70] max-h-[calc(100vh-1rem)] w-[calc(100vw-1rem)] max-w-none gap-0 overflow-y-auto rounded-xl border border-slate-200 bg-[#f9fcfa] p-0 shadow-[0_24px_80px_rgba(0,0,0,0.38)] sm:max-w-[1080px] [&>button]:right-3 [&>button]:top-3 [&>button]:grid [&>button]:h-8 [&>button]:w-8 [&>button]:place-items-center [&>button]:rounded-md [&>button]:bg-slate-100 [&>button]:text-slate-600 [&>button]:opacity-100 [&>button:hover]:bg-slate-200 [&>button_svg]:h-[18px] [&>button_svg]:w-[18px]">
       <DialogHeader className="flex-row items-center gap-3 space-y-0 px-4 pb-3 pt-4 text-left sm:px-5 sm:pb-4 sm:pt-5">
-        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#edf6ec] text-[#397b32]">
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#f4fbf5] text-[#2e7d32]">
           <SquareCheckBig className="h-[22px] w-[22px]" strokeWidth={1.9} />
         </span>
         <div className="min-w-0 pr-10">
           <DialogTitle className="text-xl font-semibold leading-6 text-slate-900">Create task</DialogTitle>
-          <DialogDescription className="mt-1 text-[13px] leading-4 text-slate-500">Add or update a task with clear ownership, timing, and completion criteria.</DialogDescription>
+          <DialogDescription className="mt-1 text-body-sm leading-4 text-slate-500">Add or update a task with clear ownership, timing, and completion criteria.</DialogDescription>
         </div>
       </DialogHeader>
       <form onSubmit={onSubmit} className="space-y-3 px-4 pb-4 sm:px-5 sm:pb-5">
@@ -129,7 +129,7 @@ const NewMasterTaskDialog = ({ busy, form, onChange, onOpenChange, onSubmit, ope
         </MasterTaskSection>
         <DialogFooter className="pt-1 sm:space-x-3">
           <Button className="h-10 px-4 text-sm" type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button className="h-10 bg-[#397b26] px-5 text-sm text-white hover:bg-[#2f6720]" type="submit" disabled={busy}>{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}{busy ? 'Saving…' : 'Save'}</Button>
+          <Button className="h-10 bg-[#2e7d32] px-5 text-sm text-white hover:bg-[#256b2a]" type="submit" disabled={busy}>{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}{busy ? 'Saving…' : 'Save'}</Button>
         </DialogFooter>
       </form>
     </DialogContent>

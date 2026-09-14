@@ -111,7 +111,7 @@ export default function AdminDashboard() {
 
   return (
     <div>
-      <PageHeader>
+      <PageHeader title="Dashboard">
         <Button variant="outline" size="sm" onClick={exportDashboard}>Export PDF</Button>
         <Button size="sm" onClick={() => loadDashboard(true)} disabled={loading}><RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />Refresh</Button>
       </PageHeader>
@@ -126,16 +126,16 @@ export default function AdminDashboard() {
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
         <section className="rounded-xl border border-border bg-card p-5 shadow-sm lg:col-span-2">
-          <div><h2 className="font-heading font-semibold">Sales and payments</h2><p className="text-xs text-muted-foreground">Rolling six-month value in Ghana cedis (₵), calculated from live orders and receipts.</p></div>
+          <div><h2 className="text-section-title">Sales and payments</h2><p className="text-xs text-muted-foreground">Rolling six-month value in Ghana cedis (₵), calculated from live orders and receipts.</p></div>
           <ResponsiveContainer width="100%" height={280} className="mt-4"><AreaChart data={monthlyTrend}>
-            <defs><linearGradient id="salesFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#2E7D32" stopOpacity={0.28} /><stop offset="100%" stopColor="#2E7D32" stopOpacity={0} /></linearGradient></defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" /><XAxis dataKey="month" fontSize={12} /><YAxis fontSize={12} tickFormatter={compactAmount} />
+            <defs><linearGradient id="salesFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#2e7d32" stopOpacity={0.28} /><stop offset="100%" stopColor="#2e7d32" stopOpacity={0} /></linearGradient></defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" /><XAxis dataKey="month" fontSize="var(--text-caption)" /><YAxis fontSize="var(--text-caption)" tickFormatter={compactAmount} />
             <Tooltip formatter={(value, name) => [formatCurrency(value), name === 'sales' ? 'Sales value' : 'Payments']} contentStyle={{ borderRadius: 10, border: '1px solid hsl(var(--border))' }} />
-            <Area type="monotone" dataKey="sales" stroke="#2E7D32" strokeWidth={2} fill="url(#salesFill)" /><Area type="monotone" dataKey="payments" stroke="#4CAF50" strokeWidth={2} fillOpacity={0} />
+            <Area type="monotone" dataKey="sales" stroke="#2e7d32" strokeWidth={2} fill="url(#salesFill)" /><Area type="monotone" dataKey="payments" stroke="#43a047" strokeWidth={2} fillOpacity={0} />
           </AreaChart></ResponsiveContainer>
         </section>
         <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
-          <h2 className="font-heading font-semibold">Harvest quality</h2><p className="text-xs text-muted-foreground">Recorded quantity by grade.</p>
+          <h2 className="text-section-title">Harvest quality</h2><p className="text-xs text-muted-foreground">Recorded quantity by grade.</p>
           {harvestQuality.length ? <><ResponsiveContainer width="100%" height={220}><PieChart><Pie data={harvestQuality} dataKey="value" nameKey="name" innerRadius={48} outerRadius={76} paddingAngle={3}>{harvestQuality.map((entry) => <Cell key={entry.name} fill={entry.color} />)}</Pie><Tooltip formatter={(value) => `${formatNumber(value)} kg`} /></PieChart></ResponsiveContainer><div className="grid grid-cols-2 gap-2">{harvestQuality.map((item) => <div key={item.name} className="flex items-center gap-2 text-xs"><span className="h-2.5 w-2.5 rounded-full" style={{ background: item.color }} /><span className="truncate">{item.name}</span><strong>{formatNumber(item.value)}</strong></div>)}</div></> : <div className="grid h-[260px] place-items-center text-sm text-muted-foreground">No graded harvests yet.</div>}
         </section>
       </div>
@@ -160,7 +160,7 @@ export default function AdminDashboard() {
           {metrics.lowStock.slice(0, 5).length ? metrics.lowStock.slice(0, 5).map((item) => <div key={item.id} className="flex items-center justify-between gap-4 border-b border-border px-4 py-3 last:border-0"><div><p className="text-sm font-semibold">{item.product_name}</p><p className="text-xs text-muted-foreground">{item.warehouse_name || 'Warehouse not set'} · {item.sku || 'No SKU'}</p></div><div className="text-right"><p className="text-sm font-semibold text-amber-700">{formatNumber(item.quantity_on_hand)} {item.unit_of_measure || ''}</p><p className="text-xs text-muted-foreground">Reorder {formatNumber(item.reorder_level)}</p></div></div>) : <Empty label="Stock levels are healthy." success />}
         </Panel>
         <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
-          <h2 className="font-heading font-semibold">Operating summary</h2>
+          <h2 className="text-section-title">Operating summary</h2>
           <div className="mt-4 grid gap-x-6 gap-y-4 sm:grid-cols-2">
             <OperatingStat label="Expenses this month" value={formatCurrency(metrics.expensesMtd)} icon={CircleCediSign} path="/admin/finance" />
             <OperatingStat label="Purchase orders" value={data.purchaseOrders.length} icon={BriefcaseBusiness} path="/admin/procurement" />
@@ -195,11 +195,11 @@ function buildHarvestQuality(harvests, harvestGrades) {
   const totals = new Map();
   harvestGrades.forEach((grade) => totals.set(grade.grade || grade.quality_grade || 'Unspecified', (totals.get(grade.grade || grade.quality_grade || 'Unspecified') || 0) + asAmount(grade.quantity_kg || grade.total_quantity || 1)));
   harvests.forEach((harvest) => { if (harvest.quality_grade) totals.set(harvest.quality_grade, (totals.get(harvest.quality_grade) || 0) + asAmount(harvest.total_quantity || harvest.quantity_kg || 1)); });
-  const colors = ['#2E7D32', '#4CAF50', '#66BB6A', '#9ACD32', '#A1B1BC'];
+  const colors = ['#2e7d32', '#43a047', '#66bb6a', '#c8e6c9', '#5f7565'];
   return [...totals.entries()].map(([name, value], index) => ({ name, value, color: colors[index % colors.length] })).filter((item) => item.value > 0);
 }
 function compactAmount(value) { return value >= 1_000_000 ? `₵${Math.round(value / 1_000_000)}M` : value >= 1_000 ? `₵${Math.round(value / 1_000)}K` : `₵${value}`; }
 function SmallMetric({ label, value, icon: Icon, path, alert }) { return <Link to={path} className="rounded-xl border border-border bg-card p-4 shadow-sm transition hover:border-primary/40 hover:shadow"><div className="flex items-center justify-between"><span className="text-xs text-muted-foreground">{label}</span><Icon className={`h-4 w-4 ${alert ? 'text-amber-600' : 'text-primary'}`} /></div><p className="mt-2 text-2xl font-bold">{value}</p></Link>; }
-function Panel({ title, path, icon: Icon, children }) { return <section className="overflow-hidden rounded-xl border border-border bg-card shadow-sm"><div className="flex items-center justify-between border-b border-border px-4 py-3"><h2 className="flex items-center gap-2 font-heading font-semibold">{Icon && <Icon className="h-4 w-4 text-amber-600" />}{title}</h2><Link to={path} className="flex items-center gap-1 text-xs font-semibold text-primary">View all <ArrowRight className="h-3 w-3" /></Link></div>{children}</section>; }
+function Panel({ title, path, icon: Icon, children }) { return <section className="overflow-hidden rounded-xl border border-border bg-card shadow-sm"><div className="flex items-center justify-between border-b border-border px-4 py-3"><h2 className="flex items-center gap-2 text-section-title">{Icon && <Icon className="h-4 w-4 text-amber-600" />}{title}</h2><Link to={path} className="flex items-center gap-1 text-xs font-semibold text-primary">View all <ArrowRight className="h-3 w-3" /></Link></div>{children}</section>; }
 function Empty({ label, success }) { return <div className="p-8 text-center text-sm text-muted-foreground">{success && <CheckCircle2 className="mx-auto mb-2 h-7 w-7 text-emerald-600" />}{label}</div>; }
 function OperatingStat({ label, value, icon: Icon, path }) { const cost = /cost|expense/i.test(label); const yieldMetric = /yield|harvest/i.test(label); const tone = cost ? 'text-rose-600' : yieldMetric ? 'text-emerald-700' : 'text-primary'; return <Link to={path} className="flex items-center gap-3 rounded-lg p-2 transition hover:bg-muted"><span className={`grid h-9 w-9 place-items-center rounded-lg ${cost ? 'bg-rose-100' : yieldMetric ? 'bg-emerald-100' : 'bg-primary/10'}`}><Icon className={`h-4 w-4 ${tone}`} /></span><span><span className="block text-xs text-muted-foreground">{label}</span><strong className={`text-sm ${tone}`}>{value}</strong></span></Link>; }

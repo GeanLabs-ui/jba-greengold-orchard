@@ -10,6 +10,9 @@ module.exports = {
   			sm: 'calc(var(--radius) - 4px)'
   		},
   		colors: {
+            ...require('./company-colors.cjs'),
+            'primary-hover': '#256B2A',
+            'primary-active': '#1B5E20',
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
   			card: {
@@ -61,6 +64,7 @@ module.exports = {
   				ring: 'hsl(var(--sidebar-ring))'
   			}
   		},
+        fontSize: Object.fromEntries(require('./src/lib/typography-roles.json').map(role => [role, ['var(--text-' + role + ')', { lineHeight: 'var(--leading-' + role + ')' }]])),
   		fontFamily: {
   			heading: ['var(--font-heading)'],
   			body: ['var(--font-body)'],

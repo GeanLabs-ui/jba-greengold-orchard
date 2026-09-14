@@ -70,7 +70,7 @@ export default function AdminHorizontalNav() {
     const count = item.countKey ? attentionCounts[item.countKey] : 0;
     if (!count) return null;
     return (
-      <span className="ml-auto min-w-5 rounded-full bg-primary px-1.5 py-0.5 text-center text-[10px] font-bold text-primary-foreground">
+      <span className="ml-auto min-w-5 rounded-full bg-primary px-1.5 py-0.5 text-center text-caption font-bold text-primary-foreground">
         {count > 99 ? '99+' : count}
       </span>
     );
@@ -138,7 +138,7 @@ export default function AdminHorizontalNav() {
                 {section.items.map((item) => {
                   if (item.subheading) {
                     return (
-                      <p key={item.path} className="px-3 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-wider text-white/55">
+                      <p key={item.path} className="px-3 pb-1 pt-2 text-caption font-semibold uppercase tracking-wider text-white/55">
                         {item.label}
                       </p>
                     );

@@ -39,7 +39,7 @@ export default function PortalDashboard() {
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         <div className="rounded-xl border border-border bg-card shadow-sm">
           <div className="flex items-center justify-between border-b border-border p-4">
-            <h3 className="font-heading font-semibold">Recent Orders</h3>
+            <h3 className="text-card-title">Recent Orders</h3>
             <Link to="/portal/orders" className="flex items-center gap-1 text-sm text-primary hover:underline">View all <ArrowRight className="h-3 w-3" /></Link>
           </div>
           <div className="divide-y divide-border">
@@ -57,7 +57,7 @@ export default function PortalDashboard() {
 
         <div className="rounded-xl border border-border bg-card shadow-sm">
           <div className="flex items-center justify-between border-b border-border p-4">
-            <h3 className="font-heading font-semibold">Pending Invoices</h3>
+            <h3 className="text-card-title">Pending Invoices</h3>
             <Link to="/portal/payments" className="flex items-center gap-1 text-sm text-primary hover:underline">View all <ArrowRight className="h-3 w-3" /></Link>
           </div>
           <div className="divide-y divide-border">
@@ -80,7 +80,7 @@ export default function PortalDashboard() {
         ].map((item) => (
           <Link key={item.title} to={item.path} className="rounded-xl border border-border bg-card p-5 shadow-sm transition-shadow hover:shadow-md">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10"><item.icon className="h-5 w-5 text-primary" /></div>
-            <h4 className="mt-3 font-semibold">{item.title}</h4>
+            <h4 className="mt-3 text-subheading">{item.title}</h4>
             <p className="mt-1 text-sm text-muted-foreground">{item.desc}</p>
           </Link>
         ))}

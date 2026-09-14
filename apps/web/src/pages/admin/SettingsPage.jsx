@@ -19,19 +19,20 @@ export default function SettingsPage() {
 
   return (
     <div>
+      <h1 className="mb-6 text-page-title">Settings</h1>
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
-          <div className="flex items-center gap-2"><Globe className="h-5 w-5 text-primary" /><h3 className="font-heading font-semibold">Company Information</h3></div>
+          <div className="flex items-center gap-2"><Globe className="h-5 w-5 text-primary" /><h3 className="text-card-title">Company Information</h3></div>
           <div className="mt-4 space-y-4">
-            <div><Label>Company Name</Label><Input defaultValue="MangoOps Ltd" /></div>
-            <div><Label>Support Email</Label><Input defaultValue="info@mangoops.com" /></div>
-            <div><Label>Phone</Label><Input defaultValue="+256 700 000 000" /></div>
-            <div><Label>Currency</Label><Input defaultValue="UGX" /></div>
+            <div><Label className="text-label">Company Name</Label><Input defaultValue="MangoOps Ltd" /></div>
+            <div><Label className="text-label">Support Email</Label><Input defaultValue="info@mangoops.com" /></div>
+            <div><Label className="text-label">Phone</Label><Input defaultValue="+256 700 000 000" /></div>
+            <div><Label className="text-label">Currency</Label><Input defaultValue="UGX" /></div>
           </div>
         </div>
 
         <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
-          <div className="flex items-center gap-2"><Bell className="h-5 w-5 text-primary" /><h3 className="font-heading font-semibold">Notification Channels</h3></div>
+          <div className="flex items-center gap-2"><Bell className="h-5 w-5 text-primary" /><h3 className="text-card-title">Notification Channels</h3></div>
           <div className="mt-4 space-y-4">
             {[
               { label: 'Email Notifications', desc: 'Send order, payment, and delivery updates via email', enabled: true },
@@ -48,7 +49,7 @@ export default function SettingsPage() {
         </div>
 
         <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
-          <div className="flex items-center gap-2"><Shield className="h-5 w-5 text-primary" /><h3 className="font-heading font-semibold">Role-Based Access Control</h3></div>
+          <div className="flex items-center gap-2"><Shield className="h-5 w-5 text-primary" /><h3 className="text-card-title">Role-Based Access Control</h3></div>
           <p className="mt-2 text-sm text-muted-foreground">Admin-user RBAC model with permissions for view, create, edit, approve, and delete actions per module.</p>
           <div className="mt-4 rounded-lg border border-primary/20 bg-primary/5 p-3 text-sm">
             <p className="font-medium">{selectedRole}</p>
@@ -65,7 +66,7 @@ export default function SettingsPage() {
         </div>
 
         <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
-          <div className="flex items-center gap-2"><Database className="h-5 w-5 text-primary" /><h3 className="font-heading font-semibold">Storage & Data</h3></div>
+          <div className="flex items-center gap-2"><Database className="h-5 w-5 text-primary" /><h3 className="text-card-title">Storage & Data</h3></div>
           <div className="mt-4 space-y-3 text-sm">
             <div className="flex items-center justify-between"><span className="text-muted-foreground">Storage Convention</span><code className="rounded bg-muted px-2 py-1 text-xs">/var/www/storage/uploads/...</code></div>
             <div className="flex items-center justify-between"><span className="text-muted-foreground">Database</span><span className="font-medium">PostgreSQL</span></div>

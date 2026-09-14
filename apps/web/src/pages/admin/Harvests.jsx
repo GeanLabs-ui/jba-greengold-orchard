@@ -540,7 +540,7 @@ export default function Harvests({ embedded = false }) {
           <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <h2 className="font-heading text-lg font-bold">Farm Process Phases</h2>
+                <h2 className="text-section-title">Farm Process Phases</h2>
                 <p className="text-sm text-muted-foreground">Each phase has its own activity log and completion progress.</p>
               </div>
               <StatusBadge status={logs.some((log) => log.status === 'blocked') ? 'blocked' : 'active'} />
@@ -569,7 +569,7 @@ export default function Harvests({ embedded = false }) {
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="text-xs font-semibold text-muted-foreground">Phase {index + 1}</span>
-                          <h3 className="font-heading text-base font-bold">{phase.label}</h3>
+                          <h3 className="text-card-title">{phase.label}</h3>
                         </div>
                         <p className="mt-1 text-sm text-muted-foreground">{phase.description}</p>
                         <div className="mt-3">
@@ -594,7 +594,7 @@ export default function Harvests({ embedded = false }) {
           </section>
 
           <aside className="rounded-xl border border-border bg-card p-5 shadow-sm">
-            <h2 className="font-heading text-lg font-bold">Recent Activity</h2>
+            <h2 className="text-section-title">Recent Activity</h2>
             <div className="mt-4 space-y-3">
               {recentLogs.map((log) => {
                 const phase = phases.find((item) => item.key === log.phase);

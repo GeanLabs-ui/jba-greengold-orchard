@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { ShieldX } from 'lucide-react';
+import usePinnedPageNavigation from '@/components/shared/usePinnedPageNavigation';
 import AdminSidebar from './AdminSidebar';
 import AdminTopbar from './AdminTopbar';
 import AdminMobileNav from './AdminMobileNav';
@@ -12,6 +13,8 @@ import { canAccessAdminPath, defaultAdminPath } from '@/lib/access-control';
 export default function AdminLayout() {
   const { user } = useAuth();
   const location = useLocation();
+  const scrollRef = useRef(null);
+  usePinnedPageNavigation(scrollRef, location.pathname);
   const [mobileOpen, setMobileOpen] = useState(false);
   const canAccessPage = canAccessAdminPath(user, location.pathname);
 
@@ -21,9 +24,9 @@ export default function AdminLayout() {
   }, []);
 
   return (
-    <div className="admin-shell app-surface flex h-[100dvh] overflow-hidden bg-background md:h-screen">
+    <div data-preserve-colors={location.pathname.replace(/\/$/, '') === '/admin/farm-daily-activities/activities/overview' ? 'true' : undefined} className="admin-shell app-surface flex h-[100dvh] overflow-hidden bg-background md:h-screen">
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-        <SheetContent side="left" className="flex w-[min(19rem,86vw)] flex-col bg-[#2E7D32] p-0 text-white">
+        <SheetContent side="left" className="flex w-[min(19rem,86vw)] flex-col bg-[#2e7d32] p-0 text-white">
           <SheetHeader className="shrink-0 border-b border-white/10 px-4 py-4">
             <SheetTitle className="text-left text-white">Admin navigation</SheetTitle>
           </SheetHeader>
@@ -35,7 +38,8 @@ export default function AdminLayout() {
 
       <div className="flex flex-1 flex-col overflow-hidden">
         <AdminTopbar onMenuClick={() => setMobileOpen(true)} />
-        <main className="flex-1 overflow-y-auto scrollbar-thin p-4 pb-24 md:p-6">
+        <main ref={scrollRef} className="admin-scroll-content flex-1 overflow-y-auto scrollbar-thin px-4 pb-24 md:px-6 md:pb-6">
+          <div className="admin-page-content">
           {canAccessPage ? <Outlet /> : (
             <div className="grid min-h-[60vh] place-items-center">
               <div className="max-w-md text-center">
@@ -46,6 +50,7 @@ export default function AdminLayout() {
               </div>
             </div>
           )}
+          </div>
         </main>
       </div>
       <AdminMobileNav user={user} onMore={() => setMobileOpen(true)} />

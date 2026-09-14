@@ -92,7 +92,7 @@ export default function Inventory() {
 
   return (
     <div>
-      <PageHeader>
+      <PageHeader title="Inventory">
         <AdminCreateDialog
           title="Stock Movement"
           description="Record an inbound, outbound, or adjustment movement."

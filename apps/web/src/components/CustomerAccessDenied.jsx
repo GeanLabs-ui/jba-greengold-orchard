@@ -9,7 +9,7 @@ export default function CustomerAccessDenied() {
     window.location.assign('/login?from_url=/portal');
   };
   return <div className="min-h-[60vh] px-4 py-16 text-center">
-    <h1 className="font-heading text-2xl font-semibold">Customer account required</h1>
+    <h1 className="text-page-title">Customer account required</h1>
     <p className="mt-3 text-muted-foreground">Use your own verified customer account to access orders, payments, and documents.</p>
     <div className="mt-6 flex justify-center gap-3">
       <Button onClick={switchAccount}>Switch to customer login</Button>

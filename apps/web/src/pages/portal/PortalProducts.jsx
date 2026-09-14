@@ -37,7 +37,7 @@ export default function PortalProducts() {
             <article key={product.id} className="flex flex-col overflow-hidden rounded-xl border border-border bg-card">
               <div className="flex h-48 items-center justify-center bg-white p-4"><img src={product.image} alt={product.name} loading="lazy" decoding="async" className="h-full w-full object-contain" /></div>
               <div className="flex flex-1 flex-col p-4">
-                <h2 className="font-heading text-lg font-semibold">{product.name}</h2>
+                <h2 className="text-section-title">{product.name}</h2>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">{product.description}</p>
                 <div className="mt-auto flex items-center justify-between gap-3 pt-5">
                   <span className="font-semibold">{formatProductPrice(product.price)}</span>

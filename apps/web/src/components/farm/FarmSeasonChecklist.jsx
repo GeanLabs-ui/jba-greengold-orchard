@@ -158,7 +158,7 @@ export function FarmSeasonSummary({ farm, blocks = [], onManage }) {
         <div>
           <div className="flex items-center gap-2">
             <CalendarCheck2 className="h-5 w-5 text-emerald-700" />
-            <h2 className="font-heading text-lg font-semibold">
+            <h2 className="text-section-title">
               Season readiness
             </h2>
           </div>
@@ -190,7 +190,7 @@ export function FarmSeasonSummary({ farm, blocks = [], onManage }) {
 
       <div className="grid border-b lg:grid-cols-[220px_repeat(3,minmax(0,1fr))]">
         <div className="bg-emerald-950 px-5 py-4 text-white">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-200">
+          <p className="text-caption font-semibold uppercase tracking-[0.16em] text-emerald-200">
             Main farmland
           </p>
           <p className="mt-1 font-semibold">{farm?.name}</p>
@@ -223,7 +223,7 @@ export function FarmSeasonSummary({ farm, blocks = [], onManage }) {
       <div className="px-5 py-4">
         <div className="mb-3 flex items-center justify-between gap-3">
           <div>
-            <h3 className="text-sm font-semibold">Subblock summary</h3>
+            <h3 className="text-card-title">Subblock summary</h3>
             <p className="text-xs text-muted-foreground">
               {activeBlocks.length} active{" "}
               {activeBlocks.length === 1 ? "subblock" : "subblocks"}
@@ -256,7 +256,7 @@ export function FarmSeasonSummary({ farm, blocks = [], onManage }) {
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-700">
+                      <p className="text-caption font-semibold uppercase tracking-[0.14em] text-emerald-700">
                         {block.block_code}
                       </p>
                       <p className="mt-0.5 font-semibold">{block.name}</p>
@@ -286,7 +286,7 @@ export function FarmSeasonSummary({ farm, blocks = [], onManage }) {
                       );
                     })}
                   </div>
-                  <p className="mt-3 border-t pt-2 text-[11px] text-muted-foreground">
+                  <p className="mt-3 border-t pt-2 text-caption text-muted-foreground">
                     {scheduled}/3 planned · {complete}/3 completed
                   </p>
                 </Link>
@@ -550,10 +550,10 @@ export default function FarmSeasonChecklist({
     >
       <div className="flex flex-col gap-4 border-b px-5 py-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-700">
+          <p className="text-caption font-semibold uppercase tracking-[0.16em] text-emerald-700">
             Seasonal operations
           </p>
-          <h2 className="mt-1 font-heading text-2xl font-semibold">
+          <h2 className="mt-1 text-section-title">
             Season checklist
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -563,7 +563,7 @@ export default function FarmSeasonChecklist({
         </div>
         <div className="flex flex-wrap items-end gap-2">
           {!lockScope ? (
-            <label className="text-[11px] font-medium text-muted-foreground">
+            <label className="text-muted-foreground text-label">
               View plan for
               <Select value={selectedScope} onValueChange={setSelectedScope}>
                 <SelectTrigger className="mt-1 h-9 min-w-[220px] bg-background">
@@ -582,7 +582,7 @@ export default function FarmSeasonChecklist({
               </Select>
             </label>
           ) : null}
-          <label className="text-[11px] font-medium text-muted-foreground">
+          <label className="text-muted-foreground text-label">
             Season year
             <Select
               value={String(year)}
@@ -681,7 +681,7 @@ export default function FarmSeasonChecklist({
                       <SelectItem value="custom">Custom dates</SelectItem>
                     </SelectContent>
                   </Select>
-                  <label className="flex items-center gap-2 rounded-lg border bg-background px-3 py-2.5 text-sm">
+                  <label className="flex items-center gap-2 rounded-lg border bg-background px-3 py-2.5 text-label">
                     {isSaving ? (
                       <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                     ) : (
@@ -704,7 +704,7 @@ export default function FarmSeasonChecklist({
                 </div>
                 {customStage === stage.id ? (
                   <div className="mt-3 flex flex-col gap-2 rounded-lg border border-dashed bg-muted/20 p-3 sm:flex-row sm:items-end">
-                    <label className="text-[11px] font-medium text-muted-foreground">
+                    <label className="text-muted-foreground text-label">
                       Start date
                       <Input
                         className="mt-1 h-9 bg-background"
@@ -718,7 +718,7 @@ export default function FarmSeasonChecklist({
                         }
                       />
                     </label>
-                    <label className="text-[11px] font-medium text-muted-foreground">
+                    <label className="text-muted-foreground text-label">
                       End date
                       <Input
                         className="mt-1 h-9 bg-background"

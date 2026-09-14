@@ -63,7 +63,7 @@ export default function Reports() {
 
   return (
     <div>
-      <PageHeader>
+      <PageHeader title="Reports">
         <Button variant="outline" size="sm" onClick={() => downloadExcel()}><FileSpreadsheet className="mr-2 h-4 w-4" /> Export Excel</Button>
         <Button size="sm" className="gradient-mango text-white" onClick={() => downloadPdf()}><FileBarChart className="mr-2 h-4 w-4" /> Export PDF</Button>
       </PageHeader>
@@ -77,41 +77,41 @@ export default function Reports() {
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-          <h3 className="font-heading font-semibold">Sales & Orders Trend</h3>
+          <h3 className="text-card-title">Sales & Orders Trend</h3>
           <ResponsiveContainer width="100%" height={260} className="mt-4">
             <BarChart data={salesData}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-              <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
+              <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize="var(--text-caption)" />
+              <YAxis stroke="hsl(var(--muted-foreground))" fontSize="var(--text-caption)" />
               <Tooltip contentStyle={{ borderRadius: '0.75rem', border: '1px solid hsl(var(--border))' }} />
-              <Bar dataKey="sales" fill="hsl(33 95% 52%)" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="sales" fill="#6b8e23" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
 
         <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-          <h3 className="font-heading font-semibold">Orders Over Time</h3>
+          <h3 className="text-card-title">Orders Over Time</h3>
           <ResponsiveContainer width="100%" height={260} className="mt-4">
             <LineChart data={salesData}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-              <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
+              <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize="var(--text-caption)" />
+              <YAxis stroke="hsl(var(--muted-foreground))" fontSize="var(--text-caption)" />
               <Tooltip contentStyle={{ borderRadius: '0.75rem', border: '1px solid hsl(var(--border))' }} />
-              <Line type="monotone" dataKey="orders" stroke="hsl(150 45% 42%)" strokeWidth={2} />
+              <Line type="monotone" dataKey="orders" stroke="#2e7d32" strokeWidth={2} />
             </LineChart>
           </ResponsiveContainer>
         </div>
       </div>
 
       <div className="mt-6">
-        <h3 className="mb-4 font-heading font-semibold">Report Categories</h3>
+        <h3 className="mb-4 text-card-title">Report Categories</h3>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {reportTypes.map((r) => (
             <div key={r.title} className="group rounded-xl border border-border bg-card p-5 shadow-sm transition-shadow hover:shadow-md cursor-pointer">
               <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${r.color}`}>
                 <r.icon className="h-6 w-6 text-white" />
               </div>
-              <h4 className="mt-3 font-semibold">{r.title}</h4>
+              <h4 className="mt-3 text-subheading">{r.title}</h4>
               <p className="mt-1 text-sm text-muted-foreground">{r.desc}</p>
               <div className="mt-3 flex gap-2">
                 <Button variant="outline" size="sm" className="flex-1" onClick={() => downloadExcel(r.title)}><FileSpreadsheet className="mr-1 h-3 w-3" /> Excel</Button>

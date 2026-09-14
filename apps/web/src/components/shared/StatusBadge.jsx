@@ -1,5 +1,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
+import { Check, CircleAlert, Clock, Info } from 'lucide-react';
 
 const statusConfig = {
   // Sales statuses
@@ -68,10 +69,12 @@ const statusConfig = {
 
 export default function StatusBadge({ status, label }) {
   const config = statusConfig[status] || { label: label || status, class: 'bg-slate-100 text-slate-700' };
+  const Icon = config.class.includes('red-') ? CircleAlert : config.class.includes('amber-') ? Clock : config.class.includes('emerald-') ? Check : Info;
 
   return (
-    <span className={cn('inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium capitalize', config.class)}>
-      {config.label}
+    <span data-status-tone={config.class.includes('red-') ? 'error' : config.class.includes('amber-') ? 'warning' : config.class.includes('emerald-') ? 'success' : 'information'} className={cn('inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium capitalize', config.class)}>
+      <Icon className="h-3 w-3 shrink-0" aria-hidden="true" />
+      {label || config.label}
     </span>
   );
 }

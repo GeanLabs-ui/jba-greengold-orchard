@@ -28,7 +28,7 @@ const SUPPLY_TYPES = [
 export default function LocalSupply() {
   return (
     <div className="relative overflow-hidden bg-background">
-      <section className="relative overflow-hidden py-20 md:py-28">
+      <section data-layout-section="hero" className="relative overflow-hidden py-20 md:py-28">
         <img
           src="/pages/local-supply-header.webp"
           alt="Fresh mangoes under an orchard tree for local supply"
@@ -36,14 +36,14 @@ export default function LocalSupply() {
         />
         <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/45 to-black/15" />
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <h1 className="font-heading text-4xl font-bold tracking-tight text-white md:text-5xl">Local Supply</h1>
+          <h1 className="text-white text-page-title">Local Supply</h1>
           <p className="mt-3 max-w-2xl text-lg text-amber-50">
             Fresh mangoes delivered to retailers, wholesalers, and walk-in customers across the region.
           </p>
         </div>
       </section>
 
-      <section className="bg-background py-16 lg:py-24">
+      <section data-layout-section="content" className="bg-background py-16 lg:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid gap-8 md:grid-cols-3">
             {SUPPLY_TYPES.map((item) => (
@@ -74,7 +74,7 @@ export default function LocalSupply() {
                   <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-sm">
                     <item.icon className="h-7 w-7 text-white" />
                   </div>
-                  <h3 className="mt-4 font-heading text-xl font-bold">{item.title}</h3>
+                  <h3 className="mt-4 text-card-title">{item.title}</h3>
                   <p className="mt-2 text-sm text-white/85">{item.desc}</p>
                 </div>
               </div>
@@ -83,11 +83,11 @@ export default function LocalSupply() {
         </div>
       </section>
 
-      <section className="bg-muted/30 py-16">
+      <section data-layout-section="content" className="bg-muted/30 py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid items-center gap-12 lg:grid-cols-2">
             <div>
-              <h2 className="font-heading text-3xl font-bold tracking-tight">Why Choose Our Local Supply?</h2>
+              <h2 className="text-section-title">Why Choose Our Local Supply?</h2>
               <ul className="mt-6 space-y-4">
                 {[
                   { icon: Clock, title: 'Fresh Daily', desc: 'Harvested and delivered within 24–48 hours for maximum freshness.' },
@@ -100,7 +100,7 @@ export default function LocalSupply() {
                       <item.icon className="h-5 w-5 text-amber-600" />
                     </div>
                     <div>
-                      <h3 className="font-semibold">{item.title}</h3>
+                      <h3 className="text-card-title">{item.title}</h3>
                       <p className="text-sm text-muted-foreground">{item.desc}</p>
                     </div>
                   </li>
