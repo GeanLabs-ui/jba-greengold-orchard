@@ -112,3 +112,26 @@ body:has(.master-task-editor) [data-state="open"][class*="fixed inset-0"] { z-in
 
 .mte-footer .mte-save-feedback { margin:0; flex:1; font-size:13px; color:#086b2b; }
 .mte-footer .mte-save-error { color:#b42318; }
+
+/* Let form sections keep their natural height inside the phone scroll area. */
+@media (max-width: 767px) {
+  .master-task-editor[data-preserve-colors] { height: calc(100dvh - 24px); max-height: calc(100dvh - 24px); }
+  .master-task-editor .mte-header { min-height: 76px; padding: 12px; align-items: center; }
+  .master-task-editor .mte-body { flex: 1 1 auto; min-height: 0; padding: 0 12px 12px; gap: 12px; }
+  .master-task-editor .mte-body > * { flex-shrink: 0; }
+  .master-task-editor .mte-section { min-height: 0; padding: 12px; }
+  .master-task-editor .mte-section-heading h2 { font-size: 16px !important; line-height: 1.35 !important; }
+  .master-task-editor .mte-section-heading p { font-size: 12px; line-height: 1.4; }
+  .master-task-editor .mte-assignment, .master-task-editor .mte-schedule { grid-template-columns: minmax(0, 1fr); }
+  .master-task-editor .mte-details-fields { grid-template-columns: minmax(0, 1fr); padding-left: 0; }
+  .master-task-editor input:not([type=checkbox]), .master-task-editor select, .master-task-editor textarea { font-size: 16px; height: 44px; }
+  .master-task-editor .mte-input-icon > svg { top: 13px; }
+  .master-task-editor :is(.mte-input-icon, .mte-status) > .mte-dot { top: 16px; }
+  .master-task-editor .mte-timestamp { border: 0; padding: 0; }
+  .master-task-editor .mte-section-top { flex-wrap: wrap; }
+  .master-task-editor .mte-section-top .mte-button { min-height: 44px; }
+  .master-task-editor .mte-footer .mte-button { min-height: 44px; }
+  .master-task-editor .mte-footer { padding: 10px 12px; }
+  .master-task-editor .mte-footer > div { display: flex; width: 100%; gap: 8px; }
+  .master-task-editor .mte-footer > div > button { flex: 1; min-width: 0; }
+}

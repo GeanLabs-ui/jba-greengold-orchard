@@ -11,7 +11,12 @@ export default function usePinnedPageNavigation(rootRef, routeKey) {
     const resize = new ResizeObserver(() => schedule());
     const update = () => {
       pinned.forEach((node) => { node.removeAttribute('data-page-pinned'); node.style.removeProperty('--page-pin-top'); });
-      const candidates = [...root.querySelectorAll('[data-page-navigation], [role="tablist"], .farm-activities-sticky-nav, .analytics-kpis, .drc-schedule-sticky, .drc-programme-bar, .drc-view-nav')]
+      // Phones keep the compact section navigation pinned; large headers,
+      // filters and summaries scroll normally so they cannot cover the page.
+      const selector = window.matchMedia('(max-width: 767px)').matches
+        ? '.farm-activities-sticky-nav, [role="tablist"], .drc-view-nav'
+        : '[data-page-navigation], [role="tablist"], .farm-activities-sticky-nav, .analytics-kpis, .drc-schedule-sticky, .drc-programme-bar, .drc-view-nav';
+      const candidates = [...root.querySelectorAll(selector)]
         .filter((node) => node.getClientRects().length && node.textContent.trim() && !node.closest('[role="dialog"]'));
       pinned = candidates.filter((node) => !candidates.some((parent) => parent !== node && parent.contains(node)));
       let top = root.closest('.portal-shell')

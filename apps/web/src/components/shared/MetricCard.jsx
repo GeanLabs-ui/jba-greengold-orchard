@@ -13,7 +13,7 @@ export default function MetricCard({ title, value, icon: Icon, trend, trendUp, c
   };
 
   return (
-    <div className="rounded border border-border bg-card p-5 shadow-none transition-colors hover:border-primary/35">
+    <div className="metric-card rounded border border-border bg-card p-5 shadow-none transition-colors hover:border-primary/35">
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <p className="text-kpi-label text-muted-foreground">{title}</p>

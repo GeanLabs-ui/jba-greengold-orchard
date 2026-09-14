@@ -9,7 +9,7 @@ export default function PageHeader({ title, description, children, className }) 
   return (
     <div data-page-navigation className={cn('mb-6 flex flex-col gap-4 sm:flex-row sm:items-center', hasHeading ? 'sm:justify-between' : 'sm:justify-end', className)}>
       {hasHeading && (
-        <div>
+        <div className="min-w-0">
           {title && <h1 className="text-page-title">{title}</h1>}
           {description && <p className="mt-1 text-body-sm text-muted-foreground">{description}</p>}
         </div>

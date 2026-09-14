@@ -21,7 +21,7 @@ export function resolveSkeleton(pathname = '/') {
     if (path.includes('/activities/farms')) return { area: 'admin', template: 'directory', label: 'farm directory' };
     if (path.includes('/activities/approvals')) return { area: 'admin', template: 'approvals', label: 'activity approvals' };
     if (path.includes('/activities/')) {
-      const activityLabel = path.endsWith('/pending') ? 'pending farm activities' : path.endsWith('/completed') ? 'completed farm activities' : 'daily activity log';
+      const activityLabel = path.endsWith('/pending') ? 'pending farm activities' : path.endsWith('/completed') ? 'completed farm activities' : 'daily task log';
       return { area: 'admin', template: 'activity-log', label: activityLabel };
     }
     if (path.includes('/harvests/season-planner')) return { area: 'admin', template: 'calendar', label: 'harvest season planner' };

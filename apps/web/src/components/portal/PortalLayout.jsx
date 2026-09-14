@@ -34,22 +34,20 @@ export default function PortalLayout() {
             <Link to="/" className="hidden items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:flex">
               <LogOut className="h-4 w-4" aria-hidden="true" /> Back to Website
             </Link>
-            <Button variant="ghost" size="icon" aria-label="Notifications"><Bell className="h-5 w-5" /></Button>
+            <Button variant="ghost" size="icon" className="relative md:hidden" onClick={openCart} aria-label={`Open basket, ${itemCount} items`}><ShoppingCart className="h-5 w-5" />{itemCount > 0 && <span className="absolute right-0 top-0 rounded-full bg-primary px-1 text-xs text-primary-foreground">{itemCount}</span>}</Button>
+            <Button variant="ghost" size="icon" className="hidden md:inline-flex" aria-label="Notifications"><Bell className="h-5 w-5" /></Button>
             <AccountMenu />
           </div>
         </div>
         <nav className="portal-horizontal-menu flex gap-1 overflow-x-auto px-3 py-2 md:px-6" aria-label="Customer portal navigation">
-          {navItems.map(({ label, path, icon: Icon }) => (
+          {navItems.map(({ label, path, icon: Icon }, index) => (
             <NavLink key={path} to={path} end={path === '/portal'} className="portal-nav-link flex min-h-11 shrink-0 items-center gap-2 rounded-lg px-3 text-sm font-semibold transition-colors motion-reduce:transition-none md:px-4">
-              <Icon className="h-4 w-4" aria-hidden="true" />{label}
+              <Icon className="h-4 w-4" aria-hidden="true" /><span className="hidden md:inline">{label}</span><span className="md:hidden">{['Home', 'Shop', 'Orders', 'Tracking', 'Payments', 'Docs'][index]}</span>
             </NavLink>
           ))}
-          <button type="button" onClick={openCart} className="portal-nav-link ml-auto flex min-h-11 shrink-0 items-center gap-2 rounded-lg px-3 text-sm font-semibold transition-colors motion-reduce:transition-none" aria-label={`Open basket, ${itemCount} items`}>
+          <button type="button" onClick={openCart} className="portal-nav-link ml-auto hidden min-h-11 shrink-0 items-center gap-2 rounded-lg px-3 text-sm font-semibold transition-colors motion-reduce:transition-none md:flex" aria-label={`Open basket, ${itemCount} items`}>
             <ShoppingCart className="h-4 w-4" aria-hidden="true" /><span aria-live="polite" aria-atomic="true">Basket ({itemCount})</span>
           </button>
-          <Link to="/" className="portal-nav-link flex min-h-11 shrink-0 items-center gap-2 rounded-lg px-3 text-sm font-semibold transition-colors motion-reduce:transition-none md:hidden">
-            <LogOut className="h-4 w-4" aria-hidden="true" /> Back to Website
-          </Link>
         </nav>
       </header>
       <main ref={navigationRoot} className="portal-scroll-content min-w-0 flex-1 p-4 pb-24 md:p-6"><Outlet /></main>

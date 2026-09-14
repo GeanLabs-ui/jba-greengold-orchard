@@ -110,7 +110,7 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div>
+    <div className="admin-dashboard">
       <PageHeader title="Dashboard">
         <Button variant="outline" size="sm" onClick={exportDashboard}>Export PDF</Button>
         <Button size="sm" onClick={() => loadDashboard(true)} disabled={loading}><RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />Refresh</Button>
@@ -140,7 +140,7 @@ export default function AdminDashboard() {
         </section>
       </div>
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      <div className="dashboard-small-metrics mt-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-6">
         <SmallMetric label="Customers" value={data.customers.length} icon={Users} path="/admin/crm" />
         <SmallMetric label="Products" value={data.products.length} icon={Package} path="/admin/content" />
         <SmallMetric label="Active farms" value={data.farms.filter((farm) => farm.status !== 'inactive').length} icon={Sprout} path="/admin/farm-daily-activities/activities/farms" />

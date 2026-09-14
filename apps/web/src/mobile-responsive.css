@@ -1,0 +1,157 @@
+/* Shared phone layout: constrain content, not the user's ability to scroll. */
+:is(.admin-page-content, .portal-scroll-content) .grid > * {
+  min-width: 0;
+}
+.whatsapp-support {
+  --support-bottom: max(20px, env(safe-area-inset-bottom));
+  position: fixed;
+  right: max(16px, env(safe-area-inset-right));
+  bottom: var(--support-bottom);
+  z-index: 49;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  max-width: calc(100% - 32px);
+}
+.whatsapp-launcher {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  filter: drop-shadow(0 4px 8px rgb(18 53 36 / 25%));
+  cursor: pointer;
+}
+.whatsapp-launcher img { width: 100%; height: 100%; }
+.whatsapp-launcher:focus-visible { outline: 3px solid #2e7d32; outline-offset: 4px; }
+#whatsapp-support-panel {
+  max-width: 100%;
+  max-height: calc(100dvh - var(--support-bottom) - 88px - env(safe-area-inset-top));
+}
+#whatsapp-support-panel > :is(header, div:last-child) { flex-shrink: 0; }
+.whatsapp-messages { flex: 1 1 auto; max-height: 26rem; overscroll-behavior: contain; }
+.whatsapp-messages p { overflow-wrap: anywhere; }
+
+@media (max-width: 767px) {
+  body:has(.admin-mobile-nav) .whatsapp-support {
+    --support-bottom: calc(80px + env(safe-area-inset-bottom));
+  }
+  .admin-scroll-content {
+    min-width: 0;
+    padding-bottom: calc(152px + env(safe-area-inset-bottom));
+  }
+  .admin-shell { height: 100dvh; }
+  .admin-mobile-nav { padding-inline: max(8px, env(safe-area-inset-left)); }
+  .admin-mobile-nav :is(a, button) { min-width: 0; font-size: 11px; }
+  .admin-dashboard > .grid { gap: 12px; }
+  .admin-dashboard > .grid > section { padding: 16px; }
+  :is(.admin-scroll-content, .portal-scroll-content) [data-page-navigation] {
+    gap: 12px;
+    overflow-wrap: anywhere;
+  }
+  :is(.admin-scroll-content, .portal-scroll-content) [data-page-navigation] > .flex {
+    min-width: 0;
+    max-width: 100%;
+  }
+  :is(.admin-scroll-content, .portal-scroll-content) [role="tab"] { min-height: 44px; }
+  :is(.admin-scroll-content, .portal-scroll-content) .overflow-x-auto { max-width: 100%; }
+  .portal-shell > header > div { gap: 8px; }
+  .portal-shell > header > div > p { min-width: 0; font-size: 12px; padding-left: 8px; }
+  :is(input, textarea, select):not([type="checkbox"]):not([type="radio"]) { font-size: 16px; }
+  #whatsapp-support-panel input { font-size: 16px; }
+  [role="dialog"][data-state] {
+    max-width: calc(100vw - 24px);
+    max-height: calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
+
+/* Mobile record views share the same fields/actions as desktop tables. */
+.mobile-record-list { display: grid; gap: 12px; min-width: 0; }
+.mobile-record { min-width: 0; padding: 14px; border: 1px solid hsl(var(--border)); border-radius: 12px; background: hsl(var(--card)); overflow-wrap: anywhere; }
+.mobile-record-fields { margin: 0; display: grid; gap: 9px; }
+.mobile-record-fields > div { display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); gap: 12px; align-items: start; }
+.mobile-record-fields dt { color: hsl(var(--muted-foreground)); font-size: 12px; line-height: 1.5; }
+.mobile-record-fields dd { min-width: 0; margin: 0; font-size: 14px; line-height: 1.5; }
+.mobile-record-fields dd > * { max-width: 100%; }
+.mobile-record-details { margin-top: 10px; border-top: 1px solid hsl(var(--border)); }
+.mobile-record-details summary { min-height: 44px; padding-block: 12px; font-size: 13px; font-weight: 600; cursor: pointer; color: hsl(var(--primary)); }
+.mobile-record-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 8px; margin-top: 12px; }
+.mobile-filter-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+@media (min-width: 768px) { .mobile-record-list.md\:hidden { display: none; } }
+
+@media (max-width: 767px) {
+  .admin-shell > div > header { flex-shrink: 0; }
+  .admin-shell .admin-scroll-content { padding-bottom: calc(100px + env(safe-area-inset-bottom)); }
+  .admin-shell .admin-page-content { padding-top: 12px; }
+  .admin-shell .farm-activities-sticky-nav { padding-block: 4px; }
+  .admin-shell .farm-activities-sticky-nav button { min-height: 44px; }
+  .admin-shell :is(.analytics-kpis, .drc-schedule-sticky, .drc-programme-bar) { position: static; }
+  .admin-shell :is(.analytics-kpis, .drc-schedule-sticky, .drc-programme-bar)::before { display: none; }
+  .admin-shell .farm-analytics .analytics-kpis { display: grid; grid-template-columns: minmax(0, 1fr); overflow: visible; }
+  .admin-shell .farm-analytics .analytics-kpi { grid-column: auto; order: 0; height: auto; min-height: 100px; padding: 16px; }
+  .admin-shell .farm-analytics .analytics-kpi strong { font-size: 24px; line-height: 1.25; }
+  .admin-shell .farm-analytics .analytics-kpi p { font-size: 13px; line-height: 1.4; }
+  .admin-shell .farm-analytics .analytics-kpi-half { flex-direction: row; align-items: center; gap: 6px; }
+  .admin-shell .farm-analytics .analytics-kpi-half .analytics-kpi-icon { display: grid; width: 24px; height: 24px; }
+  .admin-shell .farm-analytics .analytics-kpi-half .analytics-kpi-icon svg { width: 18px; height: 18px; }
+  .admin-shell .farm-analytics .analytics-kpi-note { margin-top: 8px; }
+  .admin-shell .analytics-toolbar { width: 100%; gap: 8px; }
+  .admin-shell .analytics-toolbar > label { flex: 1 1 130px; min-width: 0; }
+  .admin-shell .analytics-toolbar select { width: 100%; max-width: none; min-height: 44px; }
+  .admin-shell .analytics-toolbar > div { flex-wrap: wrap; }
+  .admin-shell .analytics-legend { flex-wrap: wrap; gap: 8px 12px; white-space: normal; }
+  .admin-shell .analytics-cost-breakdown > div { grid-template-columns: minmax(0, 1fr); }
+  .admin-shell .analytics-cost-breakdown > div > div:last-child { grid-column: auto; }
+  .admin-shell .analytics-recent article { flex-wrap: wrap; gap: 8px; }
+  .admin-shell .analytics-recent article > div:first-child { flex-basis: 100%; }
+  .admin-shell .analytics-recent article > div:last-child { width: 100%; flex-direction: row; justify-content: space-between; }
+  .admin-shell .analytics-recent article .truncate { white-space: normal; }
+  .admin-shell .drc-schedule-filter { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 8px; gap: 8px; }
+  .admin-shell .drc-schedule-filter :is(input, select) { min-width: 0; width: 100%; height: 44px; }
+  .admin-shell .drc-schedule-filter input:first-child { grid-column: 1 / -1; }
+  .admin-shell .drc-schedule-analysis { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; }
+  .admin-shell .drc-schedule-analysis > div { padding: 10px; border: 0; }
+  .admin-shell .drc-schedule-analysis span { color: hsl(var(--muted-foreground)); }
+  .admin-shell .drc-schedule-analysis strong { color: hsl(var(--foreground)); }
+  .admin-shell .mobile-record :is(.drc-btn, .drc-task-toggle) { min-height: 44px; }
+  .admin-shell .mobile-record h3 { font-size: 16px; line-height: 1.4; }
+  .admin-shell .mobile-record section { margin-inline: 0; padding-inline: 0; border: 0; box-shadow: none; }
+  .admin-shell .mobile-record section p[class*='grid-cols-'] { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .mobile-filter-grid select { border: 1px solid hsl(var(--border)); border-radius: 6px; min-height: 44px; padding: 8px; text-align: left; }
+  .mobile-filter-grid > div { min-width: 0; }
+  .activity-log-toolbar > button { flex: 1; }
+  :is(.admin-shell, .portal-shell) .metric-card { padding: 14px; }
+  :is(.admin-shell, .portal-shell) .metric-card > div { gap: 10px; }
+  :is(.admin-shell, .portal-shell) .metric-card .flex-1 { min-width: 0; }
+  :is(.admin-shell, .portal-shell) .metric-card [data-ui='metric-icon'] { flex-shrink: 0; }
+  :is(.admin-shell, .portal-shell) [data-page-navigation] { margin-bottom: 16px; }
+  :is(.admin-shell, .portal-shell) [data-page-navigation] > .flex { width: 100%; flex-wrap: wrap; }
+  :is(.admin-shell, .portal-shell) [data-page-navigation] :is(input, select) { max-width: 100%; min-width: 0; }
+  :is(.admin-shell, .portal-shell) :is(input, select, textarea, [role='combobox']), [data-ui='dialog-content'] :is(input, select, textarea, [role='combobox']) { font-size: 16px; min-height: 44px; }
+  :is(.admin-shell, .portal-shell) :is(button, a)[class*='h-']:not([role='switch']):not([role='checkbox']) { min-height: 44px; }
+  .portal-shell .portal-scroll-content { padding: 16px 12px calc(100px + env(safe-area-inset-bottom)); }
+  .portal-shell .portal-scroll-content > .space-y-6 > :not([hidden]) ~ :not([hidden]) { margin-top: 20px; }
+  .portal-shell .portal-horizontal-menu { position: fixed; inset: auto 0 0; z-index: 70; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0; padding: 6px 4px max(6px, env(safe-area-inset-bottom)); background: hsl(var(--card)); border-top: 1px solid hsl(var(--border)); overflow: visible; }
+  .portal-shell .portal-horizontal-menu .portal-nav-link { min-width: 0; min-height: 50px; padding: 4px 1px; flex-direction: column; gap: 4px; font-size: 10px; color: #355e3b; }
+  .portal-shell .portal-horizontal-menu .portal-nav-link[aria-current='page'] { background: #2e7d32; color: white; }
+  body:has(.portal-shell) .whatsapp-support { --support-bottom: calc(80px + env(safe-area-inset-bottom)); }
+  .portal-shell > header > div > p { display: none; }
+  [data-ui='dialog-overlay'] { z-index: 180; }
+  [data-ui='dialog-content'], [data-ui='sheet-content'] { z-index: 190; }
+  [data-ui='dialog-content'] { border-radius: 14px; }
+  [data-ui='dialog-content'] > button, [data-ui='sheet-content'] > button { min-width: 44px; min-height: 44px; }
+  [data-ui='dialog-content'] .flex-col-reverse, [data-ui='sheet-content'] .flex-col-reverse { gap: 8px; }
+  [data-radix-popper-content-wrapper] { z-index: 220 !important; max-width: calc(100vw - 16px); }
+}
+
+@media (max-width: 767px) {
+  .admin-scroll-content { overflow-x: hidden; }
+  .admin-shell .farm-activities-sticky-nav::before { inset-inline: 0; }
+  .admin-shell .farm-activities-sticky-nav[data-page-pinned]::before { inset-inline: 0; }
+}

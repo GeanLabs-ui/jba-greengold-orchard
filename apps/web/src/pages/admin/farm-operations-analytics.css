@@ -19,8 +19,8 @@
 .farm-analytics section > header { min-height: 38px; padding: 9px 13px; }
 .farm-analytics section > header h2 { font-size: var(--text-section-title); line-height: var(--leading-section-title); color: #075c22; font-weight: var(--weight-section-title); }
 .farm-analytics section[aria-label="Block Performance"] > div:first-child > section:first-child > header h2 { color: #172033; }
-.analytics-kpis { display: grid; grid-template-columns: 1.15fr 1.58fr 1.73fr .8fr; gap: 8px; position: sticky; top: 48px; z-index: 10; padding: 0; background: #f8faf9; }
-.analytics-kpi { min-width: 0; height: 104px; padding: 14px 12px; border-radius: 5px; color: #fff; background: #237a35; display: flex; flex-direction: column; justify-content: center; }
+.analytics-kpis { display: grid; grid-template-columns: 1.05fr 1.4fr 1.5fr 1.5fr; gap: 8px; position: sticky; top: 48px; z-index: 10; padding: 0; background: #f8faf9; }
+.analytics-kpi { min-width: 0; height: 76px; padding: 8px; border-radius: 5px; color: #fff; background: #237a35; display: flex; flex-direction: column; justify-content: center; }
 .analytics-kpi--gold { background: #d9a800; }
 .analytics-kpi--red { background: #d64545; }
 .analytics-kpi--revenue { background: #16a34a; }
@@ -29,13 +29,18 @@
 .analytics-kpi strong { display: block; margin-top: 5px; font-size: var(--text-kpi-value); line-height: var(--leading-kpi-value); color: #fff; font-weight: var(--weight-kpi-value); }
 .analytics-kpi--gold strong { font-size: var(--text-kpi-value); white-space: nowrap; }
 .analytics-kpi-main { display: flex; align-items: center; gap: 13px; }
-.analytics-kpi-symbol { width: 34px; height: 34px; flex-shrink: 0; }
-.analytics-kpi .analytics-kpi-note { display: flex; align-items: center; gap: 4px; margin-top: 14px; font-size: var(--text-caption); }
-.analytics-kpi-merged { flex-direction: row; align-items: stretch; padding: 10px 12px; }
-.analytics-kpi-half { min-width: 0; flex: 1; display: flex; align-items: center; gap: 9px; }
+.analytics-kpi-symbol { width: 26px; height: 26px; flex-shrink: 0; }
+.analytics-kpi .analytics-kpi-note { display: flex; align-items: center; gap: 4px; margin-top: 4px; font-size: var(--text-caption); }
+.analytics-kpi-merged { flex-direction: row; align-items: stretch; padding: 8px; }
+.analytics-kpi-half { min-width: 0; flex: 1; display: flex; align-items: center; gap: 6px; text-align: left; }
+.analytics-kpi-half > div { min-width: 0; }
+.analytics-kpi-remaining { display: block; margin-top: 3px; font-size: 11px; line-height: 1.2; color: #fff; overflow-wrap: anywhere; }
+.analytics-kpi-half:is(button) { border-radius: 4px; cursor: pointer; }
+.analytics-kpi-half:is(button):hover { background: #ffffff18; }
+.analytics-kpi-half:is(button):focus-visible { outline: 2px solid white; outline-offset: 2px; }
 .analytics-kpi-half + .analytics-kpi-half { border-left: 1px solid #ffffff85; padding-left: 10px; margin-left: 8px; }
-.analytics-kpi-half p { font-size: var(--text-kpi-label); white-space: nowrap; }
-.analytics-kpi-icon { display: grid; place-items: center; width: 45px; height: 45px; border-radius: 50%; background: #ffffff22; flex-shrink: 0; }
+.analytics-kpi-half p { font-size: var(--text-kpi-label); }
+.analytics-kpi-icon { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: #ffffff22; flex-shrink: 0; }
 .analytics-legend { display: flex; align-items: center; gap: 16px; font-size: var(--text-caption); color: #536078; white-space: nowrap; }
 .analytics-legend span { display: inline-flex; gap: 6px; align-items: center; }
 .analytics-legend i { width: 10px; height: 10px; }
@@ -81,7 +86,7 @@
 @media (max-width: 639px) {
   .admin-shell:has(.farm-analytics) > div > main { --admin-page-inset: 12px; padding: 0 12px 90px; }
   .analytics-kpis { grid-template-columns: repeat(2,minmax(0,1fr)); }
-  .analytics-kpi { grid-column: auto; height: 100px; padding: 12px; }
+  .analytics-kpi { grid-column: auto; height: 76px; padding: 8px; }
   .analytics-kpi--gold, .analytics-kpi--blue { grid-column: span 2; }
   .analytics-kpi-merged { grid-column: span 2; }
   .analytics-kpi--gold strong { font-size: var(--text-kpi-value); }
@@ -121,6 +126,15 @@
 .farm-analytics .analytics-table th[data-metric="yield"] { color: #2563eb; }
 .farm-analytics > section[aria-label="Block Performance"] > div { min-width: 0; }
 .farm-analytics { min-width: 0; }
+.admin-shell .farm-analytics .analytics-kpi strong { font-size: clamp(14px, 1.15vw, 18px); line-height: 1.25; overflow-wrap: anywhere; }
+.admin-shell .farm-analytics .analytics-kpi--gold strong { white-space: normal; }
+@media (max-width: 767px) {
+  .admin-shell .farm-analytics .analytics-kpis .analytics-kpi { min-height: 76px; height: 76px; padding: 8px; }
+}
+@media (min-width: 1200px) and (max-width: 1500px) {
+  .analytics-kpi-icon { width: 24px; height: 24px; }
+  .analytics-kpi-icon svg { width: 18px; height: 18px; }
+}
 @media (max-width: 639px) {
  .farm-analytics .analytics-table { min-width: 620px; }
  .farm-analytics section > header { gap: 8px; }

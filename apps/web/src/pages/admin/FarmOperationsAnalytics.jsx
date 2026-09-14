@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import {
-  ArrowDown, CalendarDays, ChartNoAxesCombined, Eye,
+  ArrowDown, CalendarDays, ChartNoAxesCombined, Eye, Pencil,
   House, Banknote, MapPin, ReceiptText, Coins, Plus, Sprout, TrendingUp, Trophy,
 } from 'lucide-react';
 import {
@@ -10,6 +10,8 @@ import {
   ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { base44 } from '@/api/base44Client';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { formatCurrency, formatDate, formatNumber } from '@/components/shared/format';
 import {
@@ -27,6 +29,11 @@ const COST = '#D64545';
 const REVENUE = '#16A34A';
 const YIELD = '#2563EB';
 const COST_COLORS = ['#dc2028', '#ef353e', '#fa535b', '#ff7b80', '#ff9c9f', '#fdd8da'];
+const PROJECTIONS = {
+  cost: { label: 'Projected Cost', unit: '₵', defaultValue: 60000 },
+  revenue: { label: 'Projected Revenue', unit: '₵', defaultValue: 400000 },
+  yield: { label: 'Projected Yield', unit: 'tonnes', defaultValue: 10000 },
+};
 
 const number = (value) => Number(value || 0);
 const text = (value) => String(value || '').trim();
@@ -57,9 +64,12 @@ function SummaryKpi({ icon: Icon, label, value, note, tone = 'green' }) {
 
 function MergedKpi({ first, second }) {
   return <div className={`analytics-kpi analytics-kpi-merged analytics-kpi--${first.tone}`}>
-    {[first, second].map(({ icon: Icon, label, value }) => <div className="analytics-kpi-half" key={label}>
-      <span className="analytics-kpi-icon"><Icon size={27} /></span><div><p>{label}</p><strong>{value}</strong></div>
-    </div>)}
+    {[first, second].map(({ icon: Icon, label, value, remaining, onClick }) => {
+      const Tag = onClick ? 'button' : 'div';
+      return <Tag className="analytics-kpi-half" key={label} {...(onClick ? { type: 'button', onClick, 'aria-label': `Edit ${label}` } : {})}>
+        <span className="analytics-kpi-icon"><Icon size={22} /></span><div><p>{label}{onClick ? <Pencil size={11} className="ml-1 inline-block" /> : null}</p><strong>{value}</strong>{remaining != null ? <span className="analytics-kpi-remaining">{remaining}</span> : null}</div>
+      </Tag>;
+    })}
   </div>;
 }
 
@@ -165,6 +175,49 @@ export default function FarmOperationsAnalytics({ data }) {
   const [customEnd, setCustomEnd] = useState('');
   const [isBlockPerformanceOpen, setIsBlockPerformanceOpen] = useState(false);
   const [toolbarTarget, setToolbarTarget] = useState(null);
+  const [projections, setProjections] = useState(null);
+  const [projectionError, setProjectionError] = useState('');
+  const [editingProjection, setEditingProjection] = useState(null);
+  const [projectionDraft, setProjectionDraft] = useState('');
+  const [savingProjection, setSavingProjection] = useState(false);
+  const [projectionFeedback, setProjectionFeedback] = useState('');
+
+  useEffect(() => {
+    let active = true;
+    base44.entities.FarmAnalyticsProjection.list('-created_date', 1)
+      .then((rows) => { if (active) setProjections(rows[0] || {}); })
+      .catch((error) => { if (active) setProjectionError(error.message || 'Could not load projections. Refresh to retry.'); });
+    return () => { active = false; };
+  }, []);
+
+  const projectionValue = (key) => projections?.[key] ?? PROJECTIONS[key].defaultValue;
+  const openProjection = (key) => {
+    setEditingProjection(key);
+    setProjectionDraft(String(projectionValue(key)));
+    setProjectionFeedback('');
+  };
+  const saveProjection = async (event) => {
+    event.preventDefault();
+    const value = Number(projectionDraft);
+    if (!projectionDraft.trim() || !Number.isFinite(value) || value < 0) {
+      setProjectionFeedback('Enter a valid number of zero or greater.');
+      return;
+    }
+    setSavingProjection(true);
+    setProjectionFeedback('');
+    try {
+      const latest = (await base44.entities.FarmAnalyticsProjection.list('-created_date', 1))[0];
+      const saved = latest
+        ? await base44.entities.FarmAnalyticsProjection.update(latest.id, { [editingProjection]: value })
+        : await base44.entities.FarmAnalyticsProjection.create({ ...Object.fromEntries(Object.entries(PROJECTIONS).map(([key, config]) => [key, config.defaultValue])), [editingProjection]: value });
+      setProjections(saved);
+      setProjectionFeedback('Saved successfully.');
+    } catch (error) {
+      setProjectionFeedback(error.message || 'Could not save. Please try again.');
+    } finally {
+      setSavingProjection(false);
+    }
+  };
 
   useEffect(() => {
     setToolbarTarget(document.getElementById('farm-analytics-header-controls'));
@@ -223,7 +276,6 @@ export default function FarmOperationsAnalytics({ data }) {
     farmFor,
     farmNameById,
     totalCost,
-    totalProjectedCost,
     totalRevenue,
     totalTrees,
     totalYieldKg,
@@ -296,7 +348,7 @@ export default function FarmOperationsAnalytics({ data }) {
       <div className="relative h-48 min-w-[142px]"><ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={costBreakdown} dataKey="value" nameKey="name" innerRadius="53%" outerRadius="90%" paddingAngle={1} stroke="white">{costBreakdown.map((item, index) => <Cell key={item.name} fill={COST_COLORS[index % COST_COLORS.length]} />)}</Pie><Tooltip formatter={(value) => formatCedis(value)} /></PieChart></ResponsiveContainer><div className="pointer-events-none absolute inset-0 grid place-content-center text-center"><strong className="text-xs text-[#d64545]">{compactCurrency(totalCost)}</strong><span className="text-caption text-[#d64545]">Total Cost</span></div></div>
       <div className="space-y-2">{costBreakdown.slice(0, 6).map((item, index) => <div key={item.name} className="flex items-center gap-2 text-caption"><span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: COST_COLORS[index % COST_COLORS.length] }} /><span className="min-w-0 flex-1 truncate">{item.name}</span><strong className="text-[#d64545]">{totalCost ? Math.round((item.value / totalCost) * 100) : 0}%</strong><span className="text-[#d64545]">({compactCurrency(item.value)})</span></div>)}</div>
       <div className="border-t border-border pt-3 sm:col-span-2"><p className="mb-3 text-caption font-semibold text-[#d64545]">Cost Split by Main Farm</p><div className="space-y-3">{farmCostSplit.map((farm) => <div key={farm.name} className="flex items-start gap-2 text-caption"><span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[#fff1c7] text-[#d9a800]"><MapPin size={14} /></span><span className="min-w-0 flex-1"><strong className="block truncate">{farm.name}</strong><span className="text-[#d64545]">{compactCurrency(farm.value)} · {totalCost ? Math.round((farm.value / totalCost) * 100) : 0}%</span></span></div>)}</div><div className="mt-4 border-t border-border pt-2 text-caption"><span className="text-[#d64545]">Total Cost</span><strong className="mt-0.5 block text-[#d64545]">{compactCurrency(totalCost)}</strong></div></div>
-    </div> : <EmptyState>No costs are logged for {range.label}. New Daily Activity Log entries update this card automatically.</EmptyState>}
+    </div> : <EmptyState>No costs are logged for {range.label}. New Daily Task Log entries update this card automatically.</EmptyState>}
   </AnalyticsPanel>;
   const recentActivitiesPanel = <AnalyticsPanel title="Recent Farm Activities" className="analytics-recent" action={<button type="button" onClick={() => navigate('/admin/farm-daily-activities/activities/records')} className="text-caption font-semibold text-[#256b2a] hover:underline">View all activities ›</button>}>
     {recentActivities.length ? <div className="divide-y divide-border">{recentActivities.slice(0, 5).map((row, index) => {
@@ -340,11 +392,12 @@ export default function FarmOperationsAnalytics({ data }) {
       {toolbarTarget ? createPortal(analyticsToolbar, toolbarTarget) : <section className="flex flex-wrap justify-end gap-2">{analyticsToolbar}</section>}
 
       <section className="analytics-kpis" aria-label="Farm summary">
-        <SummaryKpi icon={MapPin} label="Farm Structure" value={`${visibleFarms.length} farms · ${visibleBlocks.length} blocks`} note={`${formatNumber(totalTrees)} total trees`} tone="gold" />
-        <MergedKpi first={{ icon: TrendingUp, label: 'Projected Cost', value: compactCurrency(totalProjectedCost), tone: 'red' }} second={{ icon: ReceiptText, label: 'Actual Cost', value: compactCurrency(totalCost), tone: 'red' }} />
-        <MergedKpi first={{ icon: TrendingUp, label: 'Projected Revenue', value: compactCurrency(filteredActivities.reduce((sum, row) => sum + number(row.projected_revenue), 0)), tone: 'revenue' }} second={{ icon: Banknote, label: 'Actual Revenue', value: compactCurrency(totalRevenue), tone: 'revenue' }} />
-        <SummaryKpi icon={Sprout} label="Total Yield" value={`${formatNumber(totalYieldKg / 1000)} tonnes`} tone="blue" />
+        <SummaryKpi icon={MapPin} label="Farm Lands" value={`${visibleFarms.length} Farms · ${visibleBlocks.length} Blocks`} note={`${formatNumber(totalTrees)} Total Trees`} tone="gold" />
+        <MergedKpi first={{ icon: TrendingUp, label: 'Projected Cost', value: projections ? formatCedis(projectionValue('cost')) : '—', tone: 'red', remaining: projections ? formatCedis(projectionValue('cost') - totalCost) : '—', onClick: () => openProjection('cost') }} second={{ icon: ReceiptText, label: 'Actual Cost', value: compactCurrency(totalCost), tone: 'red' }} />
+        <MergedKpi first={{ icon: TrendingUp, label: 'Projected Revenue', value: projections ? formatCedis(projectionValue('revenue')) : '—', tone: 'revenue', remaining: projections ? formatCedis(projectionValue('revenue') - totalRevenue) : '—', onClick: () => openProjection('revenue') }} second={{ icon: Banknote, label: 'Actual Revenue', value: compactCurrency(totalRevenue), tone: 'revenue' }} />
+        <MergedKpi first={{ icon: Sprout, label: 'Projected Yield', value: projections ? `${formatNumber(projectionValue('yield'))} tonnes` : '—', tone: 'blue', remaining: projections ? `${formatNumber(projectionValue('yield') - totalYieldKg / 1000)} tonnes` : '—', onClick: () => openProjection('yield') }} second={{ icon: Sprout, label: 'Actual Yield', value: `${formatNumber(totalYieldKg / 1000)} tonnes`, tone: 'blue' }} />
       </section>
+      {projectionError ? <p role="alert" className="text-sm text-destructive">{projectionError}</p> : null}
 
       <section aria-label="Block Performance" className="grid items-start gap-4 xl:grid-cols-[minmax(0,2.08fr)_minmax(320px,1fr)]">
         <div className="space-y-4">
@@ -372,6 +425,27 @@ export default function FarmOperationsAnalytics({ data }) {
           {costBreakdownPanel}
         </div>
       </section>
+
+      <Dialog open={Boolean(editingProjection)} onOpenChange={(open) => { if (!open && !savingProjection) setEditingProjection(null); }}>
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Edit {PROJECTIONS[editingProjection]?.label}</DialogTitle>
+            <DialogDescription>Set the overall farm target. This projection stays fixed when you change filters.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={saveProjection} className="space-y-4">
+            <label className="block space-y-2 text-sm" htmlFor="projection-value">
+              <span>{PROJECTIONS[editingProjection]?.label} ({PROJECTIONS[editingProjection]?.unit})</span>
+              <Input id="projection-value" type="number" min="0" step="0.01" required autoFocus value={projectionDraft} disabled={savingProjection} onChange={(event) => { setProjectionDraft(event.target.value); setProjectionFeedback(''); }} />
+            </label>
+            {projectionFeedback ? <p role="status" className="text-sm">{projectionFeedback}</p> : null}
+            {projectionError ? <p role="alert" className="text-sm text-destructive">{projectionError}</p> : null}
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" disabled={savingProjection} onClick={() => setEditingProjection(null)}>{projectionFeedback === 'Saved successfully.' ? 'Done' : 'Cancel'}</Button>
+              <Button type="submit" disabled={savingProjection || !projections}>{savingProjection ? 'Saving…' : 'Save'}</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={isBlockPerformanceOpen} onOpenChange={setIsBlockPerformanceOpen}>
         <DialogContent className="farm-analytics max-h-[92vh] w-[calc(100vw-2rem)] max-w-6xl overflow-y-auto p-0">

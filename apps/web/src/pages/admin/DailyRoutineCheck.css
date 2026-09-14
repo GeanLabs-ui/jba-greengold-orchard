@@ -932,6 +932,22 @@
   border-bottom: 0;
 }
 
+.drc-table .drc-schedule-window {
+  white-space: nowrap;
+}
+
+.drc-schedule-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+}
+
+.drc-schedule-delete svg {
+  width: 1rem;
+  height: 1rem;
+}
+
 .drc-table tbody tr:hover {
   background: #f9fcfa;
 }

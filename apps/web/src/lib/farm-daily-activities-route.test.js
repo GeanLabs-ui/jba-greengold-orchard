@@ -4,7 +4,7 @@ import { getFarmDailyActivitiesNavigationState } from './farm-daily-activities-r
 describe('getFarmDailyActivitiesNavigationState', () => {
   const expectedActivityMenu = [
       'Analytics Overview',
-      'Daily Activity Log',
+      'Daily Task Log',
       'Main Activities',
       'Risk Register',
       'Farms',
@@ -13,7 +13,7 @@ describe('getFarmDailyActivitiesNavigationState', () => {
   it.each([
     ['/admin/farm-daily-activities/activities/', 'Analytics Overview'],
     ['/admin/farm-daily-activities/activities/overview', 'Analytics Overview'],
-    ['/admin/farm-daily-activities/activities/records', 'Daily Activity Log'],
+    ['/admin/farm-daily-activities/activities/records', 'Daily Task Log'],
     ['/admin/farm-daily-activities/activities/master-schedule', 'Main Activities'],
     ['/admin/farm-daily-activities/activities/risk-register', 'Risk Register'],
     ['/admin/farm-daily-activities/activities/farms', 'Farms'],
