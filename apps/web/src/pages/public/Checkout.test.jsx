@@ -27,7 +27,7 @@ vi.mock('@radix-ui/react-dialog', () => ({
   Portal: ({ children }) => children,
   Overlay: ({ className }) => <div className={className} />,
   Content: ({ children, className }) => <div role="dialog" className={className}>{children}</div>,
-  Title: ({ children }) => <h2>{children}</h2>,
+  Title: ({ children }) => <h2 className="text-section-title">{children}</h2>,
   Description: ({ children }) => <p>{children}</p>,
 }));
 

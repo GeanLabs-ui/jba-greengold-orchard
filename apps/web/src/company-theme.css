@@ -1,0 +1,236 @@
+/* Company colour map, PDF page 6. Shared by public, portal, staff and portals
+   mounted under document.body (dialogs, menus, tooltips and notifications). */
+:root,
+:root.admin-theme {
+  --company-page: #f4fbf5;
+  --company-section: #e8f5e9;
+  --company-card: #ffffff;
+  --company-ink: #123524;
+  --company-secondary: #355e3b;
+  --company-muted: #5f7565;
+  --company-border: #c8e6c9;
+  --company-disabled: #e3eee5;
+  --company-focus: #66bb6a;
+  --company-primary: #2e7d32;
+  --company-hover: #256b2a;
+  --company-active: #1b5e20;
+  --company-selected: #c8e6c9;
+  --status-success: #2e7d32;
+  --status-warning: #6b8e23;
+  --status-error: #355e3b;
+  --status-info: #3b7a57;
+  --platform-deep-green: #123524;
+  --platform-medium-green: #43a047;
+  --platform-fresh-green: #66bb6a;
+  --platform-pastel-green: #a5d6a7;
+  --platform-light-green: #c8e6c9;
+  --platform-forest-green: #1b5e20;
+  --platform-dark-green: #256b2a;
+  /* Compatibility alias for existing components, now the selected shade. */
+  --platform-yellow-green: #c8e6c9;
+  color-scheme: light;
+}
+
+body, .public-shell, .public-shell main, .portal-shell, .admin-shell {
+  background-color: var(--company-page);
+  color: var(--company-ink);
+}
+::selection { background: var(--company-selected); color: #123524; }
+input::placeholder, textarea::placeholder { color: var(--company-muted); opacity: 1; }
+:where(a, button, input, textarea, select, [tabindex], [role="combobox"]):focus-visible {
+  outline: 2px solid var(--company-focus);
+  outline-offset: 3px;
+}
+[aria-invalid="true"] { border: 2px dashed var(--status-error) !important; }
+[data-ui="button"]:disabled,
+input:disabled, textarea:disabled, select:disabled {
+  background: var(--company-disabled) !important;
+  color: var(--company-muted) !important;
+  border-color: var(--company-border) !important;
+  opacity: 1;
+}
+[data-ui="button"][data-variant="default"] {
+  background: var(--company-primary) !important;
+  color: #fff !important;
+}
+[data-ui="button"][data-variant="default"]:not(:disabled):hover {
+  background: var(--company-hover) !important;
+  color: #fff !important;
+}
+[data-ui="button"][data-variant="default"]:not(:disabled):active {
+  background: var(--company-active) !important;
+}
+[data-ui="button"][data-variant="destructive"] {
+  background: var(--status-error);
+  color: #fff;
+  border: 1px dashed currentColor;
+}
+:is([role="tab"], [role="option"])[aria-selected="true"],
+[role="tab"][data-state="active"], tr[data-state="selected"] {
+  background-color: var(--company-selected);
+  color: var(--company-ink);
+}
+
+.public-shell > header,
+.admin-theme .admin-sidebar,
+.admin-theme .admin-horizontal-menu,
+.portal-horizontal-menu,
+.company-mobile-menu {
+  background: #123524;
+  --foreground: 0 0% 100%;
+  --muted-foreground: 122.5 37.5% 84.31%;
+  --primary: 122.5 37.5% 84.31%;
+  --primary-foreground: 150.86 49.3% 13.92%;
+  color: #fff;
+}
+.public-shell > header { border-color: #355e3b; }
+.public-shell > .company-navbar { background-color: #123524; }
+.public-shell > header :is([data-slot="nav-trigger"], .company-header-control) {
+  color: #fff !important;
+  border-color: #355e3b;
+}
+.public-shell > header :is([data-slot="nav-trigger"], .company-header-control):is(:hover, [data-state="open"]),
+.portal-horizontal-menu .portal-nav-link:hover {
+  background: #256b2a !important;
+  color: #fff !important;
+}
+.public-shell > header [data-slot="nav-trigger"][data-current="true"],
+.portal-horizontal-menu .portal-nav-link[aria-current="page"],
+.admin-theme :is(.admin-sidebar, .admin-horizontal-menu) [aria-current="page"] {
+  background: #c8e6c9 !important;
+  color: #123524 !important;
+}
+.company-header-logo { background: #fff; border-radius: 3px; }
+.company-navbar :is([data-radix-navigation-menu-viewport], [data-radix-popper-content-wrapper]) {
+  --foreground: 150.86 49.3% 13.92%;
+  --muted-foreground: 136.36 10.38% 41.57%;
+  --primary: 123.04 46.2% 33.53%;
+  --primary-foreground: 0 0% 100%;
+}
+.company-mobile-menu h2 { color: #c8e6c9; }
+.public-shell > footer { background: #123524; color: #e8f5e9; }
+.app-surface table thead { background: var(--company-section); }
+.app-surface table tr { border-color: var(--company-border); }
+.app-surface tbody tr:hover { background-color: var(--company-section); }
+.admin-theme .metric-tone-primary, .admin-theme .metric-tone-green { color: #2e7d32; }
+.admin-theme .metric-tone-blue, .admin-theme .metric-tone-purple { color: #3b7a57; }
+.admin-theme .metric-tone-red { color: #355e3b; }
+.admin-theme .metric-tone-amber { color: #6b8e23; }
+.recharts-cartesian-grid line { stroke: var(--company-border); }
+.recharts-cartesian-axis-tick-value { fill: var(--company-muted); }
+.recharts-default-tooltip { background: var(--company-card) !important; border-color: var(--company-border) !important; color: var(--company-ink); }
+/* Preserve each series' own fill/stroke and existing legends/dash patterns. */
+.recharts-pie-sector path { stroke: var(--company-card); stroke-width: 2; }
+.dl-page .dl-section-heading > p, .dl-page .dl-fleet-copy > .dl-eyebrow { color: #2e7d32; }
+.dl-page .dl-hero-buttons a:first-child, .dl-page .dl-fleet-copy > a { background: #2e7d32; color: #fff; }
+.dl-page .dl-hero-buttons a:first-child:hover, .dl-page .dl-fleet-copy > a:hover { background: #256b2a; color: #fff; }
+.products-page .product-eyebrow { color: #2e7d32; }
+.products-page .product-hero .product-eyebrow,
+.products-page .product-hero .product-promises div { color: #f4fbf5; }
+.products-page .product-hero::after {
+  background: linear-gradient(90deg, rgb(18 53 36 / 0.68), rgb(18 53 36 / 0.25) 42%, transparent 70%);
+}
+.sustainability-page .sustain-hero h1 { color: #f4fbf5; text-shadow: 0 2px 8px #123524; }
+.sustainability-page .sustain-hero { background-color: #123524; }
+.public-shell .jba-public-hero h1 > span:first-child { color: #f4fbf5; }
+[data-sonner-toast][data-type="error"] { border-left: 4px dashed var(--status-error); }
+[data-sonner-toast][data-type="warning"] { border-left: 4px double var(--status-warning); }
+[data-sonner-toast][data-type="success"] { border-left: 4px solid var(--status-success); }
+
+.public-shell .jba-whatsapp-primary,
+.products-page .product-button,
+.sustainability-page .sustain-button:not(.sustain-outline) {
+  background: #2e7d32 !important;
+  color: #fff !important;
+  border-color: #2e7d32;
+}
+.public-shell .jba-whatsapp-primary:hover,
+.products-page .product-button:hover,
+.sustainability-page .sustain-button:not(.sustain-outline):hover {
+  background: #256b2a !important;
+  color: #fff !important;
+}
+
+/* Green-only dark counterpart; light mode above follows the PDF exactly. */
+:root.dark {
+  --company-page: #123524;
+  --company-section: #1b5e20;
+  --company-card: #163e29;
+  --company-ink: #f4fbf5;
+  --company-secondary: #c8e6c9;
+  --company-muted: #a5d6a7;
+  --company-border: #355e3b;
+  --company-disabled: #355e3b;
+  --company-selected: #1b5e20;
+  color-scheme: dark;
+}
+
+:root, :root.admin-theme {
+  --background: 128.57143 46.66667% 97.05882%;
+  --foreground: 150.85714 49.29577% 13.92157%;
+  --card: 0.00000 0.00000% 100.00000%;
+  --card-foreground: 150.85714 49.29577% 13.92157%;
+  --popover: 0.00000 0.00000% 100.00000%;
+  --popover-foreground: 150.85714 49.29577% 13.92157%;
+  --primary: 123.03797 46.19883% 33.52941%;
+  --primary-foreground: 0.00000 0.00000% 100.00000%;
+  --secondary: 124.61538 39.39394% 93.52941%;
+  --secondary-foreground: 128.78049 27.89116% 28.82353%;
+  --muted: 124.61538 39.39394% 93.52941%;
+  --muted-foreground: 136.36364 10.37736% 41.56863%;
+  --accent: 122.00000 37.50000% 84.31373%;
+  --accent-foreground: 150.85714 49.29577% 13.92157%;
+  --destructive: 128.78049 27.89116% 28.82353%;
+  --destructive-foreground: 0.00000 0.00000% 100.00000%;
+  --border: 122.00000 37.50000% 84.31373%;
+  --input: 122.00000 37.50000% 84.31373%;
+  --ring: 122.82353 38.46154% 56.66667%;
+  --chart-1: 150.85714 49.29577% 13.92157%;
+  --chart-2: 123.03797 46.19883% 33.52941%;
+  --chart-3: 122.82353 38.46154% 56.66667%;
+  --chart-4: 79.62617 60.45198% 34.70588%;
+  --chart-5: 122.44898 37.40458% 74.31373%;
+  --sidebar-background: 150.85714 49.29577% 13.92157%;
+  --sidebar-foreground: 0.00000 0.00000% 100.00000%;
+  --sidebar-primary: 122.00000 37.50000% 84.31373%;
+  --sidebar-primary-foreground: 150.85714 49.29577% 13.92157%;
+  --sidebar-accent: 124.28571 48.61111% 28.23529%;
+  --sidebar-accent-foreground: 0.00000 0.00000% 100.00000%;
+  --sidebar-border: 128.78049 27.89116% 28.82353%;
+  --sidebar-ring: 122.82353 38.46154% 56.66667%;
+}
+
+:root.dark {
+  --background: 150.85714 49.29577% 13.92157%;
+  --foreground: 128.57143 46.66667% 97.05882%;
+  --card: 148.50000 47.61905% 16.47059%;
+  --card-foreground: 128.57143 46.66667% 97.05882%;
+  --popover: 148.50000 47.61905% 16.47059%;
+  --popover-foreground: 128.57143 46.66667% 97.05882%;
+  --primary: 123.03797 46.19883% 33.52941%;
+  --primary-foreground: 0.00000 0.00000% 100.00000%;
+  --secondary: 128.78049 27.89116% 28.82353%;
+  --secondary-foreground: 128.57143 46.66667% 97.05882%;
+  --muted: 124.47761 55.37190% 23.72549%;
+  --muted-foreground: 122.44898 37.40458% 74.31373%;
+  --accent: 124.47761 55.37190% 23.72549%;
+  --accent-foreground: 128.57143 46.66667% 97.05882%;
+  --destructive: 128.78049 27.89116% 28.82353%;
+  --destructive-foreground: 0.00000 0.00000% 100.00000%;
+  --border: 128.78049 27.89116% 28.82353%;
+  --input: 128.78049 27.89116% 28.82353%;
+  --ring: 122.82353 38.46154% 56.66667%;
+  --chart-1: 150.85714 49.29577% 13.92157%;
+  --chart-2: 123.03797 46.19883% 33.52941%;
+  --chart-3: 122.82353 38.46154% 56.66667%;
+  --chart-4: 79.62617 60.45198% 34.70588%;
+  --chart-5: 122.44898 37.40458% 74.31373%;
+  --sidebar-background: 150.85714 49.29577% 13.92157%;
+  --sidebar-foreground: 0.00000 0.00000% 100.00000%;
+  --sidebar-primary: 122.00000 37.50000% 84.31373%;
+  --sidebar-primary-foreground: 150.85714 49.29577% 13.92157%;
+  --sidebar-accent: 124.28571 48.61111% 28.23529%;
+  --sidebar-accent-foreground: 0.00000 0.00000% 100.00000%;
+  --sidebar-border: 128.78049 27.89116% 28.82353%;
+  --sidebar-ring: 122.82353 38.46154% 56.66667%;
+}

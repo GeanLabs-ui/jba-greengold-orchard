@@ -1,0 +1,136 @@
+/* Canonical source: public Home.jsx. See docs/TYPOGRAPHY_AUDIT.md. */
+:root {
+  --font-heading: 'Roboto', Arial, sans-serif;
+  --font-body: 'Lato', Arial, sans-serif;
+  --font-primary: var(--font-body);
+  --font-display: var(--font-heading);
+  --text-display: 1.875rem;
+  --leading-display: 1.05;
+  --text-page-title: 1.875rem;
+  --leading-page-title: 1.05;
+  --weight-page-title: 900;
+  --tracking-page-title: -.025em;
+  --text-section-title: 1.875rem;
+  --leading-section-title: 1.2;
+  --weight-section-title: 900;
+  --tracking-section-title: -.035em;
+  --text-card-title: 1.25rem;
+  --leading-card-title: 1.5625rem;
+  --weight-card-title: 900;
+  --tracking-card-title: -.035em;
+  --text-subheading: 1rem;
+  --leading-subheading: 1.5rem;
+  --weight-subheading: 700;
+  --tracking-subheading: -.025em;
+  --text-body-lg: 1.125rem;
+  --leading-body-lg: 1.75rem;
+  --weight-body-lg: 400;
+  --tracking-body-lg: normal;
+  --text-body: 1rem;
+  --leading-body: 1.5rem;
+  --weight-body: 400;
+  --tracking-body: normal;
+  --text-body-sm: .875rem;
+  --leading-body-sm: 1.25rem;
+  --weight-body-sm: 400;
+  --tracking-body-sm: normal;
+  --text-label: .875rem;
+  --leading-label: 1.25rem;
+  --weight-label: 700;
+  --tracking-label: normal;
+  --text-caption: .75rem;
+  --leading-caption: 1rem;
+  --weight-caption: 400;
+  --tracking-caption: normal;
+  --text-eyebrow: .75rem;
+  --leading-eyebrow: 1rem;
+  --weight-eyebrow: 900;
+  --tracking-eyebrow: .12em;
+  --text-button: .875rem;
+  --leading-button: 1.25rem;
+  --weight-button: 700;
+  --tracking-button: .025em;
+  --text-button-compact: .875rem;
+  --leading-button-compact: 1.25rem;
+  --weight-button-compact: 700;
+  --tracking-button-compact: .025em;
+  --text-button-default: .875rem;
+  --leading-button-default: 1.25rem;
+  --weight-button-default: 700;
+  --tracking-button-default: .025em;
+  --text-kpi-value: 1.5rem;
+  --leading-kpi-value: 2rem;
+  --weight-kpi-value: 900;
+  --tracking-kpi-value: -.025em;
+  --text-kpi-label: .875rem;
+  --leading-kpi-label: 1.25rem;
+  --weight-kpi-label: 700;
+  --tracking-kpi-label: normal;
+  --text-navigation: .9375rem;
+  --leading-navigation: 1.453125rem;
+  --weight-navigation: 700;
+  --tracking-navigation: normal;
+}
+@media (min-width: 640px) {
+  :root {
+    --text-display: 2.25rem;
+    --leading-display: 1.05;
+    --text-page-title: 2.25rem;
+    --text-section-title: 2.25rem;
+    --leading-section-title: 1.111111;
+  }
+}
+/* Admin uses its original compact type scale, including body-mounted dialogs. */
+:root.admin-theme {
+  --text-page-title: clamp(1.5rem, 2.2vw, 2rem);
+  --leading-page-title: 1.15;
+  --weight-page-title: 700;
+  --text-section-title: 1.25rem;
+  --leading-section-title: 1.25;
+  --weight-section-title: 600;
+  --tracking-section-title: normal;
+  --text-card-title: 1.125rem;
+  --leading-card-title: 1.75rem;
+  --weight-card-title: 600;
+  --tracking-card-title: -.025em;
+  --text-label: .75rem;
+  --leading-label: 1rem;
+  --weight-label: 500;
+  --weight-kpi-value: 700;
+  --weight-kpi-label: 500;
+  --weight-subheading: 600;
+}
+:root .admin-shell main h1 { font-size: var(--text-page-title); line-height: 1.15; }
+:root .admin-shell main h2 { font-size: 1.25rem; line-height: 1.25; }
+:root .admin-shell main h3 { font-size: 1rem; line-height: 1.3; }
+:root.admin-theme .font-semibold { font-weight: 600; }
+:root .text-display { font-family: var(--font-heading); font-size: var(--text-display); line-height: var(--leading-display); font-weight: 900; letter-spacing: -.025em; text-transform: none; }
+:root .text-page-title { font-family: var(--font-heading); font-size: var(--text-page-title); line-height: var(--leading-page-title); font-weight: var(--weight-page-title); letter-spacing: var(--tracking-page-title); text-transform: none; }
+:root .text-section-title { font-family: var(--font-heading); font-size: var(--text-section-title); line-height: var(--leading-section-title); font-weight: var(--weight-section-title); letter-spacing: var(--tracking-section-title); text-transform: none; }
+:root .text-card-title { font-family: var(--font-heading); font-size: var(--text-card-title); line-height: var(--leading-card-title); font-weight: var(--weight-card-title); letter-spacing: var(--tracking-card-title); text-transform: none; }
+:root .text-subheading { font-family: var(--font-heading); font-size: var(--text-subheading); line-height: var(--leading-subheading); font-weight: var(--weight-subheading); letter-spacing: var(--tracking-subheading); text-transform: none; }
+:root .text-body-lg { font-family: var(--font-body); font-size: var(--text-body-lg); line-height: var(--leading-body-lg); font-weight: var(--weight-body-lg); letter-spacing: var(--tracking-body-lg); text-transform: none; }
+:root .text-body { font-family: var(--font-body); font-size: var(--text-body); line-height: var(--leading-body); font-weight: var(--weight-body); letter-spacing: var(--tracking-body); text-transform: none; }
+:root .text-body-sm { font-family: var(--font-body); font-size: var(--text-body-sm); line-height: var(--leading-body-sm); font-weight: var(--weight-body-sm); letter-spacing: var(--tracking-body-sm); text-transform: none; }
+:root .text-label { font-family: var(--font-heading); font-size: var(--text-label); line-height: var(--leading-label); font-weight: var(--weight-label); letter-spacing: var(--tracking-label); text-transform: none; }
+:root .text-caption { font-family: var(--font-body); font-size: var(--text-caption); line-height: var(--leading-caption); font-weight: var(--weight-caption); letter-spacing: var(--tracking-caption); text-transform: none; }
+:root .text-eyebrow { font-family: var(--font-body); font-size: var(--text-eyebrow); line-height: var(--leading-eyebrow); font-weight: var(--weight-eyebrow); letter-spacing: var(--tracking-eyebrow); text-transform: uppercase; }
+:root .text-button { font-family: var(--font-heading); font-size: var(--text-button); line-height: var(--leading-button); font-weight: var(--weight-button); letter-spacing: var(--tracking-button); text-transform: uppercase; }
+:root .text-button-compact { font-family: var(--font-heading); font-size: var(--text-button-compact); line-height: var(--leading-button-compact); font-weight: var(--weight-button-compact); letter-spacing: var(--tracking-button-compact); text-transform: uppercase; }
+:root .text-button-default { font-family: var(--font-heading); font-size: var(--text-button-default); line-height: var(--leading-button-default); font-weight: var(--weight-button-default); letter-spacing: var(--tracking-button-default); text-transform: uppercase; }
+:root .text-kpi-value { font-family: var(--font-heading); font-size: var(--text-kpi-value); line-height: var(--leading-kpi-value); font-weight: var(--weight-kpi-value); letter-spacing: var(--tracking-kpi-value); text-transform: none; }
+:root .text-kpi-label { font-family: var(--font-body); font-size: var(--text-kpi-label); line-height: var(--leading-kpi-label); font-weight: var(--weight-kpi-label); letter-spacing: var(--tracking-kpi-label); text-transform: none; }
+:root .text-navigation { font-family: var(--font-heading); font-size: var(--text-navigation); line-height: var(--leading-navigation); font-weight: var(--weight-navigation); letter-spacing: var(--tracking-navigation); text-transform: none; }
+
+/* Body-mounted Radix/Sonner content and SVG charts share the same foundation. */
+.recharts-wrapper, .recharts-text, .recharts-default-tooltip, .recharts-default-legend { font-family: var(--font-body); font-size: var(--text-caption); line-height: var(--leading-caption); }
+.text-kpi-value, table, .recharts-wrapper { font-variant-numeric: tabular-nums; }
+@media (max-width: 767px) { input, textarea, select { font-size: var(--text-body); } }
+
+/* Emphasis is orthogonal to role, for labels within normal body copy. */
+:root .font-bold { font-weight: 700; }
+:root .font-semibold { font-weight: 700; }
+:root .font-medium { font-weight: 500; }
+:root .font-normal { font-weight: 400; }
+:root .font-black { font-weight: 900; }
+[data-sonner-toast] { font-family: var(--font-body); font-size: var(--text-body-sm); }

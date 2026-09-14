@@ -61,10 +61,10 @@ function Metric({ icon: Icon, value, label, tone }) {
 }
 
 const ATTENDANCE_STATUS = {
-  present: { label: 'Present', color: '#2e7d32', soft: '#edf8ef' },
-  absent: { label: 'Absent', color: '#d64545', soft: '#fff1f0' },
-  late: { label: 'Late', color: '#e0a800', soft: '#fff9e6' },
-  leave: { label: 'On Leave', color: '#2196c9', soft: '#eff9fd' },
+  present: { label: 'Present', color: '#2e7d32', soft: '#f4fbf5' },
+  absent: { label: 'Absent', color: '#355e3b', soft: '#f4fbf5' },
+  late: { label: 'Late', color: '#355e3b', soft: '#f9fcfa' },
+  leave: { label: 'On Leave', color: '#3b7a57', soft: '#f9fcfa' },
 };
 
 const attendanceStatus = (value) => {
@@ -139,10 +139,10 @@ function AttendancePeriodControls({ period, onPeriodChange, customStart, customE
       </div>
       {period === 'custom' ? (
         <div className="flex flex-wrap items-center gap-1.5" onClick={(event) => event.stopPropagation()}>
-          <label className="sr-only" htmlFor={`${idPrefix}-start`}>Start date</label>
+          <label className="sr-only text-label" htmlFor={`${idPrefix}-start`}>Start date</label>
           <Input id={`${idPrefix}-start`} type="date" value={customStart} max={customEnd || todayKey} onChange={(event) => onCustomStartChange(event.target.value)} className="h-8 w-[136px] px-2 text-xs" />
           <span className="text-xs text-muted-foreground">to</span>
-          <label className="sr-only" htmlFor={`${idPrefix}-end`}>End date</label>
+          <label className="sr-only text-label" htmlFor={`${idPrefix}-end`}>End date</label>
           <Input id={`${idPrefix}-end`} type="date" value={customEnd} min={customStart || undefined} max={todayKey} onChange={(event) => onCustomEndChange(event.target.value)} className="h-8 w-[136px] px-2 text-xs" />
         </div>
       ) : null}
@@ -156,10 +156,10 @@ function AttendanceTrendChart({ data, expanded = false }) {
     <ResponsiveContainer width="100%" height="100%">
       <AreaChart data={data} margin={{ top: 8, right: expanded ? 22 : 10, left: expanded ? 0 : -20, bottom: expanded && data.length > 12 ? 36 : 0 }}>
         <defs><linearGradient id={fillId} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#2e7d32" stopOpacity={0.18} /><stop offset="100%" stopColor="#2e7d32" stopOpacity={0.01} /></linearGradient></defs>
-        <CartesianGrid stroke="#e7ece8" vertical={false} />
-        <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: expanded ? 11 : 10, fill: '#607067' }} minTickGap={expanded ? 0 : 20} interval={expanded ? 0 : 'preserveStartEnd'} angle={expanded && data.length > 12 ? -35 : 0} textAnchor={expanded && data.length > 12 ? 'end' : 'middle'} />
-        <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{ fontSize: expanded ? 11 : 10, fill: '#607067' }} />
-        <Tooltip contentStyle={{ borderColor: '#e7ece8', borderRadius: 8, fontSize: 12 }} labelStyle={{ fontWeight: 600 }} />
+        <CartesianGrid stroke="#e8f5e9" vertical={false} />
+        <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 'var(--text-caption)', fill: '#5f7565' }} minTickGap={expanded ? 0 : 20} interval={expanded ? 0 : 'preserveStartEnd'} angle={expanded && data.length > 12 ? -35 : 0} textAnchor={expanded && data.length > 12 ? 'end' : 'middle'} />
+        <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{ fontSize: 'var(--text-caption)', fill: '#5f7565' }} />
+        <Tooltip contentStyle={{ borderColor: '#e8f5e9', borderRadius: 8, fontSize: 'var(--text-caption)' }} labelStyle={{ fontWeight: 600 }} />
         <Area type="monotone" dataKey="present" name="Present or late" stroke="#2e7d32" fill={`url(#${fillId})`} strokeWidth={2} dot={expanded || data.length === 1 ? { r: 2.5, fill: '#2e7d32' } : false} activeDot={{ r: 4 }} />
       </AreaChart>
     </ResponsiveContainer>
@@ -170,7 +170,7 @@ function AttendancePanel({ title, action, children, className = '' }) {
   return (
     <section className={`overflow-hidden rounded-xl border border-border bg-card shadow-sm ${className}`}>
       <header className="flex min-h-12 items-center justify-between gap-3 border-b border-border px-4 py-3">
-        <h3 className="text-sm font-semibold">{title}</h3>
+        <h3 className="text-card-title">{title}</h3>
         {action}
       </header>
       {children}
@@ -293,7 +293,7 @@ function AttendanceDashboard({ attendance, employees, departments }) {
               <PopoverContent align="end" className="w-72">
                 <div className="space-y-3">
                   <div>
-                    <Label htmlFor="attendance-overview-date" className="text-sm font-semibold">View attendance for</Label>
+                    <Label htmlFor="attendance-overview-date" className="text-label">View attendance for</Label>
                     <p className="mt-1 text-xs text-muted-foreground">Choose a date to update the complete overview.</p>
                   </div>
                   <Input
@@ -345,7 +345,7 @@ function AttendanceDashboard({ attendance, employees, departments }) {
           <div className="mx-4 mb-4 rounded-lg border border-border">
             <div className="flex flex-col gap-3 border-b border-border px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
               <div>
-                <h4 className="text-sm font-semibold">Attendance Trend</h4>
+                <h4 className="text-subheading">Attendance Trend</h4>
                 <p className="mt-0.5 text-xs text-muted-foreground">{dateLabel}</p>
               </div>
               <AttendancePeriodControls period={period} onPeriodChange={setPeriod} customStart={customStart} customEnd={customEnd} onCustomStartChange={setCustomStart} onCustomEndChange={setCustomEnd} />
@@ -359,7 +359,7 @@ function AttendanceDashboard({ attendance, employees, departments }) {
               onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setTrendExpanded(true); } }}
             >
               <AttendanceTrendChart data={trendData} />
-              <span className="pointer-events-none absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-md border border-border bg-background/95 px-2 py-1 text-[11px] font-medium text-muted-foreground opacity-100 shadow-sm transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-visible:opacity-100"><Maximize2 className="h-3 w-3" /> Full view</span>
+              <span className="pointer-events-none absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-md border border-border bg-background/95 px-2 py-1 text-caption font-medium text-muted-foreground opacity-100 shadow-sm transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-visible:opacity-100"><Maximize2 className="h-3 w-3" /> Full view</span>
             </div>
           </div>
         </AttendancePanel>
@@ -383,22 +383,22 @@ function AttendanceDashboard({ attendance, employees, departments }) {
         </Dialog>
 
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
-          <AttendancePanel title="Department Attendance" action={<span className="text-xs font-medium text-[#176e94]">Live totals</span>}>
+          <AttendancePanel title="Department Attendance" action={<span className="text-xs font-medium text-[#3b7a57]">Live totals</span>}>
             <div className="space-y-4 p-4">
               {departmentAttendance.length ? departmentAttendance.map((department, index) => {
-                const color = index < 2 ? '#2e7d32' : index < 4 ? '#2196c9' : '#d4a017';
+                const color = index < 2 ? '#2e7d32' : index < 4 ? '#3b7a57' : '#c8e6c9';
                 return <div key={department.id}><div className="mb-1.5 flex items-center justify-between gap-3 text-xs"><span className="truncate">{department.name}</span><strong>{department.rate}%</strong></div><div className="h-1.5 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full transition-all" style={{ width: `${department.rate}%`, backgroundColor: color }} /></div></div>;
               }) : <p className="py-8 text-center text-sm text-muted-foreground">Department attendance will appear as records are generated.</p>}
             </div>
           </AttendancePanel>
 
-          <AttendancePanel title="Upcoming Leaves" action={<span className="text-xs font-medium text-[#176e94]">Scheduled</span>}>
+          <AttendancePanel title="Upcoming Leaves" action={<span className="text-xs font-medium text-[#3b7a57]">Scheduled</span>}>
             <div className="divide-y divide-border px-4">
               {upcomingLeaves.length ? upcomingLeaves.map((leave, index) => {
-                const colors = ['#2e7d32', '#d4a017', '#2196c9'];
+                const colors = ['#2e7d32', '#c8e6c9', '#3b7a57'];
                 const first = leave.dates[0]; const last = leave.dates[leave.dates.length - 1];
                 const rangeLabel = first.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + (dateKey(first) !== dateKey(last) ? ` – ${last.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}` : `, ${first.getFullYear()}`);
-                return <div key={leave.key} className="flex items-center gap-3 py-3"><span className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-xs font-semibold text-white" style={{ backgroundColor: colors[index % colors.length] }}>{employeeInitials(leave.name)}</span><span className="min-w-0 flex-1"><strong className="block truncate text-sm">{leave.name}</strong><span className="block text-xs text-muted-foreground">{rangeLabel}</span></span><span className="max-w-28 truncate rounded-md border border-border px-2 py-1 text-[10px] font-medium text-[#176e94]">{leave.type}</span></div>;
+                return <div key={leave.key} className="flex items-center gap-3 py-3"><span className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-xs font-semibold text-white" style={{ backgroundColor: colors[index % colors.length] }}>{employeeInitials(leave.name)}</span><span className="min-w-0 flex-1"><strong className="block truncate text-sm">{leave.name}</strong><span className="block text-xs text-muted-foreground">{rangeLabel}</span></span><span className="max-w-28 truncate rounded-md border border-border px-2 py-1 text-caption font-medium text-[#3b7a57]">{leave.type}</span></div>;
               }) : <p className="py-8 text-center text-sm text-muted-foreground">No upcoming leave is scheduled.</p>}
             </div>
           </AttendancePanel>
@@ -415,7 +415,7 @@ function AttendanceDashboard({ attendance, employees, departments }) {
 
         <AttendancePanel title="Attendance by Status">
           <div className="grid min-h-64 items-center gap-2 p-4 sm:grid-cols-[minmax(140px,1fr)_minmax(130px,0.9fr)] xl:grid-cols-1 2xl:grid-cols-[minmax(140px,1fr)_minmax(130px,0.9fr)]">
-            <div className="h-44"><ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={statusData} dataKey="value" nameKey="name" innerRadius={48} outerRadius={70} paddingAngle={filtered.length ? 1 : 0} stroke="none">{statusData.map((entry) => <Cell key={entry.key} fill={entry.value ? entry.color : '#e7ece8'} />)}</Pie><Tooltip contentStyle={{ borderColor: '#e7ece8', borderRadius: 8, fontSize: 12 }} /></PieChart></ResponsiveContainer></div>
+            <div className="h-44"><ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={statusData} dataKey="value" nameKey="name" innerRadius={48} outerRadius={70} paddingAngle={filtered.length ? 1 : 0} stroke="none">{statusData.map((entry) => <Cell key={entry.key} fill={entry.value ? entry.color : '#e8f5e9'} />)}</Pie><Tooltip contentStyle={{ borderColor: '#e8f5e9', borderRadius: 8, fontSize: 'var(--text-caption)' }} /></PieChart></ResponsiveContainer></div>
             <div className="space-y-3">{statusData.map((item) => <div key={item.key} className="flex items-center gap-2 text-xs"><span className="h-2 w-2 shrink-0 rounded-sm" style={{ backgroundColor: item.color }} /><span className="min-w-0 flex-1 truncate">{item.name}</span><strong className="tabular-nums">{item.value}</strong><span className="text-muted-foreground">({percent(item.value, filtered.length)}%)</span></div>)}</div>
           </div>
         </AttendancePanel>
@@ -438,7 +438,7 @@ function PageAccessGrid({ selected, onChange, disabled = false }) {
           <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{group}</p>
           <div className="grid gap-2 sm:grid-cols-2">
             {pages.map((page) => (
-              <label key={page.key} className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2.5">
+              <label key={page.key} className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2.5 text-label">
                 <span className="text-sm font-medium">{page.label}</span>
                 <Switch checked={selected.includes(page.key)} onCheckedChange={(checked) => toggle(page.key, checked)} disabled={disabled} aria-label={`${page.label} access`} />
               </label>
@@ -480,9 +480,9 @@ function DepartmentDialog({ departments, parentId = '', trigger, onSaved }) {
       <DialogContent>
         <DialogHeader><DialogTitle>{parent ? 'Add sub-department' : 'Add department'}</DialogTitle><DialogDescription>Create a main department or place a sub-department beneath an existing one.</DialogDescription></DialogHeader>
         <form onSubmit={submit} className="space-y-4">
-          <div><Label htmlFor="department-name">Name</Label><Input id="department-name" value={name} onChange={(event) => setName(event.target.value)} required maxLength={120} /></div>
-          <div><Label htmlFor="department-code">Code</Label><Input id="department-code" value={code} onChange={(event) => setCode(event.target.value.replace(/[^a-zA-Z0-9-]/g, ''))} required maxLength={16} placeholder="e.g. HR or FARM-OPS" /></div>
-          <div><Label>Main department</Label><Select value={parent || 'main'} onValueChange={(value) => setParent(value === 'main' ? '' : value)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="main">Create as main department</SelectItem>{mainDepartments.map((item) => <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>)}</SelectContent></Select></div>
+          <div><Label className="text-label" htmlFor="department-name">Name</Label><Input id="department-name" value={name} onChange={(event) => setName(event.target.value)} required maxLength={120} /></div>
+          <div><Label className="text-label" htmlFor="department-code">Code</Label><Input id="department-code" value={code} onChange={(event) => setCode(event.target.value.replace(/[^a-zA-Z0-9-]/g, ''))} required maxLength={16} placeholder="e.g. HR or FARM-OPS" /></div>
+          <div><Label className="text-label">Main department</Label><Select value={parent || 'main'} onValueChange={(value) => setParent(value === 'main' ? '' : value)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="main">Create as main department</SelectItem>{mainDepartments.map((item) => <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>)}</SelectContent></Select></div>
           <DialogFooter><Button type="submit" disabled={saving || !name.trim() || !code.trim()}>{saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}Create</Button></DialogFooter>
         </form>
       </DialogContent>
@@ -563,18 +563,18 @@ function EmployeeDialog({ employee, employees, departments, currentUser, trigger
         <DialogHeader><DialogTitle>{editing ? 'Edit employee' : 'Onboard employee'}</DialogTitle><DialogDescription>{editing ? 'Update the employee’s organization and staff-pass details.' : 'Creates the employee record, automatic staff ID, staff pass, and Google workspace invitation.'}</DialogDescription></DialogHeader>
         <form onSubmit={save} className="space-y-6">
           <div className="grid gap-4 sm:grid-cols-2">
-            <div><Label>First name</Label><Input value={form.first_name || ''} onChange={(event) => update('first_name', event.target.value)} required /></div>
-            <div><Label>Last name</Label><Input value={form.last_name || ''} onChange={(event) => update('last_name', event.target.value)} required /></div>
-            <div><Label>Google email</Label><Input type="email" value={form.email || ''} onChange={(event) => update('email', event.target.value)} required disabled={editing && Boolean(employee?.user_id)} /></div>
-            <div><Label>Phone</Label><Input value={form.phone || ''} onChange={(event) => update('phone', event.target.value)} /></div>
-            <div><Label>Job title</Label><Input value={form.job_title || ''} onChange={(event) => update('job_title', event.target.value)} required /></div>
-            <div><Label>Joining date and time</Label><Input type="datetime-local" value={form.joining_at || ''} onChange={(event) => update('joining_at', event.target.value)} required disabled={editing} /></div>
-            <div><Label>Main department</Label><Select value={form.department_id || ''} onValueChange={(value) => setForm((current) => ({ ...current, department_id: value, sub_department_id: '' }))}><SelectTrigger><SelectValue placeholder="Select department" /></SelectTrigger><SelectContent>{mainDepartments.map((item) => <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>)}</SelectContent></Select></div>
-            <div><Label>Sub-department</Label><Select value={form.sub_department_id || 'none'} onValueChange={(value) => update('sub_department_id', value === 'none' ? '' : value)} disabled={!form.department_id}><SelectTrigger><SelectValue placeholder="Optional" /></SelectTrigger><SelectContent><SelectItem value="none">No sub-department</SelectItem>{subDepartments.map((item) => <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>)}</SelectContent></Select></div>
-            <div><Label>Reports to</Label><Select value={form.reports_to_employee_id || 'none'} onValueChange={(value) => update('reports_to_employee_id', value === 'none' ? '' : value)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="none">No manager / top level</SelectItem>{employees.filter((item) => item.id !== employee?.id).map((item) => <SelectItem key={item.id} value={item.id}>{nameOf(item)} · {item.job_title || item.employee_code}</SelectItem>)}</SelectContent></Select></div>
-            <div><Label>Employment type</Label><Select value={form.employment_type || 'full_time'} onValueChange={(value) => update('employment_type', value)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{employmentTypes.map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select></div>
-            <div><Label>Workspace role</Label><Select value={form.workspace_role || 'farm_supervisor'} onValueChange={changeRole} disabled={editing}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{roleOptions.map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select></div>
-            <div><Label>Staff photo</Label><Input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setPhoto(event.target.files?.[0] || null)} /></div>
+            <div><Label className="text-label">First name</Label><Input value={form.first_name || ''} onChange={(event) => update('first_name', event.target.value)} required /></div>
+            <div><Label className="text-label">Last name</Label><Input value={form.last_name || ''} onChange={(event) => update('last_name', event.target.value)} required /></div>
+            <div><Label className="text-label">Google email</Label><Input type="email" value={form.email || ''} onChange={(event) => update('email', event.target.value)} required disabled={editing && Boolean(employee?.user_id)} /></div>
+            <div><Label className="text-label">Phone</Label><Input value={form.phone || ''} onChange={(event) => update('phone', event.target.value)} /></div>
+            <div><Label className="text-label">Job title</Label><Input value={form.job_title || ''} onChange={(event) => update('job_title', event.target.value)} required /></div>
+            <div><Label className="text-label">Joining date and time</Label><Input type="datetime-local" value={form.joining_at || ''} onChange={(event) => update('joining_at', event.target.value)} required disabled={editing} /></div>
+            <div><Label className="text-label">Main department</Label><Select value={form.department_id || ''} onValueChange={(value) => setForm((current) => ({ ...current, department_id: value, sub_department_id: '' }))}><SelectTrigger><SelectValue placeholder="Select department" /></SelectTrigger><SelectContent>{mainDepartments.map((item) => <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>)}</SelectContent></Select></div>
+            <div><Label className="text-label">Sub-department</Label><Select value={form.sub_department_id || 'none'} onValueChange={(value) => update('sub_department_id', value === 'none' ? '' : value)} disabled={!form.department_id}><SelectTrigger><SelectValue placeholder="Optional" /></SelectTrigger><SelectContent><SelectItem value="none">No sub-department</SelectItem>{subDepartments.map((item) => <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>)}</SelectContent></Select></div>
+            <div><Label className="text-label">Reports to</Label><Select value={form.reports_to_employee_id || 'none'} onValueChange={(value) => update('reports_to_employee_id', value === 'none' ? '' : value)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="none">No manager / top level</SelectItem>{employees.filter((item) => item.id !== employee?.id).map((item) => <SelectItem key={item.id} value={item.id}>{nameOf(item)} · {item.job_title || item.employee_code}</SelectItem>)}</SelectContent></Select></div>
+            <div><Label className="text-label">Employment type</Label><Select value={form.employment_type || 'full_time'} onValueChange={(value) => update('employment_type', value)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{employmentTypes.map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select></div>
+            <div><Label className="text-label">Workspace role</Label><Select value={form.workspace_role || 'farm_supervisor'} onValueChange={changeRole} disabled={editing}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{roleOptions.map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select></div>
+            <div><Label className="text-label">Staff photo</Label><Input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setPhoto(event.target.files?.[0] || null)} /></div>
           </div>
           {!editing && <div><div className="mb-3 flex items-center justify-between"><div><p className="text-sm font-semibold">Page access</p><p className="text-xs text-muted-foreground">A page switched off will be hidden and blocked for this staff account.</p></div><span className="text-xs text-muted-foreground">{pageAccess.length} enabled</span></div><PageAccessGrid selected={pageAccess} onChange={setPageAccess} /></div>}
           <DialogFooter><Button type="submit" disabled={saving || !form.department_id}>{saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}{editing ? 'Save changes' : 'Create employee and invite'}</Button></DialogFooter>
@@ -616,7 +616,7 @@ function AccessDialog({ profile, currentUser, trigger, onSaved }) {
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-3xl">
         <DialogHeader><DialogTitle>Access for {nameOf(profile.employee)}</DialogTitle><DialogDescription>{profile.account ? 'Changes apply to the staff member’s next page request.' : profile.invitation ? 'These settings will apply when the Google invitation is accepted.' : 'Send the employee’s Google invitation with the selected access.'}</DialogDescription></DialogHeader>
-        <div className="grid gap-4 sm:grid-cols-2"><div><Label>Workspace role</Label><Select value={role} onValueChange={changeRole}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{roleOptions.map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select></div>{profile.account && <div><Label>Account status</Label><Select value={status} onValueChange={setStatus}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem></SelectContent></Select></div>}</div>
+        <div className="grid gap-4 sm:grid-cols-2"><div><Label className="text-label">Workspace role</Label><Select value={role} onValueChange={changeRole}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{roleOptions.map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select></div>{profile.account && <div><Label className="text-label">Account status</Label><Select value={status} onValueChange={setStatus}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem></SelectContent></Select></div>}</div>
         <PageAccessGrid selected={pageAccess} onChange={setPageAccess} />
         <DialogFooter><Button onClick={save} disabled={saving}>{saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}{profile.account || profile.invitation ? 'Save access' : 'Send invitation'}</Button></DialogFooter>
       </DialogContent>
@@ -647,12 +647,12 @@ function StaffPassDialog({ employee, trigger }) {
         <DialogHeader><DialogTitle>Staff pass</DialogTitle><DialogDescription>Generated automatically from the employee’s HR record.</DialogDescription></DialogHeader>
         <div ref={passRef} className="relative mx-auto aspect-[1.585/1] w-full max-w-[520px] overflow-hidden rounded-2xl border border-emerald-950/15 bg-white p-6 text-slate-900 shadow-lg">
           <div className="absolute inset-x-0 top-0 h-2 bg-gradient-to-r from-emerald-900 via-emerald-600 to-amber-400" />
-          <div className="flex items-start justify-between gap-4"><BrandLogo className="h-12 w-auto" /><div className="text-right"><p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-800">Staff Pass</p><p className="mt-1 font-mono text-xs font-bold">{employee.employee_code}</p></div></div>
+          <div className="flex items-start justify-between gap-4"><BrandLogo className="h-12 w-auto" /><div className="text-right"><p className="text-caption font-bold uppercase tracking-[0.2em] text-emerald-800">Staff Pass</p><p className="mt-1 font-mono text-xs font-bold">{employee.employee_code}</p></div></div>
           <div className="mt-5 flex gap-5">
             <div className="h-28 w-24 shrink-0 overflow-hidden rounded-xl border-2 border-emerald-800/20 bg-emerald-50">{employee.photo_url ? <img src={employee.photo_url} alt={nameOf(employee)} className="h-full w-full object-cover" /> : <div className="grid h-full place-items-center text-2xl font-bold text-emerald-800">{(employee.first_name?.[0] || '?')}{employee.last_name?.[0] || ''}</div>}</div>
-            <div className="min-w-0 flex-1"><p className="truncate font-heading text-xl font-bold">{nameOf(employee)}</p><p className="mt-1 text-sm font-semibold text-emerald-800">{employee.job_title || roleLabel(employee.workspace_role)}</p><div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2 text-[10px]"><div><span className="block uppercase tracking-wide text-slate-500">Department</span><b>{employee.department_name || employee.department || '—'}</b></div><div><span className="block uppercase tracking-wide text-slate-500">Sub-department</span><b>{employee.sub_department_name || '—'}</b></div><div><span className="block uppercase tracking-wide text-slate-500">Joined</span><b>{formatDate(employee.hire_date || employee.joining_at)}</b></div><div><span className="block uppercase tracking-wide text-slate-500">Status</span><b className="capitalize">{employee.status || 'active'}</b></div></div></div>
+            <div className="min-w-0 flex-1"><p className="truncate font-heading text-xl font-bold">{nameOf(employee)}</p><p className="mt-1 text-sm font-semibold text-emerald-800">{employee.job_title || roleLabel(employee.workspace_role)}</p><div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2 text-caption"><div><span className="block uppercase tracking-wide text-slate-500">Department</span><b>{employee.department_name || employee.department || '—'}</b></div><div><span className="block uppercase tracking-wide text-slate-500">Sub-department</span><b>{employee.sub_department_name || '—'}</b></div><div><span className="block uppercase tracking-wide text-slate-500">Joined</span><b>{formatDate(employee.hire_date || employee.joining_at)}</b></div><div><span className="block uppercase tracking-wide text-slate-500">Status</span><b className="capitalize">{employee.status || 'active'}</b></div></div></div>
           </div>
-          <div className="absolute inset-x-6 bottom-4 flex items-center justify-between border-t border-slate-200 pt-2 text-[9px] text-slate-500"><span>JBA GreenGold Orchard</span><span>Company property · Return if found</span></div>
+          <div className="absolute inset-x-6 bottom-4 flex items-center justify-between border-t border-slate-200 pt-2 text-caption text-slate-500"><span>JBA GreenGold Orchard</span><span>Company property · Return if found</span></div>
         </div>
         <DialogFooter><Button onClick={exportPass} disabled={exporting}><Download className="mr-2 h-4 w-4" />{exporting ? 'Generating…' : 'Download PDF'}</Button></DialogFooter>
       </DialogContent>
@@ -702,7 +702,7 @@ export default function HR() {
 
   return (
     <div>
-      <PageHeader>
+      <PageHeader title="Human Resources">
         {canManage && <DepartmentDialog departments={departments} onSaved={load} trigger={<Button variant="outline"><Building2 className="mr-2 h-4 w-4" />Add department</Button>} />}
         {canManage && <EmployeeDialog employees={employees} departments={departments} currentUser={user} onSaved={load} trigger={<Button><UserPlus className="mr-2 h-4 w-4" />Onboard employee</Button>} />}
       </PageHeader>
@@ -735,7 +735,7 @@ export default function HR() {
           {loading ? <PageSkeleton contentOnly /> : mainDepartments.length ? <div className="space-y-4">{mainDepartments.map((department) => {
             const children = departments.filter((item) => item.parent_department_id === department.id);
             const directCount = employees.filter((item) => item.department_id === department.id).length;
-            return <section key={department.id} className="rounded-xl border border-border bg-card"><div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4"><div><div className="flex items-center gap-2"><Building2 className="h-4 w-4 text-primary" /><p className="font-semibold">{department.name}</p><span className="rounded bg-muted px-2 py-0.5 font-mono text-[10px]">{department.code}</span></div><p className="mt-1 text-xs text-muted-foreground">{directCount} staff · {children.length} sub-departments</p></div>{canManage && <DepartmentDialog departments={departments} parentId={department.id} onSaved={load} trigger={<Button size="sm" variant="outline"><Plus className="mr-2 h-4 w-4" />Add sub-department</Button>} />}</div><div className="divide-y">{children.length ? children.map((child) => <div key={child.id} className="flex items-center gap-3 px-5 py-3 text-sm"><ChevronRight className="h-4 w-4 text-muted-foreground" /><span className="font-medium">{child.name}</span><span className="font-mono text-xs text-muted-foreground">{child.code}</span><span className="ml-auto text-xs text-muted-foreground">{employees.filter((item) => item.sub_department_id === child.id).length} staff</span></div>) : <p className="px-5 py-4 text-sm text-muted-foreground">No sub-departments yet.</p>}</div></section>;
+            return <section key={department.id} className="rounded-xl border border-border bg-card"><div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4"><div><div className="flex items-center gap-2"><Building2 className="h-4 w-4 text-primary" /><p className="font-semibold">{department.name}</p><span className="rounded bg-muted px-2 py-0.5 font-mono text-caption">{department.code}</span></div><p className="mt-1 text-xs text-muted-foreground">{directCount} staff · {children.length} sub-departments</p></div>{canManage && <DepartmentDialog departments={departments} parentId={department.id} onSaved={load} trigger={<Button size="sm" variant="outline"><Plus className="mr-2 h-4 w-4" />Add sub-department</Button>} />}</div><div className="divide-y">{children.length ? children.map((child) => <div key={child.id} className="flex items-center gap-3 px-5 py-3 text-sm"><ChevronRight className="h-4 w-4 text-muted-foreground" /><span className="font-medium">{child.name}</span><span className="font-mono text-xs text-muted-foreground">{child.code}</span><span className="ml-auto text-xs text-muted-foreground">{employees.filter((item) => item.sub_department_id === child.id).length} staff</span></div>) : <p className="px-5 py-4 text-sm text-muted-foreground">No sub-departments yet.</p>}</div></section>;
           })}</div> : <div className="rounded-xl border border-dashed py-16 text-center text-sm text-muted-foreground">Create the first main department to begin the organization structure.</div>}
         </TabsContent>
 

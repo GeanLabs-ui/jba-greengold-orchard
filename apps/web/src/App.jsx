@@ -42,7 +42,6 @@ const Farms = lazy(() => import('@/pages/public/Farms'));
 const FarmDetail = lazy(() => import('@/pages/public/FarmDetail'));
 const Sustainability = lazy(() => import('@/pages/public/Sustainability'));
 const Supply = lazy(() => import('@/pages/public/Supply'));
-const Media = lazy(() => import('@/pages/public/Media'));
 const News = lazy(() => import('@/pages/public/News'));
 const NewsDetail = lazy(() => import('@/pages/public/NewsDetail'));
 const Careers = lazy(() => import('@/pages/public/Careers'));
@@ -106,7 +105,7 @@ const AdminAccessDenied = () => {
   return (
     <div className="min-h-screen bg-muted/30 px-4 py-16">
       <div className="mx-auto max-w-md rounded-lg border border-border bg-card p-6 text-center shadow-sm">
-        <h1 className="font-heading text-2xl font-semibold">Admin access required</h1>
+        <h1 className="text-page-title">Admin access required</h1>
         <p className="mt-3 text-sm text-muted-foreground">
           You are signed in, but this account is not a company staff or administrator account.
         </p>
@@ -172,7 +171,7 @@ const AuthenticatedApp = () => {
         <Route path="/supply" element={<Supply />} />
         <Route path="/export" element={<Navigate to="/supply#export-supply" replace />} />
         <Route path="/local-supply" element={<Navigate to="/supply#local-supply" replace />} />
-        <Route path="/media" element={<Media />} />
+        <Route path="/media" element={<Navigate to="/news" replace />} />
         <Route path="/news" element={<News />} />
         <Route path="/news/:slug" element={<NewsDetail />} />
         <Route path="/careers" element={<Careers />} />

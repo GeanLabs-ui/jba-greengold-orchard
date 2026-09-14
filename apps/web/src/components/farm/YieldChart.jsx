@@ -6,8 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { groupYieldRecords } from '@/lib/farm-management';
 
 const chartConfig = {
-  actual: { label: 'Actual yield', color: '#198f3c' },
-  forecast: { label: 'Forecast yield', color: '#72bd48' },
+  actual: { label: 'Actual yield', color: '#2e7d32' },
+  forecast: { label: 'Forecast yield', color: '#a5d6a7' },
 };
 
 const labelForDate = (value, granularity) => {
@@ -25,7 +25,7 @@ export default function YieldChart({ records = [], title = 'Yield trend' }) {
     <section className="rounded-xl border bg-card p-4 sm:p-5" aria-labelledby="yield-chart-title">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 id="yield-chart-title" className="font-heading text-lg font-semibold">{title}</h2>
+          <h2 id="yield-chart-title" className="text-section-title">{title}</h2>
           <p className="mt-1 text-sm text-muted-foreground">Actual and forecast harvest weight in kilograms.</p>
         </div>
         <Select value={granularity} onValueChange={setGranularity}>

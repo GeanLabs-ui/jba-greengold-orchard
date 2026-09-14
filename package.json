@@ -34,6 +34,7 @@
     "deploy:api:production": "npm run deploy:production -w apps/api",
     "deploy:pages:staging": "wrangler pages deploy apps/web/dist --project-name=jba-greengold-orchard --branch=staging",
     "deploy:pages:production": "wrangler pages deploy apps/web/dist --project-name=jba-greengold-orchard --branch=main",
+    "videos:optimize": "node scripts/optimize-videos.mjs",
     "assets:optimize": "node scripts/optimize-images.mjs"
   },
   "devDependencies": {

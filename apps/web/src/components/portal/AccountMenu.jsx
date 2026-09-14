@@ -21,7 +21,7 @@ export default function AccountMenu() {
   };
   return <div className="relative">
     <DropdownMenu>
-      <DropdownMenuTrigger asChild><button type="button" disabled={busy} aria-label={`Account menu for ${user?.full_name || user?.email || 'Customer'}`} className="rounded-full p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9ACD32] hover:bg-[#9ACD32]/20"><AccountAvatar user={user} /></button></DropdownMenuTrigger>
+      <DropdownMenuTrigger asChild><button type="button" disabled={busy} aria-label={`Account menu for ${user?.full_name || user?.email || 'Customer'}`} className="rounded-full p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c8e6c9] hover:bg-[#c8e6c9]/20"><AccountAvatar user={user} /></button></DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="z-[100] w-64 max-w-[calc(100vw-2rem)]">
         <DropdownMenuLabel><span className="block truncate">{user?.full_name || 'My Account'}</span><span className="block truncate text-xs font-normal text-muted-foreground">{user?.email}</span></DropdownMenuLabel>
         <DropdownMenuSeparator />

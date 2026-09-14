@@ -148,6 +148,7 @@ export default function Inquiries() {
 
   return (
     <div>
+      <h1 className="mb-6 text-page-title">Inquiries & Account Reviews</h1>
       {error && <div role="alert" className="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
 
       <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -201,7 +202,7 @@ export default function Inquiries() {
           <aside className="h-fit rounded-xl border border-border bg-card shadow-sm xl:sticky xl:top-20">
             {selected ? <>
               <div className="border-b border-border p-5">
-                <div className="flex items-start justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-wider text-primary">{humanize(selected.inquiry_type)}</p><h2 className="mt-2 font-heading text-xl font-semibold">{selected.subject || 'Website inquiry'}</h2></div><StatusBadge status={selected.status || 'new'} /></div>
+                <div className="flex items-start justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-wider text-primary">{humanize(selected.inquiry_type)}</p><h2 className="mt-2 text-section-title">{selected.subject || 'Website inquiry'}</h2></div><StatusBadge status={selected.status || 'new'} /></div>
                 <p className="mt-3 text-xs text-muted-foreground">Received {formatDateTime(selected.created_date)} · {selected.source_page || 'Website'}</p>
               </div>
               <div className="space-y-5 p-5">
@@ -241,7 +242,7 @@ function VerificationQueue({ loading, records, onReview, changeRequests }) {
       rowActions={(record) => <Button type="button" size="sm" variant="outline" onClick={() => onReview(record)}><Eye className="mr-2 h-4 w-4" />Review</Button>}
     />
     {changeRequests.length > 0 && <section className="border-t border-border pt-5">
-      <h2 className="font-heading text-lg font-semibold">Customer change requests ({changeRequests.length})</h2>
+      <h2 className="text-section-title">Customer change requests ({changeRequests.length})</h2>
       <p className="mt-1 text-sm text-muted-foreground">These customers want to correct identity details that are currently locked.</p>
       <div className="mt-3 divide-y rounded-lg border bg-card">{changeRequests.map((request) => <div key={request.id} className="flex flex-wrap items-center justify-between gap-3 p-4"><div><p className="font-medium">{request.email}</p><p className="mt-1 text-sm text-muted-foreground">{request.reason}</p></div><StatusBadge status={request.status} /></div>)}</div>
     </section>}
@@ -291,15 +292,15 @@ function VerificationReviewDialog({ review, onClose, onReviewed }) {
         </aside>
 
         <main className="space-y-5 p-6">
-          <div><h3 className="font-heading text-lg font-semibold">Attachment preview</h3><p className="mt-1 text-sm text-muted-foreground">Open every attachment below and compare it with the submitted details. Images and PDFs display here without downloading.</p></div>
+          <div><h3 className="text-card-title">Attachment preview</h3><p className="mt-1 text-sm text-muted-foreground">Open every attachment below and compare it with the submitted details. Images and PDFs display here without downloading.</p></div>
           {documents.length ? <div className="grid gap-4 xl:grid-cols-2">{documents.map((document, index) => <DocumentPreview key={document.id} document={document} index={index} />)}</div> : <div className="rounded-lg border border-amber-200 bg-amber-50 p-5 text-sm text-amber-800"><AlertTriangle className="mb-2 h-5 w-5" />No manual document attachments were supplied for this provider.</div>}
 
           <div className="border-t border-border pt-5">
-            <Label htmlFor="verification-review-note">Decision note shown to the customer</Label>
+            <Label className="text-label" htmlFor="verification-review-note">Decision note shown to the customer</Label>
             <Textarea id="verification-review-note" className="mt-2" minLength={10} maxLength={1000} rows={3} value={note} onChange={(event) => setNote(event.target.value)} placeholder="Record what you checked. For a rejection, explain exactly what the customer must correct and resubmit." />
             <p className="mt-1 text-xs text-muted-foreground">At least 10 characters. Rejected customers see this notice on their account page.</p>
             {error && <p role="alert" className="mt-3 text-sm text-destructive">{error}</p>}
-            <label className="mt-4 flex items-start gap-3 rounded-lg border border-border p-3 text-sm"><input className="mt-0.5" type="checkbox" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} /><span>I reviewed every available attachment and confirmed that this decision is supported by the submitted evidence.</span></label>
+            <label className="mt-4 flex items-start gap-3 rounded-lg border border-border p-3 text-label"><input className="mt-0.5" type="checkbox" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} /><span>I reviewed every available attachment and confirmed that this decision is supported by the submitted evidence.</span></label>
             <div className="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
               <Button type="button" variant="ghost" disabled={busy} onClick={onClose}>Cancel</Button>
               <Button type="button" variant="outline" className="border-red-300 text-red-700 hover:bg-red-50 hover:text-red-800" disabled={busy || !confirmed || note.trim().length < 10} onClick={() => decide('reject')}><XCircle className="mr-2 h-4 w-4" />Reject and request update</Button>

@@ -112,9 +112,9 @@ const FarmMetric = ({ icon: Icon, label, value, detail, palette }) => (
   <div className="flex min-w-0 items-start gap-1 px-1 first:pl-0 last:pr-0">
     <Icon className={`mt-0.5 h-3 w-3 shrink-0 ${palette.metric}`} />
     <div className="min-w-0">
-      <p className="truncate text-[8px] font-medium leading-3 text-muted-foreground">{label}</p>
-      <p className="mt-0.5 truncate text-[9px] font-semibold leading-4 text-foreground">{value}</p>
-      <p className="truncate text-[6.5px] leading-3 tracking-tight text-muted-foreground">{detail}</p>
+      <p className="truncate text-caption font-medium leading-3 text-muted-foreground">{label}</p>
+      <p className="mt-0.5 truncate text-caption font-semibold leading-4 text-foreground">{value}</p>
+      <p className="truncate text-caption leading-3 tracking-tight text-muted-foreground">{detail}</p>
     </div>
   </div>
 );
@@ -341,15 +341,15 @@ export default function FarmsAdmin() {
                         <LandPlot className="h-5 w-5" />
                       </div>
                       <div className="min-w-0">
-                        <h2 className="truncate font-heading text-sm font-semibold text-foreground">{farm.name}</h2>
-                        <p className="mt-1 flex min-w-0 items-center gap-1.5 text-[10px] text-muted-foreground">
+                        <h2 className="truncate text-foreground text-section-title">{farm.name}</h2>
+                        <p className="mt-1 flex min-w-0 items-center gap-1.5 text-caption text-muted-foreground">
                           <MapPin className="h-3 w-3 shrink-0" />
                           <span className="truncate">{farm.location || farm.region || "Location not recorded"}</span>
                         </p>
                       </div>
                     </div>
                     <div className="flex shrink-0 items-center gap-1">
-                      <span className={`rounded-md px-2 py-1 text-[9px] font-medium capitalize ${statusClassName(farm.status)}`}>
+                      <span className={`rounded-md px-2 py-1 text-caption font-medium capitalize ${statusClassName(farm.status)}`}>
                         {farm.status}
                       </span>
                       {canManageFarms(user?.role) ? (
@@ -385,10 +385,10 @@ export default function FarmsAdmin() {
                         <CalendarDays className="h-4 w-4" />
                       </span>
                       <div className="min-w-0">
-                        <p className="truncate text-[11px] font-semibold">
+                        <p className="truncate text-caption font-semibold">
                           {nextHarvest ? `${harvestName} scheduled` : "No harvest scheduled"}
                         </p>
-                        <p className="mt-1 truncate text-[10px] text-muted-foreground">
+                        <p className="mt-1 truncate text-caption text-muted-foreground">
                           {nextHarvest ? harvestPeriod : "Add a harvest season from the production calendar"}
                         </p>
                       </div>
@@ -396,14 +396,14 @@ export default function FarmsAdmin() {
                   </div>
                   <div className="mt-3 flex items-center justify-between border-t pt-3">
                     {canManageBlocks(user?.role) && farm.status === "active" ? (
-                      <Button variant="ghost" size="sm" className="px-1 text-[11px]" asChild>
+                      <Button variant="ghost" size="sm" className="px-1 text-caption" asChild>
                         <Link to={`/admin/farm-daily-activities/activities/farms/${farm.id}?action=add-block`}>
                           <Layers3 className="mr-1.5 h-4 w-4" />
                           Add block
                         </Link>
                       </Button>
                     ) : <span />}
-                    <Button variant="outline" size="sm" className={`text-[11px] ${palette.button}`} asChild>
+                    <Button variant="outline" size="sm" className={`text-caption ${palette.button}`} asChild>
                       <Link to={`/admin/farm-daily-activities/activities/farms/${farm.id}`}>
                         View farm
                         <ArrowRight className="ml-1 h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />

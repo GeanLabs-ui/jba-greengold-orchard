@@ -1,0 +1,89 @@
+/* Home is the size reference. Keep one frame for every public hero. */
+.public-shell { --public-hero-height: 28rem; }
+@media (min-width: 1024px) {
+  .public-shell { --public-hero-height: 32rem; }
+}
+.public-shell main :is(.jba-home-hero, .jba-public-hero, [data-layout-section="hero"]) {
+  box-sizing: border-box;
+  width: 100%;
+  height: var(--public-hero-height) !important;
+  min-height: var(--public-hero-height) !important;
+  max-height: none;
+  aspect-ratio: auto;
+}
+.public-shell main [data-layout-section="hero"]:not(.farms-hero-section) {
+  display: flex;
+  align-items: center;
+  padding-block: 24px;
+}
+.public-shell main .jba-public-hero-content {
+  height: 100%;
+  min-height: 0 !important;
+  padding-block: 0;
+}
+.public-shell main .product-hero-content { height: auto; }
+.public-shell main .product-hero-copy { padding-block: 0; }
+.public-shell main .dl-hero-inner { min-height: 0; height: 100%; padding: 0; }
+.public-shell main .dl-hero-copy { width: min(560px, 48%); }
+.public-shell main .dl-hero-photo {
+  inset: 0 0 0 auto !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+.public-shell main .dl-hero-photo img {
+  object-fit: cover;
+  object-position: 57% 18%;
+  filter: none;
+}
+.public-shell main .dl-hero-shade {
+  display: none;
+}
+.public-shell main .dl-hero-copy {
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+.public-shell main .dl-hero-copy :is(h1, p, .dl-hero-benefits span) {
+  text-shadow: 0 1px 3px rgba(0,0,0,.9), 0 2px 8px rgba(0,0,0,.65);
+}
+.public-shell main .dl-hero-benefits { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+
+/* Keep the About artwork in the frame instead of stacking a second hero. */
+.public-shell main [aria-labelledby="about-hero-heading"] .jba-public-hero-content > .lg\:hidden {
+  display: none;
+}
+@media (max-width: 1023px) {
+  .public-shell main [aria-labelledby="about-hero-heading"] > .absolute {
+    display: block;
+    opacity: .22;
+  }
+  .public-shell main [aria-labelledby="about-hero-heading"] h1 { margin-top: 12px; }
+  .public-shell main [aria-labelledby="about-hero-heading"] h1 + p { margin-top: 12px; }
+  .public-shell main [aria-labelledby="about-hero-heading"] .mt-10.grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 16px;
+  }
+  .public-shell main .careers-hero > .grid { grid-template-columns: minmax(0, 1fr) 30%; gap: 16px; }
+  .public-shell main .careers-hero h1,
+  .public-shell main .careers-hero .mt-7,
+  .public-shell main .careers-hero .mt-8 { margin-top: 16px; }
+  .public-shell main .dl-hero-copy { width: 58%; padding-inline: 16px; }
+}
+@media (max-width: 639px) {
+  .public-shell main .dl-hero-photo { width: 100% !important; }
+  .public-shell main .dl-hero-photo img { object-position: 40% top; }
+  .public-shell main .dl-hero-copy { width: 100%; padding: 0 0 0 12px; }
+  .public-shell main .dl-hero h1 { max-width: 66%; font-size: 28px; line-height: 1.05; }
+  .public-shell main .dl-hero-body { margin-top: 18px; font-size: 13px !important; }
+  .public-shell main .dl-hero-buttons { margin-top: 14px; gap: 8px; }
+  .public-shell main .dl-hero-buttons a { min-height: 40px; padding-inline: 12px; font-size: 12px; gap: 8px; }
+  .public-shell main .dl-hero-benefits { margin-top: 14px; gap: 10px; }
+  .public-shell main .dl-hero-benefits > div { font-size: 12px; }
+  .public-shell main .dl-hero-benefits svg { width: 32px; height: 32px; padding: 7px; }
+  .public-shell main .careers-hero > .grid { grid-template-columns: minmax(0, 1fr); }
+  .public-shell main .careers-hero > .grid > .relative { position: absolute; right: 16px; top: 16px; width: 90px; }
+  .public-shell main .careers-hero > .grid > div:first-child > div:first-child { max-width: 65%; }
+  .public-shell main .farms-hero-content { padding-block: 20px; }
+  .public-shell main .farms-hero-content h1 + p { line-height: 1.45; }
+}

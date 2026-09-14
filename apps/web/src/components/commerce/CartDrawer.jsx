@@ -95,7 +95,7 @@ export default function CartDrawer() {
                     <article key={line.id} className="basket-product">
                       <img src={line.image} alt="" className="basket-product-image" />
                       <div className="basket-product-info">
-                        <h3>{line.name}</h3>
+                        <h3 className="text-card-title">{line.name}</h3>
                         <p>{formatProductPrice(line.price)} each</p>
                       </div>
                       <button type="button" className="basket-icon-button basket-remove" onClick={() => removeItem(line.id)} aria-label={`Remove ${line.name}`}><Trash2 size={16} aria-hidden="true" /></button>
@@ -121,7 +121,7 @@ export default function CartDrawer() {
               </section>
 
               <aside className="basket-summary" aria-label="Order summary">
-                <h3>Order summary</h3>
+                <h3 className="text-card-title">Order summary</h3>
                 <dl>
                   <div><dt>Subtotal</dt><dd>{formatProductPrice(subtotal)}</dd></div>
                   <div><dt>Delivery</dt><dd>{deliveryFee ? formatProductPrice(deliveryFee) : 'Free'}</dd></div>
@@ -136,7 +136,7 @@ export default function CartDrawer() {
           ) : (
             <div className="basket-empty">
               <ShoppingBag size={40} aria-hidden="true" />
-              <h3>Your basket is empty</h3>
+              <h3 className="text-card-title">Your basket is empty</h3>
               <p>Add products to get started.</p>
               <button type="button" className="basket-checkout" onClick={shopProducts}>Shop products</button>
             </div>

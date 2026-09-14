@@ -13,7 +13,7 @@ const displayDate = (value) => {
 
 const PageHead = ({ right }) => <div className="drc-page-head drc-page-actions">{right}</div>;
 const Metric = ({ label, value, note, icon: Icon, alert = false }) => <div className={`drc-metric ${alert ? 'alert' : ''}`}><div><span>{label}</span><Icon /></div><strong>{value}</strong><small>{note}</small></div>;
-const PanelHead = ({ title, copy, action }) => <div className="drc-panel-head"><div><h2>{title}</h2><p>{copy}</p></div>{action}</div>;
+const PanelHead = ({ title, copy, action }) => <div className="drc-panel-head"><div><h2 className="text-section-title">{title}</h2><p>{copy}</p></div>{action}</div>;
 const Progress = ({ value, dark = false }) => <div className={`drc-track ${dark ? 'dark' : ''}`}><div style={{ width: `${Math.max(0, Math.min(100, Number(value || 0)))}%` }} /></div>;
 const Pill = ({ value }) => <span className={`drc-pill ${value || ''}`}>{MASTER_SCHEDULE_STATUS_LABELS[value] || value || '—'}</span>;
 
@@ -67,7 +67,7 @@ export default function ProgrammeOverviewView({
       </div>
       <div className="drc-focus">
         <div>
-          <h3>Management focus: close harvest, restore canopy health</h3>
+          <h3 className="text-card-title">Management focus: close harvest, restore canopy health</h3>
           <p>Complete final picking and sanitation, confirm early-harvest blocks, then protect mature terminals while recovery nutrition and irrigation servicing begin.</p>
         </div>
         <div><strong>{scheduleProjects.filter((item) => String(item.priority).toLowerCase() === 'critical' && normalizeMasterScheduleStatus(item.status) !== 'completed').length}</strong><span>critical tasks</span></div>

@@ -124,7 +124,7 @@ export default function Sales() {
 
   return (
     <div>
-      <PageHeader>
+      <PageHeader title="Sales">
         <AdminCreateDialog title="New Invoice" description="Create an invoice and add it to Sales and Finance." buttonLabel="New Invoice" fields={invoiceFields} onCreate={createInvoice} onCreated={load} submitLabel="Create Invoice" />
       </PageHeader>
 

@@ -11,13 +11,13 @@ const displayDate = (value) => {
 };
 const money = (value) => `₵ ${Number(value || 0).toLocaleString('en-GH', { maximumFractionDigits: 0 })}`;
 const PageHead = ({ right }) => <div className="drc-page-head drc-page-actions">{right}</div>;
-const PanelHead = ({ title, copy }) => <div className="drc-panel-head"><div><h2>{title}</h2><p>{copy}</p></div></div>;
+const PanelHead = ({ title, copy }) => <div className="drc-panel-head"><div><h2 className="text-section-title">{title}</h2><p>{copy}</p></div></div>;
 const FinanceRow = ({ label, value, icon: Icon }) => {
   const tone = /revenue/i.test(label) ? 'revenue' : /harvest|grade/i.test(label) ? 'yield' : 'cost';
   return <div className={`drc-finance-row drc-${tone}`}><Icon /><span>{label}</span><b>{value}</b></div>;
 };
 const Empty = ({ title, copy }) => <div className="drc-empty"><CloudSun /><b>{title}</b><p>{copy}</p></div>;
-const Field = ({ label, children }) => <label className="drc-field"><span>{label}</span>{children}</label>;
+const Field = ({ label, children }) => <label className="drc-field text-label"><span>{label}</span>{children}</label>;
 
 export const summarizeBudgetHarvest = (financeRecords, harvests) => {
   const planned = financeRecords.reduce((sum, item) => sum + Number(item.planned_amount || item.amount || 0), 0);
@@ -80,7 +80,7 @@ export default function BudgetHarvestView({
       </section>
 
       <dialog className="drc-dialog" ref={harvestDialog}>
-        <div className="drc-modal-head"><div><span className="drc-eyebrow">Commercial control</span><h2>Record harvest lot</h2></div><button type="button" onClick={() => harvestDialog.current?.close()}>×</button></div>
+        <div className="drc-modal-head"><div><span className="drc-eyebrow">Commercial control</span><h2 className="text-section-title">Record harvest lot</h2></div><button type="button" onClick={() => harvestDialog.current?.close()}>×</button></div>
         <form className="drc-form-grid" onSubmit={onAddHarvest}>
           <Field label="Harvest date"><input name="harvest_date" type="date" required defaultValue={today} /></Field>
           <Field label="Block"><select name="block_id" required>{blocks.map((block) => <option key={block.id} value={block.id}>{block.block_code} · {block.variety}</option>)}</select></Field>

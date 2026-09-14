@@ -66,7 +66,7 @@ export default function Logistics() {
 
   return (
     <div>
-      <PageHeader>
+      <PageHeader title="Logistics">
         <AdminCreateDialog
           title="Schedule Delivery"
           description="Create a delivery dispatch record."

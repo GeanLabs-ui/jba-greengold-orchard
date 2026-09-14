@@ -196,7 +196,8 @@ export default function Finance() {
 
   return (
     <div>
-      <div className="mb-6 rounded-xl border border-border bg-card p-4 shadow-sm">
+      <h1 className="mb-6 text-page-title">Finance</h1>
+      <div data-page-navigation className="mb-6 rounded-xl border border-border bg-card p-4 shadow-sm">
         <div className="mb-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-sm font-semibold"><Filter className="h-4 w-4 text-primary" />Filters</div>
           {(farmFilter !== 'all' || dateMode !== 'all') && (
@@ -204,7 +205,7 @@ export default function Finance() {
           )}
         </div>
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <label className="space-y-1.5 text-xs font-medium text-muted-foreground">
+          <label className="space-y-1.5 text-muted-foreground text-label">
             <span className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" />Farm / Block</span>
             <select value={farmFilter} onChange={(event) => setFarmFilter(event.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-sm outline-none focus:ring-2 focus:ring-ring">
               <option value="all">All Farms</option>
@@ -219,7 +220,7 @@ export default function Finance() {
             </select>
           </label>
 
-          <label className="space-y-1.5 text-xs font-medium text-muted-foreground">
+          <label className="space-y-1.5 text-muted-foreground text-label">
             <span className="flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5" />Date Filter</span>
             <select value={dateMode} onChange={(event) => setDateMode(event.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-sm outline-none focus:ring-2 focus:ring-ring">
               <option value="all">All Dates</option>
@@ -230,14 +231,14 @@ export default function Finance() {
           </label>
 
           {dateMode === 'month' && (
-            <label className="space-y-1.5 text-xs font-medium text-muted-foreground">
+            <label className="space-y-1.5 text-muted-foreground text-label">
               <span>Month</span>
               <input type="month" value={monthFilter} onChange={(event) => setMonthFilter(event.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-sm outline-none focus:ring-2 focus:ring-ring" />
             </label>
           )}
 
           {dateMode === 'year' && (
-            <label className="space-y-1.5 text-xs font-medium text-muted-foreground">
+            <label className="space-y-1.5 text-muted-foreground text-label">
               <span>Year</span>
               <select value={yearFilter} onChange={(event) => setYearFilter(event.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-sm outline-none focus:ring-2 focus:ring-ring">
                 {yearOptions.map((year) => <option key={year} value={year}>{year}</option>)}
@@ -247,11 +248,11 @@ export default function Finance() {
 
           {dateMode === 'custom' && (
             <>
-              <label className="space-y-1.5 text-xs font-medium text-muted-foreground">
+              <label className="space-y-1.5 text-muted-foreground text-label">
                 <span>Start Date</span>
                 <input type="date" value={customStart} max={customEnd || undefined} onChange={(event) => setCustomStart(event.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-sm outline-none focus:ring-2 focus:ring-ring" />
               </label>
-              <label className="space-y-1.5 text-xs font-medium text-muted-foreground">
+              <label className="space-y-1.5 text-muted-foreground text-label">
                 <span>End Date</span>
                 <input type="date" value={customEnd} min={customStart || undefined} onChange={(event) => setCustomEnd(event.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-sm outline-none focus:ring-2 focus:ring-ring" />
               </label>
@@ -268,22 +269,22 @@ export default function Finance() {
       </div>
 
       <div className="mt-6 rounded-xl border border-border bg-card p-5 shadow-sm">
-        <h3 className="font-heading font-semibold">Website Sales vs Daily Activity Expenses (₵)</h3>
+        <h3 className="text-card-title">Website Sales vs Daily Activity Expenses (₵)</h3>
         <ResponsiveContainer width="100%" height={280} className="mt-4">
           <BarChart data={monthlyData}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-            <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-            <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickFormatter={compactCedis} />
+            <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize="var(--text-caption)" />
+            <YAxis stroke="hsl(var(--muted-foreground))" fontSize="var(--text-caption)" tickFormatter={compactCedis} />
             <Tooltip contentStyle={{ borderRadius: '0.75rem', border: '1px solid hsl(var(--border))' }} formatter={(value) => formatCurrency(value)} />
-            <Bar dataKey="expenses" name="Activity expenses" fill="hsl(0 72% 51%)" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="sales" name="Website revenue" fill="#2E7D32" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="expenses" name="Activity expenses" fill="#355e3b" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="sales" name="Website revenue" fill="#2e7d32" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
 
       <section className="mt-6">
         <div className="mb-3">
-          <h3 className="font-heading font-semibold">Daily Activity Expenses</h3>
+          <h3 className="text-card-title">Daily Activity Expenses</h3>
           <p className="mt-1 text-xs text-muted-foreground">Deleting a financial cost preserves the operational Daily Activity record.</p>
         </div>
         {loading ? <PageSkeleton contentOnly /> : (
@@ -316,7 +317,7 @@ export default function Finance() {
 
       <section className="mt-6">
         <div className="mb-3">
-          <h3 className="font-heading font-semibold">Recent Website Sales</h3>
+          <h3 className="text-card-title">Recent Website Sales</h3>
           <p className="mt-1 text-xs text-muted-foreground">Orders placed by customers through the public website.</p>
         </div>
         {loading ? <PageSkeleton contentOnly /> : (

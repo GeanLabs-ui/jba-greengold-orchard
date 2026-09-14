@@ -294,7 +294,7 @@ export default function ProductionCalendar() {
 
   return (
     <div>
-      <PageHeader>
+      <PageHeader title="Production Calendar">
         <Button variant="outline" size="sm" onClick={() => downloadICalendar(events, connected?.calendar_name)}><Download className="mr-2 h-4 w-4" />Export .ics</Button>
         <Button variant="outline" size="sm" onClick={() => setShowConnections(true)}><Link2 className="mr-2 h-4 w-4" />Calendar link</Button>
         <Button size="sm" onClick={() => startCreate()}><Plus className="mr-2 h-4 w-4" />Schedule activity</Button>
@@ -312,7 +312,7 @@ export default function ProductionCalendar() {
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
             <div className="flex items-center gap-2">
               <Button variant="outline" size="icon" onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1))}><ChevronLeft className="h-4 w-4" /></Button>
-              <h2 className="min-w-44 text-center font-heading text-lg font-bold">{viewDate.toLocaleDateString('en-GH', { month: 'long', year: 'numeric' })}</h2>
+              <h2 className="min-w-44 text-center text-section-title">{viewDate.toLocaleDateString('en-GH', { month: 'long', year: 'numeric' })}</h2>
               <Button variant="outline" size="icon" onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1))}><ChevronRight className="h-4 w-4" /></Button>
             </div>
             <div className="flex items-center gap-2">
@@ -321,7 +321,7 @@ export default function ProductionCalendar() {
             </div>
           </div>
           <div className="grid grid-cols-7 border-b border-border bg-muted/40">
-            {WEEKDAYS.map((day) => <div key={day} className="py-2 text-center text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{day}</div>)}
+            {WEEKDAYS.map((day) => <div key={day} className="py-2 text-center text-caption font-bold uppercase tracking-wider text-muted-foreground">{day}</div>)}
           </div>
           <motion.div layout className="grid grid-cols-7">
             {calendarDays.map((day) => {
@@ -336,8 +336,8 @@ export default function ProductionCalendar() {
                 )}>
                   <span className={cn('grid h-7 w-7 place-items-center rounded-full text-xs font-semibold', key === todayKey() && 'bg-primary text-primary-foreground')}>{day.getDate()}</span>
                   <div className="mt-1 space-y-1">
-                    {dayEvents.slice(0, 3).map((item) => <span key={item.id} className={cn('block truncate rounded border px-1.5 py-1 text-[10px] font-semibold', STATUS_STYLES[item.status] || STATUS_STYLES.scheduled)}>{formatTime(item)} · {item.title}</span>)}
-                    {dayEvents.length > 3 && <span className="block px-1 text-[10px] font-medium text-muted-foreground">+{dayEvents.length - 3} more</span>}
+                    {dayEvents.slice(0, 3).map((item) => <span key={item.id} className={cn('block truncate rounded border px-1.5 py-1 text-caption font-semibold', STATUS_STYLES[item.status] || STATUS_STYLES.scheduled)}>{formatTime(item)} · {item.title}</span>)}
+                    {dayEvents.length > 3 && <span className="block px-1 text-caption font-medium text-muted-foreground">+{dayEvents.length - 3} more</span>}
                   </div>
                 </button>
               );
@@ -347,13 +347,13 @@ export default function ProductionCalendar() {
 
         <aside className="self-start rounded-xl border border-border bg-card shadow-sm xl:sticky xl:top-20">
           <div className="flex items-start justify-between border-b border-border p-4">
-            <div><p className="text-xs font-semibold uppercase tracking-wider text-primary">Selected day</p><h2 className="mt-1 font-heading font-bold">{formatLongDate(selectedDate)}</h2></div>
+            <div><p className="text-xs font-semibold uppercase tracking-wider text-primary">Selected day</p><h2 className="mt-1 text-section-title">{formatLongDate(selectedDate)}</h2></div>
             <Button size="icon" variant="ghost" onClick={() => startCreate(selectedDate)}><Plus className="h-4 w-4" /></Button>
           </div>
           <div className="max-h-[620px] overflow-y-auto p-3">
             {selectedEvents.length ? selectedEvents.map((event) => (
               <div key={event.id} role="button" tabIndex={0} onClick={() => startEdit(event)} onKeyDown={(keyEvent) => ['Enter', ' '].includes(keyEvent.key) && startEdit(event)} className="mb-2 block w-full cursor-pointer rounded-lg border border-border p-3 text-left transition hover:border-primary/40 hover:bg-muted/40">
-                <div className="flex items-start justify-between gap-3"><span className="text-sm font-semibold leading-5">{event.title}</span><span className={cn('shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-bold', STATUS_STYLES[event.status])}>{STATUS_LABELS[event.status]}</span></div>
+                <div className="flex items-start justify-between gap-3"><span className="text-sm font-semibold leading-5">{event.title}</span><span className={cn('shrink-0 rounded-full border px-2 py-0.5 text-caption font-bold', STATUS_STYLES[event.status])}>{STATUS_LABELS[event.status]}</span></div>
                 <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground"><Clock3 className="h-3.5 w-3.5" />{formatTime(event)}{event.assigned_to_name ? ` · ${event.assigned_to_name}` : ''}</p>
                 <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-muted"><span className="block h-full rounded-full bg-primary" style={{ width: `${Math.min(100, Number(event.progress_percent || 0))}%` }} /></div>
                 <div className="mt-2 flex gap-1" onClick={(click) => click.stopPropagation()}>
@@ -381,7 +381,7 @@ export default function ProductionCalendar() {
 function Summary({ label, value, icon: Icon, alert }) {
   return <div className="flex items-center justify-between bg-card px-4 py-4"><div><p className="text-xs text-muted-foreground">{label}</p><p className="mt-1 text-2xl font-bold">{value}</p></div><Icon className={cn('h-5 w-5 text-primary', alert && value > 0 && 'text-red-600')} /></div>;
 }
-function TinyAction({ children, onClick }) { return <button type="button" onClick={onClick} className="rounded-md bg-muted px-2 py-1 text-[10px] font-semibold hover:bg-primary/10 hover:text-primary">{children}</button>; }
+function TinyAction({ children, onClick }) { return <button type="button" onClick={onClick} className="rounded-md bg-muted px-2 py-1 text-caption font-semibold hover:bg-primary/10 hover:text-primary">{children}</button>; }
 function Field({ label, children, className }) { return <label className={cn('block', className)}><span className="mb-1.5 block text-xs font-semibold text-muted-foreground">{label}</span>{children}</label>; }
 const inputClass = 'h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15';
 
@@ -392,11 +392,11 @@ function EventEditor({ event, form, setForm, farms, saving, onClose, onSubmit })
       <Field label="Activity title"><input className={inputClass} required autoFocus value={form.title} onChange={(e) => set('title', e.target.value)} placeholder="e.g. Inspect irrigation lines" /></Field>
       <Field label="Description"><textarea className="min-h-20 w-full rounded-md border border-input bg-background p-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/15" value={form.description} onChange={(e) => set('description', e.target.value)} placeholder="What needs to be completed?" /></Field>
       <div className="grid gap-3 sm:grid-cols-3"><Field label="Date"><input className={inputClass} type="date" required value={form.date} onChange={(e) => set('date', e.target.value)} /></Field><Field label="Start"><input className={inputClass} type="time" disabled={form.all_day} value={form.start_time} onChange={(e) => set('start_time', e.target.value)} /></Field><Field label="End"><input className={inputClass} type="time" disabled={form.all_day} value={form.end_time} onChange={(e) => set('end_time', e.target.value)} /></Field></div>
-      <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.all_day} onChange={(e) => set('all_day', e.target.checked)} />All-day activity</label>
+      <label className="flex items-center gap-2 text-label"><input type="checkbox" checked={form.all_day} onChange={(e) => set('all_day', e.target.checked)} />All-day activity</label>
       <div className="grid gap-3 sm:grid-cols-2"><Field label="Category"><select className={inputClass} value={form.category} onChange={(e) => set('category', e.target.value)}>{CALENDAR_CATEGORIES.map((item) => <option key={item}>{item}</option>)}</select></Field><Field label="Priority"><select className={inputClass} value={form.priority} onChange={(e) => set('priority', e.target.value)}>{PRIORITIES.map((item) => <option key={item}>{item}</option>)}</select></Field></div>
       <div className="grid gap-3 sm:grid-cols-2"><Field label="Farm / site"><select className={inputClass} value={form.farm_id} onChange={(e) => { const farm = farms.find((item) => item.id === e.target.value); setForm((current) => ({ ...current, farm_id: e.target.value, farm_name: farm?.name || '' })); }}><option value="">Company-wide / no farm</option>{farms.map((farm) => <option key={farm.id} value={farm.id}>{farm.name}</option>)}</select></Field><Field label="Assigned to"><input className={inputClass} value={form.assigned_to_name} onChange={(e) => set('assigned_to_name', e.target.value)} placeholder="Person or team" /></Field></div>
       {event && <div className="grid gap-3 sm:grid-cols-2"><Field label="Status"><select className={inputClass} value={form.status} onChange={(e) => set('status', e.target.value)}>{CALENDAR_STATUSES.map((item) => <option key={item} value={item}>{STATUS_LABELS[item]}</option>)}</select></Field><Field label={`Progress · ${form.progress_percent}%`}><input className="mt-3 w-full accent-orange-600" type="range" min="0" max="100" step="5" value={form.progress_percent} onChange={(e) => set('progress_percent', Number(e.target.value))} /></Field></div>}
-      <div className="rounded-lg border border-border bg-muted/30 p-3"><label className="flex items-center gap-2 text-sm font-semibold"><input type="checkbox" checked={form.reminders_enabled} onChange={(e) => set('reminders_enabled', e.target.checked)} /><Bell className="h-4 w-4 text-primary" />Send task reminder</label>{form.reminders_enabled && <select className={`${inputClass} mt-3`} value={form.reminder_minutes} onChange={(e) => set('reminder_minutes', Number(e.target.value))}>{REMINDERS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select>}</div>
+      <div className="rounded-lg border border-border bg-muted/30 p-3"><label className="flex items-center gap-2 text-label"><input type="checkbox" checked={form.reminders_enabled} onChange={(e) => set('reminders_enabled', e.target.checked)} /><Bell className="h-4 w-4 text-primary" />Send task reminder</label>{form.reminders_enabled && <select className={`${inputClass} mt-3`} value={form.reminder_minutes} onChange={(e) => set('reminder_minutes', Number(e.target.value))}>{REMINDERS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select>}</div>
       <div className="flex justify-end gap-2 border-t border-border pt-4"><Button type="button" variant="outline" onClick={onClose}>Cancel</Button><Button type="submit" disabled={saving}>{saving ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <CalendarCheck2 className="mr-2 h-4 w-4" />}{event ? 'Save changes' : 'Schedule activity'}</Button></div>
     </form>
   </Modal>;
@@ -421,7 +421,7 @@ function ConnectionEditor({ connection, events, saving, onClose, onSave }) {
 function Modal({ title, copy, onClose, children }) {
   return <motion.div key={title} className="fixed inset-0 z-50 grid place-items-center bg-black/45 p-4 backdrop-blur-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
     <motion.section role="dialog" aria-modal="true" aria-label={title} className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-xl border border-border bg-card shadow-2xl" initial={{ opacity: 0, y: 16, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.98 }} transition={{ duration: 0.18 }}>
-      <div className="sticky top-0 z-10 flex items-start justify-between border-b border-border bg-card px-5 py-4"><div><h2 className="font-heading text-lg font-bold">{title}</h2><p className="mt-1 text-xs text-muted-foreground">{copy}</p></div><Button size="icon" variant="ghost" onClick={onClose}><X className="h-4 w-4" /></Button></div><div className="p-5">{children}</div>
+      <div className="sticky top-0 z-10 flex items-start justify-between border-b border-border bg-card px-5 py-4"><div><h2 className="text-section-title">{title}</h2><p className="mt-1 text-xs text-muted-foreground">{copy}</p></div><Button size="icon" variant="ghost" onClick={onClose}><X className="h-4 w-4" /></Button></div><div className="p-5">{children}</div>
     </motion.section>
   </motion.div>;
 }

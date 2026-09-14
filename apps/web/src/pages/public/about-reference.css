@@ -1,0 +1,668 @@
+/* About-reference styles are scoped above the shared marketing overrides. */
+
+#root .public-shell.about-reference-shell .ab-page {
+  color: #252c27 !important;
+  background: #fff !important;
+  font-family: 'Lato',Arial,sans-serif !important;
+  font-size: 15px !important;
+  line-height: 1.6 !important;
+  --ab-green: #155329 !important;
+  --ab-gold: #f3cd4b !important
+}
+#root .public-shell.about-reference-shell .ab-page * {
+  box-sizing: border-box !important
+}
+#root .public-shell.about-reference-shell .ab-page p,#root .public-shell.about-reference-shell .ab-page h1,#root .public-shell.about-reference-shell .ab-page h2,#root .public-shell.about-reference-shell .ab-page h3,#root .public-shell.about-reference-shell .ab-page figure {
+  margin: 0 !important
+}
+#root .public-shell.about-reference-shell .ab-page a {
+  text-decoration: none !important
+}
+#root .public-shell.about-reference-shell .ab-page button,#root .public-shell.about-reference-shell .ab-page input,#root .public-shell.about-reference-shell .ab-page summary {
+  font-family: inherit !important
+}
+#root .public-shell.about-reference-shell .ab-page button,#root .public-shell.about-reference-shell .ab-page summary {
+  cursor: pointer !important
+}
+#root .public-shell.about-reference-shell .ab-page a:focus-visible,#root .public-shell.about-reference-shell .ab-page button:focus-visible,#root .public-shell.about-reference-shell .ab-page summary:focus-visible,#root .public-shell.about-reference-shell .ab-page input:focus-visible {
+  outline: 3px solid #c69c16 !important;
+  outline-offset: 4px !important
+}
+#root .public-shell.about-reference-shell .ab-container {
+  width: 86.5% !important;
+  max-width: 1200px !important;
+  margin: 0 auto !important
+}
+#root .public-shell.about-reference-shell .ab-hero {
+  position: relative !important;
+  isolation: isolate !important;
+  color: white !important;
+  height: 510px !important;
+  overflow: hidden !important
+}
+#root .public-shell.about-reference-shell .ab-backdrop {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  z-index: -1 !important
+}
+#root .public-shell.about-reference-shell .ab-hero-inner {
+  position: relative !important;
+  height: 100% !important;
+  display: flex !important;
+  align-items: center !important
+}
+#root .public-shell.about-reference-shell .ab-hero-copy {
+  margin-left: 38px !important;
+  position: relative !important
+}
+#root .public-shell.about-reference-shell .ab-hero-copy:before,#root .public-shell.about-reference-shell .ab-market-copy:before {
+  content: '' !important;
+  position: absolute !important;
+  left: -28px !important;
+  top: 0 !important;
+  width: 2px !important;
+  height: 156px !important;
+  background: #edce43 !important
+}
+#root .public-shell.about-reference-shell .ab-page .ab-eyebrow {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  letter-spacing: 2.4px !important;
+  text-transform: uppercase !important;
+  color: inherit !important
+}
+#root .public-shell.about-reference-shell .ab-page .ab-hero h1 {
+  font-family: Georgia,'Times New Roman',serif !important;
+  font-size: 62px !important;
+  line-height: .99 !important;
+  font-weight: 400 !important;
+  letter-spacing: -1.2px !important;
+  color: #fff !important;
+  margin: 21px 0 16px !important
+}
+#root .public-shell.about-reference-shell .ab-page .ab-hero h1 span {
+  color: var(--ab-gold) !important
+}
+#root .public-shell.about-reference-shell .ab-page .ab-hero-description {
+  font-size: 20px !important;
+  line-height: 1.45 !important;
+  color: #fff !important
+}
+#root .public-shell.about-reference-shell .ab-buttons {
+  display: flex !important;
+  gap: 19px !important;
+  margin-top: 22px !important
+}
+#root .public-shell.about-reference-shell .ab-page .ab-button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 14px !important;
+  min-height: 48px !important;
+  padding: 12px 24px !important;
+  border-radius: 7px !important;
+  background: var(--ab-gold) !important;
+  color: #15381d !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  border: 1px solid var(--ab-gold) !important
+}
+#root .public-shell.about-reference-shell .ab-page .ab-button:hover {
+  background: #ffe177 !important
+}
+#root .public-shell.about-reference-shell .ab-page .ab-button-outline {
+  background: #16362233 !important;
+  border-color: #fff !important;
+  color: white !important
+}
+#root .public-shell.about-reference-shell .ab-page .ab-button-outline:hover {
+  background: #16362299 !important
+}
+#root .public-shell.about-reference-shell .ab-page .ab-handwriting {
+  font-family: 'Segoe Print','Bradley Hand',cursive !important;
+  font-style: italic !important;
+  font-weight: 400 !important;
+  line-height: 1.25 !important;
+  color: white !important;
+  letter-spacing: -.7px !important
+}
+#root .public-shell.about-reference-shell .ab-hero-note {
+  position: absolute !important;
+  right: -12px !important;
+  bottom: 48px !important;
+  transform: rotate(-9deg) !important;
+  font-size: 31px !important;
+  text-align: center !important
+}
+#root .public-shell.about-reference-shell .ab-handwriting:after {
+  content: '' !important;
+  display: block !important;
+  width: 65px !important;
+  height: 3px !important;
+  background: #edc741 !important;
+  margin: 12px auto 0 !important
+}
+#root .public-shell.about-reference-shell .ab-story {
+  text-align: center !important;
+  padding: 34px 20px 19px !important;
+  scroll-margin-top: 85px !important
+}
+#root .public-shell.about-reference-shell .ab-page .ab-section-title {
+  font: 700 13px/1.5 'Lato',Arial,sans-serif !important;
+  letter-spacing: 4.7px !important;
+  text-transform: uppercase !important;
+  color: #155329 !important;
+  text-align: center !important
+}
+#root .public-shell.about-reference-shell .ab-section-title:after {
+  content: '' !important;
+  display: block !important;
+  width: 48px !important;
+  height: 2px !important;
+  background: #dcb52c !important;
+  margin: 16px auto 22px !important
+}
+#root .public-shell.about-reference-shell .ab-story>p {
+  color: #6a6c70 !important;
+  font-size: 15px !important;
+  line-height: 1.65 !important
+}
+#root .public-shell.about-reference-shell .ab-read-more {
+  display: inline-flex !important;
+  align-items: center !important;
+  color: #155329 !important;
+  gap: 4px !important;
+  border: 0 !important;
+  background: transparent !important;
+  padding: 0 !important;
+  margin-top: 16px !important;
+  font-size: 15px !important;
+  font-weight: 700 !important
+}
+#root .public-shell.about-reference-shell .ab-expanded-story {
+  max-width: 690px !important;
+  margin: 18px auto!important
+}
+#root .public-shell.about-reference-shell .ab-gallery-section {
+  background: #f4f5f6 !important;
+  padding: 42px 0 46px !important
+}
+#root .public-shell.about-reference-shell .ab-gallery {
+  display: grid !important;
+  grid-template-columns: 1.5fr 1fr 1fr 1fr !important;
+  grid-template-rows: 190px 210px !important;
+  gap: 4px !important
+}
+#root .public-shell.about-reference-shell .ab-gallery>img,#root .public-shell.about-reference-shell .ab-gallery figure>img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  display: block !important
+}
+#root .public-shell.about-reference-shell .ab-gallery-tall {
+  grid-row: span 2 !important;
+  position: relative !important;
+  overflow: hidden !important
+}
+#root .public-shell.about-reference-shell .ab-gallery figcaption {
+  position: absolute !important;
+  bottom: 27px !important;
+  left: 28px !important;
+  transform: rotate(-7deg) !important;
+  font-size: 25px !important;
+  text-shadow: 0 2px 4px #14321b !important
+}
+#root .public-shell.about-reference-shell .ab-impact {
+  padding: 36px 0 40px !important;
+  background: #26622b !important;
+  color: white !important
+}
+#root .public-shell.about-reference-shell .ab-impact-grid {
+  display: grid !important;
+  grid-template-columns: repeat(4,1fr) !important
+}
+#root .public-shell.about-reference-shell .ab-impact-grid>div {
+  display: flex !important;
+  align-items: center !important;
+  flex-direction: column !important;
+  position: relative !important
+}
+#root .public-shell.about-reference-shell .ab-impact-grid>div+div:before {
+  content: '' !important;
+  position: absolute !important;
+  left: 0 !important;
+  top: 29px !important;
+  height: 74px !important;
+  border-left: 1px solid #ffffff66 !important
+}
+#root .public-shell.about-reference-shell .ab-impact strong {
+  font: 400 41px/1.1 Georgia,serif !important;
+  margin-top: 10px !important
+}
+#root .public-shell.about-reference-shell .ab-impact span {
+  font-size: 15px !important;
+  font-weight: 700 !important
+}
+#root .public-shell.about-reference-shell .ab-market {
+  position: relative !important;
+  isolation: isolate !important;
+  color: white !important;
+  padding: 64px 0 56px !important;
+  overflow: hidden !important
+}
+#root .public-shell.about-reference-shell .ab-market .ab-backdrop {
+  object-position: 50% 54% !important
+}
+#root .public-shell.about-reference-shell .ab-market-copy {
+  position: relative !important;
+  margin-left: 49px !important
+}
+#root .public-shell.about-reference-shell .ab-market-copy:before {
+  height: 76px !important;
+  left: -23px !important
+}
+#root .public-shell.about-reference-shell .ab-page .ab-market h2 {
+  font: 400 44px/1.2 Georgia,serif !important;
+  letter-spacing: -.8px !important;
+  margin: 12px 0 6px !important;
+  color: #fff !important
+}
+#root .public-shell.about-reference-shell .ab-market-copy>p:not(.ab-eyebrow) {
+  font-size: 18px !important
+}
+#root .public-shell.about-reference-shell .ab-market .ab-button {
+  margin-top: 18px !important;
+  padding: 10px 23px !important;
+  min-height: 44px !important
+}
+#root .public-shell.about-reference-shell .ab-quality {
+  padding: 32px 20px 46px !important
+}
+#root .public-shell.about-reference-shell .ab-quality .ab-section-title:after {
+  margin-bottom: 16px !important
+}
+#root .public-shell.about-reference-shell .ab-quality-marks {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 65px !important
+}
+#root .public-shell.about-reference-shell .ab-quality-mark {
+  display: flex !important;
+  align-items: center !important;
+  gap: 18px !important;
+  color: #174f26 !important;
+  font-size: 11px !important;
+  line-height: 1.35 !important
+}
+#root .public-shell.about-reference-shell .ab-quality-mark+ .ab-quality-mark {
+  border-left: 1px solid #e5e5e5 !important;
+  padding-left: 60px !important
+}
+#root .public-shell.about-reference-shell .ab-quality-mark>svg {
+  color: #377626 !important
+}
+#root .public-shell.about-reference-shell .ab-grown strong {
+  font: 700 23px/1 Georgia,serif !important;
+  display: block !important
+}
+#root .public-shell.about-reference-shell .ab-grown img {
+  display: inline-block !important;
+  width: 17px !important;
+  margin-left: 3px !important
+}
+#root .public-shell.about-reference-shell .ab-grown small {
+  display: block !important;
+  margin-top: 9px !important;
+  font-size: 11px !important
+}
+#root .public-shell.about-reference-shell .ab-founders {
+  padding: 32px 20px 45px !important;
+  background: #f4f5f6 !important;
+  text-align: center !important
+}
+#root .public-shell.about-reference-shell .ab-founders>.ab-section-title:after {
+  margin-bottom: 12px !important
+}
+#root .public-shell.about-reference-shell .ab-founders>p {
+  font-size: 15px !important;
+  color: #6a6c70 !important
+}
+#root .public-shell.about-reference-shell .ab-founder-grid {
+  max-width: 850px !important;
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 53px !important;
+  margin: 30px auto 0 !important;
+  text-align: left !important
+}
+#root .public-shell.about-reference-shell .ab-founder-grid article {
+  display: grid !important;
+  grid-template-columns: 45% 55% !important;
+  background: #fff !important;
+  border-radius: 10px !important;
+  overflow: hidden !important;
+  min-height: 184px !important
+}
+#root .public-shell.about-reference-shell .ab-founder-grid article>img {
+  height: 100% !important;
+  width: 100% !important;
+  object-fit: cover !important;
+  object-position: center 25% !important
+}
+#root .public-shell.about-reference-shell .ab-founder-grid article>div {
+  padding: 28px 26px !important
+}
+#root .public-shell.about-reference-shell .ab-page .ab-founder-grid h3 {
+  font: 700 20px/1.2 Georgia,serif !important;
+  color: #252525 !important
+}
+#root .public-shell.about-reference-shell .ab-founder-grid p {
+  font-size: 15px !important;
+  line-height: 1.6 !important;
+  color: #77797d !important
+}
+#root .public-shell.about-reference-shell .ab-founder-grid .ab-role {
+  font-size: 13px !important;
+  margin: 4px 0 16px !important
+}
+#root .public-shell.about-reference-shell .ab-faq {
+  padding: 34px 20px 42px !important
+}
+#root .public-shell.about-reference-shell .ab-faq-list {
+  max-width: 650px !important;
+  margin: 30px auto 0 !important
+}
+#root .public-shell.about-reference-shell .ab-faq details {
+  border-bottom: 1px solid #e4e6e5 !important
+}
+#root .public-shell.about-reference-shell .ab-faq summary {
+  min-height: 57px !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  gap: 15px !important;
+  font-size: 15px !important;
+  list-style: none !important
+}
+#root .public-shell.about-reference-shell .ab-page summary::-webkit-details-marker {
+  display: none !important
+}
+#root .public-shell.about-reference-shell .ab-faq details[open] summary>svg {
+  transform: rotate(45deg) !important
+}
+#root .public-shell.about-reference-shell .ab-faq details>p {
+  font-size: 14px !important;
+  color: #606964 !important;
+  padding: 0 25px 18px 0 !important
+}
+#root .public-shell.about-reference-shell .ab-faq details a {
+  color: #155329 !important;
+  font-weight: 700 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important
+}
+@media(min-width:1450px){
+#root .public-shell.about-reference-shell .ab-hero {
+  height: 560px !important
+}
+#root .public-shell.about-reference-shell .ab-gallery {
+  grid-template-rows: 215px 225px !important
+}}
+@media(max-width:1100px){
+#root .public-shell.about-reference-shell .ab-hero {
+  height: 440px !important
+}
+#root .public-shell.about-reference-shell .ab-page .ab-hero h1 {
+  font-size: 52px !important
+}
+#root .public-shell.about-reference-shell .ab-page .ab-hero-description {
+  font-size: 18px !important
+}
+#root .public-shell.about-reference-shell .ab-hero-copy {
+  margin-left: 28px !important
+}
+#root .public-shell.about-reference-shell .ab-gallery {
+  grid-template-rows: 160px 170px !important
+}
+#root .public-shell.about-reference-shell .ab-founder-grid {
+  gap: 40px !important
+}}
+@media(max-width:800px){
+#root .public-shell.about-reference-shell .ab-hero {
+  height: 470px !important
+}
+#root .public-shell.about-reference-shell .ab-hero .ab-backdrop {
+  object-position: 60% center !important;
+  filter: brightness(.75) !important
+}
+#root .public-shell.about-reference-shell .ab-page .ab-hero h1 {
+  font-size: 48px !important
+}
+#root .public-shell.about-reference-shell .ab-hero-copy {
+  margin-left: 18px !important
+}
+#root .public-shell.about-reference-shell .ab-hero-note {
+  font-size: 24px !important;
+  right: 0 !important;
+  bottom: 20px !important
+}
+#root .public-shell.about-reference-shell .ab-gallery-section {
+  padding: 28px 0 !important
+}
+#root .public-shell.about-reference-shell .ab-gallery {
+  grid-template-rows: 130px 140px !important
+}
+#root .public-shell.about-reference-shell .ab-gallery figcaption {
+  font-size: 18px !important;
+  left: 15px !important;
+  bottom: 18px !important
+}
+#root .public-shell.about-reference-shell .ab-impact {
+  padding: 28px 0 !important
+}
+#root .public-shell.about-reference-shell .ab-impact strong {
+  font-size: 33px !important
+}
+#root .public-shell.about-reference-shell .ab-impact span {
+  font-size: 12px !important
+}
+#root .public-shell.about-reference-shell .ab-impact svg {
+  width: 35px !important
+}
+#root .public-shell.about-reference-shell .ab-page .ab-market h2 {
+  font-size: 35px !important
+}
+#root .public-shell.about-reference-shell .ab-market {
+  padding: 45px 0 !important
+}
+#root .public-shell.about-reference-shell .ab-market .ab-backdrop {
+  filter: brightness(.75) !important
+}
+#root .public-shell.about-reference-shell .ab-market-copy {
+  margin-left: 20px !important
+}
+#root .public-shell.about-reference-shell .ab-founder-grid {
+  gap: 24px !important
+}
+#root .public-shell.about-reference-shell .ab-founder-grid article>div {
+  padding: 22px 18px !important
+}
+#root .public-shell.about-reference-shell .ab-page .ab-founder-grid h3 {
+  font-size: 18px !important
+}
+#root .public-shell.about-reference-shell .ab-founder-grid p {
+  font-size: 13px !important
+}
+#root .public-shell.about-reference-shell .ab-section-title {
+  font-size: 12px!important;
+  letter-spacing: 3px!important
+}
+#root .public-shell.about-reference-shell .ab-desktop-break {
+  display: none !important
+}}
+@media(max-width:540px){
+#root .public-shell.about-reference-shell .ab-container {
+  width: 88% !important
+}
+#root .public-shell.about-reference-shell .ab-hero {
+  height: 550px !important
+}
+#root .public-shell.about-reference-shell .ab-hero .ab-backdrop {
+  object-position: 66% center !important;
+  filter: brightness(.55) !important
+}
+#root .public-shell.about-reference-shell .ab-hero-copy {
+  margin-left: 16px !important;
+  align-self: flex-start !important;
+  margin-top: 88px !important
+}
+#root .public-shell.about-reference-shell .ab-page .ab-eyebrow {
+  font-size: 10px !important;
+  letter-spacing: 1.5px !important
+}
+#root .public-shell.about-reference-shell .ab-page .ab-hero h1 {
+  font-size: 43px !important;
+  line-height: 1.08 !important;
+  margin-top: 20px !important
+}
+#root .public-shell.about-reference-shell .ab-page .ab-hero-description {
+  font-size: 17px !important;
+  max-width: 300px !important
+}
+#root .public-shell.about-reference-shell .ab-hero-copy:before {
+  left: -17px !important;
+  height: 142px !important
+}
+#root .public-shell.about-reference-shell .ab-buttons {
+  gap: 12px !important;
+  flex-wrap: wrap !important
+}
+#root .public-shell.about-reference-shell .ab-page .ab-button {
+  font-size: 12px !important;
+  padding: 11px 15px !important;
+  gap: 10px !important
+}
+#root .public-shell.about-reference-shell .ab-hero-note {
+  bottom: 32px !important;
+  right: 12px !important
+}
+#root .public-shell.about-reference-shell .ab-story {
+  padding: 30px 24px !important
+}
+#root .public-shell.about-reference-shell .ab-story>p {
+  font-size: 14px !important
+}
+#root .public-shell.about-reference-shell .ab-gallery {
+  grid-template-columns: 1fr 1fr !important;
+  grid-template-rows: repeat(4,150px) !important;
+  gap: 4px !important
+}
+#root .public-shell.about-reference-shell .ab-gallery-tall {
+  grid-row: span 2 !important
+}
+#root .public-shell.about-reference-shell .ab-gallery>img:last-child {
+  grid-column: span 2 !important
+}
+#root .public-shell.about-reference-shell .ab-gallery figcaption {
+  font-size: 19px !important
+}
+#root .public-shell.about-reference-shell .ab-impact-grid {
+  grid-template-columns: 1fr 1fr !important;
+  gap: 28px 0 !important
+}
+#root .public-shell.about-reference-shell .ab-impact-grid>div:nth-child(3):before {
+  display: none !important
+}
+#root .public-shell.about-reference-shell .ab-impact strong {
+  font-size: 36px !important
+}
+#root .public-shell.about-reference-shell .ab-impact span {
+  font-size: 12px !important
+}
+#root .public-shell.about-reference-shell .ab-market {
+  padding: 46px 0 !important
+}
+#root .public-shell.about-reference-shell .ab-market .ab-backdrop {
+  object-position: 65% !important;
+  filter: brightness(.55) !important
+}
+#root .public-shell.about-reference-shell .ab-page .ab-market h2 {
+  font-size: 34px !important
+}
+#root .public-shell.about-reference-shell .ab-market-copy>p:not(.ab-eyebrow) {
+  font-size: 16px !important
+}
+#root .public-shell.about-reference-shell .ab-quality {
+  padding: 30px 15px !important
+}
+#root .public-shell.about-reference-shell .ab-quality-marks {
+  gap: 20px !important
+}
+#root .public-shell.about-reference-shell .ab-quality-mark {
+  gap: 8px !important;
+  font-size: 8px !important
+}
+#root .public-shell.about-reference-shell .ab-quality-mark>svg {
+  width: 45px !important;
+  height: 55px !important
+}
+#root .public-shell.about-reference-shell .ab-quality-mark+ .ab-quality-mark {
+  padding-left: 20px !important
+}
+#root .public-shell.about-reference-shell .ab-grown strong {
+  font-size: 19px !important
+}
+#root .public-shell.about-reference-shell .ab-grown small {
+  font-size: 8px !important
+}
+#root .public-shell.about-reference-shell .ab-founder-grid {
+  grid-template-columns: 1fr !important;
+  max-width: 360px !important;
+  gap: 20px !important
+}
+#root .public-shell.about-reference-shell .ab-founder-grid article {
+  min-height: 180px !important
+}
+#root .public-shell.about-reference-shell .ab-founder-grid article>div {
+  padding: 28px 22px !important
+}
+#root .public-shell.about-reference-shell .ab-page .ab-founder-grid h3 {
+  font-size: 20px !important
+}
+#root .public-shell.about-reference-shell .ab-founder-grid p {
+  font-size: 14px !important
+}
+#root .public-shell.about-reference-shell .ab-founders>p {
+  font-size: 14px !important
+}
+#root .public-shell.about-reference-shell .ab-faq {
+  padding: 30px 24px !important
+}
+#root .public-shell.about-reference-shell .ab-faq summary {
+  font-size: 14px !important;
+  padding: 14px 0 !important
+}
+#root .public-shell.about-reference-shell .ab-faq summary svg {
+  flex-shrink: 0 !important
+}}
+#root .about-reference-shell .ab-hero {
+  padding: 0!important
+}
+#root .about-reference-shell .ab-founder-grid article {
+  height: 184px!important
+}
+#root .about-reference-shell .ab-founder-grid article>img {
+  min-height: 0!important
+}
+#root .about-reference-shell .ab-page .ab-section-title {
+  font-size: 13px!important;
+  line-height: 1.5!important;
+  font-weight: 700!important;
+  font-family: Lato,Arial,sans-serif!important;
+  letter-spacing: 4.7px!important
+}

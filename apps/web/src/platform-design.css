@@ -1,0 +1,198 @@
+/* Shared layout rhythm and the landing page's Roboto/Lato typography.
+ * Colour changes are explicitly excluded from the activity overview, including
+ * its body-mounted dialogs. Keep all new colour rules inside the guard below. */
+:root {
+  --page-gutter: clamp(1.25rem, 3vw, 2.5rem);
+  --section-space: clamp(3rem, 5vw, 5rem);
+  --content-width: 75rem;
+  --content-gap: clamp(2rem, 3vw, 3rem);
+  --grid-gap: 2rem;
+}
+body, .public-shell .dl-page, .account-setup-page { font-family: var(--font-body); }
+:is(h1, h2, h3, h4, h5, h6, .font-heading, .font-display) {
+  font-family: var(--font-heading);
+}
+:is(button, nav, th, label, [data-ui="button"]) { font-family: var(--font-heading); }
+:is(input, textarea, select) { font-family: var(--font-body); }
+
+/* One outer grid, with nested content retaining its responsive columns. */
+.portal-scroll-content {
+  --admin-page-inset: var(--page-gutter);
+  padding-inline: var(--page-gutter);
+}
+.portal-scroll-content > :first-child {
+  width: 100%;
+  max-width: var(--content-width);
+  margin-inline: auto;
+}
+.portal-scroll-content { padding-top: var(--section-space); }
+.portal-scroll-content > :first-child > :is(.mt-6, .mt-8) { margin-top: var(--section-space); }
+.portal-scroll-content > :is(.space-y-4, .space-y-6, .space-y-8) > :not([hidden]) ~ :not([hidden]) {
+  margin-top: var(--section-space);
+  margin-bottom: 0;
+}
+.portal-scroll-content :is(.grid.gap-4, .grid.gap-6, .grid.gap-8) {
+  gap: var(--grid-gap);
+}
+:is(.admin-page-content, .portal-scroll-content) .grid > * { min-width: 0; }
+.public-shell main :is(.max-w-7xl, .max-w-6xl, .max-w-5xl, .product-container, .sustain-container, .dl-container) {
+  max-width: var(--content-width);
+  margin-inline: auto;
+  padding-inline: var(--page-gutter);
+}
+.public-shell main section:not(:is(.jba-home-hero, .jba-public-hero, .product-hero, .sustain-hero, .dl-hero)):not(section section) {
+  padding-block: var(--section-space);
+}
+[data-ui="button"], .product-button, .sustain-button, .jba-whatsapp-primary, .jba-whatsapp-secondary {
+  min-height: 2.75rem;
+  border-radius: 0.375rem;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  letter-spacing: 0.025em;
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+[data-ui="button"]:has(> svg:only-child) { min-width: 2.75rem; }
+@media (max-width: 767px) {
+  :root { --grid-gap: 1rem; }
+  .app-surface :is(input, select, textarea) { font-size: 1rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-ui="button"], .product-button, .sustain-button { transition: none; }
+}
+
+/* :has scopes the exception synchronously to the rendered route, without a
+ * theme effect that could leak colours when navigating or opening a portal. */
+:root:not(:has([data-preserve-colors="true"])) {
+  --company-page: #F4FBF5;
+  --company-section: #E8F5E9;
+  --company-card: #F9FCFA;
+  --company-ink: #123524;
+  --company-secondary: #355E3B;
+  --company-muted: #5F7565;
+  --company-border: #C8E6C9;
+  --company-disabled: #E3EEE5;
+  --company-focus: #66BB6A;
+  --company-primary: #2E7D32;
+  --company-hover: #256B2A;
+  --company-active: #1B5E20;
+  --company-selected: #C8E6C9;
+  --background: 128.57143 46.66667% 97.05882%;
+  --foreground: 150.85714 49.29577% 13.92157%;
+  --card: 140 33.33333% 98.23529%;
+  --card-foreground: 150.85714 49.29577% 13.92157%;
+  --popover: var(--card);
+  --popover-foreground: var(--foreground);
+  --muted: 124.61538 39.39394% 93.52941%;
+  --muted-foreground: 136.36364 10.37736% 41.56863%;
+  --primary: 123.03797 46.19883% 33.52941%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 124.61538 39.39394% 93.52941%;
+  --secondary-foreground: 128.78049 27.89116% 28.82353%;
+  --accent: 122 37.5% 84.31373%;
+  --accent-foreground: 150.85714 49.29577% 13.92157%;
+  --border: 122 37.5% 84.31373%;
+  --input: var(--border);
+  --ring: 122.82353 38.46154% 56.66667%;
+  --destructive: 128.78049 27.89116% 28.82353%;
+  --destructive-foreground: 0 0% 100%;
+  color-scheme: light;
+
+  body, .app-surface, .public-shell main, .products-page, .sustainability-page, .dl-page,
+  .account-setup-page, .admin-scroll-content, .portal-scroll-content {
+    background-color: var(--company-page) !important;
+    color: var(--company-ink);
+  }
+  .bg-card, .bg-white, [role="dialog"], [role="alertdialog"], .product-card, .review-grid figure {
+    background-color: var(--company-card);
+  }
+  .public-shell main section.bg-white { background-color: var(--company-section); }
+  .public-shell .dl-page :is(.dl-services, .dl-fleet, .dl-status) { background: var(--company-page); }
+  .public-shell .dl-page :is(.dl-process, .dl-trust) { background: var(--company-section); }
+  .public-shell .dl-page .dl-step-icon { background: #A5D6A7; color: #123524; }
+  .public-shell .dl-page .dl-section-heading > p { color: #355E3B; }
+  .admin-shell > div > header, .portal-shell > header {
+    background: #123524;
+    color: #F4FBF5;
+  }
+  .admin-shell > div > header :is(.text-muted-foreground, button),
+  .portal-shell > header :is(h1, .text-muted-foreground, button) { color: #F4FBF5; }
+  .admin-shell > div > header input { background: #F9FCFA; color: #123524; }
+  .admin-shell > div > header form svg { color: #5F7565; }
+  [data-ui="button"]:disabled {
+    background: var(--company-disabled) !important;
+    color: var(--company-muted) !important;
+    opacity: 1;
+  }
+  [data-ui="button"][data-variant="outline"] {
+    border-color: var(--company-primary);
+    color: var(--company-primary);
+  }
+  [data-ui="button"]:not(:disabled):is(:hover, :active) {
+    background-color: var(--company-hover);
+    color: #fff;
+  }
+  [data-ui="button"]:not(:disabled):active { background-color: var(--company-active); }
+  [data-ui="button"]:focus-visible { outline: 2px solid var(--company-focus); outline-offset: 3px; }
+  [data-status-tone] { background: var(--company-section); border: 1px solid; }
+  [data-status-tone="success"] { color: #2E7D32; border-style: solid; }
+  /* Dark text meets contrast; the exact warning shade is on its icon/border. */
+  [data-status-tone="warning"] { color: #355E3B; border: 3px double #6B8E23; }
+  [data-status-tone="warning"] svg { color: #6B8E23; }
+  [data-status-tone="error"] { color: #355E3B; border-style: dashed; }
+  [data-status-tone="information"] { color: #3B7A57; border-style: dotted; }
+  [data-sonner-toast][data-type="info"] { border-left: 4px dotted #3B7A57; }
+
+  /* Page-specific surfaces must not fall back to their old white palettes. */
+  .admin-shell .drc-page {
+    --drc-paper: #F4FBF5;
+    --drc-surface: #F9FCFA;
+    --drc-line: #C8E6C9;
+    --drc-muted: #355E3B;
+    --drc-green: #2E7D32;
+    --drc-red: #355E3B;
+    --drc-amber: #6B8E23;
+    background: var(--company-page);
+  }
+  .account-setup-dialog, .basket-dialog, .checkout-dialog,
+  .public-shell :is(.sustain-stat, .sustain-pillar, .review-grid figure, .product-card) {
+    background-color: var(--company-card);
+    border-color: var(--company-border);
+  }
+  .public-shell :is(.sustain-impact, .sustain-goals, .product-reviews) { background-color: var(--company-section); }
+  .public-shell :is(.sustain-icon, .review-avatar) { background-color: #A5D6A7; color: #123524; }
+  .account-setup-dialog :is(button, input, select):disabled {
+    background: #E3EEE5; color: #5F7565; opacity: 1;
+  }
+  .account-setup-dialog .account-setup-submit:hover:enabled { background: #256B2A; }
+  .account-setup-dialog .account-setup-submit:active:enabled { background: #1B5E20; }
+  .account-setup-dialog .account-setup-status[data-status="pending"] { color: #355E3B; border: 3px double #6B8E23; }
+  .account-setup-dialog .account-setup-status[data-status="rejected"],
+  .account-setup-dialog .account-setup-error { border: 1px dashed #355E3B; }
+  .account-setup-dialog .account-setup-status[data-status="verified"] { color: #2E7D32; border: 1px solid #2E7D32; }
+  .public-shell main > div { background-color: var(--company-page); }
+  .admin-shell .drc-primary { background: #2E7D32; color: white; border-color: #2E7D32; }
+  .admin-shell .drc-primary:hover { background: #256B2A; }
+  .admin-shell .drc-primary:active { background: #1B5E20; }
+  .farm-activities-sticky-nav [aria-current="page"] { background: #C8E6C9; color: #123524; }
+  [data-ui="metric-icon"] { background: #A5D6A7; color: #123524; }
+  [data-alert-tone="error"] { border: 2px dashed #355E3B; }
+  [data-alert-tone="information"] { border: 2px dotted #3B7A57; }
+  [role="tab"][data-state="active"] { background: #C8E6C9; color: #123524; box-shadow: none; }
+  .admin-shell :is(.drc-primary, .drc-btn):disabled { background: #E3EEE5; color: #5F7565; }
+}
+
+.public-shell main :is(.max-w-3xl, .max-w-4xl) { padding-inline: var(--page-gutter); }
+.public-shell .dl-page, .account-setup-dialog, .admin-shell .drc-page { font-family: var(--font-body); }
+.public-shell .dl-page :is(h1,h2,h3,h4,button), .account-setup-dialog button { font-family: var(--font-heading); }
+.account-setup-dialog :is(.account-setup-outline, .account-setup-submit) { min-height: 44px; border-radius: 6px; }
+.admin-shell :is(.drc-btn, .drc-primary) { min-height: 44px; border-radius: 6px; font-family: var(--font-heading); }
+.app-surface [role="tab"] { min-height: 44px; font-family: var(--font-heading); }
+.app-surface:not(.admin-shell) [role="tabpanel"] { margin-top: var(--section-space); }
+.app-surface:not(.admin-shell) [data-page-navigation] { margin-bottom: var(--section-space); }
+/* Headings and translated/wrapped copy must fit inside their image backdrop. */
+.public-shell .jba-public-hero {
+  height: auto !important;
+  min-height: 26rem !important;
+  max-height: none;
+}
+.public-shell .jba-public-hero-content { height: auto; }

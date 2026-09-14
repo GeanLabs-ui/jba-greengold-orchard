@@ -5,14 +5,14 @@
   scrollbar-color: var(--platform-pastel-green) var(--platform-deep-green);
 }
 
-.portal-horizontal-menu .portal-nav-link { color: #fff; }
+.portal-horizontal-menu .portal-nav-link { color: #ffffff; }
 
 .portal-horizontal-menu .portal-nav-link:is(:hover, :focus-visible, [aria-current="page"]) {
   background-color: var(--platform-yellow-green);
-  color: #173d24;
+  color: #123524;
 }
 
 .portal-horizontal-menu .portal-nav-link:focus-visible {
-  outline: 2px solid #fff;
+  outline: 2px solid #ffffff;
   outline-offset: -3px;
 }

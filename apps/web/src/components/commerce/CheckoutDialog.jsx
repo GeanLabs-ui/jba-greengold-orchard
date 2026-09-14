@@ -82,7 +82,7 @@ export default function CheckoutDialog({ routes, isAuthenticated, navigateToLogi
   const close = () => { if (!submitting && !submittingRef.current) setClosed(true); };
 
   const field = (name, label, type, placeholder, autoComplete) => (
-    <label className="checkout-field" key={name}>{label}
+    <label className="checkout-field text-label" key={name}>{label}
       <input name={name} type={type} autoComplete={autoComplete} value={shipping[name]} onChange={updateShipping} placeholder={placeholder} required disabled={submitting} />
     </label>
   );
@@ -97,7 +97,7 @@ export default function CheckoutDialog({ routes, isAuthenticated, navigateToLogi
   return <>
     <section className="checkout-launcher">
       <LockKeyhole size={28} aria-hidden="true" />
-      <h1>Checkout</h1>
+      <h1 className="text-page-title">Checkout</h1>
       <p>Your basket and delivery details stay here while you review your order.</p>
       <button ref={launcherRef} type="button" className="checkout-primary" onClick={() => setClosed(false)}>Continue checkout</button>
       <Link to={routes.products}>Continue shopping</Link>
@@ -115,14 +115,14 @@ export default function CheckoutDialog({ routes, isAuthenticated, navigateToLogi
           </header>
           {!ready ? <div className="checkout-empty">
             <ShoppingBag size={36} aria-hidden="true" />
-            <h2>{!lines.length ? 'Your basket is empty' : 'Sign in to checkout'}</h2>
+            <h2 className="text-section-title">{!lines.length ? 'Your basket is empty' : 'Sign in to checkout'}</h2>
             <p>{!lines.length ? 'Choose products before starting checkout.' : 'Your basket stays saved while you sign in.'}</p>
             {!lines.length ? <Link className="checkout-primary" to={routes.products}>Shop products</Link> : <><button type="button" className="checkout-primary" onClick={navigateToLogin}>Sign in securely</button><Link to={`/register?from_url=${encodeURIComponent(routes.checkout)}`}>Create a customer account</Link></>}
           </div> : <form ref={formRef} onSubmit={submit} noValidate className="checkout-form">
             {compact && <nav className="checkout-steps" aria-label="Checkout steps">{steps.map((label, index) => <span key={label} aria-current={step === index ? 'step' : undefined}><b>{index + 1}</b>{label}</span>)}</nav>}
             <div className="checkout-workspace">
               <section className="checkout-delivery" hidden={compact && step > 1}>
-                <h2><Truck size={18} aria-hidden="true" />{compact ? steps[step] + ' details' : 'Delivery details'}</h2>
+                <h2 className="text-section-title"><Truck size={18} aria-hidden="true" />{compact ? steps[step] + ' details' : 'Delivery details'}</h2>
                 <div className="checkout-fields" data-checkout-step="0" hidden={compact && step !== 0}>
                   {field('full_name', 'Full name', 'text', 'Full name', 'name')}
                   {field('email', 'Contact email', 'email', 'you@example.com', 'email')}
@@ -131,23 +131,23 @@ export default function CheckoutDialog({ routes, isAuthenticated, navigateToLogi
                 <div className="checkout-fields" data-checkout-step="1" hidden={compact && step !== 1}>
                   {field('city', 'City / town', 'text', 'Accra', 'address-level2')}
                   {field('region', 'Region', 'text', 'Greater Accra', 'address-level1')}
-                  <label className="checkout-field checkout-wide">Street address and landmark<textarea name="address" value={shipping.address} onChange={updateShipping} placeholder="House number, street, area, and landmark" autoComplete="street-address" required disabled={submitting} rows={2} /></label>
-                  <label className="checkout-field checkout-wide">Delivery notes <span>(optional)</span><input name="notes" value={notes} onChange={(event) => setNotes(event.target.value)} maxLength={1000} disabled={submitting} placeholder="Gate directions or preferred call time" /></label>
+                  <label className="checkout-field checkout-wide text-label">Street address and landmark<textarea name="address" value={shipping.address} onChange={updateShipping} placeholder="House number, street, area, and landmark" autoComplete="street-address" required disabled={submitting} rows={2} /></label>
+                  <label className="checkout-field checkout-wide text-label">Delivery notes <span>(optional)</span><input name="notes" value={notes} onChange={(event) => setNotes(event.target.value)} maxLength={1000} disabled={submitting} placeholder="Gate directions or preferred call time" /></label>
                 </div>
               </section>
               <section className="checkout-payment" hidden={compact && step !== 2}>
-                <h2><CreditCard size={18} aria-hidden="true" />Payment method</h2>
+                <h2 className="text-section-title"><CreditCard size={18} aria-hidden="true" />Payment method</h2>
                 <PaymentOptions country={paymentCountry} setCountry={setPaymentCountry} value={paymentMethod} onChange={setPaymentMethod} disabled={submitting} />
                 <p className="checkout-payment-help checkout-pay-later">Or pay after order confirmation</p>
-                <fieldset disabled={submitting}><legend className="sr-only">Choose a payment method</legend>{payments.map(([value, title, description]) => <label className="checkout-payment-option" key={value} data-selected={paymentMethod === value}>
+                <fieldset disabled={submitting}><legend className="sr-only">Choose a payment method</legend>{payments.map(([value, title, description]) => <label className="checkout-payment-option text-label" key={value} data-selected={paymentMethod === value}>
                   <input type="radio" name="payment_method" value={value} checked={paymentMethod === value} onChange={(event) => setPaymentMethod(event.target.value)} />
                   <span><strong>{title}</strong><small>{description}</small></span>
                 </label>)}</fieldset>
               </section>
               <section className="checkout-review" hidden={compact && step !== 3}>
-                <h2><Package size={18} aria-hidden="true" />Your order <span>({cart.itemCount ?? lines.reduce((sum, line) => sum + line.quantity, 0)} items)</span></h2>
+                <h2 className="text-section-title"><Package size={18} aria-hidden="true" />Your order <span>({cart.itemCount ?? lines.reduce((sum, line) => sum + line.quantity, 0)} items)</span></h2>
                 <div ref={listRef} className="checkout-order-list">{orderPage.items.map((line) => <article key={line.id} className="checkout-order-line">
-                  <img src={line.image} alt="" /><div><h3>{line.name}</h3><p>Qty {line.quantity}</p></div><strong>{formatProductPrice(line.lineTotal)}</strong>
+                  <img src={line.image} alt="" /><div><h3 className="text-card-title">{line.name}</h3><p>Qty {line.quantity}</p></div><strong>{formatProductPrice(line.lineTotal)}</strong>
                 </article>)}</div>
                 <nav className="checkout-order-pages" aria-label="Order product pages"><span role="status">{orderPage.start + 1}–{orderPage.end} of {lines.length}</span><div><button type="button" aria-label="Previous order products" disabled={orderPage.page === 0} onClick={() => setPage(orderPage.page - 1)}><ChevronLeft size={16} /></button><span>{orderPage.page + 1}/{orderPage.pageCount}</span><button type="button" aria-label="Next order products" disabled={orderPage.page + 1 >= orderPage.pageCount} onClick={() => setPage(orderPage.page + 1)}><ChevronRight size={16} /></button></div></nav>
                 {!compact && totals}

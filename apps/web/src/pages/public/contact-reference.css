@@ -1,0 +1,118 @@
+/* Contact-only reference styling; the shared navigation and footer are untouched. */
+#root .public-shell main .contact-reference-page { background: #fff !important; }
+#root .public-shell main .contact-reference-hero { display: block; aspect-ratio: 1024 / 385; height: auto !important; min-height: 0 !important; padding: 0; }
+#root .public-shell main .contact-reference-page { background: #fff; color: #073c32; }
+#root .contact-reference-page { --contact-green: #1c602f; --contact-muted: #657779; }
+#root .public-shell main .contact-reference-page section { padding: 0; }
+#root .contact-reference-page .contact-reference-hero { position: relative; width: 100%; aspect-ratio: 1024 / 385; overflow: hidden; background: #123524; }
+#root .contact-hero-art { position: absolute; inset: 0; background: url('/pages/contact/contact-reference.png') center 4.6047% / 100% auto no-repeat; }
+/* The desktop campaign already includes its lettering. Keep equivalent semantic
+ * copy for assistive technology, and real focusable links over the two CTAs. */
+#root .contact-hero-copy, #root .contact-hero-benefits { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+#root .contact-hero-actions a { position: absolute; top: 65.45%; height: 10.13%; width: 15.3%; overflow: hidden; color: transparent; border-radius: 6px; }
+#root .contact-hero-actions a svg { display: none; }
+#root .contact-hero-actions .contact-message-link { left: 8.89%; }
+#root .contact-hero-actions .contact-team-link { left: 25.75%; }
+#root .contact-hero-actions a:hover { background: #ffffff18; }
+#root .contact-hero-actions a:focus-visible { outline: 3px solid white; outline-offset: 4px; }
+#root .public-shell main .contact-reference-page .contact-main { padding: 26px 0; }
+#root .contact-panels { width: 92%; max-width: 1410px; margin: auto; display: grid; grid-template-columns: 1.1fr 1fr; gap: 20px; }
+#root .contact-panel { position: relative; min-width: 0; border-radius: 7px; background: #f3f8f4; }
+#root .public-shell main .contact-reference-page .contact-panel { padding: 25px; }
+#root .contact-form-panel::before { content: ''; pointer-events: none; position: absolute; top: 0; right: 0; width: 96px; height: 112px; background: url('/pages/contact/contact-reference.png') -434px -464px / 1024px 1536px; clip-path: polygon(0 0,100% 0,100% 100%,46% 100%,46% 42%,0 42%); border-top-right-radius: 7px; opacity: .75; }
+#root .contact-form-panel > * { position: relative; }
+#root .contact-reference-page .contact-panel > p:first-child, #root .contact-quick-inner > div > p:first-child { font-size: 10px; letter-spacing: .15em; font-weight: 700; color: #20612d; line-height: 1.5; text-transform: uppercase; }
+#root .public-shell .contact-reference-page h2 { font: 700 clamp(28px, 3.13vw, 43px)/1.04 Georgia, 'Times New Roman', serif !important; letter-spacing: -.045em !important; color: #063e33; text-transform: none; }
+#root .contact-reference-page .contact-panel > h2 { margin: 7px 0 6px; }
+#root .contact-panel > p:not(:first-child) { font-size: 12px; line-height: 1.5; color: var(--contact-muted); }
+#root .contact-reference-page form { margin-top: 19px; }
+#root .contact-reference-page form > .grid { gap: 16px; }
+#root .public-shell .contact-reference-page label { display: block; margin-bottom: 4px; font-size: 12px; line-height: 1.4; font-weight: 600; letter-spacing: 0; text-transform: none; color: #063b32; }
+#root .contact-reference-page input, #root .contact-reference-page textarea, #root .contact-reference-page button[role='combobox'] { min-width: 0; height: 32px; min-height: 32px; background: #ffffffb8; border: 1px solid #dbe4df; border-radius: 4px; box-shadow: none; font-size: 12px; padding: 6px 10px; color: #38524e; }
+#root .contact-reference-page input::placeholder, #root .contact-reference-page textarea::placeholder { color: #838787; }
+#root .contact-reference-page button[aria-label='Country calling code'] { width: 93px; border-right: 0; border-radius: 4px 0 0 4px; padding-inline: 8px; }
+#root .contact-reference-page button[aria-label='Country calling code'] span { font-size: 12px; gap: 5px; }
+#root .contact-reference-page button[aria-label='Country calling code'] img { width: 20px; height: 14px; }
+#root .contact-reference-page #phone { width: 100%; border-radius: 0 4px 4px 0; }
+#root .contact-reference-page textarea { min-height: 113px; height: 113px; }
+#root .contact-reference-page form > div > p { font-size: 10px; line-height: 1.4; }
+#root .contact-reference-page form [aria-label='Security verification']:empty { display: none; }
+#root .contact-reference-page form button[type='submit']:not(:disabled) { background: #1c5e2e !important; border-color: #1c5e2e !important; }
+#root .contact-reference-page form button[type='submit'] { min-height: 40px; height: 40px; font-size: 14px; letter-spacing: 0; margin-top: 22px; }
+#root .contact-reference-page form > p:last-child { font-size: 9px; line-height: 1.5; color: #64787b; margin-top: 15px; text-align: center; }
+#root .contact-reference-page .contact-method { display: flex; align-items: center; gap: 14px; min-height: 53px; padding: 4px; background: #ffffffd9; border-radius: 6px; }
+#root .contact-method > span:first-child { width: 42px; height: 42px; background: linear-gradient(110deg,#2b773c,#165326); border-radius: 5px; }
+#root .contact-method > div { flex: 1; min-width: 0; }
+#root .contact-method > div > p:first-child { font-size: 12px; line-height: 1.5; }
+#root .contact-method > div > p:last-child { font-size: 11px; line-height: 1.5; color: var(--contact-muted); white-space: normal; }
+#root .contact-method > a, #root .contact-method > span:last-child:not(:first-child) { font-size: 10px; line-height: 1.4; white-space: nowrap; padding-right: 10px; }
+#root .contact-method > a svg { width: 12px; }
+#root .contact-map { height: 192px; margin-top: 13px; overflow: hidden; border-radius: 6px; background: #d9ebdd; }
+#root .contact-map iframe { border: 0; }
+#root .public-shell main .contact-reference-page .contact-quick { position: relative; padding: 1px 0 25px; background: #fff; }
+#root .contact-quick::before, #root .contact-quick::after { content: ''; position: absolute; pointer-events: none; background-image: url('/pages/contact/contact-reference.png'); background-size: 1024px 1536px; }
+#root .contact-quick::before { left: 0; top: 0; width: 64px; height: 180px; background-position: 0 -1060px; }
+#root .contact-quick::after { right: 0; top: -18px; width: 110px; height: 88px; background-position: -914px -1040px; }
+#root .contact-quick-inner { width: 87%; max-width: 1336px; display: grid; grid-template-columns: 206px 1fr; gap: 20px; margin: auto; border-top: 1px solid #f0f4f1; padding-top: 25px; }
+#root .contact-quick-inner > div > h2 { max-width: 220px; margin: 10px 0 14px; }
+#root .contact-reference-page #quick-contact-title { font-size: 30px !important; letter-spacing: -.055em !important; }
+#root .contact-quick-inner > div > h2::after { content: ''; display: block; margin-top: 12px; width: 43px; height: 3px; background: #edae16; }
+#root .contact-quick-inner > div > p:last-child { font-size: 11px; line-height: 1.5; }
+#root .contact-quick-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 13px; align-items: end; }
+#root .contact-quick-card { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 14px 17px; min-height: 140px; border: 1px solid #e6eeea; border-radius: 5px; background: #fcfefd; transition: transform 160ms ease, border-color 160ms ease; }
+#root .contact-quick-card:hover { transform: translateY(-3px); border-color: #288037; }
+#root .contact-quick-card > span:first-child { width: 40px; height: 40px; color: white; background: linear-gradient(120deg,#3b9a37,#1f652a); }
+#root .contact-quick-card > span:nth-child(2) { width: 100%; }
+#root .contact-quick-card b { font-size: 14px; font-weight: 600; }
+#root .contact-quick-card > span > span { font-size: 11px; color: var(--contact-muted); white-space: normal; overflow-wrap: anywhere; }
+#root .contact-quick-card > svg { width: 15px; height: 15px; }
+#root #contact-message { scroll-margin-top: 110px; }
+#root .contact-reference-page :is(input,textarea,button[role='combobox']) { scroll-margin-top: 110px; }
+@media (min-width: 1250px) {
+  #root .public-shell main .contact-reference-page .contact-main { padding-block: 34px; }
+  #root .public-shell main .contact-reference-page .contact-panel { padding: 32px; }
+  #root .contact-panel > p:not(:first-child), #root .contact-reference-page label, #root .contact-method > div > p:first-child { font-size: 14px; }
+  #root .contact-reference-page input, #root .contact-reference-page button[role='combobox'] { height: 40px; font-size: 14px; }
+  #root .contact-reference-page textarea { min-height: 150px; font-size: 14px; }
+  #root .contact-method { min-height: 65px !important; }
+  #root .contact-method > div > p:last-child, #root .contact-method > a, #root .contact-method > span:last-child:not(:first-child) { font-size: 12px; }
+  #root .contact-map { height: 255px; }
+  #root .contact-quick-inner { grid-template-columns: 265px 1fr; }
+  #root .contact-quick-card { min-height: 165px; }
+}
+@media (max-width: 760px) {
+  #root .public-shell main .contact-reference-hero { aspect-ratio: auto; height: auto !important; min-height: 580px !important; }
+  #root .contact-reference-page .contact-reference-hero { aspect-ratio: auto; min-height: 580px; padding: 250px 24px 24px !important; background: #0b3525; }
+  #root .contact-hero-art { height: 265px; background: linear-gradient(0deg,#0b3525,transparent 50%), url('/pages/contact/contact-reference.png') right -42px / 820px 1230px no-repeat; }
+  #root .contact-hero-copy, #root .contact-hero-benefits { position: relative; width: auto; height: auto; margin: 0; clip-path: none; white-space: normal; overflow: visible; }
+  #root .contact-hero-copy { color: white; }
+  #root .contact-hero-copy .contact-eyebrow { font-size: 10px; letter-spacing: .22em; text-transform: uppercase; }
+  #root .public-shell .contact-hero-copy h1 { margin: 10px 0 14px; font: 700 36px/1.04 Georgia,serif !important; letter-spacing: -.035em !important; color: white; }
+  #root .contact-hero-copy > p:last-child { font-size: 14px; line-height: 1.5; }
+  #root .contact-desktop-break { display: none; }
+  #root .contact-hero-actions { display: flex; gap: 12px; margin-top: 19px; flex-wrap: wrap; }
+  #root .contact-hero-actions a { position: static; width: auto; height: auto; min-height: 44px; padding: 10px 13px; color: white; display: inline-flex; align-items: center; gap: 12px; font-size: 12px; font-weight: 700; border: 1px solid #e2efde; }
+  #root .contact-hero-actions .contact-message-link { background: #ffd047; color: #103d27; border-color: #ffd047; }
+  #root .contact-hero-actions a svg { display: block; width: 15px; height: 15px; }
+  #root .contact-hero-benefits { margin-top: 25px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px 10px; color: white; }
+  #root .contact-hero-benefits > div { display: flex; align-items: center; gap: 9px; }
+  #root .contact-hero-benefits svg { width: 34px; height: 34px; padding: 8px; border: 1px solid #c0d3be; border-radius: 50%; flex-shrink: 0; }
+  #root .contact-hero-benefits b, #root .contact-hero-benefits small { display: block; font-size: 10px; }
+  #root .contact-hero-benefits small { font-weight: 400; color: #d0dfd0; margin-top: 3px; }
+  #root .contact-panels { width: calc(100% - 32px); grid-template-columns: 1fr; gap: 20px; }
+  #root .public-shell main .contact-reference-page .contact-panel { padding: 22px; }
+  #root .contact-reference-page form > .grid { grid-template-columns: 1fr; gap: 16px; }
+  #root .contact-reference-page input, #root .contact-reference-page button[role='combobox'] { height: 44px; font-size: 16px; }
+  #root .contact-reference-page textarea { font-size: 16px; min-height: 135px; }
+  #root .contact-reference-page button[aria-label='Country calling code'] { width: 101px; }
+  #root .contact-reference-page .contact-method { gap: 10px; flex-wrap: wrap; padding: 8px; }
+  #root .contact-method > a, #root .contact-method > span:last-child:not(:first-child) { margin-left: 52px; padding: 2px 0; }
+  #root .contact-method > div { flex-basis: calc(100% - 60px); }
+  #root .contact-map { height: 215px; }
+  #root .contact-quick-inner { width: calc(100% - 44px); grid-template-columns: 1fr; }
+  #root .contact-quick::before, #root .contact-quick::after { display: none; }
+  #root .contact-quick-inner > div > h2 { max-width: none; }
+  #root .contact-quick-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  #root .contact-quick-card { padding: 16px; }
+}
+@media (prefers-reduced-motion: reduce) { #root .contact-quick-card { transition: none; } }

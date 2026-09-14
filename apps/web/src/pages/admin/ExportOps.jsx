@@ -47,7 +47,7 @@ export default function ExportOps() {
 
   return (
     <div>
-      <PageHeader>
+      <PageHeader title="Export Operations">
         <AdminCreateDialog
           title="New Export Shipment"
           description="Create an export shipment record."

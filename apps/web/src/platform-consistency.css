@@ -1,0 +1,269 @@
+/* Shared with the approved Home: Roboto/Lato, 1200px grid, 48–80px sections,
+ * 32–48px content gaps, and 48px green text actions. Keep controls semantic:
+ * tabs, icon controls, links, and destructive/disabled states retain their roles. */
+
+/* Each page owns one outer gutter. Nested columns never add another one. */
+.public-shell main :is(.max-w-7xl, .max-w-6xl, .max-w-5xl, .product-container, .sustain-container, .dl-container) {
+  width: 100%;
+  max-width: var(--content-width);
+  margin-inline: auto;
+  padding-inline: 0;
+}
+.public-shell main :is(.max-w-3xl, .max-w-4xl) { padding-inline: 0; }
+.public-shell main [data-layout-section="content"] {
+  padding-block: var(--section-space);
+  padding-inline: max(var(--page-gutter), calc((100% - var(--content-width)) / 2));
+}
+.public-shell main [data-layout-section="hero"] {
+  padding-inline: max(var(--page-gutter), calc((100% - var(--content-width)) / 2));
+}
+/* Farms uses Home's edge-to-edge hero frame, without content-section spacing. */
+.public-shell main section.farms-hero-section {
+  padding: 0 !important;
+}
+.public-shell main .farms-hero {
+  height: 28rem !important;
+  min-height: 28rem !important;
+  max-height: none;
+}
+.public-shell main .farms-hero-content {
+  max-width: calc(var(--content-width) + 2 * var(--page-gutter));
+  padding: 2rem var(--page-gutter);
+}
+.public-shell main .farms-hero-content h1 { margin-top: .75rem; }
+.public-shell main .farms-hero-content h1 + p { margin-top: 1rem; }
+.public-shell main .farms-hero-promises { margin-top: 1.25rem; }
+.public-shell main .farms-hero-content > a { margin-top: 1.5rem; }
+@media (min-width: 1024px) {
+  .public-shell main .farms-hero {
+    height: 32rem !important;
+    min-height: 32rem !important;
+  }
+}
+@media (max-width: 639px) {
+  .public-shell main .farms-hero { height: auto !important; }
+  .public-shell main .farms-hero-promises {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: .75rem;
+  }
+}
+.public-shell main [data-layout-section="hero"] > :is(.max-w-7xl, .product-container, .sustain-container) {
+  padding-inline: 0;
+}
+.public-shell main [data-layout-section="hero"] .dl-hero-inner {
+  width: 100%;
+  max-width: var(--content-width);
+}
+.public-shell main [data-layout-section="content"]:is(.product-container, .dl-fleet, .dl-cta) {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+.public-shell main :is(.dl-service-grid, .dl-trust > div:last-child) {
+  width: 100%;
+  max-width: var(--content-width);
+  gap: var(--grid-gap);
+}
+.public-shell main [data-layout-section] :is(.mt-7.grid, .mt-8.grid, .mt-10.grid, .mt-12.grid, .mt-14.grid, .mt-16.grid, .dl-service-grid) {
+  margin-top: var(--content-gap);
+}
+.public-shell main :is(.sustain-section-heading, .catalog-head) { margin-bottom: var(--content-gap); }
+.public-shell main .grid > *,
+.public-shell main :is(.product-grid, .sustain-community-grid, .dl-fleet, .dl-cta) > * { min-width: 0; }
+.public-shell main [data-layout-section] :is(.grid.gap-4, .grid.gap-6, .grid.gap-8, .grid.gap-10, .grid.gap-14) {
+  gap: var(--grid-gap);
+}
+
+/* Reading and commerce screens without full-width marketing sections. */
+.public-shell main .platform-page {
+  padding: var(--section-space) var(--page-gutter);
+}
+.public-shell main .platform-page > :is(.max-w-7xl, .max-w-6xl, .max-w-5xl) { padding-inline: 0; }
+.public-shell main .platform-reading {
+  max-width: var(--content-width);
+  margin-inline: auto;
+}
+.public-shell main .platform-reading > .max-w-3xl {
+  max-width: 48rem;
+  margin-inline: 0;
+  padding-inline: 0;
+}
+.public-shell main .platform-reading section {
+  padding: 0;
+  margin-block: var(--content-gap) 0;
+}
+
+/* Match page headers and data sections to the same outer reference grid. */
+.portal-shell .portal-scroll-content {
+  padding-inline: var(--page-gutter);
+}
+.portal-shell .portal-scroll-content > :first-child {
+  width: 100%;
+  max-width: var(--content-width);
+  margin-inline: auto;
+}
+.admin-shell .analytics-kpi--gold strong { white-space: normal; }
+.admin-shell .analytics-kpi-main > div { min-width: 0; }
+.admin-shell .drc-table .drc-btn { min-width: 7rem; }
+.portal-shell .portal-scroll-content { padding-top: var(--section-space); }
+.admin-page-content > :first-child, .portal-scroll-content > :first-child { min-width: 0; }
+.portal-scroll-content > :first-child > :is(.mt-6, .mt-8) { margin-top: var(--content-gap); }
+.portal-scroll-content > .space-y-6 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: var(--content-gap);
+}
+.app-surface:not(.admin-shell) [data-page-navigation] { margin-bottom: var(--content-gap); }
+.app-surface:not(.admin-shell) [role="tabpanel"] { margin-top: var(--content-gap); }
+.public-shell > header > .max-w-7xl,
+.public-shell > footer > :is(.max-w-7xl, .max-w-6xl),
+.portal-shell > header > div,
+.portal-shell > header > nav {
+  width: 100%;
+  max-width: calc(var(--content-width) + 2 * var(--page-gutter));
+  margin-inline: auto;
+  padding-inline: var(--page-gutter);
+}
+.public-shell .dl-footer { padding-inline: max(var(--page-gutter), calc((100% - var(--content-width)) / 2)); }
+
+/* Semantic type roles win over old per-page utility sizes and inline fonts. */
+body { font-family: var(--font-body); }
+:root :is(main, .platform-auth, [role="dialog"], [role="alertdialog"]) h1:not(.agrivi-inspired-home h1):not(.admin-shell h1) {
+  font-family: var(--font-heading) !important;
+  font-size: var(--text-page-title) !important;
+  font-weight: var(--weight-page-title) !important;
+  line-height: var(--leading-page-title) !important;
+  letter-spacing: var(--tracking-page-title) !important;
+}
+:root :is(main, .platform-auth) h2:not(.agrivi-inspired-home h2):not(.admin-shell h2):not([role="dialog"] h2) {
+  font-family: var(--font-heading) !important;
+  font-size: var(--text-section-title) !important;
+  font-weight: var(--weight-section-title) !important;
+  line-height: var(--leading-section-title) !important;
+  letter-spacing: var(--tracking-section-title) !important;
+}
+:root :is(main, .platform-auth, [role="dialog"], [role="alertdialog"]) h3:not(.agrivi-inspired-home h3):not(.admin-shell h3) {
+  font-family: var(--font-heading) !important;
+  font-size: var(--text-card-title) !important;
+  font-weight: var(--weight-card-title) !important;
+  line-height: var(--leading-card-title) !important;
+  letter-spacing: var(--tracking-card-title) !important;
+}
+:root :is(.text-button, .text-button-default, .text-button-compact) { text-transform: none; }
+.platform-auth { padding: var(--section-space) var(--page-gutter); }
+/* Dialogs use the landing card title role inside their smaller reading area. */
+:root :is([role="dialog"], [role="alertdialog"]) h2 {
+  font-family: var(--font-heading) !important;
+  font-size: var(--text-card-title) !important;
+  font-weight: var(--weight-card-title) !important;
+  line-height: var(--leading-card-title) !important;
+  letter-spacing: var(--tracking-card-title) !important;
+}
+:root .master-task-editor { font-family: var(--font-body); }
+:root .master-task-editor .mte-header h2 {
+  font-size: var(--text-page-title) !important;
+  line-height: var(--leading-page-title) !important;
+}
+:root .master-task-editor :is(.mte-field, .mte-section-heading p, .mte-header p) {
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body-sm);
+}
+:root .master-task-editor .mte-body { gap: var(--content-gap); padding: 1.5rem; }
+:root .master-task-editor .mte-section { padding: 1rem; }
+:root :is(.master-task-editor, .mte-subtask-dialog) .mte-button {
+  min-height: 3rem;
+  border-radius: .375rem;
+  padding: .75rem 1.25rem;
+  font-family: var(--font-heading);
+  font-size: var(--text-button);
+  line-height: var(--leading-button);
+  font-weight: 700;
+}
+.public-shell main :is(.product-hero-copy > p:not(.product-eyebrow), .product-sustain p:not(.product-eyebrow), .dl-fleet-copy > p:not(.dl-eyebrow)) {
+  font-size: var(--text-body-sm) !important;
+  line-height: 1.75rem !important;
+}
+
+/* Reusable primary actions. State colors stay scoped outside the analytics exception. */
+:root :is([data-ui="button"]:not([data-size="icon"]), .platform-action, .product-button, .sustain-button, .sustain-jumps a, .dl-hero-buttons a, .dl-fleet-copy > a, .dl-cta-actions a, .checkout-primary, .checkout-secondary, .basket-checkout, .basket-continue, .account-setup-submit, .account-setup-outline, .drc-primary, .drc-btn) {
+  min-height: 3rem;
+  height: auto;
+  max-width: 100%;
+  padding: .75rem 1.25rem;
+  border-radius: .375rem !important;
+  font-family: var(--font-heading) !important;
+  font-size: var(--text-button) !important;
+  font-weight: 700 !important;
+  line-height: var(--leading-button) !important;
+  letter-spacing: .025em !important;
+  text-transform: none !important;
+  white-space: normal;
+  text-align: center;
+  box-shadow: none;
+}
+:root :is(.platform-action, .product-button, .sustain-button, .sustain-jumps a, .dl-hero-buttons a, .dl-fleet-copy > a, .dl-cta-actions a) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  text-decoration: none;
+}
+:root:not(:has([data-preserve-colors="true"])) :is([data-ui="button"][data-variant="default"], [data-ui="button"][data-variant="outline"], [data-ui="button"][data-variant="secondary"], .platform-action, .product-button, .sustain-button, .sustain-jumps a, .dl-hero-buttons a, .dl-fleet-copy > a, .dl-cta-actions a, .checkout-primary, .checkout-secondary, .basket-checkout, .basket-continue, .account-setup-submit, .account-setup-outline, .drc-primary, .drc-btn) {
+  border: 1px solid #2e7d32 !important;
+  background: #2e7d32 !important;
+  color: #fff !important;
+}
+:root:not(:has([data-preserve-colors="true"])) :is([data-ui="button"][data-variant="default"], [data-ui="button"][data-variant="outline"], [data-ui="button"][data-variant="secondary"], .platform-action, .product-button, .sustain-button, .sustain-jumps a, .dl-hero-buttons a, .dl-fleet-copy > a, .dl-cta-actions a, .checkout-primary, .checkout-secondary, .basket-checkout, .basket-continue, .account-setup-submit, .account-setup-outline, .drc-primary, .drc-btn):not(:disabled):hover {
+  border-color: #1b5e20 !important;
+  background: #1b5e20 !important;
+  color: #fff !important;
+}
+:root :is([data-ui="button"], .platform-action, .product-button, .sustain-button, .sustain-jumps a, .dl-hero-buttons a, .dl-fleet-copy > a, .dl-cta-actions a):focus-visible {
+  outline: 3px solid #66bb6a;
+  outline-offset: 3px;
+}
+:root:not(:has([data-preserve-colors="true"])) :is([data-ui="button"], .platform-action, .product-button, .sustain-button, .checkout-primary, .checkout-secondary, .basket-checkout, .basket-continue, .account-setup-submit, .account-setup-outline, .drc-primary, .drc-btn):disabled {
+  border-color: #c8e6c9 !important;
+  background: #e3eee5 !important;
+  color: #5f7565 !important;
+  opacity: 1;
+}
+:root [data-ui="button"][data-size="icon"] { width: 2.75rem; height: 2.75rem; padding: 0; flex-shrink: 0; }
+:root :is(.platform-action, .product-button, .sustain-button, .dl-hero-buttons a, .dl-cta-actions a) svg {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+}
+
+/* Allow the same readable type to reflow in custom reference layouts. */
+.public-shell .sustain-community { aspect-ratio: auto; }
+.public-shell .sustain-community-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.public-shell .sustain-community-grid > *, .public-shell .sustain-section-heading > * { min-width: 0; }
+.public-shell .sustain-community blockquote { grid-column: 1 / -1; }
+.public-shell .dl-hero-buttons, .public-shell .dl-cta-actions { flex-wrap: wrap; }
+.public-shell .dl-cta { grid-template-columns: minmax(0,.7fr) minmax(0,1fr); gap: var(--grid-gap); }
+.public-shell .dl-cta-actions { grid-column: 2; padding: 0; }
+.public-shell .dl-cta-copy { padding: 0; }
+.public-shell .dl-status-heading { height: auto; min-height: 3rem; gap: 1rem; flex-wrap: wrap; }
+.public-shell .dl-shipment-top { grid-template-columns: auto minmax(0,1fr); }
+.public-shell .dl-shipment-top > b { grid-column: 2; justify-self: start; }
+.public-shell .dl-shipment-top p { flex-wrap: wrap; }
+
+@media (max-width: 1100px) {
+  .public-shell .dl-fleet { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .public-shell .dl-status { grid-column: 1 / -1; }
+  .public-shell .dl-service-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .public-shell .dl-trust > div:last-child { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .public-shell .sustain-certifications { grid-template-columns: repeat(2, minmax(0,1fr)); }
+}
+@media (max-width: 639px) {
+  .public-shell .sustain-community-grid, .public-shell .dl-cta, .public-shell .dl-fleet,
+  .public-shell .dl-service-grid, .public-shell .dl-trust > div:last-child { grid-template-columns: minmax(0,1fr); }
+  .public-shell .dl-cta-actions, .public-shell .dl-status { grid-column: 1; }
+  .public-shell .dl-hero-copy { width: 100%; }
+  .public-shell .dl-hero-benefits { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .public-shell .sustain-section-heading, .public-shell .sustain-partner > div { flex-direction: column; align-items: flex-start; }
+  .public-shell .sustain-certifications { grid-template-columns: minmax(0,1fr); }
+  .public-shell .sustain-community-grid > div, .public-shell .sustain-community-grid > blockquote { grid-column: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  :root :is(.platform-action, .product-button, .sustain-button, .sustain-jumps a) { transition: none; }
+}

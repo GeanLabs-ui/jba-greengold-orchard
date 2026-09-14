@@ -82,7 +82,7 @@ export default function AdminSidebar({ collapsed = false, onToggleCollapsed }) {
   const renderItem = (item, compact = collapsed) => {
     if (item.subheading) {
       return compact ? null : (
-        <p key={item.path} className="mt-2 px-3 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        <p key={item.path} className="mt-2 px-3 pb-1 pt-2 text-caption font-semibold uppercase tracking-wider text-muted-foreground">
           {item.label}
         </p>
       );
@@ -107,7 +107,7 @@ export default function AdminSidebar({ collapsed = false, onToggleCollapsed }) {
         <Icon className={`h-4 w-4 ${isActive ? 'text-primary' : ''}`} />
         {!compact && item.label}
         {item.countKey && attentionCounts[item.countKey] > 0 && (
-          <span className={`${compact ? 'absolute ml-7 -mt-5 h-2.5 w-2.5 p-0' : 'ml-auto min-w-5 px-1.5 py-0.5'} rounded-full bg-primary text-center text-[10px] font-bold text-primary-foreground`}>
+          <span className={`${compact ? 'absolute ml-7 -mt-5 h-2.5 w-2.5 p-0' : 'ml-auto min-w-5 px-1.5 py-0.5'} rounded-full bg-primary text-center text-caption font-bold text-primary-foreground`}>
             {!compact && (attentionCounts[item.countKey] > 99 ? '99+' : attentionCounts[item.countKey])}
           </span>
         )}

@@ -1,5 +1,6 @@
-import React from 'react';
-import { Outlet, Link, NavLink } from 'react-router-dom';
+import React, { useRef } from 'react';
+import usePinnedPageNavigation from '@/components/shared/usePinnedPageNavigation';
+import { Outlet, Link, NavLink, useLocation } from 'react-router-dom';
 import { LayoutDashboard, ShoppingCart, ShoppingBag, Truck, CreditCard, FileText, LogOut, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import BrandLogo from '@/components/shared/BrandLogo';
@@ -19,13 +20,16 @@ const navItems = [
 
 export default function PortalLayout() {
   const { itemCount, openCart } = useCart();
+  const navigationRoot = useRef(null);
+  const location = useLocation();
+  usePinnedPageNavigation(navigationRoot, location.pathname);
 
   return (
     <div className="portal-shell app-surface flex min-h-dvh min-w-0 flex-col bg-muted/30">
       <header className="sticky top-0 z-40 border-b border-border bg-card">
         <div className="flex min-h-16 items-center gap-3 px-4 md:gap-6 md:px-6">
           <Link to="/" aria-label="JBA GreenGold Orchard home" className="shrink-0"><BrandLogo className="h-12 md:h-16" imageClassName="h-10 w-20 sm:h-12 sm:w-28" /></Link>
-          <h1 className="border-l border-border pl-3 font-heading text-base font-semibold md:pl-6 md:text-lg">My Account</h1>
+          <p className="border-l border-border pl-3 md:pl-6 text-navigation">My Account</p>
           <div className="ml-auto flex shrink-0 items-center gap-2 md:gap-3">
             <Link to="/" className="hidden items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:flex">
               <LogOut className="h-4 w-4" aria-hidden="true" /> Back to Website
@@ -48,7 +52,7 @@ export default function PortalLayout() {
           </Link>
         </nav>
       </header>
-      <main className="min-w-0 flex-1 p-4 pb-24 md:p-6"><Outlet /></main>
+      <main ref={navigationRoot} className="portal-scroll-content min-w-0 flex-1 p-4 pb-24 md:p-6"><Outlet /></main>
       <CartDrawer />
     </div>
   );
