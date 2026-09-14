@@ -174,6 +174,7 @@ export default function AdminCreateDialog({
                     {dailyField('title')}
                     {dailyField('item_tag')}
                     {dailyField('quantity_used')}
+                    {dailyField('status')}
                   </div>
                 </DailySection>
                 <DailySection title="Assignment" icon={UserRound} tone="border-[#e8f5e9] bg-[#f9fcfa] text-[#2e7d32]">
@@ -189,6 +190,7 @@ export default function AdminCreateDialog({
                   {dailyField('block_id')}
                   {dailyField('category')}
                   {dailyField('cost_type')}
+                  {values.block_id === '__shared__' && dailyField('shared_scope')}
                 </div>
               </DailySection>
 

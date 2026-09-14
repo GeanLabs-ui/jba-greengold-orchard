@@ -66,6 +66,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { formatCurrency, formatDate, formatNumber } from '@/components/shared/format';
 import { base44 } from '@/api/base44Client';
 import { subscribeToDataChanges } from '@/lib/data-sync';
+import { resolveActivitySharedScope } from '@/lib/activity-shared-scope';
 
 const today = new Date().toISOString().slice(0, 10);
 const shortDate = (value) => String(value || '').slice(0, 10);
@@ -476,7 +477,7 @@ const activityLogColumns = [
   { key: 'notes', label: 'Notes', className: 'w-[170px]', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => item.notes },
 ];
 
-const activityStatusFilterOptions = ['All', 'Completed', 'Pending', 'In Progress'];
+const activityStatusFilterOptions = ['All', 'Completed', 'Pending', 'In Progress', 'Not recorded'];
 const activityTypeFilterOptions = ['All', ...activityCategories];
 const farmBlockFilterOptions = [
   { value: 'All', label: 'Farm Block: All' },
@@ -1243,6 +1244,8 @@ export default function FarmDailyActivities() {
   ), [data.blocks]);
 
   const resolveFarmBlock = (payload) => {
+    const sharedScope = resolveActivitySharedScope(payload, data.blocks || []);
+    if (sharedScope) return sharedScope;
     const farm = (data.farms || []).find((item) => item.id === payload.farm_id || item.name === payload.farm_name);
     const block = (data.blocks || []).find((item) => item.id === payload.block_id || item.name === payload.block_name);
     return {
@@ -1731,7 +1734,7 @@ export default function FarmDailyActivities() {
     revenue: asNumber(payload.actual_revenue),
     supervisor_name: payload.responsible,
     assigned_workers: payload.responsible,
-    status: 'Completed',
+    status: payload.status || 'Completed',
     created_by: payload.responsible || 'Supervisor',
     updated_by: payload.responsible || 'Supervisor',
   });
@@ -2078,13 +2081,15 @@ export default function FarmDailyActivities() {
   };
 
   const dailyActivityLogFields = [
+    { name: 'status', label: 'Status', type: 'select', options: selectOptions(['Completed', 'Pending', 'In Progress', 'Not recorded']), defaultValue: 'Completed' },
     { name: 'activity_date', label: 'Date', type: 'date', defaultValue: today, required: true },
     { name: 'title', label: 'Task Description', placeholder: 'Describe the work completed', required: true },
     { name: 'item_tag', label: 'Item Tag', placeholder: 'Item, tool, material, or reference' },
     { name: 'quantity_used', label: 'Quantity', type: 'number', defaultValue: 0 },
     { name: 'responsible', label: 'Responsible', placeholder: 'Person or team responsible', required: true },
     { name: 'contact', label: 'Contact', type: 'tel', placeholder: 'Phone number' },
-    { name: 'block_id', label: 'Farm Block', type: 'select', options: blockOptions, defaultValue: blockOptions[0]?.value, required: true },
+    { name: 'block_id', label: 'Farm Block', type: 'select', options: [...blockOptions, { value: '__shared__', label: 'Shared farm / blocks' }], defaultValue: blockOptions[0]?.value, required: true },
+    { name: 'shared_scope', label: 'Shared farm / block codes', placeholder: 'A1, A2, A3 or Farm A & B' },
     { name: 'projected_cost', label: 'Projected Cost (₵)', type: 'number', defaultValue: 0 },
     { name: 'actual_cost', label: 'Actual Cost (₵)', type: 'number', defaultValue: 0 },
     { name: 'projected_revenue', label: 'Projected Revenue (₵)', type: 'number', defaultValue: 0 },
@@ -2500,7 +2505,7 @@ export default function FarmDailyActivities() {
       buttonLabel={buttonLabel || (record ? `Edit ${record.activity_code || record.work_order_code || 'Record'}` : 'Select a record')}
       buttonIcon={Pencil}
       fields={fields}
-      initialValues={record || {}}
+      initialValues={record?.shared_scope && !record.block_id && fields.some((field) => field.name === 'shared_scope') ? { ...record, block_id: '__shared__' } : record || {}}
       onSubmit={(payload) => onSubmit(record, payload)}
       onCreated={load}
       submitLabel="Update"
