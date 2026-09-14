@@ -6,11 +6,12 @@ export default function FarmDailyActivitiesLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const { items, activeItem } = getFarmDailyActivitiesNavigationState(location.pathname);
+  const isAnalyticsOverview = location.pathname.replace(/\/$/, '') === '/admin/farm-daily-activities/activities/overview';
 
   return (
     <div className="space-y-6">
-      <div className="farm-activities-sticky-nav sticky top-0 z-40 -mx-2 border-b border-border bg-background px-2 py-2">
-        <nav className="flex max-w-full items-center gap-2 overflow-x-auto scrollbar-thin" aria-label="Farm daily activities navigation">
+      <div className="farm-activities-sticky-nav sticky top-0 z-40 -mx-2 flex flex-wrap items-center justify-between gap-3 border-b border-border bg-background px-2 py-2">
+        <nav className="flex min-w-0 max-w-full items-center gap-2 overflow-x-auto scrollbar-thin" aria-label="Farm daily activities navigation">
           {items.map((child) => {
             const isChildActive = activeItem?.path === child.path;
             return (
@@ -30,6 +31,7 @@ export default function FarmDailyActivitiesLayout() {
             );
           })}
         </nav>
+        {isAnalyticsOverview ? <div id="farm-analytics-header-controls" className="ml-auto flex flex-wrap items-center" /> : null}
       </div>
 
       <DeploymentRecoveryBoundary resetKey={`${location.pathname}${location.search}`}>

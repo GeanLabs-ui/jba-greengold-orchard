@@ -7,6 +7,7 @@ import '@/platform-design.css'
 import '@/typography.css'
 import '@/platform-consistency.css'
 import '@/public-heroes.css'
+import '@/mobile-responsive.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <App />

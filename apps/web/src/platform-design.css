@@ -118,6 +118,13 @@ body, .public-shell .dl-page, .account-setup-page { font-family: var(--font-body
   .portal-shell > header :is(h1, .text-muted-foreground, button) { color: #F4FBF5; }
   .admin-shell > div > header input { background: #F9FCFA; color: #123524; }
   .admin-shell > div > header form svg { color: #5F7565; }
+  .admin-shell > div > header .admin-notification-panel,
+  .admin-shell > div > header .admin-notification-panel button {
+    color: #123524;
+  }
+  .admin-shell > div > header .admin-notification-panel .text-muted-foreground {
+    color: #355E3B;
+  }
   [data-ui="button"]:disabled {
     background: var(--company-disabled) !important;
     color: var(--company-muted) !important;

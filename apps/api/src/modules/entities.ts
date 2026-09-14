@@ -15,6 +15,12 @@ import {
 } from "./farm-entity-compat.js";
 import { generateEmployeeCode } from "./staff-identity.js";
 
+const projectionPayloadSchema = z.object({
+  cost: z.number().finite().nonnegative().optional(),
+  revenue: z.number().finite().nonnegative().optional(),
+  yield: z.number().finite().nonnegative().optional(),
+}).strict().refine((value) => Object.keys(value).length > 0);
+
 const ENTITY_NAMES = new Set([
   "Product",
   "NewsPost",
@@ -80,6 +86,7 @@ const ENTITY_NAMES = new Set([
   "CalendarEvent",
   "CalendarConnection",
   "FarmSeasonChecklist",
+  "FarmAnalyticsProjection",
   "User",
 ]);
 const PUBLIC_READ = new Set(["Product", "NewsPost", "Farm", "ContentPage", "CustomerStory"]);
@@ -133,6 +140,7 @@ const ROLE_READ_ENTITIES: Partial<Record<AuthUser["role"], Set<string>>> = {
     "CalendarEvent",
     "CalendarConnection",
     "FarmSeasonChecklist",
+    "FarmAnalyticsProjection",
   ]),
   farm_supervisor: new Set([
     "Farm",
@@ -167,6 +175,7 @@ const ROLE_READ_ENTITIES: Partial<Record<AuthUser["role"], Set<string>>> = {
     "CalendarEvent",
     "CalendarConnection",
     "FarmSeasonChecklist",
+    "FarmAnalyticsProjection",
   ]),
   inventory_officer: new Set([
     "StockItem",
@@ -513,6 +522,9 @@ router.post("/:entity", async (c) => {
       403,
     );
   let payload = safePayload(await c.req.json().catch(() => null));
+  if (name === "FarmAnalyticsProjection" && !projectionPayloadSchema.safeParse(payload).success) {
+    return c.json({ error: { code: "VALIDATION_ERROR", message: "Projections must be non-negative numbers." } }, 422);
+  }
   if (!payload)
     return c.json(
       {
@@ -742,6 +754,9 @@ router.patch("/:entity/:id", async (c) => {
       403,
     );
   const payload = safePayload(await c.req.json().catch(() => null));
+  if (name === "FarmAnalyticsProjection" && !projectionPayloadSchema.safeParse(payload).success) {
+    return c.json({ error: { code: "VALIDATION_ERROR", message: "Projections must be non-negative numbers." } }, 422);
+  }
   if (!payload)
     return c.json(
       {

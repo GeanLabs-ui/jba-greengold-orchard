@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ExternalLink, MessageCircle, Send, X } from 'lucide-react';
+import { ExternalLink, Send, X } from 'lucide-react';
 import { whatsappSupportUrl } from '@/lib/whatsapp-support';
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '/api/v1').replace(/\/$/, '');
@@ -50,15 +50,15 @@ export default function WhatsAppSupport() {
   };
 
   return (
-    <aside className="fixed bottom-5 right-4 z-[90] font-sans sm:right-5 lg:bottom-6" aria-label="WhatsApp customer support">
+    <aside className="whatsapp-support font-sans" aria-label="WhatsApp customer support">
       {isOpen ? (
         <section id="whatsapp-support-panel" className="mb-3 flex w-[min(23rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-[#123524]/15 bg-white shadow-[0_24px_60px_rgba(7,47,31,.28)]" aria-live="polite">
           <header className="flex items-center gap-3 bg-[#1b5e20] px-4 py-3 text-white">
-            <span className="grid h-10 w-10 place-items-center rounded-full bg-[#2e7d32] ring-2 ring-white/25"><MessageCircle className="h-5 w-5" /></span>
+            <img src="/brand/whatsapp.svg" width="40" height="40" alt="" className="h-10 w-10 shrink-0" />
             <div className="min-w-0 flex-1"><h2 className="text-sm font-bold">JBA GreenGold support</h2><p className="text-[11px] text-white/80">Usually replies instantly</p></div>
             <button type="button" onClick={() => setIsOpen(false)} className="grid h-9 w-9 place-items-center rounded-full text-white hover:bg-white/10" aria-label="Close WhatsApp support"><X className="h-5 w-5" /></button>
           </header>
-          <div ref={messageListRef} className="max-h-[min(26rem,56dvh)] min-h-60 space-y-3 overflow-y-auto bg-[#e8f5e9] p-3">
+          <div ref={messageListRef} className="whatsapp-messages min-h-0 space-y-3 overflow-y-auto bg-[#e8f5e9] p-3">
             {messages.map((message) => (
               <div key={message.id} className={message.role === 'user' ? 'ml-8 text-right' : 'mr-5'}>
                 <p className={`inline-block whitespace-pre-line rounded-2xl px-3 py-2 text-left text-sm leading-5 shadow-sm ${message.role === 'user' ? 'rounded-br-md bg-[#f4fbf5] text-[#123524]' : 'rounded-bl-md bg-white text-[#123524]'}`}>{message.text}</p>
@@ -77,9 +77,8 @@ export default function WhatsAppSupport() {
           </div>
         </section>
       ) : null}
-      <button type="button" onClick={() => setIsOpen((open) => !open)} className="group flex items-center gap-3 rounded-full bg-[#2e7d32] p-2 pr-5 text-left text-white shadow-[0_12px_32px_rgba(19,105,58,.34)] transition-transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-[#a5d6a7]/35" aria-expanded={isOpen} aria-controls="whatsapp-support-panel">
-        <span className="grid h-11 w-11 place-items-center rounded-full bg-white text-[#2e7d32]"><MessageCircle className="h-6 w-6" /></span>
-        <span><span className="block text-xs font-black">WhatsApp support</span><span className="block text-[10px] text-white/85">Available 24/7</span></span>
+      <button type="button" onClick={() => setIsOpen((open) => !open)} className="whatsapp-launcher" aria-label={isOpen ? 'Close WhatsApp support' : 'Open WhatsApp support'} aria-expanded={isOpen} aria-controls="whatsapp-support-panel">
+        <img src="/brand/whatsapp.svg" width="56" height="56" alt="" />
       </button>
     </aside>
   );

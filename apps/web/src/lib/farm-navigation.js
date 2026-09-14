@@ -11,7 +11,7 @@ export const farmDailyActivitiesNavigation = [
     icon: ClipboardList,
     children: [
       { title: "Analytics Overview", path: "/admin/farm-daily-activities/activities/overview", screen: "Operations Analytics Overview" },
-      { title: "Daily Activity Log", path: "/admin/farm-daily-activities/activities/records", screen: "Daily Activity Log" },
+      { title: "Daily Task Log", path: "/admin/farm-daily-activities/activities/records", screen: "Daily Task Log" },
       { title: "Create Activity", path: "/admin/farm-daily-activities/activities/create", screen: "Create Activity" },
       { title: "Pending Activities", path: "/admin/farm-daily-activities/activities/pending", screen: "Activities List", filter: { status: "Pending" } },
       { title: "Completed Activities", path: "/admin/farm-daily-activities/activities/completed", screen: "Activities List", filter: { status: "Completed" } },

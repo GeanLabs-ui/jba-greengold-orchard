@@ -28,7 +28,21 @@ export default function DataTable({
   }
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
+    <>
+    <div className="mobile-record-list md:hidden">
+      {selectable && <label className="flex min-h-11 items-center gap-3"><input type="checkbox" aria-label="Select all rows" checked={items.every((item) => selectedIds.includes(item.id))} onChange={(event) => onSelectedIdsChange?.(event.target.checked ? items.map((item) => item.id).filter(Boolean) : [])} />Select all</label>}
+      {items.map((item, i) => (
+        <article key={item.id || i} className={`mobile-record ${selectedId === item.id ? 'ring-2 ring-primary' : ''}`}>
+          {selectable && <label className="flex min-h-11 items-center gap-3"><input type="checkbox" aria-label={`Select row ${i + 1}`} checked={selectedIds.includes(item.id)} onChange={(event) => onSelectedIdsChange?.(event.target.checked ? [...selectedIds, item.id] : selectedIds.filter((id) => id !== item.id))} />Select record</label>}
+          <dl className="mobile-record-fields">
+            {columns.slice(0, 3).map((col) => <div key={col.key}><dt>{col.label}</dt><dd className={semanticTone(col)}>{col.render ? col.render(item[col.key], item) : col.format ? col.format(item[col.key]) : item[col.key] ?? '—'}</dd></div>)}
+          </dl>
+          {columns.length > 3 && <details className="mobile-record-details"><summary>More details</summary><dl className="mobile-record-fields">{columns.slice(3).map((col) => <div key={col.key}><dt>{col.label}</dt><dd className={semanticTone(col)}>{col.render ? col.render(item[col.key], item) : col.format ? col.format(item[col.key]) : item[col.key] ?? '—'}</dd></div>)}</dl></details>}
+          {(onRowClick || rowActions) && <div className="mobile-record-actions">{onRowClick && <button type="button" className="rounded border border-border px-3 py-2 font-semibold text-primary" onClick={() => onRowClick(item)}>View record</button>}{rowActions?.(item)}</div>}
+        </article>
+      ))}
+    </div>
+    <div className="hidden overflow-x-auto rounded-xl border border-border bg-card shadow-sm md:block">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-border bg-muted/50">
@@ -67,5 +81,6 @@ export default function DataTable({
         </tbody>
       </table>
     </div>
+    </>
   );
 }

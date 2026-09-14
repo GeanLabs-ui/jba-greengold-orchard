@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CalendarDays, ClipboardList, Loader2, Plus, Power, SquareCheckBig, Target } from 'lucide-react';
+import { CalendarDays, ClipboardList, Loader2, Plus, Power, SquareCheckBig, Target, Trash2 } from 'lucide-react';
+import { base44 } from '@/api/base44Client';
+import { useToast } from '@/components/ui/use-toast';
 import MasterScheduleTask from '@/pages/admin/MasterScheduleTask';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -152,6 +154,26 @@ export default function MasterScheduleView({
   toggleProjectEnabled,
 }) {
   const pageSize = 10;
+  const { toast } = useToast();
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+  const requestDelete = (task) => { setDeleteError(''); setDeleteTarget(task); };
+  const deleteMasterTask = async () => {
+    if (!deleteTarget || deleting) return;
+    setDeleting(true);
+    setDeleteError('');
+    try {
+      await base44.entities.FarmProject.delete(deleteTarget.id);
+      setDeleteTarget(null);
+      toast({ title: 'Master task deleted' });
+    } catch (error) {
+      setDeleteError(error.message || 'The task could not be deleted. Please try again.');
+    } finally {
+      setDeleting(false);
+    }
+  };
+  const deleteButton = (task) => <button type="button" className="drc-btn drc-schedule-delete" aria-label={`Delete ${task.title}`} onClick={() => requestDelete(task)} disabled={deleting || busyKey === task.id}><Trash2 aria-hidden="true" /> Delete</button>;
   const [openTaskId, setOpenTaskId] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const totalPages = Math.max(1, Math.ceil(filteredScheduleProjects.length / pageSize));
@@ -181,22 +203,44 @@ export default function MasterScheduleView({
     <section className={`drc-view active ${embedded ? 'drc-embedded-view' : ''}`}>
       {embedded ? <div className="drc-schedule-sticky"><div className="drc-page-head drc-page-actions drc-schedule-toolbar">{filterBar}{taskButton}</div>{analysisBar}</div> : <SchedulePageHead right={taskButton} />}
       <NewMasterTaskDialog busy={busyKey === 'new-master-task'} form={newMasterTask} onChange={updateNewMasterTask} onOpenChange={setShowNewMasterTask} onSubmit={submitMasterTask} open={showNewMasterTask} />
+      <Dialog open={Boolean(deleteTarget)} onOpenChange={(open) => { if (!open && !deleting) setDeleteTarget(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete master task?</DialogTitle>
+            <DialogDescription>Delete “{deleteTarget?.title}” from the Master Schedule? This cannot be undone. Related subtasks and activity logs will be retained.</DialogDescription>
+          </DialogHeader>
+          {deleteError ? <p role="alert" className="text-sm text-red-700">{deleteError}</p> : null}
+          <DialogFooter>
+            <Button variant="outline" disabled={deleting} onClick={() => setDeleteTarget(null)}>Cancel</Button>
+            <Button variant="destructive" disabled={deleting} onClick={deleteMasterTask}>{deleting ? 'Deleting…' : 'Delete task'}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       {!embedded ? filterBar : null}
       {!embedded ? analysisBar : null}
-      <div className="drc-table-shell">
+      <div className="mobile-record-list md:hidden">
+        {visibleScheduleProjects.map((milestone) => <article key={milestone.id} className="mobile-record">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs"><span>{milestone.milestone_code || milestone.project_code}</span><SchedulePill value={normalizeMasterScheduleStatus(milestone.status)} /></div>
+          <h3 className="mt-2 text-base font-semibold">{milestone.title}</h3>
+          <dl className="mobile-record-fields mt-3"><div><dt>Due</dt><dd>{displayDate(milestone.due_date)}</dd></div><div><dt>Owner</dt><dd>{milestone.owner_name || 'Not assigned'}</dd></div><div><dt>Complete</dt><dd>{Number(milestone.progress_percent || 0)}%</dd></div></dl>
+          <details className="mobile-record-details"><summary>Task details</summary><dl className="mobile-record-fields"><div><dt>Start</dt><dd>{displayDate(milestone.start_date)}</dd></div><div><dt>Success criteria</dt><dd>{milestone.success_criteria || 'Not recorded'}</dd></div><div><dt>Subtasks</dt><dd>{milestone.completed_subtask_count || 0}/{milestone.subtask_count || 0} complete</dd></div></dl></details>
+          <div className="mobile-record-actions"><button type="button" className={`drc-task-toggle ${milestone.is_enabled === false ? '' : 'on'}`} onClick={() => toggleProjectEnabled(milestone)} disabled={busyKey === milestone.id} aria-pressed={milestone.is_enabled !== false}><Power />{milestone.is_enabled === false ? 'Off' : 'On'}</button>{embedded ? <button type="button" className="drc-btn" onClick={() => setOpenTaskId(milestone.id)}>Edit Task</button> : <Link className="drc-btn" to={`${taskBasePath}/${encodeURIComponent(milestone.id)}`}>Edit Task</Link>}{deleteButton(milestone)}</div>
+        </article>)}
+      </div>
+      <div className="drc-table-shell hidden md:block">
         <table className="drc-table">
           <thead><tr><th>ID</th><th>Task</th><th>Window</th><th>Owner</th><th>Success criteria</th><th>Tracking</th><th>Status</th><th>Complete</th><th></th></tr></thead>
           <tbody>{visibleScheduleProjects.map((milestone) => (
             <tr key={milestone.id} className={milestone.is_enabled === false ? 'drc-task-disabled' : ''}>
               <td>{milestone.milestone_code || milestone.project_code}</td>
               <td className="drc-task-name">{embedded ? <button type="button" className="drc-task-link" onClick={() => setOpenTaskId(milestone.id)}><b>{milestone.title}</b></button> : <Link to={`${taskBasePath}/${encodeURIComponent(milestone.id)}`}><b>{milestone.title}</b></Link>}</td>
-              <td>{displayDate(milestone.start_date)}<br />to {displayDate(milestone.due_date)}</td>
+              <td className="drc-schedule-window">{displayDate(milestone.start_date)} to {displayDate(milestone.due_date)}</td>
               <td>{milestone.owner_name || 'Not assigned'}</td>
               <td>{milestone.success_criteria || 'Not recorded'}{milestone.subtask_count ? <small className="block text-muted-foreground">{milestone.completed_subtask_count}/{milestone.subtask_count} subtasks complete</small> : null}</td>
               <td><button type="button" className={`drc-task-toggle ${milestone.is_enabled === false ? '' : 'on'}`} onClick={() => toggleProjectEnabled(milestone)} disabled={busyKey === milestone.id} aria-pressed={milestone.is_enabled !== false} title={milestone.is_enabled === false ? 'Turn task on' : 'Turn task off'}><Power /> {milestone.is_enabled === false ? 'Off' : 'On'}</button></td>
               <td><SchedulePill value={normalizeMasterScheduleStatus(milestone.status)} /></td>
               <td>{Number(milestone.progress_percent || 0)}%</td>
-              <td>{embedded ? <button type="button" className="drc-btn" onClick={() => setOpenTaskId(milestone.id)}>Open task</button> : <Link className="drc-btn" to={`${taskBasePath}/${encodeURIComponent(milestone.id)}`}>Open task</Link>}</td>
+              <td><div className="drc-schedule-row-actions">{embedded ? <button type="button" className="drc-btn" onClick={() => setOpenTaskId(milestone.id)}>Edit Task</button> : <Link className="drc-btn" to={`${taskBasePath}/${encodeURIComponent(milestone.id)}`}>Edit Task</Link>}{deleteButton(milestone)}</div></td>
             </tr>
           ))}</tbody>
         </table>

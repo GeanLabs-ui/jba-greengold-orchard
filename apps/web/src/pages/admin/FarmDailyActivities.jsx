@@ -75,7 +75,7 @@ const pageMap = [
   {
     name: 'Daily Activities',
     icon: ClipboardList,
-    screens: ['Daily Activity Log', 'Activities List', 'Create Activity', 'Activity Details', 'Edit Activity', 'Activity Calendar View', 'Activity Timeline View', 'Activity Approval Queue', 'Master Schedule', 'Risk Register', 'Farms'],
+    screens: ['Daily Task Log', 'Activities List', 'Create Activity', 'Activity Details', 'Edit Activity', 'Activity Calendar View', 'Activity Timeline View', 'Activity Approval Queue', 'Master Schedule', 'Risk Register', 'Farms'],
   },
   {
     name: 'Work Orders',
@@ -642,7 +642,7 @@ const DailyActivityLog = ({
       doc.setTextColor(255, 255, 255);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(19);
-      doc.text('Daily Activity Log', margin, 35);
+      doc.text('Daily Task Log', margin, 35);
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(8);
       doc.text(continuation ? 'Activity report - continued' : 'Activities, inputs, costs and outputs', margin, 49);
@@ -744,7 +744,7 @@ const DailyActivityLog = ({
       doc.setTextColor(100, 116, 139);
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(7);
-      doc.text('Mango Farm - Daily Activity Log', margin, pageHeight - 12);
+      doc.text('Mango Farm - Daily Task Log', margin, pageHeight - 12);
       doc.text(`Page ${page} of ${pages}`, pageWidth - margin, pageHeight - 12, { align: 'right' });
     }
     doc.save(`daily-activity-log-${today}.pdf`);
@@ -868,27 +868,9 @@ const DailyActivityLog = ({
 
   return (
     <div className="space-y-3">
-      <div className="flex justify-end">
-        <div className="flex w-full items-center gap-2 sm:w-auto">
-          <label className="relative min-w-0 flex-1 sm:w-56 sm:flex-none text-label">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
-            <Input
-              value={search}
-              onChange={(event) => onSearchChange(event.target.value)}
-              placeholder="Search activity logs..."
-              className="h-9 border-slate-200 bg-white pl-8 text-caption shadow-none placeholder:text-slate-400"
-              aria-label="Search activity logs"
-            />
-          </label>
-          <Button type="button" variant="outline" onClick={exportActivityLogPdf} className="h-9 border-slate-200 bg-white px-3 text-caption font-semibold text-slate-600 shadow-sm hover:bg-slate-50 hover:text-slate-900">
-            <Download className="mr-1.5 h-3.5 w-3.5" />Export
-          </Button>
-          {renderCreateAction}
-        </div>
-      </div>
-
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-        <section className="min-h-[92px] rounded-lg border border-emerald-100 bg-white px-4 py-3 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+      <div className="grid min-w-0 flex-1 gap-3 sm:grid-cols-2">
+        <section className="min-h-[80px] rounded-lg border border-emerald-100 bg-white px-4 py-3 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
           <div className="flex h-full items-center gap-3">
             <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#f4fbf5] text-[#256b2a]">
               <ClipboardList className="h-5 w-5" />
@@ -901,48 +883,7 @@ const DailyActivityLog = ({
           </div>
         </section>
 
-        <section className="min-h-[92px] rounded-lg border border-rose-100 bg-[linear-gradient(135deg,#fff_0%,#fff8f8_100%)] px-4 py-3 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-          <p className="text-center text-caption font-semibold text-rose-600">Total Cost</p>
-          <div className="mt-2 grid grid-cols-2 divide-x divide-rose-100">
-            <div className="pr-3">
-              <p className="text-caption text-slate-500">Projected Cost</p>
-              <p className="mt-1 whitespace-nowrap text-sm font-bold text-rose-600">{formatCurrency(totalProjectedCost)}</p>
-            </div>
-            <div className="pl-3">
-              <p className="text-caption text-slate-500">Actual Cost</p>
-              <p className="mt-1 whitespace-nowrap text-sm font-bold text-rose-600">{formatCurrency(totalActualCost)}</p>
-            </div>
-          </div>
-        </section>
-
-        <section className="min-h-[92px] rounded-lg border border-blue-100 bg-[linear-gradient(135deg,#fff_0%,#f5f9ff_100%)] px-4 py-3 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-          <p className="text-center text-caption font-semibold text-blue-600">Total Revenue</p>
-          <div className="mt-2 grid grid-cols-2 divide-x divide-blue-100">
-            <div className="pr-3">
-              <p className="text-caption text-slate-500">Projected Revenue</p>
-              <p className="mt-1 whitespace-nowrap text-sm font-bold text-blue-600">{formatCurrency(totalProjectedRevenue)}</p>
-            </div>
-            <div className="pl-3">
-              <p className="text-caption text-slate-500">Actual Revenue</p>
-              <p className="mt-1 whitespace-nowrap text-sm font-bold text-blue-600">{formatCurrency(totalActualRevenue)}</p>
-            </div>
-          </div>
-        </section>
-
-        <section className="min-h-[92px] rounded-lg border border-amber-100 bg-white px-4 py-3 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-          <div className="flex h-full items-center gap-3">
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-amber-50 text-amber-600">
-              <Leaf className="h-5 w-5" />
-            </span>
-            <div>
-              <p className="text-caption font-semibold uppercase tracking-wide text-amber-700">Total Harvest Output</p>
-              <p className="mt-1 text-xl font-bold leading-none text-slate-900">{formatNumber(totalOutput)} <small className="text-xs font-semibold text-slate-500">kg</small></p>
-              <p className="mt-1 text-caption text-slate-500">Current selection</p>
-            </div>
-          </div>
-        </section>
-
-        <section className="min-h-[92px] rounded-lg border border-violet-100 bg-white px-4 py-3 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+        <section className="min-h-[80px] rounded-lg border border-violet-100 bg-white px-4 py-3 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
           <div className="flex h-full items-center gap-3">
             <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-violet-50 text-violet-600">
               <CheckCircle2 className="h-5 w-5" />
@@ -955,8 +896,42 @@ const DailyActivityLog = ({
           </div>
         </section>
       </div>
+      <div className="flex shrink-0 justify-end">
+        <div className="activity-log-toolbar flex w-full flex-wrap items-center gap-2 sm:w-auto">
+          <label className="relative min-w-0 basis-full sm:w-56 sm:basis-auto sm:flex-none text-label">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+            <Input
+              value={search}
+              onChange={(event) => onSearchChange(event.target.value)}
+              placeholder="Search task logs..."
+              className="h-9 border-slate-200 bg-white pl-8 text-caption shadow-none placeholder:text-slate-400"
+              aria-label="Search task logs"
+            />
+          </label>
+          <Button type="button" variant="outline" onClick={exportActivityLogPdf} className="h-9 border-slate-200 bg-white px-3 text-caption font-semibold text-slate-600 shadow-sm hover:bg-slate-50 hover:text-slate-900">
+            <Download className="mr-1.5 h-3.5 w-3.5" />Export
+          </Button>
+          {renderCreateAction}
+        </div>
+      </div>
+      </div>
 
-      <section className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
+      <div className="mobile-record-list md:hidden">
+        <div className="mobile-filter-grid">
+          {activityLogColumns.filter((column) => ['activity_date', 'block_name', 'category', 'status'].includes(column.key)).map((column) => <div key={column.key}>{renderActivityLogColumnHeader(column)}</div>)}
+        </div>
+        {pageItems.map((item, index) => {
+          const itemId = rowId(item, pageStart + index);
+          return <article key={itemId} className="mobile-record">
+            <div className="flex flex-wrap items-center justify-between gap-2 text-xs"><span>{formatDate(item.activity_date)}</span><span className="rounded bg-muted px-2 py-1">{item.status || 'Pending'}</span></div>
+            <h3 className="mt-2 text-base font-semibold">{item.description || item.title || item.category || 'Activity'}</h3>
+            <dl className="mobile-record-fields mt-3"><div><dt>Farm / block</dt><dd>{item.farm_name || '—'} · {item.block_name || item.block_code || '—'}</dd></div><div><dt>Actual cost</dt><dd className="text-rose-600">{formatCurrency(item.actual_cost ?? item.cost)}</dd></div><div><dt>Actual revenue</dt><dd className="text-blue-600">{formatCurrency(item.actual_revenue ?? item.revenue)}</dd></div></dl>
+            <button type="button" className="mt-2 min-h-11 font-semibold text-primary" aria-expanded={selectedId === itemId} onClick={() => selectedId === itemId ? closeDetails() : pinDetails(itemId)}>{selectedId === itemId ? 'Hide details' : 'View activity details'}</button>
+            {selectedId === itemId && renderActivityDetails(item, itemId)}
+          </article>;
+        })}
+      </div>
+      <section className="hidden overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm md:block">
       <div className="max-h-[calc(100vh-12rem)] overflow-auto">
         <table className="w-full min-w-[1320px] table-fixed border-collapse text-caption leading-4 text-slate-800">
           <thead>
@@ -1215,7 +1190,7 @@ export default function FarmDailyActivities() {
   const deleteDailyLogEntry = async (activity) => {
     if (!activity?.id) return;
     const label = activity.title || activity.activity_title || activity.activity_code || 'this activity';
-    if (!window.confirm(`Delete ${label}? This removes the saved Daily Activity Log record and updates analytics.`)) return;
+    if (!window.confirm(`Delete ${label}? This removes the saved Daily Task Log record and updates analytics.`)) return;
     setDeletingActivityId(activity.id);
     try {
       await base44.entities.DailyActivity.delete(activity.id);
@@ -2768,22 +2743,22 @@ export default function FarmDailyActivities() {
       }
     }
 
-    if (activeScreen === 'Daily Activity Log' && activityStatusFilter !== 'All') {
+    if (activeScreen === 'Daily Task Log' && activityStatusFilter !== 'All') {
       const selectedStatus = activityStatusFilter.toLowerCase();
       activities = activities.filter((activity) => String(activity.status || 'Pending').trim().toLowerCase() === selectedStatus);
     }
 
-    if (activeScreen === 'Daily Activity Log' && activityFarmBlockFilter !== 'All') {
+    if (activeScreen === 'Daily Task Log' && activityFarmBlockFilter !== 'All') {
       activities = activities.filter((activity) => activityMatchesFarmBlock(activity, activityFarmBlockFilter));
     }
 
-    if (activeScreen === 'Daily Activity Log' && activityTypeFilter !== 'All') {
+    if (activeScreen === 'Daily Task Log' && activityTypeFilter !== 'All') {
       const selectedActivityType = activityTypeFilter.toLowerCase();
       activities = activities.filter((activity) => String(activity.category || '').trim().toLowerCase() === selectedActivityType);
     }
 
     switch (activeScreen) {
-      case 'Daily Activity Log':
+      case 'Daily Task Log':
         return (
           <DailyActivityLog
             items={activities}
@@ -3107,8 +3082,8 @@ export default function FarmDailyActivities() {
     switch (activePage) {
       case 'Daily Activities':
         return {
-          placeholder: activeScreen === 'Daily Activity Log' ? 'Search daily activity log...' : 'Search activities...',
-          action: activeScreen === 'Daily Activity Log'
+          placeholder: activeScreen === 'Daily Task Log' ? 'Search daily task log...' : 'Search activities...',
+          action: activeScreen === 'Daily Task Log'
             ? createAction('Add Daily Activity', dailyActivityLogFields, createDailyLogEntry, 'Add Log Entry')
             : createAction('Add Activity', activityFields, createDailyActivity, 'Add Activity')
         };
@@ -3163,8 +3138,8 @@ export default function FarmDailyActivities() {
   const pageInfo = getPageInfo();
   return (
     <div className="space-y-6">
-      <h1 className="text-page-title">{activeScreen === 'Operations Analytics Overview' ? 'Analytics Overview' : activeScreen}</h1>
-      {activeScreen !== 'Daily Activity Log' ? <div data-page-navigation className="-mt-3 border-b border-border pb-3">
+      {!['Daily Task Log', 'Operations Analytics Overview', 'Master Schedule', 'Risk Register', 'Farms'].includes(activeScreen) && <h1 className="text-page-title">{activeScreen}</h1>}
+      {!['Daily Task Log', 'Operations Analytics Overview'].includes(activeScreen) && (!pageInfo.hideSearch || pageInfo.action) ? <div data-page-navigation className="-mt-3 border-b border-border pb-3">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-end">
           <div className="flex flex-wrap items-center gap-2">
             {!pageInfo.hideSearch ? (
@@ -3176,7 +3151,6 @@ export default function FarmDailyActivities() {
               />
             ) : null}
             {pageInfo.action}
-            {activeScreen === 'Operations Analytics Overview' ? <div id="farm-analytics-header-controls" className="flex flex-wrap items-center" /> : null}
           </div>
         </div>
       </div> : null}

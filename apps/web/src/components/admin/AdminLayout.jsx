@@ -36,7 +36,7 @@ export default function AdminLayout() {
         </SheetContent>
       </Sheet>
 
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <AdminTopbar onMenuClick={() => setMobileOpen(true)} />
         <main ref={scrollRef} className="admin-scroll-content flex-1 overflow-y-auto scrollbar-thin px-4 pb-24 md:px-6 md:pb-6">
           <div className="admin-page-content">
@@ -53,7 +53,7 @@ export default function AdminLayout() {
           </div>
         </main>
       </div>
-      <AdminMobileNav user={user} onMore={() => setMobileOpen(true)} />
+      <AdminMobileNav user={user} />
     </div>
   );
 }
