@@ -1,0 +1,44 @@
+name: Reconcile staging activity records
+
+on:
+  push:
+    branches: [staging]
+    paths:
+      - 'scripts/data-import/**'
+      - '.github/workflows/book5-staging-import.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: book5-staging-import
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    if: github.ref == 'refs/heads/staging'
+    environment: staging
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af
+        with:
+          node-version: 24
+      - run: npm ci --no-audit --no-fund
+      - name: Validate encrypted payload handling
+        run: npx vitest run scripts/data-import
+      - name: Reconcile staging records
+        run: node scripts/data-import/book5-staging.mjs
+        env:
+          APP_URL: ${{ vars.APP_URL }}
+          DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+          BOOK5_IMPORT_KEY: ${{ secrets.BOOK5_IMPORT_KEY }}
+      - name: Retain encrypted reconciliation evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: book5-encrypted-evidence
+          path: test-results/book5/*.enc
+          if-no-files-found: error
+          retention-days: 14
