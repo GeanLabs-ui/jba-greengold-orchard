@@ -1,3 +1,4 @@
+import BusinessPageLayout, { LegacyBusinessRedirect } from '@/components/admin/BusinessPageLayout';
 import { lazy, Suspense, useEffect } from 'react';
 import { Toaster } from "@/components/ui/toaster"
 import { Toaster as HotToaster } from "react-hot-toast"
@@ -66,7 +67,8 @@ const Finance = lazy(() => import('@/pages/admin/Finance'));
 const ExportOps = lazy(() => import('@/pages/admin/ExportOps'));
 const HR = lazy(() => import('@/pages/admin/HR'));
 const Applications = lazy(() => import('@/pages/admin/Applications'));
-const Content = lazy(() => import('@/pages/admin/Content'));
+const NewsPosts = lazy(() => import('@/pages/admin/Content'));
+const MarketingProducts = lazy(() => import('@/pages/admin/MarketingProducts'));
 const Documents = lazy(() => import('@/pages/admin/Documents'));
 const Reports = lazy(() => import('@/pages/admin/Reports'));
 const SystemLog = lazy(() => import('@/pages/admin/SystemLog'));
@@ -192,11 +194,23 @@ const AuthenticatedApp = () => {
       >
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<AdminDashboard />} />
-          <Route path="crm" element={<CRM />} />
-          <Route path="crm/account-reviews" element={<AccountReviews />} />
-          <Route path="inquiries" element={<Inquiries />} />
-          <Route path="sales" element={<Sales />} />
-          <Route path="orders" element={<Orders />} />
+          <Route path="crm" element={<LegacyBusinessRedirect to="/admin/client-management/crm" />} />
+          <Route path="crm/account-reviews" element={<LegacyBusinessRedirect to="/admin/client-management/crm/account-reviews" />} />
+          <Route path="inquiries" element={<LegacyBusinessRedirect to="/admin/client-management/inquiries" />} />
+          <Route path="sales" element={<LegacyBusinessRedirect to="/admin/marketing/sales" />} />
+          <Route path="orders" element={<LegacyBusinessRedirect to="/admin/marketing/orders" />} />
+          <Route path="client-management" element={<BusinessPageLayout section="client-management" />}>
+            <Route path="crm" element={<CRM />} />
+            <Route path="crm/account-reviews" element={<AccountReviews />} />
+            <Route path="inquiries" element={<Inquiries />} />
+          </Route>
+          <Route path="marketing" element={<BusinessPageLayout section="marketing" />}>
+            <Route path="sales" element={<Sales />} />
+            <Route path="orders" element={<Orders />} />
+            <Route path="products" element={<MarketingProducts />} />
+            <Route path="news-posts" element={<NewsPosts />} />
+            <Route path="content" element={<LegacyBusinessRedirect to="/admin/marketing/products" />} />
+          </Route>
           <Route path="inventory" element={<Inventory />} />
           <Route path="farms" element={<Navigate to="/admin/farm-daily-activities/activities/farms" replace />} />
           <Route path="farms/:farmId" element={<FarmProfileAdmin />} />
@@ -217,7 +231,7 @@ const AuthenticatedApp = () => {
           <Route path="export-ops" element={<ExportOps />} />
           <Route path="hr" element={<HR />} />
           <Route path="applications" element={<Applications />} />
-          <Route path="content" element={<Content />} />
+          <Route path="content" element={<LegacyBusinessRedirect to="/admin/marketing/products" />} />
           <Route path="documents" element={<Documents />} />
           <Route path="reports" element={<Reports />} />
           <Route path="system-log" element={<SystemLog />} />

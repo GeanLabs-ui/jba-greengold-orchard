@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { PRODUCT_BY_ID } from '@/data/productCatalog';
+import { useProductCatalog } from '@/lib/useProductCatalog';
 
 const STORAGE_KEY = 'jba-storefront-cart-v1';
 const CartContext = createContext(null);
@@ -10,7 +10,7 @@ const readStoredCart = () => {
     const value = JSON.parse(window.localStorage.getItem(STORAGE_KEY) || '[]');
     if (!Array.isArray(value)) return [];
     return value
-      .filter((item) => PRODUCT_BY_ID[item.productId] && Number(item.quantity) > 0)
+      .filter((item) => typeof item.productId === 'string' && Number(item.quantity) > 0)
       .map((item) => ({ productId: item.productId, quantity: Math.min(99, Math.floor(Number(item.quantity))) }));
   } catch {
     return [];
@@ -18,6 +18,8 @@ const readStoredCart = () => {
 };
 
 export function CartProvider({ children }) {
+  const { products, loading: catalogLoading, error: catalogError } = useProductCatalog();
+  const PRODUCT_BY_ID = useMemo(() => Object.fromEntries(products.map(product => [product.id, product])), [products]);
   const [items, setItems] = useState(readStoredCart);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [lastAddedId, setLastAddedId] = useState('');
@@ -39,7 +41,7 @@ export function CartProvider({ children }) {
     });
     setLastAddedId(productId);
     window.setTimeout(() => setLastAddedId(''), 650);
-  }, []);
+  }, [PRODUCT_BY_ID]);
 
   const setQuantity = useCallback((productId, quantity) => {
     const amount = Math.max(0, Math.min(99, Math.floor(Number(quantity) || 0)));
@@ -53,18 +55,19 @@ export function CartProvider({ children }) {
   const openCart = useCallback(() => setIsCartOpen(true), []);
   const closeCart = useCallback(() => setIsCartOpen(false), []);
 
-  const lines = useMemo(() => items.map((item) => ({
+  const lines = useMemo(() => items.filter(item => PRODUCT_BY_ID[item.productId]).map((item) => ({
     ...PRODUCT_BY_ID[item.productId],
     productId: item.productId,
     quantity: item.quantity,
     lineTotal: PRODUCT_BY_ID[item.productId].price * item.quantity,
-  })), [items]);
-  const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
+  })), [items, PRODUCT_BY_ID]);
+  const itemCount = lines.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = lines.reduce((sum, line) => sum + line.lineTotal, 0);
   const deliveryFee = lines.length && subtotal < 250 ? 25 : 0;
   const total = subtotal + deliveryFee;
   const value = useMemo(() => ({
-    items,
+    products, catalogLoading, catalogError,
+    items: items.filter(item => PRODUCT_BY_ID[item.productId]),
     lines,
     itemCount,
     subtotal,
@@ -78,7 +81,7 @@ export function CartProvider({ children }) {
     clearCart,
     openCart,
     closeCart,
-  }), [items, lines, itemCount, subtotal, deliveryFee, total, isCartOpen, lastAddedId, addItem, setQuantity, removeItem, clearCart, openCart, closeCart]);
+  }), [PRODUCT_BY_ID, products, catalogLoading, catalogError, items, lines, itemCount, subtotal, deliveryFee, total, isCartOpen, lastAddedId, addItem, setQuantity, removeItem, clearCart, openCart, closeCart]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }

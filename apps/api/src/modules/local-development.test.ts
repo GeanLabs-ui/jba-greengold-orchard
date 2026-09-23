@@ -7,7 +7,7 @@ import { loadSession, type AppVariables } from '../middleware/auth.js';
 
 vi.mock('../db.js', () => ({ createDatabase: vi.fn(), closeDatabase: vi.fn() }));
 vi.mock('../rate-limit.js', () => ({ checkRateLimit: vi.fn(async () => ({ allowed: true })), requestIp: () => '127.0.0.1' }));
-const local = { APP_ENV: 'local', LOCAL_TEST_LOGIN_ENABLED: 'true', DATABASE_URL: 'postgresql://test:test@127.0.0.1:54329/mango_farm', ALLOWED_ORIGINS: 'http://localhost:5173' } as unknown as Env;
+const local = { APP_ENV: 'local', LOCAL_TEST_LOGIN_ENABLED: 'true', DATABASE_URL: 'postgresql://test:test@127.0.0.1:15432/mango_farm', ALLOWED_ORIGINS: 'http://localhost:5173' } as unknown as Env;
 // Mount at /auth exactly as deployed, including full path origin checks.
 const app = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 app.route('/auth', auth);
@@ -39,7 +39,7 @@ describe('local test authentication server gate', () => {
   it.each([
     { LOCAL_TEST_LOGIN_ENABLED: 'false' }, { LOCAL_TEST_LOGIN_ENABLED: undefined },
     { DATABASE_URL: 'postgresql://test:test@db.neon.tech:5432/mango_farm' }, { DATABASE_URL: '' },
-    { DATABASE_URL: 'postgresql://test:test@127.0.0.1:54329/other_database' },
+    { DATABASE_URL: 'postgresql://test:test@127.0.0.1:15432/other_database' },
   ])('fails closed with invalid local configuration %j', async override => {
     expect((await post({ ...local, ...override } as Env)).status).toBe(404);
     expect(createDatabase).not.toHaveBeenCalled();

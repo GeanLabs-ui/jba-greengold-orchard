@@ -4,7 +4,6 @@ import { get } from 'node:http';
 
 const webUrl = 'http://127.0.0.1:5173/';
 const apiUrl = 'http://127.0.0.1:8787/api/v1/health';
-const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 
 async function fetchOk(url, expectedStatus) {
   try {
@@ -35,9 +34,13 @@ function portInUse(port) {
 
 function runNpm(args) {
   return new Promise((resolve, reject) => {
-    const child = spawn(npmCommand, args, {
+    // npm supplies its CLI path when this script is launched with npm run dev.
+    // Invoke Node directly to avoid cmd.exe argument concatenation on Windows.
+    const npmCli = process.env.npm_execpath;
+    if (!npmCli) return reject(new Error('Start local development with npm run dev.'));
+    const child = spawn(process.execPath, [npmCli, ...args], {
       stdio: 'inherit',
-      shell: process.platform === 'win32',
+      shell: false,
     });
     child.once('error', reject);
     child.once('close', (code) => code === 0 ? resolve() : reject(new Error(`npm ${args.join(' ')} exited with code ${code}`)));

@@ -1,3 +1,5 @@
+import { ACTIVITY_COST_TYPES } from '@/lib/activity-cost-types';
+import AdminActionButton from '@/components/admin/AdminActionButton';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { farmDailyActivitiesNavigation } from '@/lib/farm-navigation';
@@ -29,7 +31,6 @@ import {
   ShieldCheck,
   Sprout,
   ThermometerSun,
-  Trash2,
   Truck,
   Users,
   Warehouse,
@@ -189,7 +190,7 @@ const workOrderStatuses = ['Draft', 'Scheduled', 'Assigned', 'In Progress', 'Com
 const priorities = ['low', 'medium', 'high', 'urgent'];
 const equipmentTypes = ['Tractor', 'Sprayer', 'Cutlass', 'Hoe', 'Pruning Shears', 'Crates', 'Wheelbarrow', 'Generator', 'Water Pump', 'Pickup Truck', 'Scale', 'Sorting Table', 'Cold Room Equipment', 'Drone'];
 const expenseCategories = ['Labour', 'Fuel', 'Equipment Repair', 'Fertilizer', 'Chemical', 'Transport', 'Food/Meals', 'Packaging', 'Maintenance', 'Security', 'Miscellaneous'];
-const activityCostTypes = ['Administration', 'Materials', 'Fuel', 'Labour', 'Food', 'Tools', 'Transport', 'Equipment', 'Inputs', 'Other'];
+const activityCostTypes = ACTIVITY_COST_TYPES.map((type) => type.name);
 const lossTypes = ['Rejected Fruit', 'Spoilage', 'Rot', 'Pest Damage', 'Transport Damage', 'Theft', 'Chemical Waste', 'Fuel Loss', 'Equipment Damage', 'Packaging Waste'];
 
 const selectOptions = (values) => values.map((value) => ({ value, label: value }));
@@ -805,16 +806,7 @@ const DailyActivityLog = ({
           <p className="max-w-xs leading-5 text-slate-700">{displayValue(item.notes)}</p>
           <div className="mt-auto flex justify-end gap-3 pt-4">
             {renderEditAction?.(item)}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={deletingId === item.id}
-              onClick={() => onDelete(item)}
-              className="h-8 border-rose-300 px-4 text-xs text-rose-600 hover:bg-rose-50 hover:text-rose-700"
-            >
-              <Trash2 className="mr-2 h-3.5 w-3.5" />Delete
-            </Button>
+            <AdminActionButton action="delete" type="button" disabled={deletingId === item.id} onClick={() => onDelete(item)} label="Delete" />
           </div>
         </div>
       </div>
@@ -2083,7 +2075,7 @@ export default function FarmDailyActivities() {
   const dailyActivityLogFields = [
     { name: 'status', label: 'Status', type: 'select', options: selectOptions(['Completed', 'Pending', 'In Progress', 'Not recorded']), defaultValue: 'Completed' },
     { name: 'activity_date', label: 'Date', type: 'date', defaultValue: today, required: true },
-    { name: 'title', label: 'Task Description', placeholder: 'Describe the work completed', required: true },
+    { name: 'title', label: 'Task Description', type: 'textarea', placeholder: 'Describe the work completed', required: true },
     { name: 'item_tag', label: 'Item Tag', placeholder: 'Item, tool, material, or reference' },
     { name: 'quantity_used', label: 'Quantity', type: 'number', defaultValue: 0 },
     { name: 'responsible', label: 'Responsible', placeholder: 'Person or team responsible', required: true },
@@ -2504,6 +2496,7 @@ export default function FarmDailyActivities() {
       description="Update the selected record. Related audit logs are written automatically."
       buttonLabel={buttonLabel || (record ? `Edit ${record.activity_code || record.work_order_code || 'Record'}` : 'Select a record')}
       buttonIcon={Pencil}
+      actionIcon="edit"
       fields={fields}
       initialValues={record?.shared_scope && !record.block_id && fields.some((field) => field.name === 'shared_scope') ? { ...record, block_id: '__shared__' } : record || {}}
       onSubmit={(payload) => onSubmit(record, payload)}
@@ -3142,7 +3135,7 @@ export default function FarmDailyActivities() {
 
   const pageInfo = getPageInfo();
   return (
-    <div className="space-y-6">
+    <div className={`space-y-6${activeScreen === 'Master Schedule' ? ' farm-schedule-content' : ''}`}>
       {!['Daily Task Log', 'Operations Analytics Overview', 'Master Schedule', 'Risk Register', 'Farms'].includes(activeScreen) && <h1 className="text-page-title">{activeScreen}</h1>}
       {!['Daily Task Log', 'Operations Analytics Overview'].includes(activeScreen) && (!pageInfo.hideSearch || pageInfo.action) ? <div data-page-navigation className="-mt-3 border-b border-border pb-3">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-end">

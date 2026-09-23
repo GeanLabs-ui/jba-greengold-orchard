@@ -1,19 +1,21 @@
+import FarmPerformanceTrends from '@/components/farm/FarmPerformanceTrends';
+import CostBreakdown from '@/components/farm/CostBreakdown';
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import {
-  ArrowDown, CalendarDays, ChartNoAxesCombined, Eye, Pencil,
+  ArrowDown, CalendarDays, ChartNoAxesCombined, Pencil,
   House, Banknote, MapPin, ReceiptText, Coins, Plus, Sprout, TrendingUp, Trophy,
 } from 'lucide-react';
 import {
-  Bar, CartesianGrid, Cell, ComposedChart, Line, Pie, PieChart,
+  Bar, CartesianGrid, ComposedChart, Line,
   ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { base44 } from '@/api/base44Client';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { formatCurrency, formatDate, formatNumber } from '@/components/shared/format';
+import { formatCurrency, formatDate } from '@/components/shared/format';
 import {
   activityCost,
   activityMatchesBlock,
@@ -28,7 +30,6 @@ import './farm-operations-analytics.css';
 const COST = '#D64545';
 const REVENUE = '#16A34A';
 const YIELD = '#2563EB';
-const COST_COLORS = ['#dc2028', '#ef353e', '#fa535b', '#ff7b80', '#ff9c9f', '#fdd8da'];
 const PROJECTIONS = {
   cost: { label: 'Projected Cost', unit: '₵', defaultValue: 60000 },
   revenue: { label: 'Projected Revenue', unit: '₵', defaultValue: 400000 },
@@ -41,7 +42,7 @@ const lower = (value) => text(value).toLowerCase();
 const recordDate = (row, keys) => keys.map((key) => parseRecordDate(row[key])).find(Boolean) || null;
 const monthLabel = (date) => date.toLocaleDateString('en-US', { month: 'short' });
 const formatCedis = (value) => formatCurrency(value);
-const compactCurrency = (value) => value >= 1000000 ? `₵${(value / 1000000).toFixed(1)}m` : value >= 1000 ? `₵${(value / 1000).toFixed(value >= 100000 ? 0 : 1)}k` : `₵${formatNumber(value)}`;
+const wholeNumber = (value) => Number(value || 0).toLocaleString('en-US', { maximumFractionDigits: 0 });
 
 function AnalyticsPanel({ title, children, className = '', action }) {
   return (
@@ -106,74 +107,15 @@ function EmptyState({ children = 'No records match this selection.' }) {
   return <div className="grid min-h-40 place-items-center px-5 text-center text-xs text-muted-foreground">{children}</div>;
 }
 
-function MetricLegend({ metric = 'all' }) {
-  return <div className="analytics-legend" aria-label="Block performance chart legend">
-    {[['cost', 'Cost (₵)', COST], ['yield', 'Yield (tonnes)', YIELD], ['revenue', 'Revenue (₵)', REVENUE]].map(([key, label, color]) => <span key={key} style={{ opacity: metric === 'all' || metric === key ? 1 : 0.35 }}><i style={{ background: color, borderRadius: key === 'yield' ? '50%' : 0 }} />{label}</span>)}
-  </div>;
-}
-
-function BlockPerformanceChart({ rows, height = 280, metric = 'all' }) {
-  const showCost = metric === 'all' || metric === 'cost';
-  const showRevenue = metric === 'all' || metric === 'revenue';
-  const showYield = metric === 'all' || metric === 'yield';
-  return <div style={{ height }} className="px-2 py-3">
-    <ResponsiveContainer width="100%" height="100%">
-      <ComposedChart data={rows} margin={{ top: 12, right: 14, left: 4, bottom: 2 }}>
-        <CartesianGrid stroke="#e8f5e9" vertical={false} />
-        <XAxis dataKey="blockLabel" tick={{ fontSize: 'var(--text-caption)' }} axisLine={false} tickLine={false} />
-        <YAxis yAxisId="cost" hide={!showCost && !showRevenue} tickFormatter={compactCurrency} tick={{ fontSize: 'var(--text-caption)' }} axisLine={false} tickLine={false} />
-
-        <YAxis yAxisId="yield" orientation="right" hide={!showYield} tickFormatter={(value) => `${formatNumber(value)}t`} tick={{ fontSize: 'var(--text-caption)' }} axisLine={false} tickLine={false} />
-        <Tooltip formatter={(value, name) => name === 'Yield (tonnes)' ? `${formatNumber(value)} tonnes` : formatCedis(value)} labelFormatter={(label, rowsAtLabel) => `${rowsAtLabel?.[0]?.payload?.farmName || 'Farm'} · ${label}`} />
-        {showCost ? <Bar yAxisId="cost" dataKey="cost" name="Cost (₵)" fill={COST} radius={[2, 2, 0, 0]} maxBarSize={30} /> : null}
-        {showRevenue ? <Bar yAxisId="cost" dataKey="revenue" name="Revenue (₵)" fill={REVENUE} radius={[2, 2, 0, 0]} maxBarSize={30} /> : null}
-        {showYield ? <Line yAxisId="yield" type="linear" dataKey="yieldTonnes" name="Yield (tonnes)" stroke={YIELD} strokeWidth={2} dot={{ r: 3, fill: YIELD, strokeWidth: 0 }} activeDot={{ r: 5 }} /> : null}
-      </ComposedChart>
-    </ResponsiveContainer>
-  </div>;
-}
-
-function BlockPerformanceTable({ rows, metric = 'all', paginate = true }) {
-  const [page, setPage] = useState(1);
-  const showCost = metric === 'all' || metric === 'cost';
-  const showRevenue = metric === 'all' || metric === 'revenue';
-  const showYield = metric === 'all' || metric === 'yield';
-  const headings = ['Block', ...(showCost ? ['Cost (₵)'] : []), ...(showYield ? ['Yield (tonnes)'] : []), ...(showRevenue ? ['Revenue (₵)'] : []), ...(metric === 'all' ? ['Profit (₵)'] : []), 'Status'];
-  const pageSize = 5;
-  const rankKeys = metric === 'cost' ? ['cost', 'revenue', 'yieldTonnes'] : metric === 'revenue' ? ['revenue', 'cost', 'yieldTonnes'] : metric === 'yield' ? ['yieldTonnes', 'revenue', 'cost'] : ['revenue', 'cost', 'yieldTonnes'];
-  const rankedRows = useMemo(() => rows.slice().sort((left, right) => {
-    for (const key of rankKeys) {
-      const difference = number(right[key]) - number(left[key]);
-      if (difference) return difference;
-    }
-    return text(left.blockLabel).localeCompare(text(right.blockLabel), undefined, { numeric: true });
-  }), [rankKeys, rows]);
-  const pageCount = Math.max(1, Math.ceil(rankedRows.length / pageSize));
-  const currentPage = Math.min(page, pageCount);
-  const visibleRows = paginate ? rankedRows.slice((currentPage - 1) * pageSize, currentPage * pageSize) : rankedRows;
-
-  useEffect(() => setPage(1), [metric, rows]);
-
-  return <div>
-    <div className="overflow-x-auto">
-      <table className={`analytics-table w-full ${metric === 'all' ? 'min-w-[700px]' : 'min-w-[420px]'} text-caption`}>
-        <thead className="border-y border-border bg-muted/30 text-[#1b5e20]"><tr>{headings.map((heading) => <th key={heading} data-metric={heading.startsWith('Cost') ? 'cost' : heading.startsWith('Yield') ? 'yield' : undefined} className="px-4 py-2.5 text-left font-semibold">{heading}</th>)}</tr></thead>
-        <tbody className="divide-y divide-border">{visibleRows.map((row) => <tr key={row.id || `${row.farmName}-${row.blockLabel}`} className="hover:bg-muted/30"><td className="px-4 py-2 font-semibold"><span className={`mr-3 inline-block h-2 w-2 rounded-full ${row.status === 'Needs Attention' ? 'bg-amber-500' : 'bg-[#f5b400]'}`} />{row.blockLabel}</td>{showCost ? <td className="px-4 py-2 font-semibold text-[#d64545]">{formatCedis(row.cost)}</td> : null}{showYield ? <td className="px-4 py-2 font-semibold text-[#2563eb]">{formatNumber(row.yieldTonnes)}</td> : null}{showRevenue ? <td className="px-4 py-2 font-semibold text-[#16a34a]">{formatCedis(row.revenue)}</td> : null}{metric === 'all' ? <td className={`px-4 py-2 font-semibold ${row.margin < 0 ? 'text-[#d64545]' : 'text-emerald-700'}`}>{formatCedis(row.margin)}</td> : null}<td className="px-4 py-2"><StatusPill status={row.status} /></td></tr>)}</tbody>
-      </table>
-    </div>
-    {paginate && rankedRows.length > pageSize ? <footer className="flex items-center justify-between gap-3 border-t border-border px-4 py-2 text-caption text-muted-foreground"><span>Showing {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, rankedRows.length)} of {rankedRows.length} blocks</span><div className="flex items-center gap-1.5"><button type="button" onClick={() => setPage((current) => Math.max(1, current - 1))} disabled={currentPage === 1} className="rounded border border-border px-2 py-1 font-semibold text-foreground disabled:cursor-not-allowed disabled:opacity-40">Previous</button><span className="px-1">Page {currentPage} of {pageCount}</span><button type="button" onClick={() => setPage((current) => Math.min(pageCount, current + 1))} disabled={currentPage === pageCount} className="rounded border border-border px-2 py-1 font-semibold text-foreground disabled:cursor-not-allowed disabled:opacity-40">Next</button></div></footer> : null}
-  </div>;
-}
-
 export default function FarmOperationsAnalytics({ data }) {
   const navigate = useNavigate();
   const now = useMemo(() => new Date(), []);
   const [period, setPeriod] = useState('all');
   const [farmFilter, setFarmFilter] = useState('all');
-  const [metricFilter, setMetricFilter] = useState('all');
+  const [blockMetric, setBlockMetric] = useState('all');
+  const [trendYear, setTrendYear] = useState(() => new Date().getFullYear());
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
-  const [isBlockPerformanceOpen, setIsBlockPerformanceOpen] = useState(false);
   const [toolbarTarget, setToolbarTarget] = useState(null);
   const [projections, setProjections] = useState(null);
   const [projectionError, setProjectionError] = useState('');
@@ -253,17 +195,21 @@ export default function FarmOperationsAnalytics({ data }) {
   }, [farmFilter]);
 
   const farmFilterOptions = useMemo(() => {
-    const activeFarms = farms.filter((farm) => !['inactive', 'archived', 'merged'].includes(lower(farm.status))).slice().sort((a, b) => text(a.name).localeCompare(text(b.name)));
-    return [{ value: 'all', label: 'All Farms' }, ...activeFarms.flatMap((farm) => {
-      const farmBlocks = blocks.filter((block) => String(block.farm_id) === String(farm.id) && !['inactive', 'archived', 'merged'].includes(lower(block.status))).slice().sort((a, b) => text(a.block_code || a.name).localeCompare(text(b.block_code || b.name), undefined, { numeric: true }));
-      return [
-        { value: `farm:${farm.id}`, label: farm.name },
-        ...farmBlocks.map((block) => {
-          const code = text(block.block_code || block.name);
-          return { value: `block:${block.id}`, label: lower(code).startsWith(lower(farm.name)) ? code : `Farm ${code}` };
-        }),
-      ];
-    })];
+    const isActive = (row) => !['inactive', 'archived', 'merged'].includes(lower(row.status));
+    const farmCode = (farm) => text(farm.name).replace(/^farm\s*(?:land\s*)?/i, '').trim().toUpperCase();
+    const activeFarms = farms.filter(isActive);
+    const orderedFarms = ['A', 'B'].map((code) => activeFarms.find((farm) => farmCode(farm) === code)).filter(Boolean);
+    const blockCode = (block) => text(block.block_code || block.name).replace(/^(?:farm|block)\s*/i, '').trim().toUpperCase();
+    const activeFarmIds = new Set(orderedFarms.map((farm) => String(farm.id)));
+    const configuredBlocks = blocks.filter((block) => isActive(block) && activeFarmIds.has(String(block.farm_id)));
+    return [
+      ...orderedFarms.map((farm) => ({ value: `farm:${farm.id}`, label: `Farm ${farmCode(farm)}` })),
+      { value: 'all', label: 'Farm A&B' },
+      ...['A1', 'A2', 'A3', 'A4', 'A5', 'B1', 'B2', 'B3', 'B4', 'B5'].flatMap((code) => {
+        const block = configuredBlocks.find((item) => blockCode(item) === code);
+        return block ? [{ value: `block:${block.id}`, label: code }] : [];
+      }),
+    ];
   }, [blocks, farms]);
 
   const analytics = useMemo(() => buildFarmOperationsAnalytics(
@@ -323,18 +269,13 @@ export default function FarmOperationsAnalytics({ data }) {
   const blockPerformanceRows = blockSummary.slice().sort((a, b) => (
     a.farmName.localeCompare(b.farmName) || text(a.block_code || a.name).localeCompare(text(b.block_code || b.name), undefined, { numeric: true })
   )).map((block) => ({ ...block, blockLabel: block.block_code || block.name || 'Block' }));
-  const costBreakdown = Object.values(costRows.reduce((result, row) => {
-    const category = row.costCategory || 'Other';
-    result[category] = result[category] || { name: category, value: 0 };
-    result[category].value += row.value;
-    return result;
-  }, {})).sort((a, b) => b.value - a.value);
-  const farmCostSplit = Object.values(costRows.reduce((result, row) => {
-    const farmName = farmFor(row);
-    result[farmName] = result[farmName] || { name: farmName, value: 0 };
-    result[farmName].value += row.value;
-    return result;
-  }, {})).sort((a, b) => b.value - a.value);
+  const blockMoneyMax = Math.max(0, ...blockPerformanceRows.flatMap(row => blockMetric === 'yield' ? [] : blockMetric === 'cost' ? [row.cost] : blockMetric === 'revenue' ? [row.revenue] : [row.cost, row.revenue]));
+  const blockMoneyCeiling = Math.max(1000, Math.ceil(blockMoneyMax / 1000) * 1000);
+  const blockYieldCeiling = Math.max(4, Math.ceil(Math.max(0, ...blockPerformanceRows.map(row => row.yieldTonnes))));
+  const blockMoneyTicks = Array.from({ length: 5 }, (_, index) => blockMoneyCeiling * index / 4);
+  const blockYieldTicks = Array.from({ length: 5 }, (_, index) => blockYieldCeiling * index / 4);
+  const blockCurrencyTick = value => value === 0 ? '₵0' : Math.abs(value) >= 1000000 ? `₵${(value / 1000000).toFixed(1)}m` : `₵${(value / 1000).toFixed(1)}k`;
+
   const mostProfitableBlock = blockPerformanceRows.slice().sort((a, b) => b.margin - a.margin)[0];
   const highestYieldBlock = blockPerformanceRows.slice().sort((a, b) => b.yieldTonnes - a.yieldTonnes)[0];
   const lowestCostBlock = blockPerformanceRows.slice().sort((a, b) => a.cost - b.cost)[0];
@@ -343,13 +284,7 @@ export default function FarmOperationsAnalytics({ data }) {
   const recentActivities = filteredActivities.slice().sort((a, b) => (
     (recordDate(b, ['activity_date', 'created_date']) || 0) - (recordDate(a, ['activity_date', 'created_date']) || 0)
   )).slice(0, 6);
-  const costBreakdownPanel = <AnalyticsPanel title="Cost Breakdown" className="analytics-cost-breakdown">
-    {costBreakdown.length ? <div className="grid min-h-60 items-center gap-4 p-3 sm:grid-cols-[minmax(142px,0.8fr)_minmax(0,1.2fr)]">
-      <div className="relative h-48 min-w-[142px]"><ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={costBreakdown} dataKey="value" nameKey="name" innerRadius="53%" outerRadius="90%" paddingAngle={1} stroke="white">{costBreakdown.map((item, index) => <Cell key={item.name} fill={COST_COLORS[index % COST_COLORS.length]} />)}</Pie><Tooltip formatter={(value) => formatCedis(value)} /></PieChart></ResponsiveContainer><div className="pointer-events-none absolute inset-0 grid place-content-center text-center"><strong className="text-xs text-[#d64545]">{compactCurrency(totalCost)}</strong><span className="text-caption text-[#d64545]">Total Cost</span></div></div>
-      <div className="space-y-2">{costBreakdown.slice(0, 6).map((item, index) => <div key={item.name} className="flex items-center gap-2 text-caption"><span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: COST_COLORS[index % COST_COLORS.length] }} /><span className="min-w-0 flex-1 truncate">{item.name}</span><strong className="text-[#d64545]">{totalCost ? Math.round((item.value / totalCost) * 100) : 0}%</strong><span className="text-[#d64545]">({compactCurrency(item.value)})</span></div>)}</div>
-      <div className="border-t border-border pt-3 sm:col-span-2"><p className="mb-3 text-caption font-semibold text-[#d64545]">Cost Split by Main Farm</p><div className="space-y-3">{farmCostSplit.map((farm) => <div key={farm.name} className="flex items-start gap-2 text-caption"><span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[#fff1c7] text-[#d9a800]"><MapPin size={14} /></span><span className="min-w-0 flex-1"><strong className="block truncate">{farm.name}</strong><span className="text-[#d64545]">{compactCurrency(farm.value)} · {totalCost ? Math.round((farm.value / totalCost) * 100) : 0}%</span></span></div>)}</div><div className="mt-4 border-t border-border pt-2 text-caption"><span className="text-[#d64545]">Total Cost</span><strong className="mt-0.5 block text-[#d64545]">{compactCurrency(totalCost)}</strong></div></div>
-    </div> : <EmptyState>No costs are logged for {range.label}. New Daily Task Log entries update this card automatically.</EmptyState>}
-  </AnalyticsPanel>;
+  const costBreakdownPanel = <CostBreakdown costRows={costRows} farmFor={farmFor} rangeLabel={range.label} />;
   const recentActivitiesPanel = <AnalyticsPanel title="Recent Farm Activities" className="analytics-recent" action={<button type="button" onClick={() => navigate('/admin/farm-daily-activities/activities/records')} className="text-caption font-semibold text-[#256b2a] hover:underline">View all activities ›</button>}>
     {recentActivities.length ? <div className="divide-y divide-border">{recentActivities.slice(0, 5).map((row, index) => {
       const activityName = row.title || row.activity_title || row.category || 'Activity';
@@ -362,13 +297,6 @@ export default function FarmOperationsAnalytics({ data }) {
       </article>;
     })}</div> : <EmptyState />}
   </AnalyticsPanel>;
-  const metricFilterControl = <label className="relative shrink-0 text-label">
-    <span className="sr-only">Filter performance metric</span>
-    <ChartNoAxesCombined className="pointer-events-none absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-[#256b2a]" />
-    <select value={metricFilter} onChange={(event) => setMetricFilter(event.target.value)} className="h-7 min-w-28 rounded-md border border-border bg-card pl-6 pr-6 text-caption font-medium outline-none focus:ring-2 focus:ring-primary/25">
-      <option value="all">All metrics</option><option value="cost">Cost</option><option value="revenue">Revenue</option><option value="yield">Yield</option>
-    </select>
-  </label>;
   const analyticsToolbar = <div className="analytics-toolbar flex flex-wrap items-center gap-1">
     <label className="relative text-label">
       <span className="sr-only">Analytics date range</span>
@@ -385,6 +313,13 @@ export default function FarmOperationsAnalytics({ data }) {
         {farmFilterOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
       </select>
     </label>
+    <label className="relative text-label">
+      <span className="sr-only">Monthly performance year</span>
+      <CalendarDays className="pointer-events-none absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-[#256b2a]" />
+      <select value={trendYear} onChange={(event) => setTrendYear(Number(event.target.value))} className="h-7 rounded-md border border-border bg-card pl-6 pr-6 text-caption font-medium outline-none focus:ring-2 focus:ring-primary/25">
+        {Array.from({ length: Math.max(2030, now.getFullYear(), trendYear) - 2026 + 1 }, (_, index) => 2026 + index).map((year) => <option key={year} value={year}>{year}</option>)}
+      </select>
+    </label>
     <Button className="h-7 bg-[#2e7d32] px-2.5 text-caption text-white hover:bg-[#1b5e20]" onClick={() => navigate('/admin/farm-daily-activities/activities/create')}><Plus className="mr-1 h-3 w-3" />Add Activity</Button>
   </div>;
   return (
@@ -392,39 +327,59 @@ export default function FarmOperationsAnalytics({ data }) {
       {toolbarTarget ? createPortal(analyticsToolbar, toolbarTarget) : <section className="flex flex-wrap justify-end gap-2">{analyticsToolbar}</section>}
 
       <section className="analytics-kpis" aria-label="Farm summary">
-        <SummaryKpi icon={MapPin} label="Farm Lands" value={`${visibleFarms.length} Farms · ${visibleBlocks.length} Blocks`} note={`${formatNumber(totalTrees)} Total Trees`} tone="gold" />
-        <MergedKpi first={{ icon: TrendingUp, label: 'Projected Cost', value: projections ? formatCedis(projectionValue('cost')) : '—', tone: 'red', remaining: projections ? formatCedis(projectionValue('cost') - totalCost) : '—', onClick: () => openProjection('cost') }} second={{ icon: ReceiptText, label: 'Actual Cost', value: compactCurrency(totalCost), tone: 'red' }} />
-        <MergedKpi first={{ icon: TrendingUp, label: 'Projected Revenue', value: projections ? formatCedis(projectionValue('revenue')) : '—', tone: 'revenue', remaining: projections ? formatCedis(projectionValue('revenue') - totalRevenue) : '—', onClick: () => openProjection('revenue') }} second={{ icon: Banknote, label: 'Actual Revenue', value: compactCurrency(totalRevenue), tone: 'revenue' }} />
-        <MergedKpi first={{ icon: Sprout, label: 'Projected Yield', value: projections ? `${formatNumber(projectionValue('yield'))} tonnes` : '—', tone: 'blue', remaining: projections ? `${formatNumber(projectionValue('yield') - totalYieldKg / 1000)} tonnes` : '—', onClick: () => openProjection('yield') }} second={{ icon: Sprout, label: 'Actual Yield', value: `${formatNumber(totalYieldKg / 1000)} tonnes`, tone: 'blue' }} />
+        <SummaryKpi icon={MapPin} label="Farm Lands" value={`${visibleFarms.length} Farms · ${visibleBlocks.length} Blocks`} note={`${wholeNumber(totalTrees)} Total Trees`} tone="gold" />
+        <MergedKpi first={{ icon: TrendingUp, label: 'Projected Cost', value: projections ? formatCedis(projectionValue('cost')) : '—', tone: 'red', remaining: projections ? formatCedis(projectionValue('cost') - totalCost) : '—', onClick: () => openProjection('cost') }} second={{ icon: ReceiptText, label: 'Actual Cost', value: formatCedis(totalCost), tone: 'red' }} />
+        <MergedKpi first={{ icon: TrendingUp, label: 'Projected Revenue', value: projections ? formatCedis(projectionValue('revenue')) : '—', tone: 'revenue', remaining: projections ? formatCedis(projectionValue('revenue') - totalRevenue) : '—', onClick: () => openProjection('revenue') }} second={{ icon: Banknote, label: 'Actual Revenue', value: formatCedis(totalRevenue), tone: 'revenue' }} />
+        <MergedKpi first={{ icon: Sprout, label: 'Projected Yield', value: projections ? `${wholeNumber(projectionValue('yield'))} tonnes` : '—', tone: 'blue', remaining: projections ? `${wholeNumber(projectionValue('yield') - totalYieldKg / 1000)} tonnes` : '—', onClick: () => openProjection('yield') }} second={{ icon: Sprout, label: 'Actual Yield', value: `${wholeNumber(totalYieldKg / 1000)} tonnes`, tone: 'blue' }} />
       </section>
       {projectionError ? <p role="alert" className="text-sm text-destructive">{projectionError}</p> : null}
 
-      <section aria-label="Block Performance" className="grid items-start gap-4 xl:grid-cols-[minmax(0,2.08fr)_minmax(320px,1fr)]">
-        <div className="space-y-4">
-          <section className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
-            <header className="flex flex-wrap items-center gap-3 px-5 pb-1 pt-4">
-              <h2 className="shrink-0 text-slate-800 text-section-title">Cost, Revenue &amp; Yield by Block</h2>
-              <div className="hidden min-w-0 flex-1 justify-center sm:flex"><MetricLegend metric={metricFilter} /></div>
-              <div className="ml-auto">{metricFilterControl}</div>
-              <div className="w-full sm:hidden"><MetricLegend metric={metricFilter} /></div>
-            </header>
-            {blockPerformanceRows.length ? <><BlockPerformanceChart rows={blockPerformanceRows} metric={metricFilter} height={210} /><BlockPerformanceTable rows={blockPerformanceRows} metric={metricFilter} /><div className="border-t border-border px-4 py-2 text-center"><button type="button" onClick={() => setIsBlockPerformanceOpen(true)} className="inline-flex items-center gap-1.5 text-caption font-semibold text-[#256b2a] hover:underline"><Eye className="h-3.5 w-3.5" />View all {blockPerformanceRows.length} blocks</button></div></> : <EmptyState>No blocks match this selection.</EmptyState>}
-          </section>
-          {recentActivitiesPanel}
-        </div>
+      <div className="analytics-overview-grid">
+      <FarmPerformanceTrends farms={farms} blocks={blocks} activities={activities} farmFilter={farmFilter} farmOptions={farmFilterOptions} farmId={selectedFarmId} blockId={selectedBlockId} year={trendYear} onYearChange={setTrendYear} blockChart={
 
-        <div className="space-y-4">
-          <AnalyticsPanel title="Performance Highlights">
+          <AnalyticsPanel title="Cost, Revenue & Yield by Block" className="analytics-block-chart" action={<>
+            <div className="analytics-legend" aria-label="Chart legend">
+              {(blockMetric === 'all' || blockMetric === 'cost') && <span><i style={{ background: COST }} />Cost (₵)</span>}
+              {(blockMetric === 'all' || blockMetric === 'yield') && <span><i className="rounded-full" style={{ background: YIELD }} />Yield (tonnes)</span>}
+              {(blockMetric === 'all' || blockMetric === 'revenue') && <span><i style={{ background: REVENUE }} />Revenue (₵)</span>}
+            </div>
+            <label className="relative shrink-0">
+              <span className="sr-only">Block chart metrics</span>
+              <ChartNoAxesCombined className="pointer-events-none absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-[#256b2a]" />
+              <select value={blockMetric} onChange={(event) => setBlockMetric(event.target.value)} className="rounded border border-border bg-card pl-7 pr-5 text-caption">
+                <option value="all">All metrics</option><option value="cost">Cost</option><option value="yield">Yield</option><option value="revenue">Revenue</option>
+              </select>
+            </label>
+          </>}>
+            {blockPerformanceRows.length ? <div className="analytics-block-chart-body overflow-x-auto px-2 pb-2 pt-4"><div className="h-full min-w-[560px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart data={blockPerformanceRows} margin={{ top: 8, right: 8, bottom: 0, left: 0 }} barGap={2}>
+                  <CartesianGrid vertical={false} stroke="#edf4ee" />
+                  <XAxis dataKey="blockLabel" axisLine={false} tickLine={false} interval={0} tick={{ fontSize: 12 }} />
+                  <YAxis yAxisId="currency" domain={[0, blockMoneyCeiling]} ticks={blockMoneyTicks} interval={0} allowDecimals={false} tickFormatter={blockCurrencyTick} axisLine={false} tickLine={false} width={60} tick={{ fontSize: 12 }} />
+                  <YAxis yAxisId="yield" orientation="right" allowDecimals={false} tickFormatter={(value) => `${Number(value.toFixed(2))}t`} domain={[0, blockYieldCeiling]} ticks={blockYieldTicks} interval={0} axisLine={false} tickLine={false} width={48} tick={{ fontSize: 12 }} />
+                  <Tooltip labelFormatter={(_, payload) => { const block = payload?.[0]?.payload; return block ? `${block.farmName} · ${block.blockLabel}` : ''; }} formatter={(value, name) => [name === 'Yield (tonnes)' ? `${wholeNumber(value)} tonnes` : `₵${wholeNumber(value)}`, name]} cursor={{ stroke: '#d1d5db', fill: 'transparent' }} contentStyle={{ fontSize: 12, border: '1px solid #e5e7eb' }} />
+                  {(blockMetric === 'all' || blockMetric === 'cost') && <Bar yAxisId="currency" dataKey="cost" name="Cost (₵)" fill={COST} maxBarSize={30} radius={[2, 2, 0, 0]} />}
+                  {(blockMetric === 'all' || blockMetric === 'revenue') && <Bar yAxisId="currency" dataKey="revenue" name="Revenue (₵)" fill={REVENUE} maxBarSize={30} radius={[2, 2, 0, 0]} />}
+                  {(blockMetric === 'all' || blockMetric === 'yield') && <Line yAxisId="yield" dataKey="yieldTonnes" name="Yield (tonnes)" stroke={YIELD} strokeWidth={2} dot={{ r: 3, fill: YIELD }} activeDot={{ r: 5 }} />}
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div></div> : <EmptyState>No blocks match this selection.</EmptyState>}
+          </AnalyticsPanel>
+      } />
+          <AnalyticsPanel title="Performance Highlights" className="analytics-highlights">
             <div className="space-y-3 p-3">
               <PerformanceHighlight icon={Trophy} tone="green" label="Most Profitable Block" value={mostProfitableBlock?.blockLabel || '—'} detail={`Profit: ${formatCedis(mostProfitableBlock?.margin || 0)}`} gauge={totalRevenue ? Math.min(100, Math.max(0, ((mostProfitableBlock?.margin || 0) / totalRevenue) * 100)) : 0} />
-              <PerformanceHighlight icon={Sprout} tone="blue" label="Highest Yield" value={highestYieldBlock?.blockLabel || '—'} detail={`${formatNumber(highestYieldBlock?.yieldTonnes || 0)} tonnes`} />
+              <PerformanceHighlight icon={Sprout} tone="blue" label="Highest Yield" value={highestYieldBlock?.blockLabel || '—'} detail={`${wholeNumber(highestYieldBlock?.yieldTonnes || 0)} tonnes`} />
               <PerformanceHighlight icon={Coins} tone="red" label="Lowest Cost" value={lowestCostBlock?.blockLabel || '—'} detail={formatCedis(lowestCostBlock?.cost || 0)} />
-              <PerformanceHighlight icon={ChartNoAxesCombined} tone="green" label="Revenue Performance" value={totalRevenue >= totalCost ? 'Strong' : 'Needs attention'} detail={`${formatNumber(revenueMargin)}% margin this period`} gauge={revenueMargin} />
+              <PerformanceHighlight icon={ChartNoAxesCombined} tone="green" label="Revenue Performance" value={totalRevenue >= totalCost ? 'Strong' : 'Needs attention'} detail={`${wholeNumber(revenueMargin)}% margin this period`} gauge={revenueMargin} />
             </div>
           </AnalyticsPanel>
-          {costBreakdownPanel}
-        </div>
-      </section>
+          <div className="analytics-activity-cost-row">
+            {recentActivitiesPanel}
+            {costBreakdownPanel}
+          </div>
+      </div>
 
       <Dialog open={Boolean(editingProjection)} onOpenChange={(open) => { if (!open && !savingProjection) setEditingProjection(null); }}>
         <DialogContent className="w-[calc(100vw-2rem)] max-w-sm">
@@ -447,15 +402,7 @@ export default function FarmOperationsAnalytics({ data }) {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isBlockPerformanceOpen} onOpenChange={setIsBlockPerformanceOpen}>
-        <DialogContent className="farm-analytics max-h-[92vh] w-[calc(100vw-2rem)] max-w-6xl overflow-y-auto p-0">
-          <DialogHeader className="border-b border-border px-6 py-5 pr-12">
-            <DialogTitle className="text-[#1b5e20]">All Farm Performance</DialogTitle>
-            <DialogDescription>Cost, revenue, yield, and margin across every visible farm block.</DialogDescription>
-          </DialogHeader>
-          {blockPerformanceRows.length ? <div className="space-y-3 p-4"><BlockPerformanceChart rows={blockPerformanceRows} metric={metricFilter} height={340} /><BlockPerformanceTable rows={blockPerformanceRows} metric={metricFilter} paginate={false} /></div> : <EmptyState />}
-        </DialogContent>
-      </Dialog>
+
 
     </div>
   );

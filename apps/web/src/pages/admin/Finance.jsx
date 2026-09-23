@@ -1,5 +1,6 @@
+import AdminActionButton from '@/components/admin/AdminActionButton';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Banknote, CalendarDays, Filter, MapPin, RotateCcw, TrendingDown, TrendingUp, Trash2, Wallet } from 'lucide-react';
+import { Banknote, CalendarDays, Filter, MapPin, RotateCcw, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
 import StatusBadge from '@/components/shared/StatusBadge';
 import PageSkeleton from '@/components/shared/PageSkeleton';
 import { formatCurrency, formatDate } from '@/components/shared/format';
@@ -301,15 +302,7 @@ export default function Finance() {
               { key: 'status', label: 'Status', render: (value) => <StatusBadge status={String(value || '').toLowerCase()} label={value} /> },
             ]}
             rowActions={canClearActivityCosts(user) ? (activity) => (
-              <Button
-                type="button"
-                size="sm"
-                variant="destructive"
-                disabled={deletingId === activity.id}
-                onClick={() => deleteActivityCost(activity)}
-              >
-                <Trash2 />{deletingId === activity.id ? 'Deleting…' : 'Delete'}
-              </Button>
+              <AdminActionButton action="delete" type="button" disabled={deletingId === activity.id} onClick={() => deleteActivityCost(activity)} label="Delete" />
             ) : undefined}
           />
         )}

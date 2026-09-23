@@ -1,5 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CartProvider } from './CartContext';
+import { PRODUCT_CATALOG } from '@/data/productCatalog';
+
+let catalog;
+vi.mock('@/lib/useProductCatalog', () => ({ useProductCatalog: () => ({ products: catalog, loading: false, error: '' }) }));
 
 // Exercise the provider's callbacks and derived totals without a browser or
 // real localStorage. State slots persist between simulated provider renders.
@@ -27,12 +31,24 @@ function renderCart() {
 }
 
 beforeEach(() => {
+  catalog = [...PRODUCT_CATALOG];
   hooks.slots = [];
   vi.stubGlobal('window', { localStorage: { getItem: () => '[]' }, setTimeout: vi.fn() });
 });
 afterEach(() => vi.unstubAllGlobals());
 
 describe('add to basket without opening it', () => {
+  it('restores a saved admin product and follows price and publication updates', () => {
+    const product = { id: 'admin-product', name: 'Admin product', price: 600, image: '/products/dried-mango.webp' };
+    catalog.push(product);
+    window.localStorage.getItem = () => JSON.stringify([{ productId: product.id, quantity: 2 }]);
+    expect(renderCart().subtotal).toBe(1200);
+    catalog = catalog.map(item => item.id === product.id ? { ...item, price: 625.5 } : item);
+    expect(renderCart().subtotal).toBe(1251);
+    catalog = catalog.filter(item => item.id !== product.id);
+    expect(renderCart().items).toHaveLength(0);
+    expect(renderCart().itemCount).toBe(0);
+  });
   it('adds products and updates the total quantity while the basket stays closed', () => {
     renderCart().addItem('dried-mango');
     let cart = renderCart();

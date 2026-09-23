@@ -1,5 +1,5 @@
-const CACHE = 'jba-shell-v1';
-const SHELL = ['/', '/index.html', '/manifest.webmanifest', '/brand/app-icon.svg'];
+const CACHE = 'jba-shell-v3';
+const SHELL = ['/', '/index.html', '/manifest.webmanifest', '/brand/favicon-16.png?v=2', '/brand/favicon-32.png?v=2', '/brand/apple-touch-icon.png', '/brand/app-icon-192.png', '/brand/app-icon-512.png'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(SHELL)).then(() => self.skipWaiting()));

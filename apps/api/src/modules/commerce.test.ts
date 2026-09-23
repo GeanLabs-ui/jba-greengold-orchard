@@ -1,7 +1,25 @@
 import { describe, expect, it } from 'vitest';
 import { COMMERCE_CATALOG, priceOrder, publicOrderTrackingView } from './commerce.js';
+import { mergeCatalog } from '../../../../packages/catalog/catalog.js';
 
 describe('commerce order pricing', () => {
+  it('uses saved prices for existing products and accepts newly published products', () => {
+    const catalog = Object.fromEntries(mergeCatalog([
+      { id: 'saved-edit', storefront: true, catalog_id: 'dried-mango', name: 'Updated Mango', price: 42.5, image: '/products/dried-mango.webp', category: 'dried', description: 'Updated description', status: 'published' },
+      { id: 'saved-new', storefront: true, catalog_id: 'new-product', name: 'New Product', price: 600, image: '/products/dried-mango.webp', category: 'fresh', description: 'New description', status: 'published' },
+    ]).map(product => [product.id, product]));
+    expect(priceOrder([{ product_id: 'dried-mango', quantity: 2 }, { product_id: 'new-product', quantity: 1 }], catalog)).toMatchObject({ subtotal: 685, deliveryFee: 0, total: 685 });
+  });
+
+  it('rejects unpublished products and ignores unrelated legacy records', () => {
+    const catalog = Object.fromEntries(mergeCatalog([
+      { id: 'legacy', name: 'Legacy inventory', price: 1 },
+      { id: 'draft', storefront: true, catalog_id: 'dried-mango', name: 'Draft', price: 25, status: 'draft' },
+    ]).map(product => [product.id, product]));
+    expect(catalog.legacy).toBeUndefined();
+    expect(() => priceOrder([{ product_id: 'dried-mango', quantity: 1 }], catalog)).toThrow('no longer available');
+    expect(() => priceOrder([{ product_id: 'unknown', quantity: 1 }], catalog)).toThrow('no longer available');
+  });
   it('prices catalog lines on the server and applies the delivery threshold', () => {
     const small = priceOrder([{ product_id: 'dried-mango', quantity: 2 }]);
     const large = priceOrder([{ product_id: 'gift-pack-large', quantity: 2 }]);

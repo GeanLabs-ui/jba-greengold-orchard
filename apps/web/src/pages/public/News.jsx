@@ -67,7 +67,7 @@ export default function News() {
   return <div className="newsroom-page">
     <section className="nr-hero" aria-labelledby="newsroom-title">
       <div className="nr-hero-art" aria-hidden="true" />
-      <div className="nr-hero-copy"><p className="nr-eyebrow">Newsroom</p><h1 id="newsroom-title">Discover the latest news<br />from JBA GreenGold<br />Orchard.</h1><p>Explore our newsroom for press releases,<br />company updates, harvest stories, export<br />milestones, and community impact across<br />Ghana and beyond.</p></div>
+      <div className="nr-hero-copy"><p className="nr-eyebrow">Newsroom</p><h1 id="newsroom-title">Discover the latest news <br />from JBA GreenGold <br />Orchard.</h1><p>Explore our newsroom for press releases, <br />company updates, harvest stories, export <br />milestones, and community impact across <br />Ghana and beyond.</p></div>
       <aside className="nr-media-contact" aria-label="Media contact"><h2>Media Contact</h2><div className="nr-contact-team"><span><UsersRound /></span><div><b>Communications Team</b><small>Media &amp; Brand Communications</small></div></div><a className="nr-email" href={`mailto:${mediaEmail}`}><Mail />{mediaEmail}</a><div className="nr-socials"><h3>Follow Us</h3><div>{socials.map(([Icon, name]) => <button key={name} type="button" aria-label={`Connect on ${name}`} title={`Connect on ${name}`} onClick={() => setDialog({ type: 'social', name })}><Icon /></button>)}</div></div></aside>
     </section>
 
@@ -86,7 +86,7 @@ export default function News() {
 
     <section className="nr-section nr-kit" aria-labelledby="nr-kit-title"><div className="nr-container"><div className="nr-section-head"><h2 id="nr-kit-title">Media Kit</h2></div><div className="nr-kit-grid">{mediaKits.map(({ icon: Icon, title, copy, href, file }) => <article key={title}><span className="nr-kit-icon"><Icon /></span><h3>{title}</h3><p>{copy}</p><a className="nr-button" href={href} download={file} aria-label={`Download ${title}`}><Download />Download</a></article>)}</div></div></section>
 
-    <section className="nr-explore" aria-labelledby="nr-explore-title"><div className="nr-explore-art" aria-hidden="true" /><div className="nr-explore-copy"><p className="nr-eyebrow">Explore more</p><h2 id="nr-explore-title">Explore the latest stories from<br />JBA GreenGold Orchard.</h2><p>Updates, insights and impact from our farms to the world.</p></div><Link className="nr-explore-link" to="/about">Learn More <ArrowRight /></Link></section>
+    <section className="nr-explore" aria-labelledby="nr-explore-title"><div className="nr-explore-art" aria-hidden="true" /><div className="nr-explore-copy"><p className="nr-eyebrow">Explore more</p><h2 id="nr-explore-title">Explore the latest stories from <br />JBA GreenGold Orchard.</h2><p>Updates, insights and impact from our farms to the world.</p></div><Link className="nr-explore-link" to="/about">Learn More <ArrowRight /></Link><p className="nr-explore-motto">Good People. <br />Brighter <br />Tomorrows.</p></section>
 
     <Dialog open={Boolean(dialog)} onOpenChange={(open) => { if (!open) setDialog(null); }}><DialogContent className="nr-dialog">
       <DialogTitle>{dialog?.type === 'release' ? dialog.post.title : dialog?.type === 'coverage' ? 'JBA In Media' : dialog?.type === 'all-releases' ? 'All Press Releases' : `Connect on ${dialog?.name || 'social media'}`}</DialogTitle>

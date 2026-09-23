@@ -115,7 +115,7 @@ export default function Export() {
         <div className="absolute inset-y-0 left-0 w-[48%] bg-gradient-to-r from-[#123524] via-[#123524]/95 to-transparent" />
 
         <div className="jba-public-hero-content relative mx-auto flex min-h-[420px] max-w-7xl items-center px-5 py-12 sm:px-8 lg:px-10">
-          <div className="max-w-[430px] animate-in fade-in slide-in-from-bottom-4 duration-700">
+          <div className="export-hero-copy max-w-[430px] animate-in fade-in slide-in-from-bottom-4 duration-700">
             <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#a5d6a7]">Export operations</p>
             <h1 className="mt-3 text-white text-page-title">
               From Ghana<br />to the <span className="text-[#a5d6a7]">World.</span>

@@ -8,7 +8,7 @@ const rootDirectory = path.resolve(path.dirname(fileURLToPath(import.meta.url)),
 const environmentPath = path.join(rootDirectory, '.env');
 const exampleEnvironmentPath = path.join(rootDirectory, '.env.example');
 const volumeName = 'farmactualproject_mango_farm_postgres_data';
-const localDatabasePort = '54329';
+const localDatabasePort = '15432';
 const dockerCommand = process.platform === 'win32' ? 'docker.exe' : 'docker';
 
 async function exists(filePath) {

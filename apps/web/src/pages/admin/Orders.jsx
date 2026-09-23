@@ -1,7 +1,6 @@
 import React, { Fragment, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ChevronDown, ChevronUp, Globe2, Loader2, PackageCheck, Search, Truck } from 'lucide-react';
-import PageHeader from '@/components/shared/PageHeader';
 import PageSkeleton from '@/components/shared/PageSkeleton';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { formatCurrency, formatDate } from '@/components/shared/format';
@@ -158,9 +157,15 @@ export default function Orders() {
 
   return (
     <div>
-      <PageHeader title="Orders">
+      <div data-page-navigation className="mb-6 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,24rem)_minmax(0,1fr)]">
+        <div className="relative min-w-0 w-full md:col-start-2">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input aria-label="Search orders" placeholder="Search order, customer, email or phone..." value={search} onChange={(event) => setSearch(event.target.value)} className="pl-9" />
+        </div>
+        <div className="justify-self-end">
         <AdminCreateDialog title="New Order" description="Create a customer order and add it to the fulfillment pipeline." buttonLabel="New Order" fields={orderFields} onCreate={createOrder} onCreated={load} submitLabel="Create Order" />
-      </PageHeader>
+        </div>
+      </div>
 
       <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
@@ -176,11 +181,7 @@ export default function Orders() {
         ))}
       </div>
 
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="relative w-full max-w-sm">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="Search order, customer, email or phone..." value={search} onChange={(event) => setSearch(event.target.value)} className="pl-9" />
-        </div>
+      <div className="mb-4 flex items-center justify-end">
         <p className="text-xs text-muted-foreground">{orders.filter((order) => order.source === 'website').length} website orders</p>
       </div>
       {error && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}

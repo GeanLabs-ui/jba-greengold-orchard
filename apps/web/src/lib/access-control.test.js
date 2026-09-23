@@ -6,6 +6,28 @@ import {
 } from './access-control';
 
 describe('admin page access', () => {
+  it('retains separate permissions inside the grouped business pages', () => {
+    const user = { role: 'logistics_officer' };
+    expect(canAccessAdminPath(user, '/admin/marketing')).toBe(true);
+    expect(canAccessAdminPath(user, '/admin/marketing/orders')).toBe(true);
+    expect(canAccessAdminPath(user, '/admin/marketing/sales')).toBe(false);
+    expect(canAccessAdminPath(user, '/admin/client-management')).toBe(false);
+    expect(canAccessAdminPath({ role: 'admin', pageAccess: ['inquiries'] }, '/admin/client-management')).toBe(true);
+    expect(adminPageKeyForPath('/admin/client-management/crm/account-reviews')).toBe('crm');
+    expect(adminPageKeyForPath('/admin/client-management/inquiries')).toBe('inquiries');
+    expect(canAccessAdminPath(user, '/admin/orders')).toBe(true);
+    expect(canAccessAdminPath(user, '/admin/marketing/content')).toBe(false);
+    const editor = { role: 'content_editor' };
+    expect(canAccessAdminPath(editor, '/admin/marketing')).toBe(true);
+    expect(canAccessAdminPath(editor, '/admin/marketing/content')).toBe(true);
+    expect(canAccessAdminPath(editor, '/admin/marketing/products')).toBe(true);
+    expect(canAccessAdminPath(editor, '/admin/marketing/news-posts')).toBe(true);
+    expect(canAccessAdminPath(user, '/admin/marketing/products')).toBe(false);
+    expect(canAccessAdminPath(user, '/admin/marketing/news-posts')).toBe(false);
+    expect(canAccessAdminPath(editor, '/admin/content')).toBe(true);
+    expect(canAccessAdminPath(editor, '/admin/marketing/sales')).toBe(false);
+  });
+
   it('uses explicit switches and blocks a disabled page including its subpages', () => {
     const user = { role: 'admin', pageAccess: ['dashboard', 'hr'] };
     expect(canAccessAdminPath(user, '/admin/hr')).toBe(true);

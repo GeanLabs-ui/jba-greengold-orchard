@@ -3,14 +3,14 @@ import { Plus, Search, ShoppingCart } from 'lucide-react';
 import PageHeader from '@/components/shared/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { PRODUCT_CATALOG, PRODUCT_CATEGORIES, formatProductPrice } from '@/data/productCatalog';
+import { PRODUCT_CATEGORIES, formatProductPrice } from '@/data/productCatalog';
 import { useCart } from '@/lib/CartContext';
 
 export default function PortalProducts() {
-  const { addItem, openCart, itemCount } = useCart();
+  const { addItem, openCart, itemCount, products = [], catalogLoading, catalogError } = useCart();
   const [category, setCategory] = useState('all');
   const [search, setSearch] = useState('');
-  const visibleProducts = PRODUCT_CATALOG.filter((product) =>
+  const visibleProducts = products.filter((product) =>
     (category === 'all' || product.category === category)
     && `${product.name} ${product.description}`.toLowerCase().includes(search.trim().toLowerCase()));
 
@@ -30,15 +30,17 @@ export default function PortalProducts() {
           ))}
         </div>
       </div>
+      {catalogError && <p role="alert">{catalogError}</p>}
+      {catalogLoading && <p role="status">Loading products…</p>}
       <p role="status" className="mb-4 text-sm text-muted-foreground">{visibleProducts.length} products</p>
       {visibleProducts.length ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid auto-rows-fr gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {visibleProducts.map((product) => (
             <article key={product.id} className="flex flex-col overflow-hidden rounded-xl border border-border bg-card">
               <div className="flex h-48 items-center justify-center bg-white p-4"><img src={product.image} alt={product.name} loading="lazy" decoding="async" className="h-full w-full object-contain" /></div>
               <div className="flex flex-1 flex-col p-4">
-                <h2 className="text-section-title">{product.name}</h2>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">{product.description}</p>
+                <h2 className="text-section-title line-clamp-2 h-[2.6em] break-words" title={product.name}>{product.name}</h2>
+                <p className="mt-2 line-clamp-3 h-[4.5rem] break-words text-sm leading-6 text-muted-foreground" title={product.description}>{product.description}</p>
                 <div className="mt-auto flex items-center justify-between gap-3 pt-5">
                   <span className="font-semibold">{formatProductPrice(product.price)}</span>
                   <Button size="sm" onClick={() => addItem(product.id)} aria-label={`Add ${product.name} to basket`}><Plus className="mr-1 h-4 w-4" />Add to basket</Button>

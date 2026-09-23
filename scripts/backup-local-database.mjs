@@ -10,7 +10,7 @@ const dockerCommand = process.platform === 'win32' ? 'docker.exe' : 'docker';
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) throw new Error('DATABASE_URL is required');
 const databaseUrl = new URL(connectionString);
-if (!['127.0.0.1', 'localhost', '::1'].includes(databaseUrl.hostname) || databaseUrl.port !== '54329') throw new Error('db:backup is restricted to the local Docker database.');
+if (!['127.0.0.1', 'localhost', '::1'].includes(databaseUrl.hostname) || databaseUrl.port !== '15432') throw new Error('db:backup is restricted to the local Docker database.');
 
 await mkdir(backupDirectory, { recursive: true });
 const timestamp = new Date().toISOString().replaceAll(':', '-').replaceAll('.', '-');

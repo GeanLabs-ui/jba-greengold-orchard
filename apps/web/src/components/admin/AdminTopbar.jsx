@@ -1,5 +1,6 @@
+import AdminActionButton from '@/components/admin/AdminActionButton';
 import React, { useEffect, useMemo, useState } from 'react';
-import { Bell, LogOut, Menu, RefreshCw, Search, Trash2, UserRoundCog } from 'lucide-react';
+import { Bell, LogOut, Menu, RefreshCw, Search, UserRoundCog } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import BrandLogo from '@/components/shared/BrandLogo';
 import { Input } from '@/components/ui/input';
@@ -11,6 +12,7 @@ import { timeAgo } from '@/components/shared/format';
 import { getSafeRedirectTarget } from '@/lib/safe-redirect';
 import { canAccessAdminPath, defaultAdminPath } from '@/lib/access-control';
 import AdminHorizontalNav from './AdminHorizontalNav';
+import './admin-topbar.css';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -18,15 +20,18 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 
 const adminDestinations = [
-  ['Dashboard', '/admin', 'overview summary performance kpi'], ['CRM', '/admin/crm', 'customer contact'],
-  ['Client inquiries', '/admin/inquiries', 'website messages leads contact support partnership'],
-  ['Sales', '/admin/sales', 'invoice payment quotation return'], ['Orders', '/admin/orders', 'website fulfillment'],
+  ['Client Management', '/admin/client-management', 'crm client inquiries customers'],
+  ['Marketing', '/admin/marketing', 'sales orders products news posts content'],
+  ['Dashboard', '/admin', 'overview summary performance kpi'], ['CRM', '/admin/client-management/crm', 'customer contact'],
+  ['Client inquiries', '/admin/client-management/inquiries', 'website messages leads contact support partnership'],
+  ['Sales', '/admin/marketing/sales', 'invoice payment quotation return'], ['Orders', '/admin/marketing/orders', 'website fulfillment'],
   ['Inventory', '/admin/inventory', 'stock warehouse movement'], ['Logistics', '/admin/logistics', 'delivery vehicle dispatch'],
   ['Production calendar', '/admin/calendar', 'schedule task reminder activity google outlook business calendar'],
   ['Daily activities', '/admin/farm-daily-activities/activities/overview', 'routine worker farm report'], ['Finance', '/admin/finance', 'expense revenue profit'],
   ['Procurement', '/admin/procurement', 'supplier purchase order'], ['Export operations', '/admin/export-ops', 'shipment export'],
   ['Human resources', '/admin/hr', 'employee attendance'], ['Applications', '/admin/applications', 'career applicant'],
-  ['Content', '/admin/content', 'website product news'], ['Documents', '/admin/documents', 'certificate notification'],
+  ['Products', '/admin/marketing/products', 'website catalog content'],
+  ['News Posts', '/admin/marketing/news-posts', 'website news articles content'], ['Documents', '/admin/documents', 'certificate notification'],
   ['Reports', '/admin/reports', 'analytics'], ['Settings', '/admin/settings', 'configuration user access'],
 ];
 
@@ -110,20 +115,20 @@ export default function AdminTopbar({ onMenuClick }) {
   };
 
   return (
-    <header className="sticky top-0 z-[60] flex h-16 items-center gap-2 border-b border-border bg-card px-3 sm:gap-3 sm:px-4 md:px-6">
+    <header className="admin-topbar sticky top-0 z-[60] flex h-16 items-center gap-2 border-b border-[#355e3b] bg-[#123524] text-white px-3 sm:gap-3 sm:px-4 md:px-6">
       <button type="button" className="hidden h-11 w-11 shrink-0 place-items-center rounded-xl transition-colors hover:bg-muted md:grid xl:hidden" onClick={onMenuClick} aria-label="Open navigation"><Menu className="h-5 w-5" /></button>
-      <BrandLogo className="flex h-12 w-[104px] shrink-0 xl:hidden" imageClassName="h-9 max-w-[104px] sm:h-10" />
-      <BrandLogo className="hidden h-12 w-[92px] shrink-0 xl:flex" imageClassName="h-10 max-w-[92px] sm:h-10" />
+      <BrandLogo light className="flex h-12 w-[132px] shrink-0 xl:hidden" />
+      <BrandLogo light className="hidden h-12 w-[132px] shrink-0 xl:flex" />
       <AdminHorizontalNav />
       <form onSubmit={runSearch} className="relative hidden min-w-48 max-w-sm flex-1 md:block">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search admin tools…" className="border-0 bg-muted/50 pl-9" />
-        {search && <div className="absolute left-0 right-0 top-[calc(100%+8px)] overflow-hidden rounded-lg border border-border bg-card shadow-xl">
+        {search && <div className="admin-search-results absolute left-0 right-0 top-[calc(100%+8px)] overflow-hidden rounded-lg border border-border bg-card text-foreground shadow-xl">
           {searchResults.length ? searchResults.map(([label, path]) => <button key={path} type="button" onClick={() => { navigate(path); setSearch(''); }} className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm hover:bg-muted"><Search className="h-3.5 w-3.5 text-muted-foreground" />{label}</button>) : <p className="px-4 py-3 text-sm text-muted-foreground">No matching admin page</p>}
         </div>}
       </form>
 
-      <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-3">
+      <div className="admin-topbar-actions ml-auto flex shrink-0 items-center gap-1.5 sm:gap-3">
         <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setMobileSearchOpen(true)} aria-label="Search admin tools" title="Search admin tools">
           <Search className="h-5 w-5" />
         </Button>
@@ -136,7 +141,7 @@ export default function AdminTopbar({ onMenuClick }) {
           </Button>
           {notifOpen && <div className="admin-notification-panel fixed inset-x-4 top-16 mt-2 md:absolute md:inset-x-auto md:right-0 md:top-auto md:w-[22rem] overflow-hidden rounded-lg border border-border bg-card shadow-xl">
             <div className="flex items-center justify-between border-b px-4 py-3"><p className="text-sm font-semibold">Notifications</p><span className="text-xs text-muted-foreground">{unread} unread</span></div>
-            <div className="max-h-80 overflow-y-auto p-2">{notifications.length ? notifications.map((notification) => <div key={notification.id} className="group flex rounded-md hover:bg-muted"><button type="button" onClick={() => openNotification(notification)} className="min-w-0 flex-1 px-3 py-2.5 text-left"><span className="flex items-start justify-between gap-3"><span className="text-sm font-medium">{notification.title}</span>{notification.status !== 'read' && <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-primary" />}</span><span className="mt-1 block text-xs leading-5 text-muted-foreground">{notification.message}</span><span className="mt-1 block text-caption text-muted-foreground">{timeAgo(notification.created_date)}</span></button>{notification.status === 'read' && <Button type="button" variant="ghost" size="icon" onClick={() => deleteNotification(notification)} className="mr-1 mt-1.5 h-8 w-8 shrink-0" aria-label={`Delete notification: ${notification.title}`} title="Delete notification"><Trash2 className="h-4 w-4" /></Button>}</div>) : <p className="px-3 py-8 text-center text-sm text-muted-foreground">No notifications yet.</p>}</div>
+            <div className="max-h-80 overflow-y-auto p-2">{notifications.length ? notifications.map((notification) => <div key={notification.id} className="group flex rounded-md hover:bg-muted"><button type="button" onClick={() => openNotification(notification)} className="min-w-0 flex-1 px-3 py-2.5 text-left"><span className="flex items-start justify-between gap-3"><span className="text-sm font-medium">{notification.title}</span>{notification.status !== 'read' && <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-primary" />}</span><span className="mt-1 block text-xs leading-5 text-muted-foreground">{notification.message}</span><span className="mt-1 block text-caption text-muted-foreground">{timeAgo(notification.created_date)}</span></button>{notification.status === 'read' && <AdminActionButton action="delete" type="button" onClick={() => deleteNotification(notification)} aria-label={`Delete notification: ${notification.title}`} title="Delete notification" />}</div>) : <p className="px-3 py-8 text-center text-sm text-muted-foreground">No notifications yet.</p>}</div>
           </div>}
         </div>
         <DropdownMenu>

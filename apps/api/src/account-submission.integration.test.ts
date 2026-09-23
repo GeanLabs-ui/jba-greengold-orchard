@@ -15,7 +15,7 @@ declare const process: { env: Record<string, string | undefined> };
 describe.skipIf(!process.env.AUTH_DATABASE_TEST)('account submission after session rotation', () => {
   it('uploads both documents once and persists a pending verification after stale-token recovery', async () => {
     const url = new URL(process.env.DATABASE_URL!);
-    if (!['localhost', '127.0.0.1'].includes(url.hostname) || url.port !== '54329') throw new Error('Local test database required');
+    if (!['localhost', '127.0.0.1'].includes(url.hostname) || url.port !== '15432') throw new Error('Local test database required');
     const db = postgres(url.toString(), { max: 1, prepare: false });
     const rollback = new Error('ROLLBACK_TEST_FIXTURES');
     let verified = false;

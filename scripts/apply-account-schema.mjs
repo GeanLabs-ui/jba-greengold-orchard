@@ -5,7 +5,7 @@ import { migrationChecksums } from '../packages/database/scripts/migration-check
 
 // Target only the missing additive account schema, never replay older migrations.
 const url = new URL(process.env.DATABASE_URL);
-if (!['localhost', '127.0.0.1'].includes(url.hostname) || url.port !== '54329') throw new Error('Local database only');
+if (!['localhost', '127.0.0.1'].includes(url.hostname) || url.port !== '15432') throw new Error('Local database only');
 const name = '0019_customer_account_setup.sql';
 const source = await readFile(new URL(`../packages/database/migrations/${name}`, import.meta.url), 'utf8');
 assertMigrationIsNonDestructive(name, source);

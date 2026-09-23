@@ -1,7 +1,8 @@
+import AdminActionButton from '@/components/admin/AdminActionButton';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Building2, CalendarDays, ChevronRight, Download, IdCard, Loader2,
-  Mail, Maximize2, MoreHorizontal, Network, Pencil, Plus, ShieldCheck, UserPlus, UserRoundCog, Users,
+  Mail, Maximize2, MoreHorizontal, Network, Plus, ShieldCheck, UserPlus, UserRoundCog, Users,
 } from 'lucide-react';
 import {
   Area, AreaChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
@@ -647,7 +648,7 @@ function StaffPassDialog({ employee, trigger }) {
         <DialogHeader><DialogTitle>Staff pass</DialogTitle><DialogDescription>Generated automatically from the employee’s HR record.</DialogDescription></DialogHeader>
         <div ref={passRef} className="relative mx-auto aspect-[1.585/1] w-full max-w-[520px] overflow-hidden rounded-2xl border border-emerald-950/15 bg-white p-6 text-slate-900 shadow-lg">
           <div className="absolute inset-x-0 top-0 h-2 bg-gradient-to-r from-emerald-900 via-emerald-600 to-amber-400" />
-          <div className="flex items-start justify-between gap-4"><BrandLogo className="h-12 w-auto" /><div className="text-right"><p className="text-caption font-bold uppercase tracking-[0.2em] text-emerald-800">Staff Pass</p><p className="mt-1 font-mono text-xs font-bold">{employee.employee_code}</p></div></div>
+          <div className="flex items-start justify-between gap-4"><BrandLogo className="h-14 w-[150px]" /><div className="text-right"><p className="text-caption font-bold uppercase tracking-[0.2em] text-emerald-800">Staff Pass</p><p className="mt-1 font-mono text-xs font-bold">{employee.employee_code}</p></div></div>
           <div className="mt-5 flex gap-5">
             <div className="h-28 w-24 shrink-0 overflow-hidden rounded-xl border-2 border-emerald-800/20 bg-emerald-50">{employee.photo_url ? <img src={employee.photo_url} alt={nameOf(employee)} className="h-full w-full object-cover" /> : <div className="grid h-full place-items-center text-2xl font-bold text-emerald-800">{(employee.first_name?.[0] || '?')}{employee.last_name?.[0] || ''}</div>}</div>
             <div className="min-w-0 flex-1"><p className="truncate font-heading text-xl font-bold">{nameOf(employee)}</p><p className="mt-1 text-sm font-semibold text-emerald-800">{employee.job_title || roleLabel(employee.workspace_role)}</p><div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2 text-caption"><div><span className="block uppercase tracking-wide text-slate-500">Department</span><b>{employee.department_name || employee.department || '—'}</b></div><div><span className="block uppercase tracking-wide text-slate-500">Sub-department</span><b>{employee.sub_department_name || '—'}</b></div><div><span className="block uppercase tracking-wide text-slate-500">Joined</span><b>{formatDate(employee.hire_date || employee.joining_at)}</b></div><div><span className="block uppercase tracking-wide text-slate-500">Status</span><b className="capitalize">{employee.status || 'active'}</b></div></div></div>
@@ -724,7 +725,7 @@ export default function HR() {
                 const manager = managerById.get(employee.reports_to_employee_id);
                 return <article key={employee.id} className="flex flex-col gap-4 p-4 lg:flex-row lg:items-center">
                   <div className="flex min-w-0 flex-1 items-center gap-4"><div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-primary/10">{employee.photo_url ? <img src={employee.photo_url} alt="" className="h-full w-full object-cover" /> : <div className="grid h-full place-items-center font-semibold text-primary">{employee.first_name?.[0] || '?'}{employee.last_name?.[0] || ''}</div>}</div><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><p className="font-semibold">{nameOf(employee)}</p><StatusBadge status={employee.status || 'active'} /></div><p className="mt-1 text-sm text-muted-foreground">{employee.job_title || roleLabel(employee.workspace_role)} · {employee.employee_code || 'ID pending'}</p><p className="mt-1 text-xs text-muted-foreground">{employee.department_name || employee.department || 'No department'}{employee.sub_department_name ? ` › ${employee.sub_department_name}` : ''}{manager ? ` · Reports to ${nameOf(manager)}` : ' · Top-level reporting line'}</p></div></div>
-                  <div className="flex flex-wrap gap-2">{canManage && <EmployeeDialog employee={employee} employees={employees} departments={departments} currentUser={user} onSaved={load} trigger={<Button size="sm" variant="outline"><Pencil className="mr-2 h-4 w-4" />Edit</Button>} />}<StaffPassDialog employee={employee} trigger={<Button size="sm" variant="outline"><IdCard className="mr-2 h-4 w-4" />Staff pass</Button>} /></div>
+                  <div className="flex flex-wrap gap-2">{canManage && <EmployeeDialog employee={employee} employees={employees} departments={departments} currentUser={user} onSaved={load} trigger={<AdminActionButton action="edit" label="Edit" />} />}<StaffPassDialog employee={employee} trigger={<Button size="sm" variant="outline"><IdCard className="mr-2 h-4 w-4" />Staff pass</Button>} /></div>
                 </article>;
               })}
             </div>

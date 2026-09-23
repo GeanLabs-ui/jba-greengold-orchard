@@ -1,3 +1,4 @@
+import AdminActionButton from '@/components/admin/AdminActionButton';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -5,9 +6,7 @@ import {
   CloudSun,
   Loader2,
   Plus,
-  Pencil,
   RefreshCw,
-  Trash2,
 } from 'lucide-react';
 import PageSkeleton from '@/components/shared/PageSkeleton';
 import { base44 } from '@/api/base44Client';
@@ -1131,7 +1130,7 @@ function RiskRegisterView({ risks, onCreateRisk, onEditRisk, onDeleteRisk, busyK
         <table className="drc-table">
           <thead><tr><th>ID</th><th>Risk</th><th>Category</th><th>Probability</th><th>Impact</th><th>Mitigation</th><th>Owner</th><th>Recorded</th><th>Updated</th><th>Status</th><th>Actions</th></tr></thead>
           <tbody>{visibleRisks.map((risk) => (
-            <tr key={risk.id}><td>{risk.risk_code}</td><td className="drc-task-name"><b>{risk.requirement}</b></td><td>{risk.category}</td><td>{risk.probability}</td><td>{risk.impact}</td><td>{risk.mitigation}</td><td>{risk.owner}</td><td>{dateTime(risk.recorded_at || risk.created_date)}</td><td>{dateTime(risk.updated_date || risk.created_date)}</td><td><Pill value={risk.status === 'Closed' ? 'GREEN' : risk.status === 'Monitoring' ? 'AMBER' : 'RED'} label={risk.status || 'Open'} /></td><td><button type="button" className="drc-btn drc-risk-edit" onClick={() => openRiskDialog(risk)}><Pencil /> Edit</button></td></tr>
+            <tr key={risk.id}><td>{risk.risk_code}</td><td className="drc-task-name"><b>{risk.requirement}</b></td><td>{risk.category}</td><td>{risk.probability}</td><td>{risk.impact}</td><td>{risk.mitigation}</td><td>{risk.owner}</td><td>{dateTime(risk.recorded_at || risk.created_date)}</td><td>{dateTime(risk.updated_date || risk.created_date)}</td><td><Pill value={risk.status === 'Closed' ? 'GREEN' : risk.status === 'Monitoring' ? 'AMBER' : 'RED'} label={risk.status || 'Open'} /></td><td><AdminActionButton action="edit" type="button" onClick={() => openRiskDialog(risk)} label="Edit" /></td></tr>
           ))}</tbody>
         </table>
       </div>
@@ -1146,7 +1145,7 @@ function RiskRegisterView({ risks, onCreateRisk, onEditRisk, onDeleteRisk, busyK
           <label className="text-label"><span>Status</span><select name="status" defaultValue={editingRisk?.status || 'Open'}><option>Open</option><option>Monitoring</option><option>Closed</option></select></label>
           <label className="wide text-label"><span>Mitigation / next action</span><textarea name="mitigation" rows="3" defaultValue={editingRisk?.mitigation || ''} required minLength="3" maxLength="2000" /></label>
           <div className="drc-master-task-actions">
-            {editingRisk ? <button type="button" className="drc-btn drc-danger" onClick={removeRisk} disabled={busyKey === editingRisk.id}><Trash2 /> Delete risk</button> : null}
+            {editingRisk ? <AdminActionButton action="delete" type="button" onClick={removeRisk} disabled={busyKey === editingRisk.id} label="Delete risk" /> : null}
             <div className="drc-risk-form-primary-actions"><button type="button" className="drc-btn" onClick={closeRiskDialog}>Cancel</button><button className="drc-primary" disabled={busyKey === 'new-risk' || busyKey === editingRisk?.id}>{busyKey === 'new-risk' || busyKey === editingRisk?.id ? <Loader2 className="drc-spin" /> : <Plus />}{editingRisk ? 'Save changes' : 'Add risk'}</button></div>
           </div>
         </form>

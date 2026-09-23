@@ -369,6 +369,11 @@ const staff = {
 };
 
 const files = {
+  uploadProductImage(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    return request('/product-images', { method: 'POST', body: formData });
+  },
   upload(file, recordId) {
     const formData = new FormData();
     formData.append("file", file);

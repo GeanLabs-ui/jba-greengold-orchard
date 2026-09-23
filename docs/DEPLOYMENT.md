@@ -54,6 +54,10 @@ For routine releases, use the **Prepare production promotion** workflow in GitHu
 
 The deployment workflows require the frontend, `/api/v1/health`, and database-backed `/api/v1/ready` to pass. Also inspect Cloudflare Worker errors/traces and Neon metrics. Confirm HTTPS redirection, CSP/security headers, cache headers, Turnstile enforcement, Google token verification, R2 privacy/recovery, WAF activity, and that customer records cannot cross account boundaries.
 
+Staging additionally runs `scripts/browser-smoke.mjs` in Chromium at desktop and mobile widths after deployment. It checks rendered home, products, customer login, and staff login pages, product filters, navigation, uncaught JavaScript errors, and failed application assets. Screenshots and results are retained in the `staging-browser-verification` workflow artifact for 14 days. These checks do not sign in, submit orders, or modify existing records. Authenticated workspace flows still need separate verification.
+
+CI and staging audit the complete dependency tree, including development and deployment tooling, with `npm audit --audit-level=low`. Package cache use is disabled so a cache-service outage cannot affect the release checks. Workflow actions are pinned to commits using the Node 24 runtime.
+
 ## Rollback and migrations
 
 Cloudflare retains Worker and Pages deployments, so roll back both surfaces to the previous known-good deployment from the dashboard or by redeploying a release tag. Database migrations must be additive and backward-compatible: add nullable columns/tables first, deploy compatible code, backfill, and only remove old fields in a later release. For destructive data recovery, pause deployments and restore or branch from Neon's point-in-time history; never improvise a reverse migration on production. Test a Neon restore and an R2 backup read in staging before the first production approval and quarterly thereafter.
