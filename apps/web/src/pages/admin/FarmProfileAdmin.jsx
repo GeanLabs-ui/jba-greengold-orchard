@@ -1,9 +1,9 @@
+import AdminActionButton from '@/components/admin/AdminActionButton';
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft,
   CalendarDays,
-  Edit3,
   Grid2X2,
   Leaf,
   Merge,
@@ -395,9 +395,7 @@ export default function FarmProfileAdmin() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   {canManageFarms(user?.role) ? (
-                    <DropdownMenuItem onClick={() => setFarmDialog(true)}>
-                      <Edit3 className="mr-2 h-4 w-4" />Edit farm
-                    </DropdownMenuItem>
+                    <AdminActionButton action="edit" as={DropdownMenuItem} onClick={() => setFarmDialog(true)} label="Edit farm" />
                   ) : null}
                   <DropdownMenuItem asChild>
                     <Link to="/admin/farm-daily-activities/activities/farms"><ArrowLeft className="mr-2 h-4 w-4" />All farms</Link>

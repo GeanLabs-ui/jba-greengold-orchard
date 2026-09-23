@@ -4,7 +4,7 @@ body:has(.master-task-editor) [data-state="open"][class*="fixed inset-0"] { z-in
 .master-task-editor h2,.master-task-editor p { margin:0; }
 .master-task-editor .mte-header { display:flex; align-items:center; position:relative; flex-shrink:0; gap:28px; min-height:106px; padding:12px 30px; overflow:hidden; }
 .mte-brand { width:194px; padding-right:27px; border-right:1px solid #43565d; flex-shrink:0; }
-.mte-brand img { width:168px; height:58px; object-fit:contain; }
+.mte-brand img { width:100%; min-height:0; object-fit:contain; }
 .mte-header > div:nth-child(2) { z-index:1; max-width:650px; text-align:left; gap:3px; display:flex; flex-direction:column; }
 .master-task-editor .mte-header > div:nth-child(2) > * { margin:0; }
 .master-task-editor .mte-header .mte-eyebrow { font-size:17px; line-height:22px; font-weight:400; color:#152b34; }

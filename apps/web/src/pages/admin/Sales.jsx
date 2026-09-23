@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Banknote, CreditCard, Globe2, Receipt, ShoppingBag } from 'lucide-react';
-import PageHeader from '@/components/shared/PageHeader';
 import PageSkeleton from '@/components/shared/PageSkeleton';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { formatCurrency, formatDate } from '@/components/shared/format';
@@ -124,9 +123,19 @@ export default function Sales() {
 
   return (
     <div>
-      <PageHeader title="Sales">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <div data-page-navigation className="mb-6 grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,36rem)_minmax(0,1fr)]">
+        <TabsList className="h-auto min-w-0 max-w-full justify-start overflow-x-auto lg:col-start-2 lg:justify-self-center">
+          <TabsTrigger value="orders">Sales orders ({orders.length})</TabsTrigger>
+          <TabsTrigger value="invoices">Invoices ({records.invoices.length})</TabsTrigger>
+          <TabsTrigger value="payments">Payments ({records.payments.length})</TabsTrigger>
+          <TabsTrigger value="quotations">Quotations</TabsTrigger>
+          <TabsTrigger value="returns">Returns</TabsTrigger>
+        </TabsList>
+          <div className="justify-self-end">
         <AdminCreateDialog title="New Invoice" description="Create an invoice and add it to Sales and Finance." buttonLabel="New Invoice" fields={invoiceFields} onCreate={createInvoice} onCreated={load} submitLabel="Create Invoice" />
-      </PageHeader>
+          </div>
+        </div>
 
       <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Summary icon={ShoppingBag} label="Gross sales" value={formatCurrency(grossSales)} />
@@ -135,14 +144,6 @@ export default function Sales() {
         <Summary icon={CreditCard} label="Outstanding" value={formatCurrency(totalOutstanding)} tone="text-amber-700" />
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="h-auto w-full justify-start overflow-x-auto">
-          <TabsTrigger value="orders">Sales orders ({orders.length})</TabsTrigger>
-          <TabsTrigger value="invoices">Invoices ({records.invoices.length})</TabsTrigger>
-          <TabsTrigger value="payments">Payments ({records.payments.length})</TabsTrigger>
-          <TabsTrigger value="quotations">Quotations</TabsTrigger>
-          <TabsTrigger value="returns">Returns</TabsTrigger>
-        </TabsList>
 
         <TabsContent value="orders" className="mt-4"><SalesOrdersTable orders={orders} invoiceByOrder={invoiceByOrder} loading={loading} /></TabsContent>
         <TabsContent value="invoices" className="mt-4">

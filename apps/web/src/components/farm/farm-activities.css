@@ -1,0 +1,223 @@
+.farm-activities-page { --fa-border:#dce9e3; --fa-ink:#142c3b; --fa-green:#08763d; color:var(--fa-ink); width:100%; min-width:0; padding:0 0 18px; font-family:Arial,Helvetica,sans-serif; font-size:13px; line-height:1.4; }
+.farm-activities-page *, .fa-editor *, .fa-popover * { box-sizing:border-box; }
+/* Expanded schedule uses the normal page scroll, without a nested row viewport. */
+.farm-schedule-layout > .farm-activities-sticky-nav { justify-content:flex-start; column-gap:24px; }
+.farm-schedule-nav-heading { flex:1 1 600px; min-width:0; display:flex; align-items:center; flex-wrap:wrap; gap:12px 20px; }
+.farm-schedule-nav-heading > div:first-child { flex:1 1 360px; min-width:0; }
+.farm-schedule-nav-heading h2 { margin:0; font:600 16px/1.4 Arial,Helvetica,sans-serif; color:#174c32; }
+.farm-schedule-nav-heading p { margin:4px 0 0; font:400 12px/1.4 Arial,Helvetica,sans-serif; color:#52685c; }
+.farm-schedule-layout .farm-activities-page .fa-board { overflow:visible; }
+.farm-schedule-layout .farm-activities-page .fa-table-scroll { overflow:visible; }
+.farm-schedule-layout .fa-summary-row { position:sticky; top:var(--fa-summary-top, 0px); z-index:35; background:var(--company-page, #f4fbf5); isolation:isolate; }
+.farm-schedule-layout .fa-summary-row::before { content:''; position:absolute; inset:-24px -1px -14px; z-index:-1; background:var(--company-page, #f4fbf5); pointer-events:none; }
+.farm-schedule-layout .fa-workbook-table thead { position:sticky; top:var(--fa-columns-top, var(--page-navigation-height, 0px)); z-index:34; }
+.farm-activities-page button, .fa-editor button, .fa-popover button { cursor:pointer; }
+.farm-activities-page button:disabled, .fa-editor button:disabled, .fa-popover button:disabled { cursor:not-allowed; opacity:.5; }
+.farm-activities-page :is(button,input,select,textarea):focus-visible,.fa-editor :is(button,input,select,textarea):focus-visible,.fa-popover :is(button,input):focus-visible { outline:2px solid #168c4f; outline-offset:2px; }
+.farm-activities-page .fa-intro { display:grid; grid-template-columns:1.05fr 1fr; align-items:center; gap:30px; margin-bottom:19px; }
+.farm-activities-page .fa-breadcrumb { display:flex; align-items:center; gap:9px; color:#73828a; font-size:12px; margin-bottom:14px; }
+.farm-activities-page .fa-breadcrumb svg { width:12px; height:12px; }
+.farm-activities-page .fa-breadcrumb span:last-child { color:#224936; }
+.farm-activities-page .fa-intro h1 { font-family:inherit; font-size:32px; line-height:1.15; font-weight:700; letter-spacing:-.8px; color:#0b1928; margin:0 0 4px; }
+.farm-activities-page .fa-intro p { font-family:inherit; font-size:14px; color:#71808c; margin:0; line-height:1.5; }
+.farm-activities-page .fa-banner { min-height:98px; display:flex; gap:17px; align-items:center; padding:20px; border-radius:9px; background:linear-gradient(90deg,#e8f4e8 0%,#e8f4e8ed 50%,#e8f4e810 100%),url('/videos/optimized/farms-3950bfae05ce-poster.webp') center 45%/cover; overflow:hidden; }
+.farm-activities-page .fa-banner>span { width:48px; height:48px; display:grid; place-items:center; flex-shrink:0; border-radius:50%; background:#d9efd9; color:#087438; }
+.farm-activities-page .fa-banner strong { color:#104e2b; font-size:14px; font-weight:600; }
+.farm-activities-page .fa-banner p { font-size:12px; margin-top:3px; color:#355e46; }
+.farm-activities-page .fa-view-tabs { display:flex; gap:10px; margin-bottom:12px; overflow-x:auto; overflow-y:hidden; scrollbar-width:none; padding:1px; }
+.farm-activities-page .fa-view-tabs::-webkit-scrollbar { display:none; }
+.farm-activities-page .fa-view-tabs button { display:flex; align-items:center; justify-content:center; gap:13px; border:1px solid var(--fa-border); border-radius:6px; background:transparent; color:#40544a; min-height:40px; padding:0 20px; white-space:nowrap; font:inherit; font-size:12px; }
+.farm-activities-page .fa-view-tabs svg { width:16px; height:16px; }
+.farm-activities-page .fa-view-tabs button[aria-selected=true] { background:#2a714a; border-color:#2a714a; color:white; font-weight:600; }
+.farm-activities-page .fa-kpis { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-bottom:14px; }
+.farm-activities-page .fa-kpi { min-height:78px; border:1px solid var(--fa-border); border-radius:7px; background:#ffffffdc; display:flex; align-items:center; gap:24px; padding:13px 19px; }
+.farm-activities-page .fa-kpi>div { flex:1; min-width:0; }
+.farm-activities-page .fa-kpi p { margin:0 0 1px; font-size:12px; color:#3d4d55; }
+.farm-activities-page .fa-kpi-value { display:flex; align-items:center; gap:12px; }
+.farm-activities-page .fa-kpi strong { font-size:23px; color:#073d27; line-height:1.1; }
+.farm-activities-page .fa-kpi-icon { width:46px; height:46px; flex-shrink:0; display:grid; place-items:center; border-radius:50%; background:#e1f5e6; color:#079143; }
+.farm-activities-page .fa-kpi-icon svg { width:23px; height:23px; }
+.farm-activities-page .fa-amber .fa-kpi-icon { background:#fff4d2; color:#f1a000; }
+.farm-activities-page .fa-success .fa-kpi-icon { background:linear-gradient(#def5e2,#a9dfb4); }
+.farm-activities-page .fa-red .fa-kpi-icon { background:#ffe3e5; color:#df1727; }
+.farm-activities-page .fa-red strong { color:#a91d23; }
+.farm-activities-page .fa-blue .fa-kpi-icon { background:#dfeeff; color:#1686ed; }
+.farm-activities-page progress { width:100%; height:7px; border:0; border-radius:8px; overflow:hidden; background:#e0e2e1; accent-color:#149049; }
+.farm-activities-page progress::-webkit-progress-bar { background:#e0e2e1; }
+.farm-activities-page progress::-webkit-progress-value { background:#149049; border-radius:8px; }
+.farm-activities-page .fa-board { border:1px solid var(--fa-border); border-radius:8px; background:#fff; overflow:hidden; }
+.farm-activities-page .fa-schedule-heading { padding:16px; border-bottom:1px solid var(--fa-border); background:#f7fbf8; }
+.farm-activities-page .fa-schedule-heading h2 { margin:0; font:600 16px/1.4 Arial,Helvetica,sans-serif; color:#174c32; }
+.farm-activities-page .fa-schedule-heading p { margin:4px 0 0; font-size:12px; color:#52685c; }
+.farm-activities-page .fa-toolbar { display:grid; grid-template-columns:minmax(110px,1fr) minmax(110px,1fr) minmax(180px,1.5fr) auto; align-items:center; gap:10px; padding:13px; border-bottom:1px solid var(--fa-border); }
+.farm-activities-page :is(input:not([type=checkbox]),select,textarea), .fa-editor :is(input,select,textarea), .fa-popover input { min-width:0; width:100%; max-width:100%; border:1px solid #dce4e6; border-radius:5px; background:#fff; color:#354853; min-height:35px; padding:7px 10px; font:inherit; font-size:12px; line-height:1.4; box-shadow:none; }
+.farm-activities-page select { text-overflow:ellipsis; padding-right:20px; }
+.farm-activities-page input[type=checkbox] { width:14px; height:14px; accent-color:#0c793e; cursor:pointer; }
+.farm-activities-page .fa-search { position:relative; display:block; }
+.farm-activities-page .fa-search svg { position:absolute; left:11px; top:10px; width:16px; height:16px; color:#7d8b96; }
+.farm-activities-page .fa-search input { padding-left:37px; }
+.farm-activities-page .fa-primary,.fa-editor .fa-primary,.fa-popover .fa-primary { display:inline-flex; align-items:center; justify-content:center; gap:9px; background:linear-gradient(#087c3e,#02662e); color:white; border:1px solid #08743a; border-radius:6px; padding:9px 16px; font-weight:600; }
+.farm-activities-page .fa-add { margin-left:auto; white-space:nowrap; min-height:38px; }
+.farm-activities-page .fa-add svg { width:17px; height:17px; }
+.farm-activities-page .fa-date,.fa-editor .fa-date { display:flex; align-items:center; gap:8px; border:1px solid #dce4e6; border-radius:5px; background:#fff; color:#455764; font:inherit; font-size:11px; min-height:35px; padding:7px 9px; width:100%; text-align:left; }
+.fa-date svg { flex-shrink:0; }
+.farm-activities-page .fa-date.fa-date-icon { width:44px; min-height:44px; padding:0; justify-content:center; margin-inline:auto; }
+.fa-date span { white-space:nowrap; }
+.farm-activities-page .fa-table-scroll { width:100%; overflow-x:auto; }
+.farm-activities-page .fa-table { width:100%; min-width:1260px; table-layout:fixed; border-collapse:collapse; font-size:12px; }
+.farm-activities-page .fa-table th { background:#eef6f1; height:40px; text-align:left; padding:8px 10px; font-weight:500; color:#213c48; border-right:1px solid #eaf1ed; }
+.farm-activities-page .fa-table th button { background:none; border:0; padding:0; font:inherit; color:inherit; text-align:left; white-space:nowrap; }
+.farm-activities-page .fa-table td { padding:8px 10px; height:53px; border-top:1px solid #edf2f0; border-right:1px solid #edf2f0; vertical-align:middle; color:#4c5c67; }
+.farm-activities-page .fa-table th:first-child,.farm-activities-page .fa-table td:first-child { text-align:center; padding:8px 4px; }
+.farm-activities-page .fa-table tr:hover { background:#fbfdfb; }
+.farm-activities-page .fa-workbook-table { min-width:0; font-size:13px; line-height:1.5; }
+.farm-activities-page .fa-workbook-table th { height:30px; padding:5px 8px; background:#2f75b5; color:#fff; font-size:14px; font-weight:700; text-align:center; border:0; }
+.farm-activities-page .fa-workbook-table td { height:auto; padding:10px 8px; vertical-align:top; color:#000; border:0; overflow-wrap:anywhere; }
+.farm-activities-page .fa-workbook-table td:first-child { text-align:left; padding:10px 12px; }
+.farm-activities-page .fa-workbook-table th { overflow-wrap:anywhere; }
+.farm-activities-page .fa-workbook-table .fa-actions button { flex-shrink:0; }
+.farm-activities-page .fa-workbook-table tbody tr:nth-child(odd) { background:#f4f8fc; }
+.farm-activities-page .fa-workbook-table tbody tr:nth-child(even) { background:#fff; }
+.farm-activities-page .fa-workbook-action { display:block; padding:0; border:0; background:none; color:inherit; text-align:left; font:inherit; font-weight:400; }
+.farm-activities-page .fa-action-timing p { margin:0; color:inherit; font:inherit; }
+.farm-activities-page .fa-physical-signs { white-space:pre-line; overflow-wrap:anywhere; }
+.farm-activities-page .fa-note { padding:0; border:0; background:none; color:inherit; text-align:left; font:inherit; white-space:pre-wrap; overflow-wrap:anywhere; }
+.farm-activities-page .fa-mobile-field-label { display:block; margin-bottom:4px; font-weight:600; font-size:12px; }
+.farm-activities-page .fa-mobile-actions { display:flex; align-items:center; justify-content:space-between; }
+.farm-activities-page .fa-task-title { display:flex; align-items:center; gap:9px; width:100%; text-align:left; font:inherit; font-size:12px; font-weight:600; color:#182f3e; background:none; border:0; padding:0; line-height:1.4; }
+.farm-activities-page .fa-task-title svg { flex-shrink:0; width:20px; height:20px; color:#45982b; }
+.farm-activities-page .fa-text-preview { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; text-align:left; font:inherit; font-size:12px; line-height:1.5; color:inherit; background:none; border:0; padding:0; max-width:100%; }
+.farm-activities-page .fa-text-preview:hover { color:#08773b; }
+.farm-activities-page select.fa-status,.fa-editor select.fa-status { width:100%; min-height:28px; border:0; border-radius:20px; padding:5px 20px 5px 10px; font-size:11px; }
+.farm-activities-page select.fa-status-not_started,.fa-editor select.fa-status-not_started { background:#eef1f4; color:#354a5c; }
+.farm-activities-page select.fa-status-in_progress,.fa-editor select.fa-status-in_progress { background:#fff3d5; color:#a65b00; }
+.farm-activities-page select.fa-status-completed,.fa-editor select.fa-status-completed { background:#d8f0dc; color:#086330; }
+.farm-activities-page select.fa-status-blocked,.fa-editor select.fa-status-blocked { background:#ffe4e5; color:#a5222c; }
+.farm-activities-page select.fa-status-on_hold,.farm-activities-page select.fa-status-deferred,.fa-editor select.fa-status-on_hold,.fa-editor select.fa-status-deferred { background:#e7effa; color:#315a89; }
+.farm-activities-page .fa-overdue { display:block; font-size:9px; color:#b42f39; margin:2px 10px 0; }
+.farm-activities-page .fa-actions { display:flex; gap:6px; justify-content:center; }
+.farm-activities-page .fa-actions button { display:grid; place-items:center; width:31px; min-width:27px; height:32px; border:1px solid #d6e9de; border-radius:5px; background:#fff; color:#0e9444; padding:0; }
+.farm-activities-page .fa-actions svg { width:15px; height:15px; }
+.farm-activities-page .fa-actions .fa-delete { border-color:#ffdbde; color:#eb3948; background:#fff4f4; }
+.farm-activities-page .fa-pagination { display:flex; justify-content:space-between; align-items:center; gap:16px; margin-top:18px; color:#47625a; }
+.farm-activities-page .fa-pagination nav { display:flex; align-items:center; gap:8px; }
+.farm-activities-page .fa-pagination button { display:flex; align-items:center; justify-content:center; gap:7px; padding:7px 12px; min-width:33px; height:34px; border:1px solid var(--fa-border); background:#fff; border-radius:5px; font:inherit; color:#32584b; }
+.farm-activities-page .fa-pagination button[aria-current=page] { background:#097c3e; color:white; border-color:#097c3e; }
+.farm-activities-page .fa-pagination svg { width:13px; height:13px; }
+.fa-editor { width:calc(100vw - 32px); max-width:800px; max-height:calc(100dvh - 32px); overflow-y:auto; background:#fff; color:#203d31; border:1px solid #dce9e3; border-radius:12px; padding:25px; font-family:Arial,Helvetica,sans-serif; font-size:13px; z-index:80; }
+.fa-editor h2 { font-family:inherit; font-size:22px; }
+.fa-editor .fa-form-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px 20px; margin-top:8px; }
+.fa-editor .fa-form-grid label,.fa-editor .fa-field-label { display:block; font-size:12px; color:#40594f; }
+.fa-editor label>span { color:#b82b35; }
+.fa-editor label :is(input,select,textarea),.fa-editor .fa-field-label { margin-top:5px; }
+.fa-editor textarea { resize:vertical; }
+.fa-editor .fa-full { grid-column:1/-1; }
+.fa-editor .fa-date { font-size:13px; }
+.fa-editor .fa-readiness { background:#f2f8f1; border-radius:6px; padding:10px 12px; margin-top:14px; font-size:12px; }
+.fa-editor .fa-readiness summary { cursor:pointer; font-weight:600; }
+.fa-editor .fa-readiness p { white-space:pre-line; line-height:1.6; margin:8px 0; }
+.fa-editor .fa-readiness small { color:#62776b; }
+.fa-dialog-footer { display:flex; justify-content:flex-end; gap:9px; margin-top:18px; }
+.fa-workspace-link { margin-right:auto; align-self:center; color:#167243; font-size:12px; text-decoration:underline; }
+.fa-dialog-footer button { padding:8px 14px; border-radius:5px; background:white; border:1px solid #d6e2dc; font:inherit; }
+.fa-editor .fa-danger { background:#bf2837; color:#fff; border-color:#bf2837; }
+.fa-confirm { max-width:460px; }
+.fa-popover { z-index:100; width:320px; padding:15px; font-family:Arial,Helvetica,sans-serif; font-size:12px; background:#fff; color:#253e34; }
+.fa-popover .fa-range-inputs { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.fa-popover .fa-range-inputs input { margin-top:5px; }
+.fa-popover .fa-dialog-footer { margin-top:12px; }
+.fa-popover button { font-family:inherit; }
+.farm-activities-page .fa-feedback,.farm-activities-page .fa-error,.fa-editor .fa-error { border-radius:5px; background:#e7f6ec; color:#156135; padding:9px 12px; margin:0 0 10px; }
+.farm-activities-page .fa-error,.fa-editor .fa-error { background:#fff0f0; color:#9f2832; }
+.farm-activities-page .fa-error button { text-decoration:underline; }
+.farm-activities-page .fa-bulk { display:flex; align-items:center; gap:20px; padding:10px 16px; background:#edf7f0; }
+.farm-activities-page .fa-bulk button { display:flex; gap:6px; align-items:center; color:#176139; font:inherit; }
+.farm-activities-page .fa-bulk svg { width:15px; height:15px; }
+.farm-activities-page .fa-empty { text-align:center; padding:55px 20px; color:#63766d; }
+.farm-activities-page .fa-empty>svg { margin:0 auto 12px; }
+.farm-activities-page .fa-empty h2 { font:600 18px Arial,sans-serif; margin-bottom:5px; }
+.farm-activities-page .fa-empty button { margin-top:15px; color:#08773b; text-decoration:underline; }
+.farm-activities-page .fa-custom { display:flex; flex-direction:column; gap:3px; margin-top:5px; }
+.farm-activities-page .fa-custom button { padding:4px; color:#14683b; border:1px solid #dce9e3; border-radius:4px; }
+.farm-activities-page .fa-mobile-cards { display:none; }
+.farm-activities-page .fa-calendar { padding:16px; overflow-x:auto; }
+.farm-activities-page .fa-calendar-head { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:16px; }
+.farm-activities-page .fa-calendar-head h2 { font:600 18px Arial,sans-serif; }
+.farm-activities-page .fa-calendar-head>div { display:flex; gap:10px; }
+.farm-activities-page .fa-calendar-head button { border:1px solid #dce9e3; border-radius:5px; padding:6px 10px; }
+.farm-activities-page .fa-calendar-head svg { width:16px; height:16px; }
+.farm-activities-page .fa-month-grid { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); min-width:660px; border-left:1px solid #e0eae4; border-top:1px solid #e0eae4; }
+.farm-activities-page .fa-month-grid>strong { padding:10px; background:#f1f7f3; font-weight:500; }
+.farm-activities-page .fa-day { min-height:110px; padding:6px; border-right:1px solid #e0eae4; border-bottom:1px solid #e0eae4; }
+.farm-activities-page .fa-day time { display:inline-block; padding:2px 5px; margin-bottom:5px; }
+.farm-activities-page .fa-today time { background:#10783e; color:#fff; border-radius:50%; }
+.farm-activities-page .fa-outside { background:#f9faf9; color:#8d9c93; }
+.farm-activities-page .fa-event { display:block; width:100%; border-left:3px solid #3f9461; border-radius:3px; padding:4px 5px; font-size:10px; text-align:left; margin-bottom:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; background:#e9f4ec; }
+.farm-activities-page .fa-calendar-unscheduled { margin-top:12px; }
+@media(min-width:1800px) { .farm-activities-page .fa-table td { height:59px; } }
+@media(max-width:1250px) { .farm-activities-page .fa-toolbar { grid-template-columns:2fr 1fr 1fr; } .farm-activities-page .fa-kpi { gap:10px; padding:12px; } .farm-activities-page .fa-kpi-icon { width:35px; height:35px; } .farm-activities-page .fa-banner { padding:15px; } }
+@media(max-width:1023px) {
+  .farm-activities-page .fa-intro { grid-template-columns:1fr; gap:15px; }
+  .farm-activities-page .fa-intro h1 { font-size:27px; }
+  .farm-activities-page .fa-intro p { font-size:13px; }
+  .farm-activities-page .fa-banner { min-height:83px; }
+  .farm-activities-page .fa-banner p { font-size:11px; }
+  .farm-activities-page .fa-view-tabs button { min-height:44px; padding:0 14px; gap:8px; }
+  .farm-activities-page .fa-kpis { grid-template-columns:1fr 1fr; gap:8px; }
+  .farm-activities-page .fa-kpi { min-height:70px; gap:14px; }
+  .farm-activities-page .fa-kpi-value progress { max-width:160px; }
+  .farm-activities-page .fa-toolbar { grid-template-columns:minmax(0,1fr) minmax(0,1fr); padding:12px; }
+  .farm-activities-page .fa-search,.farm-activities-page .fa-toolbar>.fa-date,.farm-activities-page .fa-add { grid-column:1/-1; width:100%; }
+  .farm-activities-page :is(input:not([type=checkbox]),select),.farm-activities-page .fa-date { min-height:44px; font-size:13px; }
+  .farm-activities-page .fa-search svg { top:14px; }
+  .farm-activities-page .fa-table-scroll { display:none; }
+  .farm-activities-page .fa-mobile-cards { display:grid; }
+  .farm-activities-page .fa-mobile-cards article { padding:16px; border-bottom:1px solid #dce9e3; display:grid; gap:11px; }
+  .farm-activities-page .fa-mobile-cards article:last-child { border:0; }
+  .farm-activities-page .fa-mobile-cards article:nth-child(odd) { background:#f4f8fc; }
+  .farm-activities-page .fa-mobile-workbook-heading { margin:0 -16px; padding:6px 12px; background:#2f75b5; color:#fff; text-align:center; font:700 13px/1.4 Arial,Helvetica,sans-serif; }
+  .farm-activities-page .fa-mobile-cards .fa-action-timing p { color:#000; font:inherit; }
+  .farm-activities-page .fa-mobile-status>div:first-child { flex:1; }
+  .farm-activities-page .fa-mobile-title { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .farm-activities-page .fa-mobile-title label { display:flex; align-items:center; gap:9px; }
+  .farm-activities-page .fa-mobile-title input { flex-shrink:0; }
+  .farm-activities-page .fa-mobile-title strong { font-size:14px; }
+  .farm-activities-page .fa-actions button { width:40px; height:42px; }
+  .farm-activities-page .fa-mobile-cards p { color:#61716a; font-size:12px; line-height:1.55; }
+  .farm-activities-page .fa-mobile-status { display:flex; align-items:center; gap:10px; }
+  .farm-activities-page .fa-mobile-status>.fa-status { flex:1; }
+  .farm-activities-page .fa-mobile-status .fa-completion { width:95px; }
+  .farm-activities-page .fa-mobile-owner { display:flex; align-items:center; gap:8px; color:#365849; }
+  .farm-activities-page .fa-pagination { flex-direction:column; align-items:flex-start; font-size:12px; }
+  .farm-activities-page .fa-pagination nav { align-self:flex-end; }
+  .farm-activities-page .fa-pagination button { min-height:44px; }
+  .fa-editor { padding:20px; }
+  .fa-editor .fa-form-grid { grid-template-columns:1fr; }
+  .fa-editor :is(input,select),.fa-editor .fa-date { min-height:44px; }
+  .farm-activities-page .fa-bulk { flex-wrap:wrap; gap:12px; }
+}
+
+.farm-activities-page .fa-toolbar { display:flex; flex-wrap:wrap; justify-content:flex-end; }
+.farm-activities-page .fa-mobile-filters { display:none; }
+.farm-activities-page .fa-column-filter { display:inline-flex; align-items:center; justify-content:center; gap:4px; }
+.farm-activities-page .fa-table th .fa-date-heading { display:flex; flex-direction:row-reverse; gap:4px; align-items:center; justify-content:center; min-height:0; width:100%; color:inherit; background:none; border:0; padding:0; font:inherit; }
+.farm-activities-page .fa-table th .fa-column-filter { white-space:nowrap; flex-wrap:nowrap; }
+.farm-activities-page [data-filter-active=true] { text-decoration:underline; text-underline-offset:4px; }
+.fa-column-popover { width:280px; max-width:calc(100vw - 24px); padding:14px; background:#fff; color:#253e34; z-index:100; font:400 13px/1.4 Arial,Helvetica,sans-serif; }
+.fa-column-popover label { display:block; font-weight:600; }
+.fa-column-popover select { width:100%; margin:8px 0; padding:8px; border:1px solid #dce4e6; border-radius:5px; background:#fff; font:inherit; }
+.fa-column-popover > button { margin:8px 8px 0 0; padding:6px 9px; border:1px solid #dce4e6; border-radius:5px; font:inherit; }
+@media(max-width:1023px) {
+  .farm-activities-page .fa-mobile-filters { display:flex; flex-wrap:wrap; align-items:center; gap:12px; width:100%; }
+  .farm-activities-page .fa-mobile-filters > button { width:auto; }
+}
+
+.farm-activities-page .fa-summary-row { display:flex; align-items:center; gap:14px; flex-shrink:0; margin-bottom:14px; }
+.farm-activities-page .fa-summary-row .fa-kpis { flex:1; min-width:0; margin-bottom:0; }
+.farm-activities-page .fa-summary-row > .fa-add { flex-shrink:0; }
+.farm-activities-page .fa-toolbar { display:none; }
+@media(max-width:1023px) {
+  .farm-activities-page .fa-summary-row { flex-wrap:wrap; }
+  .farm-activities-page .fa-summary-row .fa-kpis { flex-basis:100%; }
+  .farm-activities-page .fa-toolbar { display:flex; }
+}

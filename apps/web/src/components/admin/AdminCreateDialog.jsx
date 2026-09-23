@@ -15,12 +15,24 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
+import AdminActionButton from '@/components/admin/AdminActionButton';
 
 const buildInitialValues = (fields) => (
   fields.reduce((values, field) => ({
     ...values,
     [field.name]: field.defaultValue ?? '',
   }), {})
+);
+
+// Keep the section type stable so typing does not remount its controls.
+const DailySection = ({ title: sectionTitle, icon: Icon, tone, children, className = '' }) => (
+  <section className={`rounded-lg border p-3 ${tone} ${className}`}>
+    <div className="mb-2 flex items-center gap-2">
+      <Icon className="h-4 w-4 shrink-0" />
+      <h3 className="text-card-title !m-0 !leading-tight">{sectionTitle}</h3>
+    </div>
+    {children}
+  </section>
 );
 
 export default function AdminCreateDialog({
@@ -37,6 +49,7 @@ export default function AdminCreateDialog({
   buttonIcon: ButtonIcon = Plus,
   initialValues: providedInitialValues,
   formVariant,
+  actionIcon,
 }) {
   const { toast } = useToast();
   const initialValues = useMemo(() => ({
@@ -46,17 +59,24 @@ export default function AdminCreateDialog({
   const [open, setOpen] = useState(false);
   const [values, setValues] = useState(initialValues);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
 
   useEffect(() => {
-    if (!open) setValues(initialValues);
+    if (!open) {
+      setValues(initialValues);
+      setSaveError('');
+    }
   }, [initialValues, open]);
 
   const updateValue = (name, value) => {
+    setSaveError('');
     setValues((current) => ({ ...current, [name]: value }));
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (saving) return;
+    setSaveError('');
     setSaving(true);
 
     const payload = fields.reduce((next, field) => {
@@ -72,6 +92,7 @@ export default function AdminCreateDialog({
       setOpen(false);
       onCreated?.();
     } catch (error) {
+      setSaveError(error?.message || 'Could not save. Please try again.');
       toast({
         title: `Could not save ${title.toLowerCase()}`,
         description: error?.message,
@@ -92,7 +113,7 @@ export default function AdminCreateDialog({
           {field.label}
         </Label>
         {field.type === 'select' ? (
-          <Select value={value} onValueChange={(nextValue) => updateValue(field.name, nextValue)}>
+          <Select required={formVariant === 'daily-activity-log' && field.required} value={value} onValueChange={(nextValue) => updateValue(field.name, nextValue)}>
             <SelectTrigger id={field.name} className={formVariant === 'daily-activity-log' ? 'h-8 border-slate-200 bg-white text-caption shadow-sm' : undefined}>
               <SelectValue placeholder={field.placeholder || 'Select'} />
             </SelectTrigger>
@@ -130,6 +151,7 @@ export default function AdminCreateDialog({
           <Input
             id={field.name}
             type={field.type || 'text'}
+            step={field.step ?? (formVariant === 'daily-activity-log' && field.type === 'number' ? 'any' : undefined)}
             required={field.required}
             value={value}
             onChange={(event) => updateValue(field.name, event.target.value)}
@@ -143,36 +165,31 @@ export default function AdminCreateDialog({
 
   const dailyActivityFields = Object.fromEntries(fields.map((field) => [field.name, field]));
   const dailyField = (name, className) => renderField(dailyActivityFields[name], className);
-  const DailySection = ({ title: sectionTitle, icon: Icon, tone, children, className = '' }) => (
-    <section className={`rounded-lg border p-3 ${tone} ${className}`}>
-      <div className="mb-2 flex items-center gap-2">
-        <Icon className="h-4 w-4" />
-        <h3 className="text-card-title">{sectionTitle}</h3>
-      </div>
-      {children}
-    </section>
-  );
-
   const dailyActivityForm = formVariant === 'daily-activity-log';
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant={buttonVariant} className={buttonClassName}>
+        {actionIcon ? <AdminActionButton action={actionIcon} label={buttonLabel} /> : <Button variant={buttonVariant} className={buttonClassName}>
           <ButtonIcon className="mr-2 h-4 w-4" />
           {buttonLabel}
-        </Button>
+        </Button>}
       </DialogTrigger>
       <DialogContent className={dailyActivityForm ? 'max-h-[calc(100vh-1rem)] overflow-y-auto border-slate-200 bg-[#f9fcfa] p-3 shadow-2xl sm:max-w-[49rem] sm:rounded-xl' : 'max-h-[90vh] overflow-y-auto sm:max-w-xl'}>
         {dailyActivityForm ? (
           <>
-            <form onSubmit={handleSubmit} className="space-y-2.5">
+            <DialogTitle className="sr-only">{title}</DialogTitle>
+            <DialogDescription className="sr-only">Enter the task details, then save the activity.</DialogDescription>
+            <form onSubmit={handleSubmit} onInvalid={(event) => {
+              const field = fields.find((item) => item.name === event.target.id);
+              setSaveError(`${field?.label || 'Required field'}: ${event.target.validationMessage}`);
+            }} className="space-y-2.5">
               <div className="grid gap-2.5 md:grid-cols-2">
                 <DailySection title="Activity details" icon={CalendarDays} tone="border-[#e8f5e9] bg-[#f9fcfa] text-[#2e7d32]">
                   <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2">
                     {dailyField('activity_date')}
-                    {dailyField('title')}
                     {dailyField('item_tag')}
+                    {dailyField('title', 'sm:col-span-2')}
                     {dailyField('quantity_used')}
                     {dailyField('status')}
                   </div>
@@ -197,11 +214,11 @@ export default function AdminCreateDialog({
               <div className="grid gap-2.5 md:grid-cols-2">
                 <DailySection title="Financials & output" icon={CircleDollarSign} tone="border-[#e8f5e9] bg-[#f9fcfa] text-[#2e7d32]">
                   <div className="grid gap-x-3 gap-y-3 sm:grid-cols-3">
-                    {dailyField('projected_cost')}
-                    {dailyField('actual_cost')}
-                    {dailyField('projected_revenue')}
-                    {dailyField('actual_revenue')}
-                    {dailyField('output_quantity_kg')}
+                    {dailyField('projected_cost', 'grid min-w-0 grid-rows-[1fr_auto]')}
+                    {dailyField('actual_cost', 'grid min-w-0 grid-rows-[1fr_auto]')}
+                    {dailyField('projected_revenue', 'grid min-w-0 grid-rows-[1fr_auto]')}
+                    {dailyField('actual_revenue', 'grid min-w-0 grid-rows-[1fr_auto]')}
+                    {dailyField('output_quantity_kg', 'grid min-w-0 grid-rows-[1fr_auto]')}
                   </div>
                 </DailySection>
                 <DailySection title="Notes" icon={FileText} tone="border-[#e8f5e9] bg-[#f9fcfa] text-[#2e7d32]">
@@ -209,6 +226,7 @@ export default function AdminCreateDialog({
                 </DailySection>
               </div>
 
+              {saveError && <p role="alert" className="text-body-sm text-red-700">{saveError}</p>}
               <div className="flex items-center justify-end gap-2 pt-1">
                 <DialogClose asChild>
                   <Button type="button" variant="outline" className="h-8 border-slate-200 px-4 text-caption text-slate-600 hover:bg-slate-50">Cancel</Button>

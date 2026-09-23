@@ -100,7 +100,7 @@ input:disabled, textarea:disabled, select:disabled {
   background: #c8e6c9 !important;
   color: #123524 !important;
 }
-.company-header-logo { background: #fff; border-radius: 3px; }
+.company-header-logo { background: transparent; border-radius: 0; }
 .company-navbar :is([data-radix-navigation-menu-viewport], [data-radix-popper-content-wrapper]) {
   --foreground: 150.86 49.3% 13.92%;
   --muted-foreground: 136.36 10.38% 41.57%;

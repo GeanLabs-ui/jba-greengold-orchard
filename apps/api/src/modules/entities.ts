@@ -15,6 +15,17 @@ import {
 } from "./farm-entity-compat.js";
 import { generateEmployeeCode } from "./staff-identity.js";
 
+const storefrontProductSchema = z.object({
+  storefront: z.literal(true),
+  catalog_id: z.string().regex(/^[a-zA-Z0-9-]{1,120}$/),
+  name: z.string().trim().min(1).max(120),
+  description: z.string().trim().min(1).max(1000),
+  category: z.enum(['fresh', 'dried', 'drinks', 'preserves', 'gifts', 'export']),
+  price: z.number().finite().min(0).max(10000000).refine(value => Math.abs(value * 100 - Math.round(value * 100)) < 0.00001),
+  image: z.string().max(2048).refine(value => /^https:\/\/[^\s]+$/.test(value) || /^\/(?!\/)[^\s]+$/.test(value)),
+  status: z.enum(['draft', 'published']),
+});
+
 const projectionPayloadSchema = z.object({
   cost: z.number().finite().nonnegative().optional(),
   revenue: z.number().finite().nonnegative().optional(),
@@ -330,7 +341,7 @@ function canRead(
   return ROLE_READ_ENTITIES[user.role]?.has(name) ?? false;
 }
 
-function canWrite(user: AuthUser | null, name: string): boolean {
+export function canWrite(user: AuthUser | null, name: string): boolean {
   if (!user) return false;
   if (["Department", "Employee"].includes(name)) return ["super_admin", "hr_officer"].includes(user.role);
   return isAdmin(user) || (ROLE_WRITE_ENTITIES[user.role]?.has(name) ?? false);
@@ -522,6 +533,9 @@ router.post("/:entity", async (c) => {
       403,
     );
   let payload = safePayload(await c.req.json().catch(() => null));
+  if (name === "Product" && payload?.storefront === true && !storefrontProductSchema.safeParse(payload).success) {
+    return c.json({ error: { code: "VALIDATION_ERROR", message: "Enter a product name, description, category, valid image URL, non-negative price (up to two decimals), and publication status." } }, 422);
+  }
   if (name === "FarmAnalyticsProjection" && !projectionPayloadSchema.safeParse(payload).success) {
     return c.json({ error: { code: "VALIDATION_ERROR", message: "Projections must be non-negative numbers." } }, 422);
   }
@@ -754,6 +768,9 @@ router.patch("/:entity/:id", async (c) => {
       403,
     );
   const payload = safePayload(await c.req.json().catch(() => null));
+  if (name === "Product" && payload?.storefront === true && !storefrontProductSchema.safeParse(payload).success) {
+    return c.json({ error: { code: "VALIDATION_ERROR", message: "Enter a product name, description, category, valid image URL, non-negative price (up to two decimals), and publication status." } }, 422);
+  }
   if (name === "FarmAnalyticsProjection" && !projectionPayloadSchema.safeParse(payload).success) {
     return c.json({ error: { code: "VALIDATION_ERROR", message: "Projections must be non-negative numbers." } }, 422);
   }

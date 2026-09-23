@@ -1,4 +1,5 @@
-import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useBrowserLayoutEffect } from '@/lib/use-browser-layout-effect';
+import React, { useEffect, useRef, useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, CheckCircle2, ChevronLeft, ChevronRight, CreditCard, Loader2, LockKeyhole, Package, ShoppingBag, Truck, X } from 'lucide-react';
@@ -38,7 +39,7 @@ export default function CheckoutDialog({ routes, isAuthenticated, navigateToLogi
     return () => query.removeEventListener('change', update);
   }, []);
 
-  useLayoutEffect(() => {
+  useBrowserLayoutEffect(() => {
     if (!open || !ready || (compact && step !== 3)) return undefined;
     let observer;
     const measure = () => {

@@ -1,3 +1,5 @@
+import { normalizeCostType } from './activity-cost-types';
+
 const asNumber = (value) => {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
@@ -98,7 +100,7 @@ export function buildFarmOperationsAnalytics(
     .map((activity) => ({
       ...activity,
       value: activityCost(activity),
-      costCategory: activity.cost_type || activity.category || 'Other',
+      costCategory: normalizeCostType(activity.cost_type),
     }))
     .filter((activity) => activity.value > 0);
 

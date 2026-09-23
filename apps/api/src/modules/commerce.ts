@@ -1,3 +1,4 @@
+import { PRODUCT_CATALOG, mergeCatalog, type CatalogProduct } from '../../../../packages/catalog/catalog.js';
 import { Hono } from 'hono';
 import { z } from 'zod';
 import { closeDatabase, createDatabase } from '../db.js';
@@ -5,27 +6,12 @@ import { requireRole, requireCsrf, type AppVariables } from '../middleware/auth.
 import { checkRateLimit, requestIp } from '../rate-limit.js';
 import { assertPaymentOption, PaymentError } from './payment-gateways.js';
 
-export const COMMERCE_CATALOG = {
-  'dried-mango': { name: 'Dried Mango', price: 25, image: '/products/catalog-dried-mango.webp' },
-  'mango-juice': { name: 'Mango Juice', price: 20, image: '/products/catalog-mango-juice.webp' },
-  'wild-mango-wine': { name: 'Wild Mango Wine', price: 85, image: '/products/catalog-wild-mango-wine.webp' },
-  'mango-jam': { name: 'Mango Jam', price: 25, image: '/products/catalog-mango-jam.webp' },
-  'mango-pickle': { name: 'Mango Pickle', price: 22, image: '/products/catalog-mango-pickle.webp' },
-  'dehydrated-mango': { name: 'Dehydrated Mango', price: 30, image: '/products/catalog-dehydrated-mango.webp' },
-  'gift-pack-small': { name: 'Gift Pack (Small)', price: 95, image: '/products/catalog-gift-small.webp' },
-  'gift-pack-large': { name: 'Gift Pack (Large)', price: 160, image: '/products/catalog-gift-large.webp' },
-  'fresh-mango-export-box': { name: 'Fresh Mango Export Box', price: 120, image: '/products/box-package.webp' },
-  'dried-mango-pouch': { name: 'Dried Mango Pouch', price: 25, image: '/products/dried-mango.webp' },
-  'dehydrated-mango-jar': { name: 'Dehydrated Mango Jar', price: 32, image: '/products/dried-mango-jar.webp' },
-  'mango-pudding-pouch': { name: 'Mango Pudding Pouch', price: 18, image: '/products/mango-pudding.webp' },
-} as const;
-
-type ProductId = keyof typeof COMMERCE_CATALOG;
+export const COMMERCE_CATALOG = Object.fromEntries(PRODUCT_CATALOG.map(product => [product.id, product]));
 
 const checkoutSchema = z.object({
   checkout_key: z.string().uuid().optional(),
   items: z.array(z.object({
-    product_id: z.enum(Object.keys(COMMERCE_CATALOG) as [ProductId, ...ProductId[]]),
+    product_id: z.string().min(1).max(120),
     quantity: z.coerce.number().int().min(1).max(99),
   })).min(1).max(50),
   shipping: z.object({
@@ -65,9 +51,10 @@ export function publicOrderTrackingView(order: StoredOrder, createdAt: Date, upd
   };
 }
 
-export function priceOrder(items: Array<{ product_id: ProductId; quantity: number }>) {
+export function priceOrder(items: Array<{ product_id: string; quantity: number }>, catalog: Record<string, Pick<CatalogProduct, 'name' | 'price' | 'image'>> = COMMERCE_CATALOG) {
   const lines = items.map((item) => {
-    const product = COMMERCE_CATALOG[item.product_id];
+    const product = catalog[item.product_id];
+    if (!product) throw new Error('This product is no longer available. Refresh your basket.');
     const lineTotal = product.price * item.quantity;
     return {
       product_id: item.product_id,
@@ -84,6 +71,15 @@ export function priceOrder(items: Array<{ product_id: ProductId; quantity: numbe
 }
 
 const router = new Hono<{ Bindings: Env; Variables: AppVariables }>();
+
+router.get('/catalog', async (c) => {
+  const sql = createDatabase(c.env);
+  try {
+    const rows = await sql<{ id: string; data: Record<string, any>; created_at: Date }[]>`SELECT id, data, created_at FROM entity_records WHERE entity_name = 'Product' AND data->>'storefront' = 'true' ORDER BY updated_at, id`;
+    c.header('Cache-Control', 'no-store');
+    return c.json({ data: mergeCatalog(rows.map(row => ({ ...row.data, id: row.id, created_date: row.created_at.toISOString() }))) });
+  } finally { await closeDatabase(sql); }
+});
 
 router.post('/orders/track', async (c) => {
   const parsed = guestTrackingSchema.safeParse(await c.req.json().catch(() => null));
@@ -173,7 +169,10 @@ router.post('/orders', requireRole('customer'), requireCsrf(), async (c) => {
       }, 429);
     }
 
-    const pricing = priceOrder(parsed.data.items);
+    const productRows = await sql<{ id: string; data: Record<string, any> }[]>`SELECT id, data FROM entity_records WHERE entity_name = 'Product' AND data->>'storefront' = 'true' ORDER BY updated_at, id`;
+    const catalog = Object.fromEntries(mergeCatalog(productRows.map(row => ({ ...row.data, id: row.id }))).map(product => [product.id, product]));
+    if (parsed.data.items.some(item => !catalog[item.product_id])) return c.json({ error: { code: 'PRODUCT_UNAVAILABLE', message: 'A product is no longer available. Refresh your basket.' } }, 422);
+    const pricing = priceOrder(parsed.data.items, catalog);
     const now = new Date();
     const datePart = now.toISOString().slice(0, 10).replaceAll('-', '');
     const orderNumber = `JBA-${datePart}-${crypto.randomUUID().slice(0, 6).toUpperCase()}`;

@@ -1,4 +1,5 @@
 import React from 'react';
+import BrandLogo from '@/components/shared/BrandLogo';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, Facebook, Instagram, Leaf, Linkedin, Mail, MapPin, Phone, MessageCircle } from 'lucide-react';
 import { whatsappSupportUrl } from '@/lib/whatsapp-support';
@@ -78,12 +79,7 @@ export default function PublicFooter({ workingLinks = false }) {
         <div className="grid gap-6 md:grid-cols-5">
           <div>
             <Link to="/" aria-label="JBA GreenGold Orchard Home">
-              <img
-                src="/brand/footer-logo-reference.webp"
-                alt="JBA GreenGold Orchard"
-                className="h-12 w-auto object-contain"
-                loading="lazy"
-              />
+              <BrandLogo light className="h-[72px] w-[174px]" />
             </Link>
             <p className="mt-2 max-w-xs text-[11px] leading-4 text-white/65">
               Unlocking Prosperity Through Land Cultivation

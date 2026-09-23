@@ -5,3 +5,7 @@
 *.webp binary
 *.woff2 binary
 package-lock.json text eol=lf
+
+*.pdf binary
+*.mp4 binary
+*.xlsx binary

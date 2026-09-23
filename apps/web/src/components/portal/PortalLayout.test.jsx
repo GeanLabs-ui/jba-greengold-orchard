@@ -1,7 +1,7 @@
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { MemoryRouter } from 'react-router-dom';
+import { StaticRouter } from 'react-router-dom';
 import PortalLayout from './PortalLayout';
 
 vi.mock('@/lib/AuthContext', () => ({ useAuth: () => ({ user: { full_name: 'Client Example' } }) }));
@@ -15,7 +15,7 @@ vi.mock('@/lib/utils', async () => {
 
 describe('portal top navigation', () => {
   it.each(['/portal', '/portal/products', '/portal/tracking', '/portal/orders', '/portal/orders/order-1', '/portal/payments', '/portal/documents'])('marks exactly one destination active on %s', (path) => {
-    const html = renderToStaticMarkup(<MemoryRouter initialEntries={[path]}><PortalLayout /></MemoryRouter>);
+    const html = renderToStaticMarkup(<StaticRouter location={path}><PortalLayout /></StaticRouter>);
     expect(html.match(/aria-current="page"/g)).toHaveLength(1);
     expect(html).toContain('Customer portal navigation');
     expect(html).toContain('portal-horizontal-menu');

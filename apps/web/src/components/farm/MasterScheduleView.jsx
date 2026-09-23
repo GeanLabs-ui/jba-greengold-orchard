@@ -1,6 +1,7 @@
+import AdminActionButton from '@/components/admin/AdminActionButton';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CalendarDays, ClipboardList, Loader2, Plus, Power, SquareCheckBig, Target, Trash2 } from 'lucide-react';
+import { CalendarDays, ClipboardList, Loader2, Plus, Power, SquareCheckBig, Target } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
 import MasterScheduleTask from '@/pages/admin/MasterScheduleTask';
@@ -173,7 +174,7 @@ export default function MasterScheduleView({
       setDeleting(false);
     }
   };
-  const deleteButton = (task) => <button type="button" className="drc-btn drc-schedule-delete" aria-label={`Delete ${task.title}`} onClick={() => requestDelete(task)} disabled={deleting || busyKey === task.id}><Trash2 aria-hidden="true" /> Delete</button>;
+  const deleteButton = (task) => <AdminActionButton action="delete" type="button" aria-label={`Delete ${task.title}`} onClick={() => requestDelete(task)} disabled={deleting || busyKey === task.id} />;
   const [openTaskId, setOpenTaskId] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const totalPages = Math.max(1, Math.ceil(filteredScheduleProjects.length / pageSize));
@@ -212,7 +213,7 @@ export default function MasterScheduleView({
           {deleteError ? <p role="alert" className="text-sm text-red-700">{deleteError}</p> : null}
           <DialogFooter>
             <Button variant="outline" disabled={deleting} onClick={() => setDeleteTarget(null)}>Cancel</Button>
-            <Button variant="destructive" disabled={deleting} onClick={deleteMasterTask}>{deleting ? 'Deleting…' : 'Delete task'}</Button>
+            <AdminActionButton action="delete" disabled={deleting} onClick={deleteMasterTask} label={deleting ? 'Deleting…' : 'Delete task'} />
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -224,7 +225,7 @@ export default function MasterScheduleView({
           <h3 className="mt-2 text-base font-semibold">{milestone.title}</h3>
           <dl className="mobile-record-fields mt-3"><div><dt>Due</dt><dd>{displayDate(milestone.due_date)}</dd></div><div><dt>Owner</dt><dd>{milestone.owner_name || 'Not assigned'}</dd></div><div><dt>Complete</dt><dd>{Number(milestone.progress_percent || 0)}%</dd></div></dl>
           <details className="mobile-record-details"><summary>Task details</summary><dl className="mobile-record-fields"><div><dt>Start</dt><dd>{displayDate(milestone.start_date)}</dd></div><div><dt>Success criteria</dt><dd>{milestone.success_criteria || 'Not recorded'}</dd></div><div><dt>Subtasks</dt><dd>{milestone.completed_subtask_count || 0}/{milestone.subtask_count || 0} complete</dd></div></dl></details>
-          <div className="mobile-record-actions"><button type="button" className={`drc-task-toggle ${milestone.is_enabled === false ? '' : 'on'}`} onClick={() => toggleProjectEnabled(milestone)} disabled={busyKey === milestone.id} aria-pressed={milestone.is_enabled !== false}><Power />{milestone.is_enabled === false ? 'Off' : 'On'}</button>{embedded ? <button type="button" className="drc-btn" onClick={() => setOpenTaskId(milestone.id)}>Edit Task</button> : <Link className="drc-btn" to={`${taskBasePath}/${encodeURIComponent(milestone.id)}`}>Edit Task</Link>}{deleteButton(milestone)}</div>
+          <div className="mobile-record-actions"><button type="button" className={`drc-task-toggle ${milestone.is_enabled === false ? '' : 'on'}`} onClick={() => toggleProjectEnabled(milestone)} disabled={busyKey === milestone.id} aria-pressed={milestone.is_enabled !== false}><Power />{milestone.is_enabled === false ? 'Off' : 'On'}</button>{embedded ? <AdminActionButton action="edit" type="button" onClick={() => setOpenTaskId(milestone.id)} label="Edit Task" /> : <AdminActionButton action="edit" as={Link} to={`${taskBasePath}/${encodeURIComponent(milestone.id)}`} label="Edit Task" />}{deleteButton(milestone)}</div>
         </article>)}
       </div>
       <div className="drc-table-shell hidden md:block">
@@ -240,7 +241,7 @@ export default function MasterScheduleView({
               <td><button type="button" className={`drc-task-toggle ${milestone.is_enabled === false ? '' : 'on'}`} onClick={() => toggleProjectEnabled(milestone)} disabled={busyKey === milestone.id} aria-pressed={milestone.is_enabled !== false} title={milestone.is_enabled === false ? 'Turn task on' : 'Turn task off'}><Power /> {milestone.is_enabled === false ? 'Off' : 'On'}</button></td>
               <td><SchedulePill value={normalizeMasterScheduleStatus(milestone.status)} /></td>
               <td>{Number(milestone.progress_percent || 0)}%</td>
-              <td><div className="drc-schedule-row-actions">{embedded ? <button type="button" className="drc-btn" onClick={() => setOpenTaskId(milestone.id)}>Edit Task</button> : <Link className="drc-btn" to={`${taskBasePath}/${encodeURIComponent(milestone.id)}`}>Edit Task</Link>}{deleteButton(milestone)}</div></td>
+              <td><div className="drc-schedule-row-actions">{embedded ? <AdminActionButton action="edit" type="button" onClick={() => setOpenTaskId(milestone.id)} label="Edit Task" /> : <AdminActionButton action="edit" as={Link} to={`${taskBasePath}/${encodeURIComponent(milestone.id)}`} label="Edit Task" />}{deleteButton(milestone)}</div></td>
             </tr>
           ))}</tbody>
         </table>

@@ -14,3 +14,9 @@
 :root .public-shell main .products-shop.products-shop.products-shop .shop-catalog-head select{letter-spacing:0;font-weight:400}
 @media(max-width:600px){:root .public-shell main .products-shop.products-shop.products-shop .shop-card h3{font-size:13px!important}:root .public-shell main .products-shop.products-shop.products-shop .shop-catalog-head h2{font-size:20px!important}.public-shell main .products-shop .shop-hero{background-position:28% center}}
 
+
+/* Fixed text slots keep every catalog card equal, including future products. */
+.products-shop .shop-grid{grid-auto-rows:1fr}
+.products-shop .shop-card-image{flex-shrink:0}
+.products-shop .shop-card h3{height:2.6em;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow-wrap:anywhere}
+.products-shop .shop-card p{height:4.05em;min-height:4.05em;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow-wrap:anywhere}

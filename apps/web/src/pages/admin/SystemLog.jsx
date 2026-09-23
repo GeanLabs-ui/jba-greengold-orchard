@@ -1,5 +1,6 @@
+import AdminActionButton from '@/components/admin/AdminActionButton';
 import React, { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, ClipboardList, RefreshCw, Search, Trash2 } from 'lucide-react';
+import { AlertTriangle, ClipboardList, RefreshCw, Search } from 'lucide-react';
 import PageHeader from '@/components/shared/PageHeader';
 import PageSkeleton from '@/components/shared/PageSkeleton';
 import DataTable from '@/components/shared/DataTable';
@@ -43,11 +44,11 @@ export default function SystemLog() {
     <PageHeader title="System Log" description="Platform activity and signed-in application errors, with exact timestamps and error details."><Button variant="outline" size="sm" onClick={loadEvents} disabled={loading}><RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} /> Refresh</Button></PageHeader>
     <div className="grid gap-4 sm:grid-cols-3"><MetricCard title="Logged events" value={events.length} icon={ClipboardList} color="primary" /><MetricCard title="Errors recorded" value={errors.length} icon={AlertTriangle} color="red" /><MetricCard title="Latest event" value={events[0] ? formatDateTime(events[0].timestamp) : '—'} icon={RefreshCw} color="blue" /></div>
     <div className="mt-6 flex flex-col gap-3 sm:flex-row"><div className="relative flex-1"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input value={search} onChange={(event) => setSearch(event.target.value)} className="pl-9" placeholder="Search action, record, user, error code, or message…" /></div><Button variant={showErrors ? 'default' : 'outline'} onClick={() => setShowErrors((value) => !value)}><AlertTriangle className="mr-2 h-4 w-4" /> {showErrors ? 'Showing errors' : 'Errors only'}</Button></div>
-    <div className="mt-4">{loading ? <PageSkeleton contentOnly /> : <>{canDelete && selectedIds.length > 0 && <div className="mb-3 flex items-center justify-between rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3"><span className="text-sm font-medium">{selectedIds.length} selected</span><Button type="button" variant="destructive" size="sm" onClick={deleteSelected}><Trash2 className="mr-2 h-4 w-4" /> Delete selected</Button></div>}<DataTable items={visibleEvents} emptyMessage="No activity matches these filters." columns={[
+    <div className="mt-4">{loading ? <PageSkeleton contentOnly /> : <>{canDelete && selectedIds.length > 0 && <div className="mb-3 flex items-center justify-between rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3"><span className="text-sm font-medium">{selectedIds.length} selected</span><AdminActionButton action="delete" type="button" onClick={deleteSelected} label="Delete selected" /></div>}<DataTable items={visibleEvents} emptyMessage="No activity matches these filters." columns={[
       { key: 'timestamp', label: 'Date & time', render: (value) => formatDateTime(value) },
       { key: 'action', label: 'Activity', render: (value) => value === 'error' ? 'Error' : String(value || '').replace(/^./, (letter) => letter.toUpperCase()) },
       { key: 'target', label: 'Area' }, { key: 'record_id', label: 'Record' }, { key: 'actor', label: 'Performed by' },
       { key: 'error_code', label: 'Error code' }, { key: 'error_message', label: 'Exact error', render: (value, item) => value ? <span title={item.path || undefined}>{value}</span> : '—' },
-    ]} selectable={canDelete} selectedIds={selectedIds} onSelectedIdsChange={setSelectedIds} rowActions={canDelete ? (event) => <Button type="button" variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => deleteEvent(event)} aria-label={`Permanently delete system log entry from ${formatDateTime(event.timestamp)}`} title="Permanently delete"><Trash2 className="h-4 w-4" /></Button> : undefined} /></>}</div>
+    ]} selectable={canDelete} selectedIds={selectedIds} onSelectedIdsChange={setSelectedIds} rowActions={canDelete ? (event) => <AdminActionButton action="delete" type="button" onClick={() => deleteEvent(event)} aria-label={`Permanently delete system log entry from ${formatDateTime(event.timestamp)}`} title="Permanently delete" /> : undefined} /></>}</div>
   </div>;
 }

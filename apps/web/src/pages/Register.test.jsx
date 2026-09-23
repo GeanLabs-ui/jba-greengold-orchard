@@ -1,7 +1,7 @@
 import React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { MemoryRouter } from 'react-router-dom';
+import { StaticRouter } from 'react-router-dom';
 import Register from './Register';
 import { base44 } from '@/api/base44Client';
 
@@ -13,7 +13,7 @@ vi.mock('@/components/GoogleSignInButton', () => ({ default: (props) => { google
 
 function render(path = '/register') {
   vi.stubGlobal('window', { location: { origin: 'http://localhost:5173', assign: vi.fn() } });
-  return renderToStaticMarkup(<MemoryRouter initialEntries={[path]}><Register /></MemoryRouter>);
+  return renderToStaticMarkup(<StaticRouter location={path}><Register /></StaticRouter>);
 }
 
 afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); vi.clearAllMocks(); });

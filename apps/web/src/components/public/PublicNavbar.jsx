@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import BrandLogo from '@/components/shared/BrandLogo';
 import { Link, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowRight, ChevronDown, Menu, PackageSearch, ShoppingBag } from 'lucide-react';
@@ -104,11 +105,7 @@ export default function PublicNavbar() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10">
         <div className="flex h-[4.5rem] items-center justify-between">
           <Link to="/" className="flex items-center gap-2" aria-label="JBA GreenGold Orchard Home">
-            <img
-              src="/brand/header-logo-reference.webp"
-              alt="JBA GreenGold Orchard"
-              className="company-header-logo h-11 w-auto object-contain"
-            />
+            <BrandLogo light className="company-header-logo h-[60px] w-[150px]" />
           </Link>
 
           <NavigationMenu className="hidden lg:flex" aria-label="Primary navigation">

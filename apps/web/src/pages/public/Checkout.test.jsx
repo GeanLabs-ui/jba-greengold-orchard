@@ -15,6 +15,21 @@ vi.mock('react', async (importOriginal) => {
     return actual.createElement(type, props, ...children);
   } } };
 });
+vi.mock('react/jsx-runtime', async (importOriginal) => {
+  const actual = await importOriginal();
+  const capture = (factory) => (type, props, key) => {
+    if (type === 'form' || type === 'button') state.controls.push({ type, ...props });
+    return factory(type, props, key);
+  };
+  return { ...actual, jsx: capture(actual.jsx), jsxs: capture(actual.jsxs) };
+});
+vi.mock('react/jsx-dev-runtime', async (importOriginal) => {
+  const actual = await importOriginal();
+  return { ...actual, jsxDEV: (type, props, ...args) => {
+    if (type === 'form' || type === 'button') state.controls.push({ type, ...props });
+    return actual.jsxDEV(type, props, ...args);
+  } };
+});
 vi.mock('react-router-dom', () => ({
   useLocation: () => ({ pathname: state.path }), useNavigate: () => state.navigate,
   Link: ({ to, children, ...props }) => <a href={to} {...props}>{children}</a>,
