@@ -5,3 +5,7 @@
 *.webp binary
 *.woff2 binary
 package-lock.json text eol=lf
+*.pdf binary
+*.mp4 binary
+*.xlsx binary
+asserts/WhatsApp[[:space:]]Video[[:space:]]2026-09-07[[:space:]]at[[:space:]]3.02.44[[:space:]]PM[[:space:]](1).mp4 filter=lfs diff=lfs merge=lfs -text

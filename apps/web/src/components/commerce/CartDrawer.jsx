@@ -1,4 +1,5 @@
-import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useBrowserLayoutEffect } from '@/lib/use-browser-layout-effect';
+import React, { useEffect, useRef, useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Minus, Plus, ShoppingBag, Trash2, X } from 'lucide-react';
@@ -26,7 +27,7 @@ export default function CartDrawer() {
 
   // Measure only the space reserved for rows. Header, pagination, and summary
   // have their own layout areas and never scroll out of view.
-  useLayoutEffect(() => {
+  useBrowserLayoutEffect(() => {
     if (!open || !lines.length) return undefined;
     let observer;
     let frame;

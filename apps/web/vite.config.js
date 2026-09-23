@@ -40,6 +40,15 @@ export default defineConfig({
     target: 'es2022',
     sourcemap: false,
     assetsInlineLimit: 4096,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          const modulePath = id.replaceAll('\\', '/');
+          if (/\/node_modules\/(react|react-dom|scheduler)\//.test(modulePath)) return 'react-runtime';
+          if (/\/node_modules\/(react-router|react-router-dom|@tanstack\/react-query|@tanstack\/query-core)\//.test(modulePath)) return 'navigation-data';
+        },
+      },
+    },
   },
   server: {
     host: '127.0.0.1',

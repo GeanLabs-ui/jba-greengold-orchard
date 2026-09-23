@@ -7,9 +7,10 @@ export default function FarmDailyActivitiesLayout() {
   const navigate = useNavigate();
   const { items, activeItem } = getFarmDailyActivitiesNavigationState(location.pathname);
   const isAnalyticsOverview = location.pathname.replace(/\/$/, '') === '/admin/farm-daily-activities/activities/overview';
+  const isMasterSchedule = location.pathname.replace(/\/$/, '') === '/admin/farm-daily-activities/activities/master-schedule';
 
   return (
-    <div className="space-y-6">
+    <div className={`space-y-6${isMasterSchedule ? ' farm-schedule-layout' : ''}`}>
       <div className="farm-activities-sticky-nav sticky top-0 z-40 -mx-2 flex flex-wrap items-center justify-between gap-3 border-b border-border bg-background px-2 py-2">
         <nav className="flex min-w-0 max-w-full items-center gap-2 overflow-x-auto scrollbar-thin" aria-label="Farm daily activities navigation">
           {items.map((child) => {
@@ -31,6 +32,7 @@ export default function FarmDailyActivitiesLayout() {
             );
           })}
         </nav>
+        {isMasterSchedule && <header className="farm-schedule-nav-heading"><div><h2>POST-HARVEST MANAGEMENT &amp; FLOWER INDUCTION GUIDE</h2><p>Management Review | Timing and observable readiness indicators</p></div></header>}
         {isAnalyticsOverview ? <div id="farm-analytics-header-controls" className="ml-auto flex flex-wrap items-center" /> : null}
       </div>
 

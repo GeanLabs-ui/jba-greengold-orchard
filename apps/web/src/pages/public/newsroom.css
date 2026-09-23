@@ -127,3 +127,177 @@
   .nr-dialog { padding: 24px; }
 }
 @media (prefers-reduced-motion: reduce) { #root .newsroom-page :is(button,a,button span), .nr-dialog .nr-button { transition: none; } }
+
+/* Live typography replaces the lettering baked into the old banner image. */
+#root .public-shell main .newsroom-page .nr-explore {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(120px, .2fr);
+  align-items: center;
+  gap: clamp(24px, 4vw, 64px);
+  min-height: 260px;
+  aspect-ratio: auto;
+  padding: clamp(40px, 5vw, 76px) 6.5% !important;
+  isolation: isolate;
+}
+#root .newsroom-page .nr-explore-art {
+  z-index: -1;
+  background: linear-gradient(90deg, #123a21b3, #123a2140), url('/pages/news/explore-orchard-clean.png') center / cover no-repeat;
+}
+#root .newsroom-page .nr-explore-copy {
+  position: relative;
+  width: auto;
+  height: auto;
+  margin: 0;
+  overflow: visible;
+  clip-path: none;
+  white-space: normal;
+  border-left: 3px solid var(--hero-accent-green, #c8e6c9);
+  padding-left: clamp(18px, 2.2vw, 34px);
+  color: #fff;
+  text-shadow: none;
+  filter: none;
+}
+#root .newsroom-page .nr-explore-copy .nr-eyebrow {
+  color: #c8e6c9;
+  font: 700 clamp(12px, 1.2vw, 18px)/1.4 Arial, sans-serif;
+  letter-spacing: .1em;
+  margin: 0 0 12px;
+}
+#root .public-shell main .newsroom-page .nr-explore-copy h2 {
+  color: #fff !important;
+  font: 700 clamp(27px, 3vw, 46px)/1.13 Georgia, serif !important;
+  letter-spacing: -.025em !important;
+  margin: 0 0 16px;
+  text-shadow: none;
+}
+#root .newsroom-page .nr-explore-copy > p:last-child {
+  color: #fff;
+  font: 400 clamp(15px, 1.5vw, 22px)/1.5 Arial, sans-serif;
+  margin: 0;
+}
+#root .newsroom-page .nr-explore-link {
+  position: relative;
+  inset: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  width: auto;
+  height: auto;
+  min-height: 52px;
+  margin: 0;
+  padding: 16px 28px;
+  background: #ffd037;
+  color: #13341f;
+  font: 700 clamp(14px, 1.3vw, 20px)/1.3 Arial, sans-serif;
+  white-space: nowrap;
+}
+#root .newsroom-page .nr-explore-link:hover { background: #ffffff25; }
+#root .newsroom-page .nr-explore-link svg { display: block; width: 22px; height: 22px; }
+#root .newsroom-page .nr-explore-motto {
+  color: #fff;
+  font: italic 500 clamp(22px, 2.2vw, 34px)/1.2 Georgia, serif;
+  margin: 0;
+  text-align: center;
+}
+@media (max-width: 1000px) {
+  #root .public-shell main .newsroom-page .nr-explore { grid-template-columns: minmax(0, 1fr) auto; }
+  #root .newsroom-page .nr-explore-motto { display: none; }
+}
+@media (max-width: 700px) {
+  #root .public-shell main .newsroom-page .nr-explore { grid-template-columns: minmax(0, 1fr); padding: 36px 24px !important; gap: 24px; }
+  #root .newsroom-page .nr-explore-link { justify-self: start; margin-left: 21px; }
+  #root .newsroom-page .nr-hero-copy { border-left: 3px solid var(--hero-accent-green); padding-left: 18px; }
+}
+
+/* The newsroom hero uses actual HTML text instead of screenshot lettering. */
+#root .public-shell main .newsroom-page .nr-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 34%);
+  align-items: center;
+  gap: 7%;
+  aspect-ratio: auto;
+  min-height: 448px;
+  padding: 48px 6.5% !important;
+}
+#root .newsroom-page .nr-hero-art {
+  background: linear-gradient(90deg, #092e20ed, #092e2080 52%, #092e2020), url('/pages/about/orchard-hero.png') center / cover no-repeat;
+}
+#root .public-shell .nr-hero-art::before,
+#root .public-shell .nr-hero-art::after { display: none; }
+#root .newsroom-page .nr-hero-copy {
+  position: relative;
+  width: auto; height: auto; margin: 0;
+  overflow: visible; clip-path: none; white-space: normal;
+  padding-left: 26px;
+  border: 0;
+  color: #fff;
+  text-shadow: none;
+}
+#root .newsroom-page .nr-hero-copy::before {
+  content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+  width: var(--hero-rule-width); height: var(--hero-rule-height); background: var(--hero-accent-green);
+}
+#root .newsroom-page .nr-hero-copy .nr-eyebrow { color: #c8e6c9; font: 700 14px/1.4 Arial,sans-serif; letter-spacing: .12em; margin-bottom: 14px; }
+#root .public-shell main .newsroom-page .nr-hero-copy h1 { color: #fff !important; font: 700 clamp(32px,3.4vw,52px)/1.08 Georgia,serif !important; letter-spacing: -.025em !important; margin: 0 0 20px; text-shadow: none; }
+#root .newsroom-page .nr-hero-copy > p:last-child { color: #fff; font: 400 clamp(15px,1.5vw,20px)/1.55 Arial,sans-serif; margin: 0; }
+#root .newsroom-page .nr-media-contact { position: relative; inset: auto; width: 100%; min-height: 0; }
+@media (max-width:700px) {
+  #root .public-shell main .newsroom-page .nr-hero { grid-template-columns: minmax(0,1fr); padding: 36px 24px !important; gap: 32px; }
+  #root .newsroom-page .nr-hero-copy br { display: none; }
+}
+
+/* Typography follows the public landing page, using its shared type tokens. */
+#root .public-shell main .newsroom-page { font-family: var(--font-body); }
+#root .public-shell main .newsroom-page :is(h1,h2,h3) {
+  font-family: var(--font-heading) !important;
+  font-style: normal !important;
+  font-weight: 900 !important;
+  text-shadow: none;
+}
+#root .public-shell main .newsroom-page .nr-hero-copy h1 {
+  font-size: var(--text-page-title) !important;
+  line-height: 1.111111 !important;
+  letter-spacing: -.025em !important;
+}
+#root .public-shell main .newsroom-page :is(.nr-section-head h2,.nr-explore-copy h2) {
+  font-size: var(--text-section-title) !important;
+  line-height: var(--leading-section-title) !important;
+  letter-spacing: -.035em !important;
+}
+#root .public-shell main .newsroom-page :is(.nr-media-contact h2,h3) {
+  font-size: var(--text-card-title) !important;
+  line-height: 1.25 !important;
+  letter-spacing: -.035em !important;
+}
+#root .public-shell main .newsroom-page :is(p,small,b,a,button) { font-family: var(--font-body) !important; }
+#root .public-shell main .newsroom-page :is(p,.nr-contact-team small) {
+  font-size: var(--text-body-sm);
+  line-height: 1.5;
+}
+#root .public-shell main .newsroom-page .nr-hero-copy > p:last-child {
+  font-size: 14px; line-height: 1.4; font-weight: 400;
+}
+#root .public-shell main .newsroom-page .nr-eyebrow {
+  font-size: 12px; font-weight: 900; line-height: 16px; letter-spacing: .12em;
+}
+#root .public-shell main .newsroom-page .nr-hero-copy .nr-eyebrow {
+  font-size: 10px; font-weight: 700; line-height: 15px; letter-spacing: .16em;
+}
+#root .public-shell main .newsroom-page :is(.nr-button,.nr-text-link,.nr-explore-link) {
+  font-size: 14px; font-weight: 700; line-height: 20px; letter-spacing: .025em;
+}
+#root .public-shell main .newsroom-page .nr-explore-motto {
+  font-family: var(--font-heading) !important; font-size: 20px; line-height: 1.3; font-style: normal; font-weight: 700;
+}
+/* Allow natural wrapping without joining words where desktop line breaks sat. */
+#root .newsroom-page .nr-hero-copy br { display: initial; }
+@media(max-width:700px) {
+  #root .newsroom-page .nr-hero-copy br { display: initial; }
+  #root .public-shell main .newsroom-page .nr-hero-copy h1 { line-height: 1.05 !important; }
+}
+#root .public-shell main .newsroom-page :is(.nr-hero-copy h1,.nr-explore-copy h2,.nr-section-head h2,.nr-media-contact h2,.nr-socials h3,.nr-release-card h3,.nr-kit-card h3) {
+  font-family: var(--font-heading) !important;
+  font-weight: 900 !important;
+  font-style: normal !important;
+}

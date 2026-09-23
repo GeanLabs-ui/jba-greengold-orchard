@@ -1,6 +1,7 @@
+import AdminActionButton from '@/components/admin/AdminActionButton';
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, CalendarDays, CheckSquare, ClipboardList, Clock3, Download, Eye, History, LayoutDashboard, Loader2, MessageSquare, Paperclip, Pause, Play, Plus, RotateCcw, Save, Trash2 } from 'lucide-react';
+import { ArrowLeft, CalendarDays, CheckSquare, ClipboardList, Clock3, Download, Eye, History, LayoutDashboard, Loader2, MessageSquare, Paperclip, Pause, Play, Plus, RotateCcw, Save } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -61,7 +62,7 @@ function SubtaskRow({ subtask, currentTime, onComplete, onTimerToggle, onUpdate,
     <div className="flex flex-wrap items-start gap-3">
       <input type="checkbox" checked={complete} onChange={() => onComplete(subtask)} className="mt-1 h-4 w-4 shrink-0" aria-label={`Mark ${subtask.title} complete`} />
       <div className="min-w-0 flex-1"><p className={complete ? 'font-medium text-muted-foreground line-through' : 'font-medium'}>{subtask.title}</p><p className="mt-1 text-xs text-muted-foreground">Created {new Date(subtask.created_date || subtask.created_at).toLocaleString()} · {statusText}</p></div>
-      <div className="flex items-center gap-2"><Button type="button" size="sm" variant={running ? 'outline' : 'secondary'} disabled={complete} onClick={() => onTimerToggle(subtask)}>{running ? <Pause /> : <Play />}{running ? 'Pause task' : 'Start task'}</Button><Button type="button" size="icon" variant="ghost" onClick={() => onArchive(subtask)} title="Delete subtask"><Trash2 /></Button></div>
+      <div className="flex items-center gap-2"><Button type="button" size="sm" variant={running ? 'outline' : 'secondary'} disabled={complete} onClick={() => onTimerToggle(subtask)}>{running ? <Pause /> : <Play />}{running ? 'Pause task' : 'Start task'}</Button><AdminActionButton action="delete" type="button" onClick={() => onArchive(subtask)} title="Delete subtask" label="Delete subtask" /></div>
     </div>
     <div className="mt-4 grid gap-3 border-t pt-4 sm:grid-cols-3">
       <label className="grid gap-1 text-muted-foreground text-label"><span>Priority</span><select value={subtask.priority || 'medium'} onChange={(event) => onUpdate(subtask, 'priority', event.target.value)} className="h-9 rounded-md border border-input bg-background px-2 text-sm text-foreground"><option value="urgent">Urgent</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select></label>

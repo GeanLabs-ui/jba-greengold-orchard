@@ -15,7 +15,7 @@ export function localTestLoginEnabled(env: LocalEnvironment): boolean {
     // Defense in depth: even a misconfigured local flag cannot target Neon.
     return ['postgres:', 'postgresql:'].includes(database.protocol)
       && ['localhost', '127.0.0.1'].includes(database.hostname)
-      && database.port === '54329' && database.pathname === '/mango_farm';
+      && database.port === '15432' && database.pathname === '/mango_farm';
   } catch { return false; }
 }
 

@@ -6,7 +6,7 @@ import { PRODUCT_CATALOG } from '@/data/productCatalog';
 
 const { addItem, openCart } = vi.hoisted(() => ({ addItem: vi.fn(), openCart: vi.fn() }));
 let controls = [];
-vi.mock('@/lib/CartContext', () => ({ useCart: () => ({ addItem, openCart, itemCount: 2 }) }));
+vi.mock('@/lib/CartContext', () => ({ useCart: () => ({ addItem, openCart, itemCount: 2, products: PRODUCT_CATALOG }) }));
 vi.mock('@/lib/utils', async () => {
   const { clsx } = await import('clsx');
   const { twMerge } = await import('tailwind-merge');

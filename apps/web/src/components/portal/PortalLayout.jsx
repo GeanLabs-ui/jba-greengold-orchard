@@ -26,11 +26,20 @@ export default function PortalLayout() {
 
   return (
     <div className="portal-shell app-surface flex min-h-dvh min-w-0 flex-col bg-muted/30">
-      <header className="sticky top-0 z-40 border-b border-border bg-card">
-        <div className="flex min-h-16 items-center gap-3 px-4 md:gap-6 md:px-6">
-          <Link to="/" aria-label="JBA GreenGold Orchard home" className="shrink-0"><BrandLogo className="h-12 md:h-16" imageClassName="h-10 w-20 sm:h-12 sm:w-28" /></Link>
-          <p className="border-l border-border pl-3 md:pl-6 text-navigation">My Account</p>
-          <div className="ml-auto flex shrink-0 items-center gap-2 md:gap-3">
+      <header className="portal-topbar sticky top-0 z-40 border-b border-[#355e3b] bg-[#123524] text-white">
+        <div className="portal-header-row flex min-h-16 items-center gap-3 px-4 md:px-6">
+          <Link to="/" aria-label="JBA GreenGold Orchard home" className="flex shrink-0 items-center"><BrandLogo light className="h-12 w-[132px]" /></Link>
+        <nav className="portal-horizontal-menu flex min-w-0 flex-1 gap-1 overflow-x-auto py-2" aria-label="Customer portal navigation">
+          {navItems.map(({ label, path, icon: Icon }, index) => (
+            <NavLink key={path} to={path} end={path === '/portal'} className="portal-nav-link flex min-h-11 shrink-0 items-center gap-2 rounded-lg px-3 text-sm font-semibold transition-colors motion-reduce:transition-none md:px-2">
+              <Icon className="h-4 w-4" aria-hidden="true" /><span className="hidden md:inline">{label}</span><span className="md:hidden">{['Home', 'Shop', 'Orders', 'Tracking', 'Payments', 'Docs'][index]}</span>
+            </NavLink>
+          ))}
+          <button type="button" onClick={openCart} className="portal-nav-link ml-auto hidden min-h-11 shrink-0 items-center gap-2 rounded-lg px-3 text-sm font-semibold transition-colors motion-reduce:transition-none md:flex" aria-label={`Open basket, ${itemCount} items`}>
+            <ShoppingCart className="h-4 w-4" aria-hidden="true" /><span aria-live="polite" aria-atomic="true">Basket ({itemCount})</span>
+          </button>
+        </nav>
+          <div className="portal-topbar-actions ml-auto flex shrink-0 items-center gap-2 md:gap-3">
             <Link to="/" className="hidden items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:flex">
               <LogOut className="h-4 w-4" aria-hidden="true" /> Back to Website
             </Link>
@@ -39,16 +48,7 @@ export default function PortalLayout() {
             <AccountMenu />
           </div>
         </div>
-        <nav className="portal-horizontal-menu flex gap-1 overflow-x-auto px-3 py-2 md:px-6" aria-label="Customer portal navigation">
-          {navItems.map(({ label, path, icon: Icon }, index) => (
-            <NavLink key={path} to={path} end={path === '/portal'} className="portal-nav-link flex min-h-11 shrink-0 items-center gap-2 rounded-lg px-3 text-sm font-semibold transition-colors motion-reduce:transition-none md:px-4">
-              <Icon className="h-4 w-4" aria-hidden="true" /><span className="hidden md:inline">{label}</span><span className="md:hidden">{['Home', 'Shop', 'Orders', 'Tracking', 'Payments', 'Docs'][index]}</span>
-            </NavLink>
-          ))}
-          <button type="button" onClick={openCart} className="portal-nav-link ml-auto hidden min-h-11 shrink-0 items-center gap-2 rounded-lg px-3 text-sm font-semibold transition-colors motion-reduce:transition-none md:flex" aria-label={`Open basket, ${itemCount} items`}>
-            <ShoppingCart className="h-4 w-4" aria-hidden="true" /><span aria-live="polite" aria-atomic="true">Basket ({itemCount})</span>
-          </button>
-        </nav>
+
       </header>
       <main ref={navigationRoot} className="portal-scroll-content min-w-0 flex-1 p-4 pb-24 md:p-6"><Outlet /></main>
       <CartDrawer />

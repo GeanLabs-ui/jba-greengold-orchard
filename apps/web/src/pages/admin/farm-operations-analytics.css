@@ -44,6 +44,15 @@
 .analytics-legend { display: flex; align-items: center; gap: 16px; font-size: var(--text-caption); color: #536078; white-space: nowrap; }
 .analytics-legend span { display: inline-flex; gap: 6px; align-items: center; }
 .analytics-legend i { width: 10px; height: 10px; }
+.farm-analytics .analytics-block-chart > header { flex-wrap: wrap; border-bottom: 0; }
+.farm-analytics .analytics-block-chart { display: flex; flex-direction: column; width: 100%; height: 260px; }
+.analytics-block-chart > header { flex-shrink: 0; }
+.farm-analytics .analytics-block-chart > header h2 { color: #172033; }
+.analytics-block-chart-body { flex: 1; min-height: 0; }
+.analytics-block-chart .analytics-legend { flex-wrap: wrap; gap: 12px; }
+@media (max-width: 767px) {
+  .analytics-block-chart .analytics-legend { order: 3; width: 100%; }
+}
 .analytics-toolbar select, .farm-analytics select { font-size: var(--text-body); height: 29px; border-radius: 4px; }
 .analytics-toolbar select { min-width: 140px; }
 .analytics-toolbar button { text-transform: uppercase; border-radius: 4px; }
@@ -152,4 +161,30 @@
     inset: -8px calc(-1 * var(--admin-page-inset)) -4px;
     background: #f8faf9;
   }
+}
+
+/* Keep the two dashboard rows aligned with the KPI strip. */
+.analytics-overview-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: start; }
+.analytics-overview-grid > * { min-width: 0; }
+.farm-analytics .analytics-overview-grid .analytics-chart-rotation { max-width: none; margin-inline: 0; }
+@media (min-width: 1200px) {
+  .analytics-overview-grid { grid-template-columns: minmax(0, 2.08fr) minmax(0, 1fr); }
+  .analytics-overview-grid .analytics-chart-rotation-controls { height: 34px; margin-bottom: 10px; flex-wrap: nowrap; }
+  .analytics-overview-grid > .analytics-highlights { align-self: stretch; margin-top: 44px; display: flex; flex-direction: column; }
+  .analytics-overview-grid > .analytics-highlights > div { flex: 1; display: grid; grid-template-rows: repeat(4, minmax(0, 1fr)); gap: 12px; }
+  .analytics-overview-grid > .analytics-highlights .analytics-highlight { margin-top: 0; }
+  .analytics-overview-grid > :is(.analytics-recent, .analytics-cost-breakdown) { align-self: stretch; }
+  .farm-analytics .analytics-cost-breakdown > div {
+    grid-template-columns: minmax(142px, .8fr) minmax(0, 1.2fr);
+    grid-template-rows: 120px auto;
+    align-items: start;
+    gap: 8px 12px;
+  }
+  .farm-analytics .analytics-cost-breakdown > div > div:first-child { height: 120px; }
+  .farm-analytics .analytics-cost-breakdown > div > div:nth-child(2) { grid-column: 2; grid-row: 1 / span 2; align-self: center; }
+  .farm-analytics .analytics-cost-breakdown > div > div:last-child { grid-column: 1; grid-row: 2; padding-top: 8px; }
+  .farm-analytics .analytics-cost-breakdown > div > div:last-child > p { margin-bottom: 8px; }
+  .farm-analytics .analytics-cost-breakdown > div > div:last-child > .space-y-3 > * + * { margin-top: 6px; }
+  .farm-analytics .analytics-cost-breakdown > div > div:last-child > div:last-child { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px; margin-top: 8px; padding-top: 6px; }
+  .farm-analytics .analytics-cost-breakdown > div > div:last-child > div:last-child strong { margin-top: 0; }
 }

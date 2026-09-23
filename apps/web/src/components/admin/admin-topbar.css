@@ -1,0 +1,35 @@
+/* Match the public navbar while keeping light popovers readable. */
+.admin-theme .admin-shell .admin-topbar {
+  background: #123524;
+  border-color: #355e3b;
+  color: #f4fbf5;
+}
+
+.admin-theme .admin-topbar > button,
+.admin-theme .admin-topbar-actions > button,
+.admin-theme .admin-topbar-actions > div > button {
+  color: #f4fbf5;
+}
+
+.admin-theme .admin-topbar > button:hover,
+.admin-theme .admin-topbar-actions > button:hover,
+.admin-theme .admin-topbar-actions > div > button:hover {
+  background: #256b2a;
+  color: #fff;
+}
+
+.admin-theme .admin-topbar-actions > button .text-muted-foreground {
+  color: #c8e6c9;
+}
+
+.admin-theme .admin-topbar > form input {
+  background: #f4fbf5;
+  color: #123524;
+}
+
+.admin-theme .admin-topbar .admin-search-results,
+.admin-theme .admin-topbar .admin-search-results button,
+.admin-theme .admin-topbar .admin-notification-panel,
+.admin-theme .admin-topbar .admin-notification-panel button {
+  color: #123524;
+}

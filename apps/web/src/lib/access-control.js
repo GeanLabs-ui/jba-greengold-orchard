@@ -1,3 +1,5 @@
+import { businessPages } from './business-navigation';
+
 export const ADMIN_ACCESS_ROLES = ['super_admin', 'admin', 'farm_manager', 'farm_supervisor', 'inventory_officer', 'quality_officer', 'finance_officer', 'hr_officer', 'sales_officer', 'logistics_officer', 'content_editor', 'auditor'];
 
 export const ADMIN_PAGE_ACCESS = [
@@ -16,7 +18,7 @@ export const ADMIN_PAGE_ACCESS = [
   { key: 'export_ops', label: 'Export Operations', path: '/admin/export-ops', group: 'Business' },
   { key: 'hr', label: 'HR', path: '/admin/hr', group: 'System' },
   { key: 'applications', label: 'Applications ATS', path: '/admin/applications', group: 'System' },
-  { key: 'content', label: 'Content', path: '/admin/content', group: 'System' },
+  { key: 'content', label: 'Content', path: '/admin/content', group: 'Business' },
   { key: 'documents', label: 'Documents', path: '/admin/documents', group: 'System' },
   { key: 'reports', label: 'Reports', path: '/admin/reports', group: 'System' },
   { key: 'system_log', label: 'System Log', path: '/admin/system-log', group: 'System' },
@@ -53,7 +55,10 @@ export const pageAccessForUser = (user) => {
 
 export const adminPageKeyForPath = (pathname) => {
   const normalized = String(pathname || '').split('?')[0].replace(/\/$/, '') || '/admin';
+  const businessItem = Object.values(businessPages).flatMap((page) => page.items).find((item) => normalized === item.path || normalized.startsWith(`${item.path}/`));
+  if (businessItem) return businessItem.key;
   if (normalized === '/admin') return 'dashboard';
+  if (normalized === '/admin/marketing/content') return 'content';
   if (normalized === '/admin/harvests') return 'farm_daily_activities';
   const page = ADMIN_PAGE_ACCESS
     .filter((item) => item.path !== '/admin')
@@ -63,6 +68,9 @@ export const adminPageKeyForPath = (pathname) => {
 };
 
 export const canAccessAdminPath = (user, pathname) => {
+  const normalized = String(pathname || '').split('?')[0].replace(/\/$/, '');
+  const section = Object.entries(businessPages).find(([slug]) => normalized === `/admin/${slug}`)?.[1];
+  if (section) return section.items.some((item) => pageAccessForUser(user).includes(item.key));
   const key = adminPageKeyForPath(pathname);
   return Boolean(key && pageAccessForUser(user).includes(key));
 };

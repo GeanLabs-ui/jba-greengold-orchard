@@ -1,5 +1,30 @@
 /* Home is the size reference. Keep one frame for every public hero. */
-.public-shell { --public-hero-height: 28rem; }
+.public-shell { --public-hero-height: 28rem; --hero-accent-green: #c8e6c9; }
+
+/* Match every existing vertical hero accent to the Supply hero. */
+#root .public-shell main :is(.jba-home-hero-copy, .jba-home-hero-aside, .dl-hero-copy, .careers-hero-rule) {
+  border-left-color: var(--hero-accent-green) !important;
+}
+#root .public-shell.about-reference-shell .ab-page .ab-hero-copy::before {
+  background: var(--hero-accent-green) !important;
+}
+/* Desktop campaign artwork includes these rules; cover them with crisp CSS. */
+#root .public-shell .nr-hero-art::after,
+#root .public-shell .contact-hero-art::after {
+  content: '';
+  position: absolute;
+  background: var(--hero-accent-green);
+}
+#root .public-shell .nr-hero-art::after {
+  left: 6.25%; top: 18.2%; width: .5%; height: 65%;
+}
+#root .public-shell .contact-hero-art::after {
+  left: 6.68%; top: 17.1%; width: .4%; height: 58.8%;
+}
+@media (max-width: 700px) {
+  #root .public-shell .nr-hero-art::after,
+  #root .public-shell .contact-hero-art::after { display: none; }
+}
 @media (min-width: 1024px) {
   .public-shell { --public-hero-height: 32rem; }
 }
@@ -87,3 +112,90 @@
   .public-shell main .farms-hero-content { padding-block: 20px; }
   .public-shell main .farms-hero-content h1 + p { line-height: 1.45; }
 }
+@media (max-width: 760px) {
+  #root .public-shell .contact-hero-art::after { display: none; }
+  #root .public-shell .contact-hero-copy { border-left: 3px solid var(--hero-accent-green); padding-left: 18px; }
+}
+
+/* One accent size for every public hero card, measured from Home at desktop. */
+.public-shell { --hero-rule-width: 3px; --hero-rule-height: 278px; }
+#root .public-shell main :is(.jba-home-hero-copy, .jba-home-hero-aside, .dl-hero-copy, .ab-hero-copy, .shop-hero-inner, .farms-hero-content, .sustain-hero-grid > div, .export-hero-copy, .nr-explore-copy) {
+  position: relative;
+  border-left-width: 0 !important;
+}
+#root .public-shell main :is(.jba-home-hero-copy, .jba-home-hero-aside, .dl-hero-copy, .ab-hero-copy, .shop-hero-inner, .farms-hero-content, .sustain-hero-grid > div, .export-hero-copy, .nr-explore-copy)::before {
+  content: '' !important;
+  position: absolute !important;
+  left: 0 !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  width: var(--hero-rule-width) !important;
+  height: var(--hero-rule-height) !important;
+  background: var(--hero-accent-green) !important;
+  pointer-events: none;
+}
+#root .public-shell main :is(.shop-hero-inner, .sustain-hero-grid > div, .export-hero-copy) { padding-left: 24px; }
+#root .public-shell main .farms-hero-content::before { left: 12px !important; }
+#root .public-shell main .careers-hero-rule {
+  border: 0;
+  width: var(--hero-rule-width);
+  height: var(--hero-rule-height);
+  background: var(--hero-accent-green);
+  top: 50%;
+  transform: translateY(-50%);
+  left: -20px;
+}
+#root .public-shell.about-reference-shell .ab-page .ab-hero-copy::before { left: -24px !important; }
+#root .public-shell .nr-hero-art::after,
+#root .public-shell .contact-hero-art::after {
+  width: var(--hero-rule-width);
+  height: var(--hero-rule-height);
+  top: 50%;
+  transform: translateY(-50%);
+}
+/* Erase only the old baked-in rule with a neighboring sliver of its own photo. */
+#root .public-shell .nr-hero,
+#root .public-shell .contact-reference-hero { container-type: inline-size; }
+#root .public-shell .nr-hero-art::before,
+#root .public-shell .contact-hero-art::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background-repeat: no-repeat;
+  background-size: 100cqw auto;
+}
+#root .public-shell .nr-hero-art::before {
+  left: 6.2%; width: .6%;
+  background-image: url('/pages/news/newsroom-reference.png');
+  background-position: -5.5cqw 2.689779%;
+}
+#root .public-shell .contact-hero-art::before {
+  left: 6.65%; width: .45%;
+  background-image: url('/pages/contact/contact-reference.png');
+  background-position: -6cqw 4.6047%;
+}
+@media (max-width: 760px) {
+  #root .public-shell .contact-hero-art::before { display: none; }
+  #root .public-shell .contact-hero-copy { position: relative; border: 0; padding-left: 24px; }
+  #root .public-shell .contact-hero-copy::before {
+    content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+    width: var(--hero-rule-width); height: var(--hero-rule-height); background: var(--hero-accent-green);
+  }
+}
+@media (max-width: 700px) {
+  #root .public-shell .nr-hero-art::before { display: none; }
+  #root .public-shell .nr-hero-copy { position: relative; border: 0; padding-left: 24px; min-height: var(--hero-rule-height); }
+  #root .public-shell .nr-hero-copy::before {
+    content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+    width: var(--hero-rule-width); height: var(--hero-rule-height); background: var(--hero-accent-green);
+  }
+  #root .public-shell main .nr-explore-copy { min-height: var(--hero-rule-height); display: flex; flex-direction: column; justify-content: center; }
+}
+#root .public-shell.about-reference-shell .ab-page .ab-hero-copy::before {
+  width: var(--hero-rule-width) !important;
+  height: var(--hero-rule-height) !important;
+  top: 50% !important;
+}
+#root .public-shell main .farms-hero-content { padding-left: 44px !important; }
+#root .public-shell main .farms-hero-content::before { left: 20px !important; }

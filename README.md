@@ -19,6 +19,8 @@ Production monorepo for the public website, customer portal, staff workspace, an
 
 Always start the Farm app from this repository root. The web server is fixed to port `5173` and will stop with a clear workspace message if another checkout is already using that port; it will not silently start on `5174` or another fallback port.
 
+Local PostgreSQL binds to `127.0.0.1:15432`. This avoids the Windows reserved port range that can include the former port `54329`. Existing checkouts should use port `15432` in `.env` and `apps/api/.dev.vars` (including any Hyperdrive local connection string). The protected Docker volume remains `farmactualproject_mango_farm_postgres_data`; changing the port does not create a new database or run migrations.
+
 For routine work with an existing local database, use `npm run dev` (or the equivalent `npm run dev:local`). Neither command runs migrations. Run `npm run db:migrate` separately only when migrations are intentionally required. Local backups are kept outside Docker under `.backups/database`.
 
 Run the full release gate with:

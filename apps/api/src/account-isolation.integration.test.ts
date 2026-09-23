@@ -18,7 +18,7 @@ const bodyOf = (response: Response) => response.json() as Promise<{ data: any }>
 describe.skipIf(!process.env.AUTH_DATABASE_TEST)('PostgreSQL account isolation', () => {
   it('validates every existing account session and separates two customer identities', async () => {
     const url = new URL(process.env.DATABASE_URL!);
-    if (!['localhost', '127.0.0.1'].includes(url.hostname) || url.port !== '54329') throw new Error('Local test database required');
+    if (!['localhost', '127.0.0.1'].includes(url.hostname) || url.port !== '15432') throw new Error('Local test database required');
     const db = postgres(url.toString(), { max: 1, prepare: false });
     const rollback = new Error('ROLLBACK_TEST_FIXTURES');
     try {

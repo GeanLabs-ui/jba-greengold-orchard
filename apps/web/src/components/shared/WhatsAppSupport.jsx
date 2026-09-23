@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { ExternalLink, Send, X } from 'lucide-react';
 import { whatsappSupportUrl } from '@/lib/whatsapp-support';
 
@@ -11,6 +12,15 @@ const initialMessage = {
 };
 
 export default function WhatsAppSupport() {
+  const { pathname } = useLocation();
+  const path = pathname.replace(/\/+$/, '').toLowerCase() || '/';
+  const hidden = path === '/admin' || path.startsWith('/admin/') ||
+    ['/login', '/register', '/staff-login', '/accept-staff-invite'].includes(path);
+
+  return hidden ? null : <WhatsAppSupportWidget />;
+}
+
+function WhatsAppSupportWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([initialMessage]);
   const [draft, setDraft] = useState('');
