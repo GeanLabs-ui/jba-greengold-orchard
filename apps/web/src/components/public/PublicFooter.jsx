@@ -86,7 +86,7 @@ export default function PublicFooter({ workingLinks = false }) {
               />
             </Link>
             <p className="mt-2 max-w-xs text-[11px] leading-4 text-white/65">
-              Growing today, sustaining tomorrow — careful orchard, timeless mangoes from farm to appetite.
+              Unlocking Prosperity Through Land Cultivation
             </p>
             <div className="mt-3 flex gap-4">
               {workingLinks ? <>
