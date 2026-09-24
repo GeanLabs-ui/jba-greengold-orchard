@@ -16,6 +16,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
 import AdminActionButton from '@/components/admin/AdminActionButton';
+import FarmScopeMultiSelect from '@/components/farm/FarmScopeMultiSelect';
+import { scopeLabel } from '@/lib/farm-scope';
 
 const buildInitialValues = (fields) => (
   fields.reduce((values, field) => ({
@@ -55,6 +57,9 @@ export default function AdminCreateDialog({
   const initialValues = useMemo(() => ({
     ...buildInitialValues(fields),
     ...(providedInitialValues || {}),
+    ...(providedInitialValues && !providedInitialValues.farm_id && scopeLabel(providedInitialValues.farm_name) === 'Farm A&B'
+      && fields.some((field) => field.name === 'farm_id' && field.options?.some((option) => option.value === '__all__'))
+      ? { farm_id: '__all__' } : {}),
   }), [fields, providedInitialValues]);
   const [open, setOpen] = useState(false);
   const [values, setValues] = useState(initialValues);
@@ -70,7 +75,7 @@ export default function AdminCreateDialog({
 
   const updateValue = (name, value) => {
     setSaveError('');
-    setValues((current) => ({ ...current, [name]: value }));
+    setValues((current) => ({ ...current, [name]: value, ...(name === 'farm_id' && fields.some((field) => field.name === 'block_id') ? { block_id: '' } : {}) }));
   };
 
   const handleSubmit = async (event) => {
@@ -112,13 +117,16 @@ export default function AdminCreateDialog({
         <Label htmlFor={field.name} className={formVariant === 'daily-activity-log' ? 'mb-1 block text-caption font-semibold text-slate-600' : undefined}>
           {field.label}
         </Label>
-        {field.type === 'select' ? (
-          <Select required={formVariant === 'daily-activity-log' && field.required} value={value} onValueChange={(nextValue) => updateValue(field.name, nextValue)}>
+        {field.type === 'farm-scope-multi' ? (
+          <FarmScopeMultiSelect id={field.name} value={value} options={field.options} onChange={(nextValue) => updateValue(field.name, nextValue)} />
+        ) : field.type === 'select' ? (
+          <Select required={Boolean(field.required)} value={value} onValueChange={(nextValue) => updateValue(field.name, nextValue === '__farm__' ? '' : nextValue)}>
             <SelectTrigger id={field.name} className={formVariant === 'daily-activity-log' ? 'h-8 border-slate-200 bg-white text-caption shadow-sm' : undefined}>
               <SelectValue placeholder={field.placeholder || 'Select'} />
             </SelectTrigger>
             <SelectContent>
-              {field.options.map((option) => (
+              {field.name === 'block_id' && !field.required && fields.some((item) => item.name === 'farm_id') && <SelectItem value="__farm__">{fields.find((item) => item.name === 'farm_id').options?.find((option) => option.value === values.farm_id)?.label || 'Whole farm'}</SelectItem>}
+              {field.options.filter((option) => field.name !== 'block_id' || !fields.some((item) => item.name === 'farm_id') || !option.farmId || !values.farm_id || values.farm_id === '__all__' || option.farmId === values.farm_id).map((option) => (
                 <SelectItem key={option.value} value={option.value}>
                   {option.label}
                 </SelectItem>

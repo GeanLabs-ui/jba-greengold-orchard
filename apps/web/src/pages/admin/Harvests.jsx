@@ -1,3 +1,4 @@
+import { farmSelectOptions, blockSelectOptions, resolveOperationalScope, blockLabel } from '@/lib/farm-scope';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   Calendar,
@@ -378,23 +379,7 @@ export default function Harvests({ embedded = false }) {
   });
 
   const createOperationalRecord = (entityName) => (payload) => {
-    const farm = farms.find((item) => item.id === payload.farm_id);
-    const block = blocks.find((item) => item.id === payload.block_id);
-    const nextPayload = {
-      ...payload,
-      farm_name: farm?.name || payload.farm_name || 'Unassigned Farm',
-      block_name: block?.name || payload.block_name || '',
-    };
-
-    if (payload.farm_id === 'unassigned_farm') {
-      nextPayload.farm_id = '';
-      nextPayload.farm_name = 'Unassigned Farm';
-    }
-
-    if (payload.block_id === 'unassigned_block') {
-      nextPayload.block_id = '';
-      nextPayload.block_name = '';
-    }
+    const nextPayload = { ...payload, ...resolveOperationalScope(payload, farms, blocks) };
 
     const generatedCodeField = codeField[entityName];
     if (generatedCodeField && !nextPayload[generatedCodeField]) {
@@ -410,17 +395,8 @@ export default function Harvests({ embedded = false }) {
   const activeProjects = projects.filter((project) => !['completed', 'cancelled'].includes(project.status)).length;
 
   const recentLogs = useMemo(() => logs.slice(0, 5), [logs]);
-  const farmOptions = useMemo(() => (
-    farms.length > 0
-      ? farms.map((farm) => ({ value: farm.id, label: farm.name }))
-      : [{ value: 'unassigned_farm', label: 'Unassigned Farm' }]
-  ), [farms]);
-
-  const blockOptions = useMemo(() => (
-    blocks.length > 0
-      ? blocks.map((block) => ({ value: block.id, label: `${block.name} (${block.farm_name || 'Farm'})` }))
-      : [{ value: 'unassigned_block', label: 'No Block' }]
-  ), [blocks]);
+  const farmOptions = useMemo(() => [...farmSelectOptions(farms), { value: '__all__', label: 'Farm A&B' }], [farms]);
+  const blockOptions = useMemo(() => blockSelectOptions(blocks), [blocks]);
 
   const activeProcessConfig = processEntityConfig[view];
   const processItems = {
@@ -663,7 +639,7 @@ export default function Harvests({ embedded = false }) {
               { key: 'phase', label: 'Phase', render: (value) => phases.find((phase) => phase.key === value)?.label || value },
               { key: 'activity_title', label: 'Activity' },
               { key: 'farm_name', label: 'Farm' },
-              { key: 'block_name', label: 'Block' },
+              { key: 'block_name', label: 'Block', render: (item) => blockLabel(item) },
               { key: 'performed_by_name', label: 'Who' },
               { key: 'activity_date', label: 'Date', render: (value, item) => displayDateTime(value, item.start_time) },
               { key: 'quantity', label: 'Qty', align: 'right', render: (value, item) => value ? `${formatNumber(value)} ${item.unit_of_measure || ''}` : '' },

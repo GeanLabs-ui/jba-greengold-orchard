@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Globe2, Leaf, UsersRound, CalendarDays, CirclePlay, Plus, Sprout } from 'lucide-react';
 import './about-reference.css';
 const questions = [
- ['Where is JBA GreenGold Orchard located?','JBA GreenGold Orchard is based in Ghana, with our contact team in Accra. Visit our farm page to explore our orchards, or contact us to arrange a visit.','/farms'],
+ ['Where is JBA GreenGold Orchard located?','JBA GreenGold Orchard is based in Ghana, with our contact team in Duayaw Nkwanta, Ahafo Region. Visit our farm page to explore our orchards, or contact us to arrange a visit.','/farms'],
  ['What products do you offer?','We offer premium fresh mangoes and natural mango products, including dried mango, juice, jam, pickles, and gift collections. Explore our products to discover the harvest.','/products'],
  ['Do you work with international buyers?','Yes. We work with local and international buyers. Our supply team can help with product availability, export requirements, and delivery arrangements.','/supply'],
  ['How can I get in touch?','Email info@jbagreengold.com or use our contact page to speak with our team about products, supply, partnerships, or visiting the orchard.','/contact']

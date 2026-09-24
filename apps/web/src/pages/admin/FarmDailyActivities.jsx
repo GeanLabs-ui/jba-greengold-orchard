@@ -1,3 +1,4 @@
+import { FARM_SCOPE_OPTIONS, farmSelectOptions, blockSelectOptions, blockLabel, scopeLabel, matchesFarmScope, resolveOperationalScope, activityScopeValue } from '@/lib/farm-scope';
 import { ACTIVITY_COST_TYPES } from '@/lib/activity-cost-types';
 import AdminActionButton from '@/components/admin/AdminActionButton';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -270,7 +271,7 @@ const activityColumns = [
   { key: 'activity_code', label: 'Activity ID' },
   { key: 'activity_date', label: 'Date', format: formatDate },
   { key: 'farm_name', label: 'Farm' },
-  { key: 'block_name', label: 'Block/Field' },
+  { key: 'block_name', label: 'Block/Field', render: (item) => blockLabel(item) },
   { key: 'category', label: 'Activity Category' },
   { key: 'supervisor_name', label: 'Supervisor' },
   { key: 'total_hours', label: 'Hours', align: 'right', format: formatNumber },
@@ -283,7 +284,7 @@ const workOrderColumns = [
   { key: 'work_order_code', label: 'Work Order ID' },
   { key: 'title', label: 'Title' },
   { key: 'farm_name', label: 'Farm' },
-  { key: 'block_name', label: 'Block' },
+  { key: 'block_name', label: 'Block', render: (item) => blockLabel(item) },
   { key: 'category', label: 'Category' },
   { key: 'scheduled_date', label: 'Scheduled Date', format: formatDate },
   { key: 'estimated_cost', label: 'Estimated Cost', align: 'right', format: formatCurrency },
@@ -295,7 +296,7 @@ const harvestColumns = [
   { key: 'harvest_code', label: 'Harvest ID' },
   { key: 'harvest_date', label: 'Date', format: formatDate },
   { key: 'farm_name', label: 'Farm' },
-  { key: 'block_name', label: 'Block' },
+  { key: 'block_name', label: 'Block', render: (item) => blockLabel(item) },
   { key: 'team', label: 'Team' },
   { key: 'mango_variety', label: 'Mango Variety' },
   { key: 'quantity_harvested_kg', label: 'Quantity Harvested kg', align: 'right', format: formatNumber },
@@ -349,7 +350,7 @@ const inputUsageColumns = [
   { key: 'application_code', label: 'Application ID' },
   { key: 'application_date', label: 'Date', format: formatDate },
   { key: 'farm_name', label: 'Farm' },
-  { key: 'block_name', label: 'Block' },
+  { key: 'block_name', label: 'Block', render: (item) => blockLabel(item) },
   { key: 'activity', label: 'Activity' },
   { key: 'input_name', label: 'Input Name' },
   { key: 'input_type', label: 'Input Type' },
@@ -389,7 +390,7 @@ const lossColumns = [
   { key: 'loss_code', label: 'Loss ID' },
   { key: 'loss_date', label: 'Date', format: formatDate },
   { key: 'farm_name', label: 'Farm' },
-  { key: 'block_name', label: 'Block' },
+  { key: 'block_name', label: 'Block', render: (item) => blockLabel(item) },
   { key: 'batch_number', label: 'Batch Number' },
   { key: 'loss_type', label: 'Loss Type' },
   { key: 'quantity', label: 'Quantity', align: 'right', format: formatNumber },
@@ -469,7 +470,7 @@ const activityLogColumns = [
   { key: 'quantity', label: 'Quantity', className: 'w-[72px] text-center', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => formatNumber(item.quantity_used ?? item.harvest_quantity ?? item.crates_used) },
   { key: 'responsible', label: 'Responsible', className: 'w-[116px]', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => item.responsible || item.assigned_workers || item.supervisor_name },
   { key: 'contact', label: 'Contact', className: 'w-[92px]', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => item.contact },
-  { key: 'block_name', label: 'Farm Block', className: 'w-[102px]', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => item.block_name || item.block_code },
+  { key: 'block_name', label: 'Farm Block', className: 'w-[102px]', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => blockLabel(item) },
   { key: 'projected_cost', label: 'Projected Cost', className: 'w-[96px] text-center', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => <span className="font-semibold text-[#2e7d32]">{formatCurrency(item.projected_cost)}</span> },
   { key: 'actual_cost', label: 'Actual Cost', className: 'w-[96px] text-center', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => <span className="font-semibold text-[#2e7d32]">{formatCurrency(item.actual_cost ?? item.cost)}</span> },
   { key: 'revenue', label: 'Actual Revenue', className: 'w-[84px] text-center', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => <span className="font-semibold text-[#2e7d32]">{formatCurrency(item.actual_revenue ?? item.revenue)}</span> },
@@ -480,28 +481,7 @@ const activityLogColumns = [
 
 const activityStatusFilterOptions = ['All', 'Completed', 'Pending', 'In Progress', 'Not recorded'];
 const activityTypeFilterOptions = ['All', ...activityCategories];
-const farmBlockFilterOptions = [
-  { value: 'All', label: 'Farm Block: All' },
-  { value: 'A&B', label: 'Farm A & B' },
-  { value: 'A', label: 'Farm A' },
-  ...Array.from({ length: 5 }, (_, index) => ({ value: `A${index + 1}`, label: `Block A${index + 1}` })),
-  { value: 'B', label: 'Farm B' },
-  ...Array.from({ length: 5 }, (_, index) => ({ value: `B${index + 1}`, label: `Block B${index + 1}` })),
-];
-
-const activityMatchesFarmBlock = (activity, filter) => {
-  if (filter === 'All') return true;
-
-  const farmBlockText = [activity.farm_name, activity.block_name, activity.block_code]
-    .filter(Boolean)
-    .join(' ')
-    .toUpperCase();
-  const hasCode = (code) => new RegExp(`(^|[^A-Z0-9])${code}($|[^A-Z0-9])`).test(farmBlockText);
-
-  if (filter === 'A&B') return /(^|[^A-Z0-9])[AB](?:\d+)?($|[^A-Z0-9])/.test(farmBlockText);
-  if (filter === 'A' || filter === 'B') return new RegExp(`(^|[^A-Z0-9])${filter}(?:\\d+)?($|[^A-Z0-9])`).test(farmBlockText);
-  return hasCode(filter);
-};
+const farmBlockFilterOptions = FARM_SCOPE_OPTIONS;
 
 const DailyActivityLog = ({
   items,
@@ -619,7 +599,7 @@ const DailyActivityLog = ({
       { label: 'Quantity', width: 44, value: (item) => formatNumber(item.quantity_used ?? item.harvest_quantity ?? item.crates_used) },
       { label: 'Responsible', width: 70, value: (item) => item.responsible || item.assigned_workers || item.supervisor_name },
       { label: 'Contact', width: 65, value: (item) => item.contact },
-      { label: 'Farm Block', width: 56, value: (item) => item.block_name || item.block_code },
+      { label: 'Farm Block', width: 56, value: (item) => blockLabel(item) },
       { label: 'Projected Cost', width: 63, value: (item) => item.projected_cost },
       { label: 'Actual Cost', width: 63, value: (item) => item.actual_cost ?? item.cost },
       { label: 'Actual Revenue', width: 65, value: (item) => item.actual_revenue ?? item.revenue },
@@ -635,7 +615,7 @@ const DailyActivityLog = ({
     ];
     const money = (value) => `GHS ${asNumber(value).toLocaleString('en-GH', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
     const dateLabel = { all: 'All dates', today: 'Today', week: 'This week', month: 'This month', custom: 'Custom range' }[dateFilter];
-    const selectedBlock = farmBlockFilterOptions.find((option) => option.value === farmBlockFilter)?.label || 'Farm Block: All';
+    const selectedBlock = farmBlockFilterOptions.find((option) => option.value === farmBlockFilter)?.label || 'Farm A&B';
     const filters = [dateLabel, selectedBlock, activityTypeFilter === 'All' ? 'All activity types' : activityTypeFilter, statusFilter === 'All' ? 'All status' : statusFilter].join('  |  ');
 
     const drawReportHeader = (continuation = false) => {
@@ -797,7 +777,7 @@ const DailyActivityLog = ({
           <p className="mb-1 font-semibold text-[#256b2a]">Production</p>
           {[
             ['Harvest / Output', `${formatNumber(item.harvest_quantity ?? item.output_quantity_kg)} kg`],
-            ['Farm Block', item.block_name || item.block_code],
+            ['Farm Block', blockLabel(item)],
             ['Main Farm', item.farm_name],
           ].map(([label, value]) => <p key={label} className="grid grid-cols-[132px_1fr] gap-3"><span className={label === 'Harvest / Output' ? 'text-emerald-700' : 'text-slate-600'}>{label}</span><span className={label === 'Harvest / Output' ? 'font-semibold text-emerald-700' : ''}>{displayValue(value)}</span></p>)}
         </div>
@@ -845,7 +825,7 @@ const DailyActivityLog = ({
     }
 
     if (column.key === 'block_name') {
-      return <label className="block text-label"><span className="sr-only">Filter activities by farm block</span><select value={farmBlockFilter} onChange={(event) => onFarmBlockFilterChange(event.target.value)} className={selectClassName} aria-label="Filter activities by farm block">{farmBlockFilterOptions.map((option) => <option key={option.value} value={option.value}>{option.value === 'All' ? 'Farm Block' : option.label}</option>)}</select></label>;
+      return <label className="block text-label"><span className="sr-only">Filter activities by farm block</span><select value={farmBlockFilter} onChange={(event) => onFarmBlockFilterChange(event.target.value)} className={selectClassName} aria-label="Filter activities by farm block">{farmBlockFilterOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>;
     }
 
     if (column.key === 'category') {
@@ -918,7 +898,7 @@ const DailyActivityLog = ({
           return <article key={itemId} className="mobile-record">
             <div className="flex flex-wrap items-center justify-between gap-2 text-xs"><span>{formatDate(item.activity_date)}</span><span className="rounded bg-muted px-2 py-1">{item.status || 'Pending'}</span></div>
             <h3 className="mt-2 text-base font-semibold">{item.description || item.title || item.category || 'Activity'}</h3>
-            <dl className="mobile-record-fields mt-3"><div><dt>Farm / block</dt><dd>{item.farm_name || '—'} · {item.block_name || item.block_code || '—'}</dd></div><div><dt>Actual cost</dt><dd className="text-rose-600">{formatCurrency(item.actual_cost ?? item.cost)}</dd></div><div><dt>Actual revenue</dt><dd className="text-blue-600">{formatCurrency(item.actual_revenue ?? item.revenue)}</dd></div></dl>
+            <dl className="mobile-record-fields mt-3"><div><dt>Farm / block</dt><dd>{scopeLabel(item.farm_name) || '—'} · {blockLabel(item) || '—'}</dd></div><div><dt>Actual cost</dt><dd className="text-rose-600">{formatCurrency(item.actual_cost ?? item.cost)}</dd></div><div><dt>Actual revenue</dt><dd className="text-blue-600">{formatCurrency(item.actual_revenue ?? item.revenue)}</dd></div></dl>
             <button type="button" className="mt-2 min-h-11 font-semibold text-primary" aria-expanded={selectedId === itemId} onClick={() => selectedId === itemId ? closeDetails() : pinDetails(itemId)}>{selectedId === itemId ? 'Hide details' : 'View activity details'}</button>
             {selectedId === itemId && renderActivityDetails(item, itemId)}
           </article>;
@@ -1057,7 +1037,7 @@ export default function FarmDailyActivities() {
 
   const [search, setSearch] = useState('');
   const [activityStatusFilter, setActivityStatusFilter] = useState('All');
-  const [activityFarmBlockFilter, setActivityFarmBlockFilter] = useState('All');
+  const [activityFarmBlockFilter, setActivityFarmBlockFilter] = useState('all');
   const [activityTypeFilter, setActivityTypeFilter] = useState('All');
   const [deletingActivityId, setDeletingActivityId] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -1223,29 +1203,13 @@ export default function FarmDailyActivities() {
       : rows
   );
 
-  const farmOptions = useMemo(() => (
-    (data.farms || []).length
-      ? data.farms.map((farm) => ({ value: farm.id, label: farm.name }))
-      : [{ value: 'farm_001', label: 'Eastern Ridge Orchard' }]
-  ), [data.farms]);
-
-  const blockOptions = useMemo(() => (
-    (data.blocks || []).length
-      ? data.blocks.map((block) => ({ value: block.id, label: `${block.name} (${block.farm_name})` }))
-      : [{ value: 'block_001', label: 'North Kent Block' }]
-  ), [data.blocks]);
+  const farmOptions = useMemo(() => [...farmSelectOptions(data.farms), { value: '__all__', label: 'Farm A&B' }], [data.farms]);
+  const blockOptions = useMemo(() => blockSelectOptions(data.blocks), [data.blocks]);
 
   const resolveFarmBlock = (payload) => {
     const sharedScope = resolveActivitySharedScope(payload, data.blocks || []);
-    if (sharedScope) return sharedScope;
-    const farm = (data.farms || []).find((item) => item.id === payload.farm_id || item.name === payload.farm_name);
-    const block = (data.blocks || []).find((item) => item.id === payload.block_id || item.name === payload.block_name);
-    return {
-      farm_id: payload.farm_id || farm?.id || block?.farm_id || '',
-      farm_name: farm?.name || payload.farm_name || block?.farm_name || '',
-      block_id: payload.block_id || block?.id || '',
-      block_name: block?.name || payload.block_name || '',
-    };
+    if (sharedScope) return { ...sharedScope, block_code: sharedScope.block_id ? sharedScope.block_name : '' };
+    return resolveOperationalScope(payload, data.farms, data.blocks);
   };
 
   const notify = (title, message, type = 'farm_operations') => (
@@ -1761,7 +1725,7 @@ export default function FarmDailyActivities() {
     if (!nextPayload.log_entry && isChemical && !nextPayload.weather_condition) throw new Error('Chemical application must require weather condition.');
     if (usesEquipment && (!nextPayload.equipment_operator || !nextPayload.equipment_condition)) throw new Error('Equipment usage must require operator and condition.');
 
-    const farmBlock = resolveFarmBlock(nextPayload);
+    const farmBlock = resolveFarmBlock(payload);
     const totalHours = hoursBetween(nextPayload.start_time, nextPayload.end_time);
     const itemizedCost = asNumber(nextPayload.labour_cost) + asNumber(nextPayload.equipment_cost) + asNumber(nextPayload.fuel_cost) + asNumber(nextPayload.input_cost) + asNumber(nextPayload.transport_cost);
     const cost = nextPayload.actual_cost === '' || nextPayload.actual_cost == null ? itemizedCost : asNumber(nextPayload.actual_cost);
@@ -2080,8 +2044,8 @@ export default function FarmDailyActivities() {
     { name: 'quantity_used', label: 'Quantity', type: 'number', defaultValue: 0 },
     { name: 'responsible', label: 'Responsible', placeholder: 'Person or team responsible', required: true },
     { name: 'contact', label: 'Contact', type: 'tel', placeholder: 'Phone number' },
-    { name: 'block_id', label: 'Farm Block', type: 'select', options: [...blockOptions, { value: '__shared__', label: 'Shared farm / blocks' }], defaultValue: blockOptions[0]?.value, required: true },
-    { name: 'shared_scope', label: 'Shared farm / block codes', placeholder: 'A1, A2, A3 or Farm A & B' },
+    { name: 'block_id', label: 'Farm Block', type: 'select', options: [...farmSelectOptions(data.farms).map((option) => ({ ...option, value: `farm:${option.value}` })), { value: '__all__', label: 'Farm A&B' }, ...blockOptions, { value: '__shared__', label: 'Select multiple blocks' }], defaultValue: blockOptions[0]?.value, required: true },
+    { name: 'shared_scope', label: 'Shared farms / blocks', type: 'farm-scope-multi', options: blockOptions },
     { name: 'projected_cost', label: 'Projected Cost (₵)', type: 'number', defaultValue: 0 },
     { name: 'actual_cost', label: 'Actual Cost (₵)', type: 'number', defaultValue: 0 },
     { name: 'projected_revenue', label: 'Projected Revenue (₵)', type: 'number', defaultValue: 0 },
@@ -2498,7 +2462,8 @@ export default function FarmDailyActivities() {
       buttonIcon={Pencil}
       actionIcon="edit"
       fields={fields}
-      initialValues={record?.shared_scope && !record.block_id && fields.some((field) => field.name === 'shared_scope') ? { ...record, block_id: '__shared__' } : record || {}}
+      initialValues={record && fields.some((field) => field.name === 'shared_scope') ? { ...record, block_id: activityScopeValue(record), shared_scope: record.shared_scope || record.block_name || '' } : record || {}}
+      formVariant={fields.some((field) => field.name === 'shared_scope') ? 'daily-activity-log' : undefined}
       onSubmit={(payload) => onSubmit(record, payload)}
       onCreated={load}
       submitLabel="Update"
@@ -2746,8 +2711,8 @@ export default function FarmDailyActivities() {
       activities = activities.filter((activity) => String(activity.status || 'Pending').trim().toLowerCase() === selectedStatus);
     }
 
-    if (activeScreen === 'Daily Task Log' && activityFarmBlockFilter !== 'All') {
-      activities = activities.filter((activity) => activityMatchesFarmBlock(activity, activityFarmBlockFilter));
+    if (activeScreen === 'Daily Task Log' && activityFarmBlockFilter !== 'all') {
+      activities = activities.filter((activity) => matchesFarmScope(activity, activityFarmBlockFilter, { farms: data.farms, blocks: data.blocks }));
     }
 
     if (activeScreen === 'Daily Task Log' && activityTypeFilter !== 'All') {

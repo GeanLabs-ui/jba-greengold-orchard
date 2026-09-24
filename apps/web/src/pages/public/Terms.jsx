@@ -61,7 +61,7 @@ export default function Terms() {
           <section>
             <h2 className="text-section-title">8. Contact</h2>
             <p className="mt-3">
-              JBA GreenGold Orchard — Accra, Ghana.<br />
+              JBA GreenGold Orchard — Duayaw Nkwanta, Ahafo Region, Ghana.<br />
               Email: <a href="mailto:info@jbagreengold.com" className="text-primary hover:underline">info@jbagreengold.com</a>
             </p>
           </section>

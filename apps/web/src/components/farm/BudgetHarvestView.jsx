@@ -1,3 +1,4 @@
+import { blockLabel } from '@/lib/farm-scope';
 import { CheckCircle2, CloudSun, Loader2, Plus, Sprout, Target } from 'lucide-react';
 import CircleCediSign from '@/components/icons/CircleCediSign';
 import '@/pages/admin/DailyRoutineCheck.css';
@@ -83,7 +84,7 @@ export default function BudgetHarvestView({
         <div className="drc-modal-head"><div><span className="drc-eyebrow">Commercial control</span><h2 className="text-section-title">Record harvest lot</h2></div><button type="button" onClick={() => harvestDialog.current?.close()}>×</button></div>
         <form className="drc-form-grid" onSubmit={onAddHarvest}>
           <Field label="Harvest date"><input name="harvest_date" type="date" required defaultValue={today} /></Field>
-          <Field label="Block"><select name="block_id" required>{blocks.map((block) => <option key={block.id} value={block.id}>{block.block_code} · {block.variety}</option>)}</select></Field>
+          <Field label="Block"><select name="block_id" required>{blocks.map((block) => <option key={block.id} value={block.id}>{blockLabel(block)}</option>)}</select></Field>
           <Field label="Variety"><select name="variety"><option>Kent</option><option>Keitt</option><option>Black Pearl</option></select></Field>
           <Field label="Lot code"><input name="lot_code" required maxLength="80" /></Field>
           <Field label="Harvested kg"><input name="harvested_kg" type="number" min="0.01" step="0.01" required /></Field>

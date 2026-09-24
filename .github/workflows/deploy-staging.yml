@@ -42,7 +42,18 @@ jobs:
       - name: Reject destructive database migrations
         run: npm run db:check-migrations
       - name: Apply staging database migrations
-        run: npm run db:migrate
+        id: migrations
+        shell: bash
+        run: |
+          npm run db:migrate | tee migration-output.log
+          if grep -q '^Applied 0020_post_harvest_main_activities.sql$' migration-output.log; then
+            echo 'schedule_updated=true' >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+      - name: Verify approved Main Activities and preserved previous schedule
+        if: steps.migrations.outputs.schedule_updated == 'true'
+        run: node scripts/verify-main-activities.mjs
         env:
           DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
       - name: Deploy staging API

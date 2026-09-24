@@ -5,34 +5,7 @@ const asAmount = (value) => {
 
 const normalized = (value) => String(value || '').trim().toLowerCase();
 
-const locationText = (record = {}) => {
-  const records = [record, ...(Array.isArray(record.items) ? record.items : [])];
-  return records.flatMap((item) => [
-    item?.farm_code,
-    item?.farm_name,
-    item?.farm,
-    item?.block_code,
-    item?.block_name,
-    item?.block,
-  ]).filter(Boolean).join(' ').toUpperCase();
-};
-
-export function matchesFarmSelection(record, selection = 'all') {
-  const selected = String(selection || 'all').trim().toUpperCase();
-  if (selected === 'ALL') return true;
-
-  const text = locationText(record);
-  const blockCodes = new Set(text.match(/\b[AB][1-5]\b/g) || []);
-  const farmCodes = new Set(
-    [...text.matchAll(/\bFARM(?:\s+LAND)?\s+([AB])\b/g)].map((match) => match[1]),
-  );
-
-  if (/^[AB][1-5]$/.test(selected)) return blockCodes.has(selected);
-  if (/^[AB]$/.test(selected)) {
-    return farmCodes.has(selected) || [...blockCodes].some((code) => code.startsWith(selected));
-  }
-  return false;
-}
+export { matchesFarmScope as matchesFarmSelection } from './farm-scope';
 
 export function matchesDateSelection(value, selection = {}) {
   const mode = selection.mode || 'all';

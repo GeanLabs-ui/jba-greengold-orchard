@@ -1,3 +1,4 @@
+import { scopeLabel } from '@/lib/farm-scope';
 import AdminActionButton from '@/components/admin/AdminActionButton';
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
@@ -328,12 +329,12 @@ export default function FarmProfileAdmin() {
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
             <img
               src={farmImageUrl}
-              alt={`${farm.name} farm`}
+              alt={`${scopeLabel(farm.name)} farm`}
               className="h-28 w-full rounded-lg border border-white/20 object-cover object-[70%_center] shadow-sm sm:w-60 lg:h-28 lg:w-60"
             />
             <div className="min-w-0 flex-1">
               <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
-                <h1 className="shrink-0 text-page-title">{farm.name}</h1>
+                <h1 className="shrink-0 text-page-title">{scopeLabel(farm.name)}</h1>
                 <dl className="grid flex-1 grid-cols-2 gap-x-3 gap-y-2 text-caption sm:grid-cols-3">
                   <div className="flex gap-1.5">
                     <span className="text-lime-300"><Ruler className="h-4 w-4" /></span>
@@ -496,7 +497,7 @@ export default function FarmProfileAdmin() {
         }
       />
       <BlockFormDialog open={blockDialog} onOpenChange={setBlockDialog} saving={saving} unallocatedAcres={unallocated} onSubmit={(payload) => mutate(() => base44.farms.createBlock(farm.id, payload), "Block created", () => setBlockDialog(false))} />
-      <StatusActionDialog open={Boolean(statusDialog)} onOpenChange={(open) => !open && setStatusDialog(null)} entityLabel={farm.name} action={statusDialog || "deactivate"} saving={saving} onSubmit={(payload) => mutate(() => statusDialog === "deactivate" ? base44.farms.deactivate(farm.id, payload) : base44.farms.reactivate(farm.id), `Farm ${statusDialog === "deactivate" ? "deactivated" : "reactivated"}`, () => setStatusDialog(null))} />
+      <StatusActionDialog open={Boolean(statusDialog)} onOpenChange={(open) => !open && setStatusDialog(null)} entityLabel={scopeLabel(farm.name)} action={statusDialog || "deactivate"} saving={saving} onSubmit={(payload) => mutate(() => statusDialog === "deactivate" ? base44.farms.deactivate(farm.id, payload) : base44.farms.reactivate(farm.id), `Farm ${statusDialog === "deactivate" ? "deactivated" : "reactivated"}`, () => setStatusDialog(null))} />
       <MergeBlocksDialog open={mergeDialog} onOpenChange={setMergeDialog} farm={farm} blocks={farm.blocks || []} saving={saving} loadImpact={loadImpact} onSubmit={(payload) => mutate(() => base44.farms.mergeBlocks(payload), "Blocks merged safely", () => setMergeDialog(false))} />
     </div>
   );

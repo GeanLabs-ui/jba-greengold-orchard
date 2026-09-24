@@ -1,3 +1,4 @@
+import { scopeLabel, farmScopeOptions, resolveOperationalScope } from '@/lib/farm-scope';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useSearchParams } from 'react-router-dom';
@@ -41,7 +42,7 @@ const REMINDERS = [
 const todayKey = () => new Date().toISOString().slice(0, 10);
 const blankForm = (day = todayKey()) => ({
   title: '', description: '', date: day, start_time: '08:00', end_time: '09:00', all_day: false,
-  category: 'Farm Operations', farm_id: '', farm_name: '', assigned_to_name: '', priority: 'Medium',
+  category: 'Farm Operations', farm_id: '', farm_name: '', block_id: '', block_name: '', block_code: '', shared_scope: '', assigned_to_name: '', priority: 'Medium',
   status: 'scheduled', progress_percent: 0, reminders_enabled: true, reminder_minutes: 30, notes: '',
 });
 const createCode = () => `CAL-${Date.now().toString(36).toUpperCase()}`;
@@ -73,6 +74,7 @@ export default function ProductionCalendar() {
   const [selectedDate, setSelectedDate] = useState(todayKey());
   const [events, setEvents] = useState([]);
   const [farms, setFarms] = useState([]);
+  const [blocks, setBlocks] = useState([]);
   const [connections, setConnections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -108,13 +110,15 @@ export default function ProductionCalendar() {
   const load = useCallback(async ({ quiet = false } = {}) => {
     if (!quiet) setLoading(true);
     try {
-      const [calendarEvents, farmRecords, connectionRecords] = await Promise.all([
+      const [calendarEvents, farmRecords, connectionRecords, blockRecords] = await Promise.all([
         base44.entities.CalendarEvent.list('start_at', 250).catch(() => []),
         base44.entities.Farm.list('name', 250).catch(() => []),
         base44.entities.CalendarConnection.list('-created_date', 20).catch(() => []),
+        base44.entities.FarmBlock.listAll(),
       ]);
       setEvents(calendarEvents || []);
       setFarms(farmRecords || []);
+      setBlocks(blockRecords || []);
       setConnections(connectionRecords || []);
       processReminders(calendarEvents || []).catch(() => {});
       const requested = searchParams.get('event');
@@ -204,6 +208,7 @@ export default function ProductionCalendar() {
     const payload = {
       title: form.title.trim(), description: form.description.trim(), category: form.category,
       farm_id: form.farm_id, farm_name: form.farm_name, assigned_to_name: form.assigned_to_name.trim(),
+      block_id: form.block_id, block_name: form.block_name, block_code: form.block_code, shared_scope: form.shared_scope,
       priority: form.priority, status: form.status, progress_percent: Number(form.progress_percent || 0),
       start_at: eventDate(form.date, form.start_time, form.all_day),
       end_at: eventDate(form.date, form.end_time, form.all_day, true), all_day: Boolean(form.all_day),
@@ -371,7 +376,7 @@ export default function ProductionCalendar() {
       </div>
 
       <AnimatePresence>
-        {showEditor && <EventEditor event={editing} form={form} setForm={setForm} farms={farms} saving={saving} onClose={() => { setShowEditor(false); setSearchParams({}); }} onSubmit={submitEvent} />}
+        {showEditor && <EventEditor event={editing} form={form} setForm={setForm} farms={farms} blocks={blocks} saving={saving} onClose={() => { setShowEditor(false); setSearchParams({}); }} onSubmit={submitEvent} />}
         {showConnections && <ConnectionEditor connection={connected} events={events} saving={saving} onClose={() => setShowConnections(false)} onSave={saveConnection} />}
       </AnimatePresence>
     </div>
@@ -385,7 +390,7 @@ function TinyAction({ children, onClick }) { return <button type="button" onClic
 function Field({ label, children, className }) { return <label className={cn('block', className)}><span className="mb-1.5 block text-xs font-semibold text-muted-foreground">{label}</span>{children}</label>; }
 const inputClass = 'h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15';
 
-function EventEditor({ event, form, setForm, farms, saving, onClose, onSubmit }) {
+function EventEditor({ event, form, setForm, farms, blocks, saving, onClose, onSubmit }) {
   const set = (key, value) => setForm((current) => ({ ...current, [key]: value }));
   return <Modal title={event ? 'Edit scheduled activity' : 'Schedule production activity'} copy="Updates synchronize with Daily Routine and Farm Daily Activities." onClose={onClose}>
     <form onSubmit={onSubmit} className="space-y-4">
@@ -394,7 +399,7 @@ function EventEditor({ event, form, setForm, farms, saving, onClose, onSubmit })
       <div className="grid gap-3 sm:grid-cols-3"><Field label="Date"><input className={inputClass} type="date" required value={form.date} onChange={(e) => set('date', e.target.value)} /></Field><Field label="Start"><input className={inputClass} type="time" disabled={form.all_day} value={form.start_time} onChange={(e) => set('start_time', e.target.value)} /></Field><Field label="End"><input className={inputClass} type="time" disabled={form.all_day} value={form.end_time} onChange={(e) => set('end_time', e.target.value)} /></Field></div>
       <label className="flex items-center gap-2 text-label"><input type="checkbox" checked={form.all_day} onChange={(e) => set('all_day', e.target.checked)} />All-day activity</label>
       <div className="grid gap-3 sm:grid-cols-2"><Field label="Category"><select className={inputClass} value={form.category} onChange={(e) => set('category', e.target.value)}>{CALENDAR_CATEGORIES.map((item) => <option key={item}>{item}</option>)}</select></Field><Field label="Priority"><select className={inputClass} value={form.priority} onChange={(e) => set('priority', e.target.value)}>{PRIORITIES.map((item) => <option key={item}>{item}</option>)}</select></Field></div>
-      <div className="grid gap-3 sm:grid-cols-2"><Field label="Farm / site"><select className={inputClass} value={form.farm_id} onChange={(e) => { const farm = farms.find((item) => item.id === e.target.value); setForm((current) => ({ ...current, farm_id: e.target.value, farm_name: farm?.name || '' })); }}><option value="">Company-wide / no farm</option>{farms.map((farm) => <option key={farm.id} value={farm.id}>{farm.name}</option>)}</select></Field><Field label="Assigned to"><input className={inputClass} value={form.assigned_to_name} onChange={(e) => set('assigned_to_name', e.target.value)} placeholder="Person or team" /></Field></div>
+      <div className="grid gap-3 sm:grid-cols-2"><Field label="Farm / block"><select className={inputClass} value={form.block_id ? `block:${form.block_id}` : scopeLabel(form.farm_name) === 'Farm A&B' ? 'all' : form.farm_id ? `farm:${form.farm_id}` : ''} onChange={(e) => { const value = e.target.value; const scope = resolveOperationalScope({ block_id: value === 'all' ? '__all__' : value.startsWith('block:') ? value.slice(6) : value }, farms, blocks); setForm((current) => ({ ...current, ...scope })); }}><option value="">Company-wide / no farm</option>{farmScopeOptions(farms, blocks).map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></Field><Field label="Assigned to"><input className={inputClass} value={form.assigned_to_name} onChange={(e) => set('assigned_to_name', e.target.value)} placeholder="Person or team" /></Field></div>
       {event && <div className="grid gap-3 sm:grid-cols-2"><Field label="Status"><select className={inputClass} value={form.status} onChange={(e) => set('status', e.target.value)}>{CALENDAR_STATUSES.map((item) => <option key={item} value={item}>{STATUS_LABELS[item]}</option>)}</select></Field><Field label={`Progress · ${form.progress_percent}%`}><input className="mt-3 w-full accent-orange-600" type="range" min="0" max="100" step="5" value={form.progress_percent} onChange={(e) => set('progress_percent', Number(e.target.value))} /></Field></div>}
       <div className="rounded-lg border border-border bg-muted/30 p-3"><label className="flex items-center gap-2 text-label"><input type="checkbox" checked={form.reminders_enabled} onChange={(e) => set('reminders_enabled', e.target.checked)} /><Bell className="h-4 w-4 text-primary" />Send task reminder</label>{form.reminders_enabled && <select className={`${inputClass} mt-3`} value={form.reminder_minutes} onChange={(e) => set('reminder_minutes', Number(e.target.value))}>{REMINDERS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select>}</div>
       <div className="flex justify-end gap-2 border-t border-border pt-4"><Button type="button" variant="outline" onClick={onClose}>Cancel</Button><Button type="submit" disabled={saving}>{saving ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <CalendarCheck2 className="mr-2 h-4 w-4" />}{event ? 'Save changes' : 'Schedule activity'}</Button></div>

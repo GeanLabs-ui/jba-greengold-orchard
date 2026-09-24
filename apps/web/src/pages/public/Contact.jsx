@@ -29,9 +29,9 @@ const contactMethods = [
   {
     icon: MapPin,
     title: 'Office Location',
-    value: 'Plot 123, Industrial Area, Accra, Ghana',
+    value: 'Duayaw Nkwanta, Ahafo Region, Ghana',
     action: 'Get Directions',
-    href: 'https://www.google.com/maps/search/?api=1&query=Accra%2C%20Ghana',
+    href: 'https://www.google.com/maps/search/?api=1&query=Duayaw%20Nkwanta%2C%20Ahafo%20Region%2C%20Ghana',
   },
   { icon: Phone, title: 'Phone', value: '+233 59 354 9954', action: 'Call Now', href: 'tel:+233593549954' },
   { icon: Mail, title: 'Email', value: 'info@jbagreengold.com', action: 'Send Email', href: 'mailto:info@jbagreengold.com' },
@@ -42,7 +42,7 @@ const quickContactOptions = [
   { icon: MessageCircle, title: 'WhatsApp', copy: 'Chat with us instantly', href: whatsappSupportUrl('Hello JBA GreenGold, I would like to make an inquiry.') },
   { icon: Phone, title: 'Call Us', copy: '+233 59 354 9954', href: 'tel:+233593549954' },
   { icon: Mail, title: 'Email Us', copy: 'info@jbagreengold.com', href: 'mailto:info@jbagreengold.com' },
-  { icon: MapPin, title: 'Visit Us', copy: 'Accra, Ghana', href: 'https://www.google.com/maps/search/?api=1&query=Accra%2C%20Ghana' },
+  { icon: MapPin, title: 'Visit Us', copy: 'Duayaw Nkwanta, Ahafo Region, Ghana', href: 'https://www.google.com/maps/search/?api=1&query=Duayaw%20Nkwanta%2C%20Ahafo%20Region%2C%20Ghana' },
 ];
 
 const countryCallingCodes = [
@@ -192,13 +192,13 @@ export default function Contact() {
               {contactMethods.map((method) => (
                 <div key={method.title} className="contact-method">
                   <span className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-[#2e7d32] text-white"><method.icon className="h-5 w-5" /></span>
-                  <div className="min-w-0 flex-1"><p className="text-body-sm font-bold">{method.title}</p><p className="truncate text-caption text-[#5f7565]">{method.value}</p></div>
+                  <div className="min-w-0 flex-1"><p className="text-body-sm font-bold">{method.title}</p><p className="text-caption text-[#5f7565]">{method.value}</p></div>
                   {method.href ? <a href={method.href} target={method.href.startsWith('http') ? '_blank' : undefined} rel={method.href.startsWith('http') ? 'noreferrer' : undefined} className="inline-flex items-center gap-2 text-caption font-bold text-[#256b2a] hover:text-[#43a047]">{method.action} <ArrowRight className="h-3.5 w-3.5" /></a> : <span className="text-caption font-bold text-[#256b2a]">{method.action}</span>}
                 </div>
               ))}
             </div>
             <div className="contact-map">
-              <iframe title="Map of Accra, Ghana" width="100%" height="100%" loading="lazy" src="https://maps.google.com/maps?q=Accra%2C%20Ghana&z=11&output=embed" referrerPolicy="no-referrer-when-downgrade" />
+              <iframe title="Map of Duayaw Nkwanta, Ahafo Region, Ghana" width="100%" height="100%" loading="lazy" src="https://maps.google.com/maps?q=Duayaw%20Nkwanta%2C%20Ahafo%20Region%2C%20Ghana&z=11&output=embed" referrerPolicy="no-referrer-when-downgrade" />
             </div>
           </section>
         </div>
@@ -210,7 +210,7 @@ export default function Contact() {
           <div className="contact-quick-grid">
             {quickContactOptions.map((option) => (
               <a key={option.title} href={option.href} target={option.href.startsWith('http') ? '_blank' : undefined} rel={option.href.startsWith('http') ? 'noreferrer' : undefined} className="contact-quick-card">
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#e8f5e9] text-[#2e7d32]"><option.icon className="h-5 w-5" /></span><span className="min-w-0 flex-1"><b className="block text-caption">{option.title}</b><span className="block truncate text-caption text-[#5f7565]">{option.copy}</span></span><ArrowRight className="h-3.5 w-3.5" />
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#e8f5e9] text-[#2e7d32]"><option.icon className="h-5 w-5" /></span><span className="min-w-0 flex-1"><b className="block text-caption">{option.title}</b><span className="block text-caption text-[#5f7565]">{option.copy}</span></span><ArrowRight className="h-3.5 w-3.5" />
               </a>
             ))}
           </div>

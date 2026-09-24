@@ -1,3 +1,4 @@
+import { FARM_SCOPE_OPTIONS } from '@/lib/farm-scope';
 import AdminActionButton from '@/components/admin/AdminActionButton';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Banknote, CalendarDays, Filter, MapPin, RotateCcw, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
@@ -63,6 +64,7 @@ export default function Finance() {
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState('');
+  const [structure, setStructure] = useState({ farms: [], blocks: [] });
   const [farmFilter, setFarmFilter] = useState('all');
   const [dateMode, setDateMode] = useState('all');
   const [monthFilter, setMonthFilter] = useState(initialMonth);
@@ -76,7 +78,10 @@ export default function Finance() {
       base44.entities.DailyActivity.listAll('-activity_date'),
       base44.entities.Order.listAll('-order_date'),
       base44.entities.Invoice.listAll('-invoice_date'),
-    ]).then(([activityRecords, orderRecords, invoiceRecords]) => {
+      base44.entities.Farm.listAll(),
+      base44.entities.FarmBlock.listAll(),
+    ]).then(([activityRecords, orderRecords, invoiceRecords, farms, blocks]) => {
+      setStructure({ farms: farms || [], blocks: blocks || [] });
       setActivities(activityRecords || []);
       setOrders(orderRecords || []);
       setInvoices(invoiceRecords || []);
@@ -91,7 +96,7 @@ export default function Finance() {
     const unsubscribe = subscribeToDataChanges(() => {
       clearTimeout(timer);
       timer = setTimeout(() => load(false), 120);
-    }, ['DailyActivity', 'FarmExpense', 'Order', 'Invoice']);
+    }, ['DailyActivity', 'FarmExpense', 'Order', 'Invoice', 'Farm', 'FarmBlock']);
     return () => { clearTimeout(timer); unsubscribe(); };
   }, [load]);
 
@@ -121,17 +126,17 @@ export default function Finance() {
     });
   }, [invoices, orders]);
   const expenses = useMemo(() => allExpenses.filter((expense) => (
-    matchesFarmSelection(expense, farmFilter)
+    matchesFarmSelection(expense, farmFilter, structure)
     && matchesDateSelection(dateValue(expense, ['expense_date', 'created_date']), dateSelection)
-  )), [allExpenses, farmFilter, dateSelection]);
+  )), [allExpenses, farmFilter, dateSelection, structure]);
   const sales = useMemo(() => allSales.filter((sale) => (
-    matchesFarmSelection(sale, farmFilter)
+    matchesFarmSelection(sale, farmFilter, structure)
     && matchesDateSelection(dateValue(sale, ['order_date', 'created_date']), dateSelection)
-  )), [allSales, farmFilter, dateSelection]);
+  )), [allSales, farmFilter, dateSelection, structure]);
   const outstandingInvoices = useMemo(() => allOutstandingInvoices.filter((invoice) => (
-    matchesFarmSelection(invoice, farmFilter)
+    matchesFarmSelection(invoice, farmFilter, structure)
     && matchesDateSelection(dateValue(invoice, ['invoice_date', 'created_date']), dateSelection)
-  )), [allOutstandingInvoices, farmFilter, dateSelection]);
+  )), [allOutstandingInvoices, farmFilter, dateSelection, structure]);
   const totalSales = sumAmounts(sales, 'total_amount');
   const totalExpenses = sumAmounts(expenses, 'amount');
   const outstanding = outstandingInvoices.reduce((sum, invoice) => (
@@ -209,15 +214,7 @@ export default function Finance() {
           <label className="space-y-1.5 text-muted-foreground text-label">
             <span className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" />Farm / Block</span>
             <select value={farmFilter} onChange={(event) => setFarmFilter(event.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-sm outline-none focus:ring-2 focus:ring-ring">
-              <option value="all">All Farms</option>
-              <optgroup label="Farm A">
-                <option value="A">Farm A (all blocks)</option>
-                {Array.from({ length: 5 }, (_, index) => <option key={`A${index + 1}`} value={`A${index + 1}`}>Farm A{index + 1}</option>)}
-              </optgroup>
-              <optgroup label="Farm B">
-                <option value="B">Farm B (all blocks)</option>
-                {Array.from({ length: 5 }, (_, index) => <option key={`B${index + 1}`} value={`B${index + 1}`}>Farm B{index + 1}</option>)}
-              </optgroup>
+              {FARM_SCOPE_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
             </select>
           </label>
 
