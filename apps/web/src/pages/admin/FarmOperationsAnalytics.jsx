@@ -1,3 +1,4 @@
+import { farmScopeOptions, blockLabel } from '@/lib/farm-scope';
 import FarmPerformanceTrends from '@/components/farm/FarmPerformanceTrends';
 import CostBreakdown from '@/components/farm/CostBreakdown';
 import { useEffect, useMemo, useState } from 'react';
@@ -194,23 +195,7 @@ export default function FarmOperationsAnalytics({ data }) {
     return { selectedFarmId: 'all', selectedBlockId: 'all' };
   }, [farmFilter]);
 
-  const farmFilterOptions = useMemo(() => {
-    const isActive = (row) => !['inactive', 'archived', 'merged'].includes(lower(row.status));
-    const farmCode = (farm) => text(farm.name).replace(/^farm\s*(?:land\s*)?/i, '').trim().toUpperCase();
-    const activeFarms = farms.filter(isActive);
-    const orderedFarms = ['A', 'B'].map((code) => activeFarms.find((farm) => farmCode(farm) === code)).filter(Boolean);
-    const blockCode = (block) => text(block.block_code || block.name).replace(/^(?:farm|block)\s*/i, '').trim().toUpperCase();
-    const activeFarmIds = new Set(orderedFarms.map((farm) => String(farm.id)));
-    const configuredBlocks = blocks.filter((block) => isActive(block) && activeFarmIds.has(String(block.farm_id)));
-    return [
-      ...orderedFarms.map((farm) => ({ value: `farm:${farm.id}`, label: `Farm ${farmCode(farm)}` })),
-      { value: 'all', label: 'Farm A&B' },
-      ...['A1', 'A2', 'A3', 'A4', 'A5', 'B1', 'B2', 'B3', 'B4', 'B5'].flatMap((code) => {
-        const block = configuredBlocks.find((item) => blockCode(item) === code);
-        return block ? [{ value: `block:${block.id}`, label: code }] : [];
-      }),
-    ];
-  }, [blocks, farms]);
+  const farmFilterOptions = useMemo(() => farmScopeOptions(farms, blocks), [farms, blocks]);
 
   const analytics = useMemo(() => buildFarmOperationsAnalytics(
     { farms, blocks, dailyActivities: activities },
@@ -242,7 +227,7 @@ export default function FarmOperationsAnalytics({ data }) {
   const matchesConfiguredBlock = (row) => visibleBlocks.some((block) => activityMatchesBlock(row, block));
   const activityOnlyBlocks = Object.values(filteredActivities.reduce((result, row) => {
     if (matchesConfiguredBlock(row)) return result;
-    const label = text(row.block_code || row.block_name || row.block_id);
+    const label = blockLabel(row.block_code || row.block_name || row.block_id);
     if (!label) return result;
     const key = label.toLowerCase();
     result[key] = result[key] || { id: `activity-block-${key}`, block_code: label, name: label, rows: [] };
@@ -268,7 +253,7 @@ export default function FarmOperationsAnalytics({ data }) {
 
   const blockPerformanceRows = blockSummary.slice().sort((a, b) => (
     a.farmName.localeCompare(b.farmName) || text(a.block_code || a.name).localeCompare(text(b.block_code || b.name), undefined, { numeric: true })
-  )).map((block) => ({ ...block, blockLabel: block.block_code || block.name || 'Block' }));
+  )).map((block) => ({ ...block, blockLabel: blockLabel(block) || 'Block' }));
   const blockMoneyMax = Math.max(0, ...blockPerformanceRows.flatMap(row => blockMetric === 'yield' ? [] : blockMetric === 'cost' ? [row.cost] : blockMetric === 'revenue' ? [row.revenue] : [row.cost, row.revenue]));
   const blockMoneyCeiling = Math.max(1000, Math.ceil(blockMoneyMax / 1000) * 1000);
   const blockYieldCeiling = Math.max(4, Math.ceil(Math.max(0, ...blockPerformanceRows.map(row => row.yieldTonnes))));
@@ -288,7 +273,7 @@ export default function FarmOperationsAnalytics({ data }) {
   const recentActivitiesPanel = <AnalyticsPanel title="Recent Farm Activities" className="analytics-recent" action={<button type="button" onClick={() => navigate('/admin/farm-daily-activities/activities/records')} className="text-caption font-semibold text-[#256b2a] hover:underline">View all activities ›</button>}>
     {recentActivities.length ? <div className="divide-y divide-border">{recentActivities.slice(0, 5).map((row, index) => {
       const activityName = row.title || row.activity_title || row.category || 'Activity';
-      const location = [farmFor(row), row.block_name || row.block_code].filter((value) => value && value !== '—').join(' · ') || 'Unassigned farm';
+      const location = [farmFor(row), blockLabel(row)].filter((value) => value && value !== '—').join(' · ') || 'Unassigned farm';
       const assignedTo = row.responsible || row.assigned_workers || row.supervisor_name || 'Not recorded';
       const cost = number(row.actual_cost ?? row.cost);
       return <article key={row.id || row.activity_code || index} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-2.5 transition-colors hover:bg-muted/30">

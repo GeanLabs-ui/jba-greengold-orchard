@@ -1,4 +1,5 @@
 import { normalizeCostType } from './activity-cost-types';
+import { blockLabel, farmCode, matchesFarmScope, scopeLabel } from './farm-scope';
 
 const asNumber = (value) => {
   const parsed = Number(value);
@@ -40,8 +41,8 @@ export function activityCost(activity) {
 
 export function activityMatchesBlock(activity, block) {
   const hasSameValue = (left, right) => {
-    const leftValue = asText(left).toLowerCase();
-    const rightValue = asText(right).toLowerCase();
+    const leftValue = blockLabel(left).toLowerCase();
+    const rightValue = blockLabel(right).toLowerCase();
     return Boolean(leftValue && rightValue && leftValue === rightValue);
   };
   const blockLabels = [block.name, block.block_name, block.block_code];
@@ -56,32 +57,35 @@ export function buildFarmOperationsAnalytics(
   { farms = [], blocks = [], dailyActivities = [] },
   { start = null, end = null, farmId = 'all', blockId = 'all' } = {},
 ) {
-  const farmNameById = new Map(farms.map((farm) => [String(farm.id), farm.name]));
-  const farmNameByLabel = new Map(farms.map((farm) => [asText(farm.name).toLowerCase(), farm.name]));
+  const farmNameById = new Map(farms.map((farm) => [String(farm.id), scopeLabel(farm.name)]));
+  const farmNameByLabel = new Map(farms.flatMap((farm) => [farm.name, scopeLabel(farm.name)].map((name) => [asText(name).toLowerCase(), scopeLabel(farm.name)])));
   const blockById = new Map(blocks.map((block) => [String(block.id), block]));
   const blockByLabel = new Map();
   blocks.forEach((block) => {
     [block.name, block.block_name, block.block_code].filter(Boolean).forEach((label) => {
-      blockByLabel.set(asText(label).toLowerCase(), block);
+      blockByLabel.set(blockLabel(label).toLowerCase(), block);
     });
   });
   const selectedFarmName = farmNameById.get(String(farmId));
   const blockFor = (row) => blockById.get(String(row.block_id))
-    || blockByLabel.get(asText(row.block_name || row.block_code).toLowerCase());
+    || blockByLabel.get(blockLabel(row.block_name || row.block_code).toLowerCase());
   const farmFor = (row) => {
     const block = blockFor(row);
+    if (/^(?:farm\s*)?A\s*&\s*B$/i.test(asText(row.farm_name))) return 'Farm A&B';
     return farmNameByLabel.get(asText(row.farm_name).toLowerCase())
       || farmNameById.get(String(row.farm_id))
-      || asText(block?.farm_name)
+      || scopeLabel(block?.farm_name)
       || farmNameById.get(String(block?.farm_id))
       || 'Unassigned farm';
   };
   const matchesFarm = (row) => farmId === 'all'
     || String(row.farm_id) === String(farmId)
-    || farmFor(row) === selectedFarmName;
+    || (selectedFarmName && farmFor(row) === selectedFarmName)
+    || (farmCode(selectedFarmName) && matchesFarmScope(row, farmCode(selectedFarmName), { farms, blocks }));
   const matchesBlock = (row) => blockId === 'all'
     || String(row.block_id) === String(blockId)
-    || String(blockFor(row)?.id) === String(blockId);
+    || String(blockFor(row)?.id) === String(blockId)
+    || matchesFarmScope(row, `block:${blockId}`, { farms, blocks });
   const matchesPeriod = (row) => {
     if (!start && !end) return true;
     const date = parseRecordDate(row.activity_date || row.created_date);

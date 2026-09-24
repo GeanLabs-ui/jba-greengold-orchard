@@ -1,3 +1,4 @@
+import { FARM_SCOPE_OPTIONS, scopeLabel } from '@/lib/farm-scope';
 import AdminActionButton from '@/components/admin/AdminActionButton';
 import BrandLogo from '@/components/shared/BrandLogo';
 import { useId, useState } from 'react';
@@ -60,7 +61,7 @@ export default function MasterTaskEditor({ task, form, setForm, saving, onSave, 
             <SectionHeading icon={FileText} title="Task Details" description="Basic information about this master task." />
             <div className="mte-details-fields">
               <Field label="Task name" required><input name="title" required maxLength={200} value={form.title} onChange={update} /></Field>
-              <Field label="Field / Department / Area"><Choice name="field_area" value={form.field_area} onChange={update} choices={['Farm A', 'Farm B', 'Farm A & B', ...[1, 2, 3, 4, 5].map((number) => `Farm A${number}`), ...[1, 2, 3, 4, 5].map((number) => `Farm B${number}`)]} icon={House} /></Field>
+              <Field label="Field / Department / Area"><Choice name="field_area" value={scopeLabel(form.field_area)} onChange={update} choices={FARM_SCOPE_OPTIONS.map((option) => option.label)} icon={House} /></Field>
               <Field label="Workflow / Category"><Choice name="workflow_category" value={form.workflow_category} onChange={update} choices={['Production & Export', 'Farm Operations', 'Harvest', 'Maintenance', 'Quality Assurance', 'Administration']} icon={ClipboardList} /></Field>
             </div>
           </section>

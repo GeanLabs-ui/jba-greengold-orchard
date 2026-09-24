@@ -87,7 +87,7 @@ export default function FarmPerformanceTrends({ farms, blocks, activities, farmF
   }, []);
   const scopedActivities = useMemo(() => buildFarmOperationsAnalytics({ farms, blocks, dailyActivities: activities }, { farmId, blockId }).activities, [farms, blocks, activities, farmId, blockId]);
   const trends = useMemo(() => buildFarmPerformanceTrends(scopedActivities, year, currentYear), [scopedActivities, year, currentYear]);
-  const scope = farmOptions.find((option) => option.value === farmFilter)?.label || 'All Farms';
+  const scope = farmOptions.find((option) => option.value === farmFilter)?.label || 'Farm A&B';
   const yearlyRows = rangeEnd === 'auto' ? trends.yearly : trends.yearly.filter((row) => Number(row.label) <= Number(rangeEnd));
   return <section className="farm-performance-trends" aria-label="Farm performance trends">
     <AnalyticsChartRotation>

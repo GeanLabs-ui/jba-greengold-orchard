@@ -1,3 +1,4 @@
+import { scopeLabel } from '@/lib/farm-scope';
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -341,7 +342,7 @@ export default function FarmsAdmin() {
                         <LandPlot className="h-5 w-5" />
                       </div>
                       <div className="min-w-0">
-                        <h2 className="truncate text-foreground text-section-title">{farm.name}</h2>
+                        <h2 className="truncate text-foreground text-section-title">{scopeLabel(farm.name)}</h2>
                         <p className="mt-1 flex min-w-0 items-center gap-1.5 text-caption text-muted-foreground">
                           <MapPin className="h-3 w-3 shrink-0" />
                           <span className="truncate">{farm.location || farm.region || "Location not recorded"}</span>
@@ -355,7 +356,7 @@ export default function FarmsAdmin() {
                       {canManageFarms(user?.role) ? (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full" aria-label={`Open actions for ${farm.name}`}>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full" aria-label={`Open actions for ${scopeLabel(farm.name)}`}>
                               <MoreVertical className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>

@@ -37,7 +37,7 @@ function ContactColumn() {
     <div>
       <h4 className="text-xs font-bold uppercase tracking-[0.12em] text-white">Contact</h4>
       <ul className="mt-4 space-y-2.5 text-sm">
-        <li className="flex items-center gap-2"><MapPin className="h-4 w-4 text-[#c8e6c9]" /> Accra, Ghana</li>
+        <li className="flex items-center gap-2"><MapPin className="h-4 w-4 shrink-0 text-[#c8e6c9]" /> Duayaw Nkwanta, Ahafo Region, Ghana</li>
         <li className="flex items-center gap-2"><Phone className="h-4 w-4 text-[#c8e6c9]" /> +233 59 354 9954</li>
         <li className="flex items-center gap-2"><Mail className="h-4 w-4 text-[#c8e6c9]" /> info@jbagreengold.com</li>
       </ul>
@@ -72,6 +72,8 @@ function NewsletterColumn({ workingLinks = false }) {
 }
 
 export default function PublicFooter({ workingLinks = false }) {
+  const navigate = useNavigate();
+
   return (
     <footer className="relative overflow-hidden bg-[#1b5e20] text-white/75">
       <Leaf className="pointer-events-none absolute -bottom-20 -right-14 h-80 w-80 rotate-[-22deg] text-white/[0.06]" strokeWidth={0.45} />
@@ -82,7 +84,14 @@ export default function PublicFooter({ workingLinks = false }) {
               <BrandLogo light className="h-[72px] w-[174px]" />
             </Link>
             <p className="mt-2 max-w-xs text-[11px] leading-4 text-white/65">
-              Unlocking Prosperity Through Land Cultivation
+              <button
+                type="button"
+                onClick={() => navigate('/staff-login')}
+                className="cursor-default appearance-none border-0 bg-transparent p-0 text-left text-inherit no-underline hover:no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
+                style={{ font: 'inherit' }}
+              >
+                Unlocking Prosperity Through Land Cultivation
+              </button>
             </p>
             <div className="mt-3 flex gap-4">
               {workingLinks ? <>

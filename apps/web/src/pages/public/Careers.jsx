@@ -17,10 +17,10 @@ const benefits = [
 ];
 const openRoles = [
   ['Farm Operations Manager', 'Operations', 'Techiman, Ghana'],
-  ['Quality Assurance Officer', 'Quality Control', 'Accra, Ghana'],
-  ['Sales & Marketing Executive', 'Sales & Marketing', 'Accra, Ghana'],
-  ['Supply Chain Coordinator', 'Supply Chain', 'Accra, Ghana'],
-  ['Finance Officer', 'Finance', 'Accra, Ghana'],
+  ['Quality Assurance Officer', 'Quality Control', 'Duayaw Nkwanta, Ahafo Region, Ghana'],
+  ['Sales & Marketing Executive', 'Sales & Marketing', 'Duayaw Nkwanta, Ahafo Region, Ghana'],
+  ['Supply Chain Coordinator', 'Supply Chain', 'Duayaw Nkwanta, Ahafo Region, Ghana'],
+  ['Finance Officer', 'Finance', 'Duayaw Nkwanta, Ahafo Region, Ghana'],
 ];
 
 export default function Careers() {

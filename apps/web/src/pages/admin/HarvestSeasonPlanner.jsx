@@ -1,3 +1,4 @@
+import { blockLabel, scopeLabel, FARM_SCOPE_OPTIONS, matchesFarmScope } from '@/lib/farm-scope';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Bell,
@@ -200,31 +201,33 @@ export default function HarvestSeasonPlanner() {
 
   const eventByPeriod = useMemo(() => new Map(events.map((event) => [event.harvest_period_id, event])), [events]);
   const periodById = useMemo(() => new Map(periods.map((period) => [period.id, period])), [periods]);
+  const scopeStructure = useMemo(() => ({ farms, blocks: farms.flatMap((farm) => farm.blocks || []) }), [farms]);
+  const matchesScope = useCallback((record) => matchesFarmScope(record, filters.farm, scopeStructure), [filters.farm, scopeStructure]);
   const metrics = useMemo(() => {
     const visibleYear = Number(filters.year || CURRENT_YEAR);
-    const yearPeriods = periods.filter((period) => Number(period.season_year) === visibleYear);
+    const yearPeriods = periods.filter((period) => (filters.year === 'all' || Number(period.season_year) === visibleYear) && matchesScope(period));
     const coveredFarms = new Set(yearPeriods.map((period) => period.farm_id)).size;
     const coveredBlocks = new Set(yearPeriods.map((period) => period.block_id).filter(Boolean)).size;
     const reminders = yearPeriods.filter((period) => eventByPeriod.get(period.id)?.reminders_enabled && new Date(eventByPeriod.get(period.id).start_at) >= new Date()).length;
     return { total: yearPeriods.length, coveredFarms, coveredBlocks, reminders };
-  }, [eventByPeriod, filters.year, periods]);
+  }, [eventByPeriod, filters.year, periods, matchesScope]);
 
   const filteredFarms = useMemo(() => farms.filter((farm) => {
-    if (filters.farm !== 'all' && farm.id !== filters.farm) return false;
+    if (!matchesScope({ farm_id: farm.id }) && !(farm.blocks || []).some((block) => matchesScope({ block_id: block.id }))) return false;
     const search = filters.search.trim().toLowerCase();
     if (!search) return true;
-    return `${farm.name} ${farm.farm_code} ${farm.location} ${(farm.blocks || []).map((block) => `${block.name} ${block.block_code}`).join(' ')}`.toLowerCase().includes(search);
-  }), [farms, filters.farm, filters.search]);
+    return `${scopeLabel(farm.name)} ${farm.farm_code} ${farm.location} ${(farm.blocks || []).map((block) => `${blockLabel(block)} ${block.block_code}`).join(' ')}`.toLowerCase().includes(search);
+  }), [farms, filters.search, matchesScope]);
 
   const filteredCalendarEvents = useMemo(() => events.filter((calendarEvent) => {
     const period = periodById.get(calendarEvent.harvest_period_id);
     if (!period) return false;
-    if (filters.farm !== 'all' && period.farm_id !== filters.farm) return false;
+    if (!matchesScope(period)) return false;
     if (filters.type !== 'all' && period.harvest_type !== filters.type) return false;
     if (filters.status !== 'all' && period.status !== filters.status) return false;
     if (filters.year !== 'all' && Number(period.season_year) !== Number(filters.year)) return false;
     return true;
-  }), [events, filters.farm, filters.status, filters.type, filters.year, periodById]);
+  }), [events, filters.status, filters.type, filters.year, periodById, matchesScope]);
   const calendarDays = useMemo(() => calendarDaysFor(viewDate), [viewDate]);
   const calendarEventsByDate = useMemo(() => filteredCalendarEvents.reduce((groups, calendarEvent) => {
     const key = String(calendarEvent.start_at || '').slice(0, 10);
@@ -308,7 +311,7 @@ export default function HarvestSeasonPlanner() {
       task_code: `HSP-${Date.now().toString().slice(-8)}-${sequence}`,
       harvest_period_id: period.id,
       title: `${info.label} harvest — ${block?.block_code || farm.name}`,
-      description: `Harvest season schedule for ${block ? `${block.name}, ${farm.name}` : farm.name}.`,
+      description: `Harvest season schedule for ${block ? `${blockLabel(block)}, ${scopeLabel(farm.name)}` : farm.name}.`,
       category: 'Harvesting',
       farm_id: farm.id,
       farm_name: farm.name,
@@ -385,7 +388,7 @@ export default function HarvestSeasonPlanner() {
         }
         await base44.entities.Notification.create({
           title: 'Harvest season scheduled',
-          message: `${typeInfo(form.harvest_type).label} was scheduled for ${farm.name}${form.apply_to_blocks ? ' and its active blocks' : selectedBlock ? ` — ${selectedBlock.block_code}` : ''}.`,
+          message: `${typeInfo(form.harvest_type).label} was scheduled for ${scopeLabel(farm.name)}${form.apply_to_blocks ? ' and its active blocks' : selectedBlock ? ` — ${selectedBlock.block_code}` : ''}.`,
           type: 'harvest_schedule', notification_type: 'harvest_schedule', channel: 'Admin', status: 'new',
           record_id: created[0]?.period.id, entity_name: 'HarvestPeriod', calendar_event_id: created[0]?.calendarEvent?.id || '', destination: PAGE_PATH,
         });
@@ -514,36 +517,36 @@ export default function HarvestSeasonPlanner() {
               const key = day.toISOString().slice(0, 10);
               const dayEvents = calendarEventsByDate[key] || [];
               const inMonth = day.getMonth() === viewDate.getMonth();
-              return <div key={key} role="button" tabIndex={0} onClick={() => setSelectedDate(key)} onDoubleClick={() => openCreate(filters.farm !== 'all' ? filters.farm : farms[0]?.id, '', key)} onKeyDown={(event) => event.key === 'Enter' && setSelectedDate(key)} className={`min-h-24 border-b border-r p-2 text-left outline-none transition-colors hover:bg-emerald-50/35 focus:ring-2 focus:ring-inset focus:ring-primary ${!inMonth ? 'bg-muted/15 text-muted-foreground' : ''} ${selectedDate === key ? 'bg-emerald-50/60' : ''}`}><span className={`grid h-6 w-6 place-items-center rounded-full text-caption font-semibold ${key === todayKey() ? 'bg-primary text-primary-foreground' : ''}`}>{day.getDate()}</span><div className="mt-1 space-y-1">{dayEvents.slice(0, 2).map((calendarEvent) => {
+              return <div key={key} role="button" tabIndex={0} onClick={() => setSelectedDate(key)} onDoubleClick={() => openCreate(filteredFarms[0]?.id || farms[0]?.id, '', key)} onKeyDown={(event) => event.key === 'Enter' && setSelectedDate(key)} className={`min-h-24 border-b border-r p-2 text-left outline-none transition-colors hover:bg-emerald-50/35 focus:ring-2 focus:ring-inset focus:ring-primary ${!inMonth ? 'bg-muted/15 text-muted-foreground' : ''} ${selectedDate === key ? 'bg-emerald-50/60' : ''}`}><span className={`grid h-6 w-6 place-items-center rounded-full text-caption font-semibold ${key === todayKey() ? 'bg-primary text-primary-foreground' : ''}`}>{day.getDate()}</span><div className="mt-1 space-y-1">{dayEvents.slice(0, 2).map((calendarEvent) => {
                 const period = periodById.get(calendarEvent.harvest_period_id);
                 return <button type="button" key={calendarEvent.id} onClick={(event) => { event.stopPropagation(); if (period) openEdit(period); }} className="block w-full truncate rounded border border-emerald-200 bg-emerald-50 px-1.5 py-1 text-left text-caption font-semibold text-emerald-900 transition hover:border-emerald-400">{String(calendarEvent.start_at).slice(11, 16)} · {calendarEvent.title}</button>;
               })}{dayEvents.length > 2 ? <span className="block px-1 text-caption text-muted-foreground">+{dayEvents.length - 2} more</span> : null}</div></div>;
             })}</div>
           </div>
-          <aside className="self-start"><div className="flex items-start justify-between border-b p-4"><div><span className="text-caption font-semibold uppercase tracking-wider text-emerald-700">Selected day</span><h4 className="mt-1 text-subheading">{formatDate(selectedDate)}</h4></div><Button size="icon" variant="ghost" onClick={() => openCreate(filters.farm !== 'all' ? filters.farm : farms[0]?.id, '', selectedDate)} title="Schedule harvest on selected day"><Plus className="h-4 w-4" /></Button></div><div className="max-h-[590px] overflow-y-auto p-3">{selectedEvents.length ? selectedEvents.map((calendarEvent) => {
+          <aside className="self-start"><div className="flex items-start justify-between border-b p-4"><div><span className="text-caption font-semibold uppercase tracking-wider text-emerald-700">Selected day</span><h4 className="mt-1 text-subheading">{formatDate(selectedDate)}</h4></div><Button size="icon" variant="ghost" onClick={() => openCreate(filteredFarms[0]?.id || farms[0]?.id, '', selectedDate)} title="Schedule harvest on selected day"><Plus className="h-4 w-4" /></Button></div><div className="max-h-[590px] overflow-y-auto p-3">{selectedEvents.length ? selectedEvents.map((calendarEvent) => {
             const period = periodById.get(calendarEvent.harvest_period_id);
             return <button type="button" key={calendarEvent.id} onClick={() => period && openEdit(period)} className="mb-2 w-full rounded-lg border p-3 text-left transition hover:border-primary/40 hover:bg-muted/35"><div className="flex items-start justify-between gap-2"><span className="text-sm font-semibold leading-5">{calendarEvent.title}</span><StatusBadge status={period?.status || calendarEvent.status} /></div><p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground"><Clock3 className="h-3.5 w-3.5" />{formatDateTime(calendarEvent.start_at)}</p><p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground"><MapPin className="h-3.5 w-3.5" />{calendarEvent.block_name || calendarEvent.farm_name}</p>{calendarEvent.reminders_enabled ? <p className="mt-2 flex items-center gap-1.5 text-caption font-medium text-emerald-700"><Bell className="h-3.5 w-3.5" />{reminderLabel(calendarEvent.reminder_minutes)}</p> : null}</button>;
-          }) : <div className="py-12 text-center"><CalendarClock className="mx-auto h-8 w-8 text-muted-foreground/40" /><p className="mt-3 text-sm text-muted-foreground">No harvest activity scheduled.</p><Button className="mt-4" size="sm" onClick={() => openCreate(filters.farm !== 'all' ? filters.farm : farms[0]?.id, '', selectedDate)}>Schedule this day</Button></div>}</div></aside>
+          }) : <div className="py-12 text-center"><CalendarClock className="mx-auto h-8 w-8 text-muted-foreground/40" /><p className="mt-3 text-sm text-muted-foreground">No harvest activity scheduled.</p><Button className="mt-4" size="sm" onClick={() => openCreate(filteredFarms[0]?.id || farms[0]?.id, '', selectedDate)}>Schedule this day</Button></div>}</div></aside>
         </div>
       </section> : null}
 
       {workspace === 'plan' ? <section className="rounded-xl border bg-card animate-in fade-in-0 slide-in-from-bottom-1 duration-200">
         <div className="grid gap-3 border-b p-4 lg:grid-cols-[minmax(220px,1fr)_repeat(4,minmax(135px,0.45fr))]">
           <label className="relative text-label"><Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /><Input className="pl-9" value={filters.search} onChange={(event) => setFilters((current) => ({ ...current, search: event.target.value }))} placeholder="Search farm land or block" /></label>
-          <select className={inputClass} value={filters.farm} onChange={(event) => { const farmId = event.target.value; setFilters((current) => ({ ...current, farm: farmId })); if (farmId !== 'all') setExpandedFarmId(farmId); }}><option value="all">All farm lands</option>{farms.map((farm) => <option key={farm.id} value={farm.id}>{farm.name}</option>)}</select>
+          <select aria-label="Farm / block" className={inputClass} value={filters.farm} onChange={(event) => { const selection = event.target.value; setFilters((current) => ({ ...current, farm: selection })); const farm = farms.find((item) => matchesFarmScope({ farm_id: item.id }, selection, scopeStructure) || (item.blocks || []).some((block) => matchesFarmScope({ block_id: block.id }, selection, scopeStructure))); if (farm) setExpandedFarmId(farm.id); }}>{FARM_SCOPE_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select>
           <select className={inputClass} value={filters.type} onChange={(event) => setFilters((current) => ({ ...current, type: event.target.value }))}><option value="all">All harvest types</option>{HARVEST_TYPES.map((type) => <option key={type.value} value={type.value}>{type.label}</option>)}</select>
           <select className={inputClass} value={filters.status} onChange={(event) => setFilters((current) => ({ ...current, status: event.target.value }))}><option value="all">All statuses</option>{STATUSES.map((status) => <option key={status} value={status}>{status.replaceAll('_', ' ')}</option>)}</select>
           <select className={inputClass} value={filters.year} onChange={(event) => setFilters((current) => ({ ...current, year: event.target.value }))}><option value="all">All years</option>{[CURRENT_YEAR - 1, CURRENT_YEAR, CURRENT_YEAR + 1, CURRENT_YEAR + 2].map((year) => <option key={year}>{year}</option>)}</select>
         </div>
 
         <div className="divide-y">{filteredFarms.map((farm) => {
-          const scopes = [{ id: null, name: farm.name, code: farm.farm_code, kind: 'Farm land', periods: visiblePeriods(farm.id, null) }, ...(farm.blocks || []).filter((block) => block.status !== 'merged').map((block) => ({ id: block.id, name: block.name, code: block.block_code, kind: 'Sub-block', block, periods: visiblePeriods(farm.id, block.id) }))];
+          const scopes = [{ id: null, name: scopeLabel(farm.name), code: farm.farm_code, kind: 'Farm land', periods: visiblePeriods(farm.id, null) }, ...(farm.blocks || []).filter((block) => block.status !== 'merged' && matchesScope({ block_id: block.id })).map((block) => ({ id: block.id, name: blockLabel(block), code: block.block_code, kind: 'Sub-block', block, periods: visiblePeriods(farm.id, block.id) }))];
           const expanded = expandedFarmId === farm.id;
           return <div key={farm.id} className="animate-in fade-in-0 duration-300">
             <div className={`flex flex-wrap items-center justify-between gap-3 px-4 py-3 transition-colors ${expanded ? 'bg-emerald-50/60' : 'bg-muted/20 hover:bg-muted/40'}`}>
               <button type="button" className="flex min-w-0 flex-1 items-center gap-3 text-left" onClick={() => setExpandedFarmId(expanded ? '' : farm.id)} aria-expanded={expanded}>
                 <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md border bg-background"><ChevronRight className={`h-4 w-4 transition-transform ${expanded ? 'rotate-90 text-emerald-700' : 'text-muted-foreground'}`} /></span>
-                <span className="min-w-0"><span className="flex flex-wrap items-center gap-2"><MapPin className="h-4 w-4 text-emerald-700" /><b className="truncate">{farm.name}</b><StatusBadge status={farm.status} /></span><small className="mt-0.5 block truncate text-muted-foreground">{farm.location || farm.region || 'Location not recorded'} · {(farm.blocks || []).filter((block) => block.status === 'active').length} active blocks · {periods.filter((period) => period.farm_id === farm.id).length} schedules</small></span>
+                <span className="min-w-0"><span className="flex flex-wrap items-center gap-2"><MapPin className="h-4 w-4 text-emerald-700" /><b className="truncate">{scopeLabel(farm.name)}</b><StatusBadge status={farm.status} /></span><small className="mt-0.5 block truncate text-muted-foreground">{farm.location || farm.region || 'Location not recorded'} · {(farm.blocks || []).filter((block) => block.status === 'active').length} active blocks · {periods.filter((period) => period.farm_id === farm.id).length} schedules</small></span>
               </button>
               <Button size="sm" variant="outline" onClick={() => openCreate(farm.id)}><Plus className="mr-1 h-4 w-4" />Land schedule</Button>
             </div>
@@ -568,9 +571,9 @@ export default function HarvestSeasonPlanner() {
           <DialogHeader><DialogTitle>{editing ? 'Edit harvest season' : 'Schedule harvest season'}</DialogTitle><DialogDescription>Connect the harvest period to a farm land or sub-block and optionally create a timed calendar reminder.</DialogDescription></DialogHeader>
           <form onSubmit={submit} className="space-y-5">
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Farm land"><select className={inputClass} value={form.farm_id} disabled={Boolean(editing)} onChange={(event) => change('farm_id', event.target.value)} required><option value="">Select farm land</option>{farms.map((farm) => <option key={farm.id} value={farm.id}>{farm.name}</option>)}</select></Field>
+              <Field label="Farm land"><select className={inputClass} value={form.farm_id} disabled={Boolean(editing)} onChange={(event) => change('farm_id', event.target.value)} required><option value="">Select farm land</option>{farms.map((farm) => <option key={farm.id} value={farm.id}>{scopeLabel(farm.name)}</option>)}</select></Field>
               <Field label="Planning level"><select className={inputClass} value={form.scope} disabled={Boolean(editing)} onChange={(event) => change('scope', event.target.value)}><option value="farm">Whole farm land</option><option value="block">Specific sub-block</option></select></Field>
-              {form.scope === 'block' ? <Field label="Sub-block"><select className={inputClass} value={form.block_id} disabled={Boolean(editing)} onChange={(event) => change('block_id', event.target.value)} required><option value="">Select sub-block</option>{(selectedFarm?.blocks || []).filter((block) => block.status === 'active').map((block) => <option key={block.id} value={block.id}>{block.block_code} · {block.name}</option>)}</select></Field> : null}
+              {form.scope === 'block' ? <Field label="Sub-block"><select className={inputClass} value={form.block_id} disabled={Boolean(editing)} onChange={(event) => change('block_id', event.target.value)} required><option value="">Select sub-block</option>{(selectedFarm?.blocks || []).filter((block) => block.status === 'active').map((block) => <option key={block.id} value={block.id}>{blockLabel(block)}</option>)}</select></Field> : null}
               <Field label="Harvest type"><select className={inputClass} value={form.harvest_type} onChange={(event) => change('harvest_type', event.target.value)}>{HARVEST_TYPES.map((type) => <option key={type.value} value={type.value}>{type.label}</option>)}</select></Field>
               <Field label="Season year"><Input type="number" min="2000" max="2200" value={form.season_year} onChange={(event) => change('season_year', event.target.value)} required /></Field>
               <Field label="Harvest period starts"><Input type="date" value={form.expected_start_date} onChange={(event) => change('expected_start_date', event.target.value)} required /></Field>

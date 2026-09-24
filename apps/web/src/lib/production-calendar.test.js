@@ -24,6 +24,15 @@ const event = {
 };
 
 describe('production calendar synchronization', () => {
+  it('preserves block and combined scopes when synchronizing calendar records', () => {
+    for (const scope of [
+      { farm_id: 'farm-b', farm_name: 'Farm B', block_id: 'block-b3', block_name: 'B3', block_code: 'B3', shared_scope: '' },
+      { farm_id: '', farm_name: 'Farm A&B', block_id: '', block_name: 'Farm A&B', block_code: '', shared_scope: 'Farm A&B' },
+    ]) {
+      expect(eventToTaskPayload({ ...event, ...scope })).toMatchObject(scope);
+      expect(eventToDailyActivityPayload({ ...event, ...scope })).toMatchObject(scope);
+    }
+  });
   it('maps calendar events into the shared routine and daily activity records', () => {
     expect(calendarStatusToTask('completed')).toBe('completed');
     expect(eventToTaskPayload(event)).toMatchObject({

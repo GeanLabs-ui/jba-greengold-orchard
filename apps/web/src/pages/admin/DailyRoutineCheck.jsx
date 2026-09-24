@@ -1,3 +1,4 @@
+import { blockLabel, farmSelectOptions, blockSelectOptions, resolveOperationalScope } from '@/lib/farm-scope';
 import AdminActionButton from '@/components/admin/AdminActionButton';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -833,7 +834,7 @@ export default function DailyRoutineCheck({ initialView = 'dashboard', riskOnly 
     const form = new FormData(event.currentTarget);
     setBusyKey('field-log');
     try {
-      const block = shared.blocks.find((item) => item.id === form.get('block_id'));
+      const scope = resolveOperationalScope({ block_id: form.get('block_id') }, shared.farms, shared.blocks);
       const payload = {
         programme_code: PROGRAMME_CODE,
         source: 'Daily Routine Check',
@@ -842,10 +843,7 @@ export default function DailyRoutineCheck({ initialView = 'dashboard', riskOnly 
         log_type: form.get('type'),
         activity_date: form.get('entry_date'),
         entry_date: form.get('entry_date'),
-        block_id: block?.id || '',
-        block_name: block?.name || 'Farm-wide',
-        farm_id: block?.farm_id || shared.farms[0]?.id || '',
-        farm_name: block?.farm_name || shared.farms[0]?.name || PROGRAMME.name,
+        ...scope,
         performed_by_name: form.get('owner'),
         owner: form.get('owner'),
         activity_title: form.get('notes'),
@@ -1046,7 +1044,7 @@ export default function DailyRoutineCheck({ initialView = 'dashboard', riskOnly 
             <table className="drc-table">
               <thead><tr><th>Date</th><th>Block</th><th>Responsible</th><th>Observation / action</th><th>Result / follow-up</th></tr></thead>
               <tbody>{shared.logs.filter((item) => (item.type || item.log_type) === logType).map((log) => (
-                <tr key={log.id}><td>{date(log.entry_date || log.activity_date)}</td><td>{log.block_name || 'Farm-wide'}</td><td>{log.owner || log.performed_by_name}</td><td>{log.activity_title || log.notes}</td><td>{log.result || '—'}</td></tr>
+                <tr key={log.id}><td>{date(log.entry_date || log.activity_date)}</td><td>{blockLabel(log.block_name) || 'Farm-wide'}</td><td>{log.owner || log.performed_by_name}</td><td>{log.activity_title || log.notes}</td><td>{log.result || '—'}</td></tr>
               ))}</tbody>
             </table>
           ) : <Empty title={`No ${logType.toLowerCase()} entries yet`} copy="The first dated record will appear here." action={<button type="button" className="drc-primary" onClick={() => fieldDialog.current?.showModal()}><Plus /> Add entry</button>} />}
@@ -1068,7 +1066,7 @@ export default function DailyRoutineCheck({ initialView = 'dashboard', riskOnly 
         <form className="drc-form-grid" onSubmit={addFieldLog}>
           <Field label="Log type"><select name="type" required>{LOG_TYPES.map((type) => <option key={type}>{type}</option>)}</select></Field>
           <Field label="Date"><input name="entry_date" type="date" required defaultValue={TODAY} /></Field>
-          <Field label="Block"><select name="block_id"><option value="">Farm-wide</option>{shared.blocks.map((block) => <option key={block.id} value={block.id}>{block.block_code} · {block.variety}</option>)}</select></Field>
+          <Field label="Farm / block"><select name="block_id" required>{farmSelectOptions(shared.farms).map((option) => <option key={option.value} value={`farm:${option.value}`}>{option.label}</option>)}<option value="__all__">Farm A&B</option>{blockSelectOptions(shared.blocks).map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></Field>
           <Field label="Responsible person"><input name="owner" required minLength="2" maxLength="120" /></Field>
           <Field label="Observation / action" full><textarea name="notes" rows="4" required minLength="3" maxLength="4000" /></Field>
           <Field label="Result / follow-up" full><input name="result" maxLength="2000" /></Field>

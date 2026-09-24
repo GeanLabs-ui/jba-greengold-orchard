@@ -60,6 +60,10 @@ export function eventToTaskPayload(event) {
     description: event.description || '',
     farm_id: event.farm_id || '',
     farm_name: event.farm_name || '',
+    block_id: event.block_id || '',
+    block_name: event.block_name || '',
+    block_code: event.block_code || '',
+    shared_scope: event.shared_scope || '',
     assigned_to_name: event.assigned_to_name || '',
     owner_name: event.assigned_to_name || '',
     priority: event.priority || 'Medium',
@@ -89,6 +93,10 @@ export function eventToDailyActivityPayload(event) {
     category: event.category || 'Farm Operations',
     farm_id: event.farm_id || '',
     farm_name: event.farm_name || '',
+    block_id: event.block_id || '',
+    block_name: event.block_name || '',
+    block_code: event.block_code || '',
+    shared_scope: event.shared_scope || '',
     assigned_workers: event.assigned_to_name || '',
     supervisor_name: event.assigned_to_name || '',
     priority: event.priority || 'Medium',
@@ -191,4 +199,3 @@ export function outlookCalendarUrl(event) {
   });
   return `https://outlook.office.com/calendar/0/deeplink/compose?${query}`;
 }
-

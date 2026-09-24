@@ -47,6 +47,8 @@ jobs:
         run: npm run db:check-migrations
       - name: Validate migrations and idempotency
         run: npm run db:migrate && npm run db:migrate
+      - name: Verify Main Activities migration preserves existing records
+        run: node scripts/test-main-activities-migration.mjs
       - name: Audit all dependencies
         run: npm audit --audit-level=low
       - name: Validate staging Worker bundle

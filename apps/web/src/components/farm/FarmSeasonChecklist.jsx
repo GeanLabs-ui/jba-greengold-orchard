@@ -1,3 +1,4 @@
+import { blockLabel, scopeLabel } from '@/lib/farm-scope';
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -259,7 +260,7 @@ export function FarmSeasonSummary({ farm, blocks = [], onManage }) {
                       <p className="text-caption font-semibold uppercase tracking-[0.14em] text-emerald-700">
                         {block.block_code}
                       </p>
-                      <p className="mt-0.5 font-semibold">{block.name}</p>
+                      <p className="mt-0.5 font-semibold">{blockLabel(block)}</p>
                     </div>
                     <ChevronRight className="h-4 w-4 text-muted-foreground transition group-hover:translate-x-0.5 group-hover:text-emerald-700" />
                   </div>
@@ -571,11 +572,11 @@ export default function FarmSeasonChecklist({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="farm">
-                    Entire farmland · {farm.name}
+                    Entire farmland · {scopeLabel(farm.name)}
                   </SelectItem>
                   {blocks.map((block) => (
                     <SelectItem key={block.id} value={block.id}>
-                      {block.block_code} · {block.name}
+                      {blockLabel(block)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -607,7 +608,7 @@ export default function FarmSeasonChecklist({
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
           <span className="font-semibold">
             {selectedBlock
-              ? `${selectedBlock.block_code} · ${selectedBlock.name}`
+              ? blockLabel(selectedBlock)
               : farm.name}
           </span>
           <span className="text-muted-foreground">
