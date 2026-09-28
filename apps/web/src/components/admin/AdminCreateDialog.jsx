@@ -18,6 +18,7 @@ import { useToast } from '@/components/ui/use-toast';
 import AdminActionButton from '@/components/admin/AdminActionButton';
 import FarmScopeMultiSelect from '@/components/farm/FarmScopeMultiSelect';
 import { scopeLabel } from '@/lib/farm-scope';
+import './daily-activity-dialog.css';
 
 const buildInitialValues = (fields) => (
   fields.reduce((values, field) => ({
@@ -183,7 +184,7 @@ export default function AdminCreateDialog({
           {buttonLabel}
         </Button>}
       </DialogTrigger>
-      <DialogContent className={dailyActivityForm ? 'max-h-[calc(100vh-1rem)] overflow-y-auto border-slate-200 bg-[#f9fcfa] p-3 shadow-2xl sm:max-w-[49rem] sm:rounded-xl' : 'max-h-[90vh] overflow-y-auto sm:max-w-xl'}>
+      <DialogContent className={dailyActivityForm ? 'daily-activity-dialog max-h-[calc(100dvh-1.5rem)] overflow-y-auto border-slate-200 bg-[#f9fcfa] p-3 shadow-2xl sm:max-w-[49rem] sm:rounded-xl' : 'max-h-[90vh] overflow-y-auto sm:max-w-xl'}>
         {dailyActivityForm ? (
           <>
             <DialogTitle className="sr-only">{title}</DialogTitle>

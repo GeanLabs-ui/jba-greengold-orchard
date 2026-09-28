@@ -17,14 +17,25 @@ export function parseRecordDate(value) {
 }
 
 export function activityYieldKg(activity) {
+  // The compact task log's explicit output remains authoritative after edits,
+  // including clearing it to zero or changing the task type.
+  if (activity.log_entry && activity.output_quantity_kg != null && activity.output_quantity_kg !== '') {
+    return asNumber(activity.output_quantity_kg);
+  }
   const recordedHarvest = asNumber(activity.harvest_quantity);
   if (recordedHarvest > 0) return recordedHarvest;
   const gradedHarvest = asNumber(activity.grade_a_quantity)
     + asNumber(activity.grade_b_quantity)
     + asNumber(activity.rejected_quantity);
   if (gradedHarvest > 0) return gradedHarvest;
+  // The records form accepts explicit output for any task type. Only the
+  // generic quantity field needs a harvest category to distinguish inputs.
+  if (activity.output_quantity_kg !== null && activity.output_quantity_kg !== undefined
+    && String(activity.output_quantity_kg).trim() !== '') {
+    return asNumber(activity.output_quantity_kg);
+  }
   return normalizeStatus(activity.category) === 'harvesting'
-    ? asNumber(activity.output_quantity_kg ?? activity.quantity_used)
+    ? asNumber(activity.quantity_used)
     : 0;
 }
 
