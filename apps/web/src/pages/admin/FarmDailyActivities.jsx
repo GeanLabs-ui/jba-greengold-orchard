@@ -1,5 +1,6 @@
 import { FARM_SCOPE_OPTIONS, farmSelectOptions, blockSelectOptions, blockLabel, scopeLabel, matchesFarmScope, resolveOperationalScope, activityScopeValue } from '@/lib/farm-scope';
-import { ACTIVITY_COST_TYPES } from '@/lib/activity-cost-types';
+import { ACTIVITY_COST_TYPES, normalizeCostType } from '@/lib/activity-cost-types';
+import { activityYieldKg } from '@/lib/farm-operations-analytics';
 import AdminActionButton from '@/components/admin/AdminActionButton';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -164,6 +165,7 @@ const pageMap = [
 
 const activityCategories = [
   'Land Clearing',
+  'Planting',
   'Weeding',
   'Pruning',
   'Irrigation',
@@ -474,8 +476,8 @@ const activityLogColumns = [
   { key: 'projected_cost', label: 'Projected Cost', className: 'w-[96px] text-center', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => <span className="font-semibold text-[#2e7d32]">{formatCurrency(item.projected_cost)}</span> },
   { key: 'actual_cost', label: 'Actual Cost', className: 'w-[96px] text-center', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => <span className="font-semibold text-[#2e7d32]">{formatCurrency(item.actual_cost ?? item.cost)}</span> },
   { key: 'revenue', label: 'Actual Revenue', className: 'w-[84px] text-center', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => <span className="font-semibold text-[#2e7d32]">{formatCurrency(item.actual_revenue ?? item.revenue)}</span> },
-  { key: 'output_quantity_kg', label: 'Harvest / Output kg', className: 'w-[104px] text-center', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => <span className="font-semibold text-[#2e7d32]">{formatNumber(item.harvest_quantity ?? item.output_quantity_kg)} kg</span> },
-  { key: 'cost_type', label: 'Type of Cost', className: 'w-[86px] text-center', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => item.cost_type },
+  { key: 'output_quantity_kg', label: 'Harvest / Output kg', className: 'w-[104px] text-center', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => <span className="font-semibold text-[#2e7d32]">{formatNumber(activityYieldKg(item))} kg</span> },
+  { key: 'cost_type', label: 'Type of Cost', className: 'w-[86px] text-center', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => item.cost_type ? normalizeCostType(item.cost_type) : '—' },
   { key: 'notes', label: 'Notes', className: 'w-[170px]', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => item.notes },
 ];
 
@@ -547,7 +549,7 @@ const DailyActivityLog = ({
   const totalActualCost = visibleItems.reduce((sum, item) => sum + asNumber(item.actual_cost ?? item.cost), 0);
   const totalProjectedRevenue = visibleItems.reduce((sum, item) => sum + asNumber(item.projected_revenue), 0);
   const totalActualRevenue = visibleItems.reduce((sum, item) => sum + asNumber(item.actual_revenue ?? item.revenue), 0);
-  const totalOutput = visibleItems.reduce((sum, item) => sum + asNumber(item.harvest_quantity ?? item.output_quantity_kg), 0);
+  const totalOutput = visibleItems.reduce((sum, item) => sum + activityYieldKg(item), 0);
   const completedCount = visibleItems.filter((item) => String(item.status || '').toLowerCase() === 'completed').length;
   const completedPercent = visibleItems.length ? Math.round((completedCount / visibleItems.length) * 100) : 0;
   const displayValue = (value) => (value === null || value === undefined || value === '' ? '—' : value);
@@ -603,8 +605,8 @@ const DailyActivityLog = ({
       { label: 'Projected Cost', width: 63, value: (item) => item.projected_cost },
       { label: 'Actual Cost', width: 63, value: (item) => item.actual_cost ?? item.cost },
       { label: 'Actual Revenue', width: 65, value: (item) => item.actual_revenue ?? item.revenue },
-      { label: 'Harvest / Output kg', width: 66, value: (item) => `${formatNumber(item.harvest_quantity ?? item.output_quantity_kg)} kg` },
-      { label: 'Type of Cost', width: 55, value: (item) => item.cost_type },
+      { label: 'Harvest / Output kg', width: 66, value: (item) => `${formatNumber(activityYieldKg(item))} kg` },
+      { label: 'Type of Cost', width: 55, value: (item) => item.cost_type ? normalizeCostType(item.cost_type) : '—' },
       { label: 'Notes', width: 105, value: (item) => item.notes },
     ];
     const groupHeaders = [
@@ -776,7 +778,7 @@ const DailyActivityLog = ({
         <div className="px-0 pt-4 md:pr-6 xl:border-r xl:border-slate-200 xl:pl-6 xl:pt-0">
           <p className="mb-1 font-semibold text-[#256b2a]">Production</p>
           {[
-            ['Harvest / Output', `${formatNumber(item.harvest_quantity ?? item.output_quantity_kg)} kg`],
+            ['Harvest / Output', `${formatNumber(activityYieldKg(item))} kg`],
             ['Farm Block', blockLabel(item)],
             ['Main Farm', item.farm_name],
           ].map(([label, value]) => <p key={label} className="grid grid-cols-[132px_1fr] gap-3"><span className={label === 'Harvest / Output' ? 'text-emerald-700' : 'text-slate-600'}>{label}</span><span className={label === 'Harvest / Output' ? 'font-semibold text-emerald-700' : ''}>{displayValue(value)}</span></p>)}
@@ -1527,7 +1529,9 @@ export default function FarmDailyActivities() {
       activity_date: payload.activity_date || today,
       title: payload.title || payload.activity_title,
       total_hours: totalHours,
-      harvest_quantity: isHarvest
+      harvest_quantity: Object.prototype.hasOwnProperty.call(payload, 'output_quantity_kg')
+        ? asNumber(payload.output_quantity_kg)
+        : isHarvest
         ? (harvestTotal || asNumber(payload.output_quantity_kg ?? payload.quantity_used))
         : asNumber(payload.harvest_quantity),
       cost,
@@ -1734,7 +1738,9 @@ export default function FarmDailyActivities() {
       ...farmBlock,
       title: nextPayload.title || nextPayload.activity_title,
       total_hours: totalHours,
-      harvest_quantity: isHarvest
+      harvest_quantity: Object.prototype.hasOwnProperty.call(payload, 'output_quantity_kg')
+        ? asNumber(payload.output_quantity_kg)
+        : isHarvest
         ? (harvestTotal || asNumber(nextPayload.output_quantity_kg ?? nextPayload.quantity_used))
         : asNumber(nextPayload.harvest_quantity),
       cost,
@@ -2051,8 +2057,8 @@ export default function FarmDailyActivities() {
     { name: 'projected_revenue', label: 'Projected Revenue (₵)', type: 'number', defaultValue: 0 },
     { name: 'actual_revenue', label: 'Actual Revenue (₵)', type: 'number', defaultValue: 0 },
     { name: 'output_quantity_kg', label: 'Harvest / Output Quantity (kg)', type: 'number', defaultValue: 0 },
-    { name: 'cost_type', label: 'Type of Cost', type: 'select', options: selectOptions(activityCostTypes), defaultValue: 'Labour', required: true },
-    { name: 'category', label: 'Farm Activity Type', type: 'select', options: selectOptions(activityCategories), defaultValue: 'Land Clearing', required: true },
+    { name: 'cost_type', label: 'Type of Cost', type: 'select', options: selectOptions(activityCostTypes), defaultValue: 'Labor', required: true },
+    { name: 'category', label: 'Farm Task Type', type: 'select', options: selectOptions(activityCategories), defaultValue: 'Land Clearing', required: true },
     { name: 'notes', label: 'Notes', type: 'textarea', wide: true },
   ];
 
@@ -2462,7 +2468,7 @@ export default function FarmDailyActivities() {
       buttonIcon={Pencil}
       actionIcon="edit"
       fields={fields}
-      initialValues={record && fields.some((field) => field.name === 'shared_scope') ? { ...record, block_id: activityScopeValue(record), shared_scope: record.shared_scope || record.block_name || '' } : record || {}}
+      initialValues={record && fields.some((field) => field.name === 'shared_scope') ? { ...record, cost_type: normalizeCostType(record.cost_type), block_id: activityScopeValue(record), shared_scope: record.shared_scope || record.block_name || '' } : record || {}}
       formVariant={fields.some((field) => field.name === 'shared_scope') ? 'daily-activity-log' : undefined}
       onSubmit={(payload) => onSubmit(record, payload)}
       onCreated={load}

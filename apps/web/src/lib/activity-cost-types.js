@@ -1,20 +1,20 @@
 export const ACTIVITY_COST_TYPES = [
   { name: 'Administration', color: '#eab308' },
   { name: 'Materials', color: '#3b82f6' },
-  { name: 'Fuel', color: '#ef4444' },
-  { name: 'Labour', color: '#ec4899' },
-  { name: 'Food', color: '#22c55e' },
+  { name: 'Labor', color: '#ec4899' },
   { name: 'Tools', color: '#8b5cf6' },
-  { name: 'Transport', color: '#06b6d4' },
-  { name: 'Equipment', color: '#6366f1' },
-  { name: 'Inputs', color: '#14b8a6' },
-  { name: 'Other', color: '#f97316' },
+  { name: 'Transportation', color: '#06b6d4' },
+  { name: 'Food/Ent', color: '#22c55e' },
+  { name: 'Others', color: '#f97316' },
 ];
 
 export function normalizeCostType(value) {
   const name = String(value || '').trim().toLowerCase();
   if (name === 'admin') return 'Administration';
-  return ACTIVITY_COST_TYPES.find((type) => type.name.toLowerCase() === name)?.name || 'Other';
+  if (name === 'labour') return 'Labor';
+  if (name === 'transport') return 'Transportation';
+  if (name === 'food') return 'Food/Ent';
+  return ACTIVITY_COST_TYPES.find((type) => type.name.toLowerCase() === name)?.name || 'Others';
 }
 
 export function buildCostTypeBreakdown(costRows) {

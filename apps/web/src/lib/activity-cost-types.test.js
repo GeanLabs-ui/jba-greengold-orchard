@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ACTIVITY_COST_TYPES, buildCostTypeBreakdown } from './activity-cost-types';
+import { ACTIVITY_COST_TYPES, buildCostTypeBreakdown, normalizeCostType } from './activity-cost-types';
 import { buildFarmOperationsAnalytics } from './farm-operations-analytics';
 
 describe('cost type breakdown', () => {
@@ -12,9 +12,9 @@ describe('cost type breakdown', () => {
       { actual_cost: 15, cost_type: 'Unclassified', category: 'Labour' },
     ] });
     const breakdown = buildCostTypeBreakdown(analytics.costRows);
-    expect(breakdown.find((row) => row.name === 'Food').value).toBe(125);
+    expect(breakdown.find((row) => row.name === 'Food/Ent').value).toBe(125);
     expect(breakdown.find((row) => row.name === 'Administration').value).toBe(50);
-    expect(breakdown.find((row) => row.name === 'Other').value).toBe(25);
+    expect(breakdown.find((row) => row.name === 'Others').value).toBe(25);
     expect(breakdown.reduce((sum, row) => sum + row.value, 0)).toBe(analytics.totalCost);
     expect(analytics.costRows.map((row) => row.costCategory)).not.toContain('Weeding');
   });
@@ -22,9 +22,16 @@ describe('cost type breakdown', () => {
   it('keeps every dropdown type and its fixed color, including zero-cost types', () => {
     const rows = buildCostTypeBreakdown([{ cost_type: 'Labour', value: 10 }]);
     expect(rows.map((row) => row.name)).toEqual(ACTIVITY_COST_TYPES.map((type) => type.name));
-    expect(rows).toHaveLength(10);
-    expect(new Set(rows.map((row) => row.color)).size).toBe(10);
-    expect(rows.find((row) => row.name === 'Food')).toMatchObject({ value: 0, color: '#22c55e' });
-    expect(rows.find((row) => row.name === 'Labour')).toMatchObject({ value: 10, color: '#ec4899' });
+    expect(rows.map((row) => row.name)).toEqual(['Administration', 'Materials', 'Labor', 'Tools', 'Transportation', 'Food/Ent', 'Others']);
+    expect(new Set(rows.map((row) => row.color)).size).toBe(7);
+    expect(rows.find((row) => row.name === 'Food/Ent')).toMatchObject({ value: 0, color: '#22c55e' });
+    expect(rows.find((row) => row.name === 'Labor')).toMatchObject({ value: 10, color: '#ec4899' });
+  });
+
+  it('keeps legacy cost records in the renamed categories without losing their amounts', () => {
+    expect(['Labour', 'Transport', 'Food', 'Other', 'Fuel', 'Equipment', 'Inputs'].map(normalizeCostType))
+      .toEqual(['Labor', 'Transportation', 'Food/Ent', 'Others', 'Others', 'Others', 'Others']);
+    const rows = buildCostTypeBreakdown(['Labour', 'Transport', 'Food', 'Other', 'Fuel', 'Equipment', 'Inputs'].map((cost_type) => ({ cost_type, value: 10 })));
+    expect(rows.reduce((sum, row) => sum + row.value, 0)).toBe(70);
   });
 });

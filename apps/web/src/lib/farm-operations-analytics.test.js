@@ -81,9 +81,31 @@ describe('farm operations analytics', () => {
     expect(activityYieldKg({ category: 'Pruning', quantity_used: 75 })).toBe(0);
   });
 
+  it('includes explicitly recorded output for every farm task type without treating material quantity as yield', () => {
+    const result = buildFarmOperationsAnalytics({
+      dailyActivities: [
+        { category: 'Planting', actual_cost: 125, actual_revenue: 350, output_quantity_kg: 80 },
+        { category: 'Pruning', actual_cost: 25, actual_revenue: 50, output_quantity_kg: 20 },
+        { category: 'Fertilizer Application', quantity_used: 500 },
+      ],
+    });
+
+    expect(result.totalYieldKg).toBe(100);
+    expect(result.totalCost).toBe(150);
+    expect(result.totalRevenue).toBe(400);
+    expect(result.totalRevenue - result.totalCost).toBe(250);
+    expect(activityYieldKg({ category: 'Harvesting', output_quantity_kg: 0, quantity_used: 500 })).toBe(0);
+  });
+
   it('uses the calculated activity cost when the optional actual-cost field is blank', () => {
     expect(activityCost({ actual_cost: '', cost: 125 })).toBe(125);
     expect(activityCost({ actual_cost: 0, cost: 125 })).toBe(0);
+  });
+
+  it('uses the edited compact task output even when older harvest fields remain', () => {
+    const record = { log_entry: true, category: 'Planting', harvest_quantity: 100, grade_a_quantity: 100 };
+    expect(activityYieldKg({ ...record, output_quantity_kg: 20 })).toBe(20);
+    expect(activityYieldKg({ ...record, output_quantity_kg: 0 })).toBe(0);
   });
 
   it('matches block performance rows only to an explicit saved block reference', () => {
