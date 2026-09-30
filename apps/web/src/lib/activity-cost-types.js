@@ -25,3 +25,6 @@ export function buildCostTypeBreakdown(costRows) {
   });
   return ACTIVITY_COST_TYPES.map((type) => ({ ...type, value: totals.get(type.name) }));
 }
+
+export const formatCostPercentage = (value, total) => !total || !value ? '0%'
+  : value / total * 100 < .1 ? '<0.1%' : `${Number((value / total * 100).toFixed(1))}%`;

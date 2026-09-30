@@ -41,7 +41,7 @@ try {
       }
       if (route === '/about') {
         await page.getByRole('heading', { name: 'John Boakye Asante', exact: true }).waitFor();
-        const portrait = page.getByRole('img', { name: 'Benedict Asante, Co-Founder', exact: true });
+        const portrait = page.getByRole('img', { name: 'Benedict Oppong Asante, Co-Founder', exact: true });
         await portrait.scrollIntoViewIfNeeded();
         await portrait.evaluate(image => image.decode());
         assert.equal(await portrait.getAttribute('src'), '/pages/about/founder-benedict-original.jpg');

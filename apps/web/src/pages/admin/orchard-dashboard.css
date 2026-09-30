@@ -1,0 +1,222 @@
+/* This dashboard follows the supplied orchard overview reference. Keep these
+   styles local so the existing admin navigation and other pages retain theirs. */
+.admin-shell:has(.orchard-dashboard) .admin-scroll-content { padding: 0 10px 24px; background: #d6ecfa; }
+.admin-shell:has(.orchard-dashboard) .admin-page-content { padding-top: 0; }
+.orchard-dashboard { --orchard-ink:#1c2942; color:var(--orchard-ink); font-family:Roboto,Arial,sans-serif; padding:0 0 8px; }
+.orchard-dashboard * { box-sizing:border-box; }
+.orchard-dashboard h1,.orchard-dashboard h2,.orchard-dashboard p { margin:0; }
+.orchard-dashboard button,.orchard-dashboard a { -webkit-tap-highlight-color:transparent; }
+.orchard-dashboard button:focus-visible,.orchard-dashboard a:focus-visible { outline:2px solid #2864be; outline-offset:3px; }
+.orchard-toolbar { min-height:38px; display:flex; align-items:center; gap:12px; padding:5px 4px; }
+.orchard-dashboard .orchard-toolbar h1 { font-size:17px; font-weight:750; line-height:24px; color:#183c37; }
+.orchard-toolbar > span { font-size:10px; color:#496378; }
+.orchard-toolbar > div { margin-left:auto; display:flex; gap:6px; }
+.orchard-toolbar button { display:flex; gap:5px; align-items:center; border:1px solid #a9c9d4; border-radius:4px; padding:4px 8px; font-size:10px; font-weight:600; background:#f8fcff; color:#20543c; }
+.orchard-toolbar button:hover { background:#e9f5ec; }
+.orchard-toolbar button:disabled { opacity:.5; cursor:wait; }
+.orchard-toolbar button svg { width:12px; height:12px; }
+.orchard-metrics { display:grid; grid-template-columns:repeat(8,minmax(0,1fr)); gap:6px; }
+.orchard-metric { position:relative; display:flex; align-items:flex-start; gap:8px; min-width:0; min-height:92px; padding:13px 9px 10px; background:linear-gradient(115deg,#fff 65%,#f1f7fc); border:1px solid #eaf3fa; border-radius:6px; box-shadow:0 1px 3px #5492ab0b; }
+.orchard-metric-icon { background:linear-gradient(135deg,#85c978,#3c973e); color:white; flex:0 0 39px; width:39px; height:39px; display:grid; place-items:center; border-radius:50%; }
+.orchard-metric-icon.gold { background:linear-gradient(135deg,#f7d739,#d5a800); }
+.orchard-metric-icon.red { background:linear-gradient(135deg,#f47878,#d43d40); }
+.orchard-metric-icon svg { width:26px; height:26px; stroke-width:1.7; }
+.orchard-metric > div { min-width:0; flex:1; }
+.orchard-dashboard .orchard-metric h2 { font-size:10px; font-weight:700; line-height:14px; white-space:nowrap; letter-spacing:-.15px; color:#24334d; }
+.orchard-metric strong { display:block; font-size:clamp(17px,1.7vw,27px); font-weight:800; line-height:1.3; letter-spacing:-.7px; white-space:nowrap; color:#172640; }
+.orchard-farm-summary .orchard-metric strong { font-size:22px; line-height:1.1; }
+.orchard-metric em { font-size:.7em; font-style:normal; letter-spacing:-.3px; }
+.orchard-metric small { display:block; margin-top:2px; font-size:9px; line-height:12px; color:#4b5b70; }
+.orchard-sales-mix { position:absolute; bottom:9px; left:10px; right:10px; display:flex; overflow:hidden; height:10px; border-radius:4px; background:#e5ebf1; }
+.orchard-metrics > .orchard-metric:last-child { padding-top:9px; }
+.orchard-metrics > .orchard-metric:last-child { padding-bottom:26px; }
+.orchard-metrics > .orchard-metric:last-child strong { font-size:22px; }
+.orchard-metrics > .orchard-metric:last-child small { margin:0; }
+.orchard-analysis { display:grid; grid-template-columns:1.65fr .9fr 1.05fr 1.18fr; gap:7px; margin-top:7px; }
+.orchard-panel { min-width:0; border:1px solid #eaf3fa; border-radius:6px; padding:9px 10px; background:linear-gradient(110deg,#fff 75%,#fbfdff); overflow:hidden; }
+.orchard-panel-heading { display:flex; align-items:center; justify-content:space-between; gap:6px; min-height:24px; margin-bottom:7px; }
+.orchard-dashboard .orchard-panel-heading h2 { display:flex; align-items:center; gap:7px; font-size:13px; font-weight:750; line-height:18px; letter-spacing:-.2px; color:#1d2d45; }
+.orchard-panel-heading h2 > svg { color:#408748; width:23px; height:23px; flex-shrink:0; stroke-width:2.5; }
+.orchard-panel-heading > a { font-size:9px; white-space:nowrap; }
+.orchard-tabs { display:flex; background:#edf2f7; border-radius:4px; padding:2px; }
+.orchard-tabs button { padding:4px 8px; color:#41516b; font-size:9px; line-height:12px; border-radius:3px; }
+.orchard-tabs button[aria-pressed=true] { color:#fff; background:#1e504a; }
+.orchard-business-chart { height:clamp(155px,13.5vw,224px); width:100%; }
+.orchard-chart-key { display:flex; justify-content:center; gap:18px; padding-top:4px; font-size:10px; color:#45546b; }
+.orchard-chart-key span { display:flex; align-items:center; gap:5px; }
+.orchard-chart-key i { width:12px; height:12px; border-radius:50%; }
+.orchard-split { display:flex; align-items:center; gap:8px; min-width:0; }
+.orchard-donut { position:relative; flex:0 0 51%; min-width:0; height:clamp(115px,10.4vw,167px); }
+.orchard-donut-label { pointer-events:none; position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:25%; }
+.orchard-donut-label strong { color:#17253c; font-size:clamp(14px,1.25vw,21px); font-weight:800; line-height:1.1; }
+.orchard-donut-label small { font-size:9px; line-height:12px; margin-top:3px; white-space:nowrap; }
+.orchard-legend { list-style:none; margin:0; padding:0; min-width:0; flex:1; max-height:190px; overflow:auto; }
+.orchard-legend li { display:flex; align-items:flex-start; gap:5px; margin-bottom:10px; font-size:10px; }
+.orchard-legend i { flex:0 0 10px; width:10px; height:10px; border-radius:50%; margin-top:2px; }
+.orchard-legend li > div { min-width:0; width:100%; }
+.orchard-legend span { display:block; font-size:10px; line-height:13px; }
+.orchard-legend strong { font-size:12px; display:inline-block; margin-right:5px; }
+.orchard-legend small { display:block; font-size:10px; color:#59657a; line-height:14px; }
+.orchard-markets { display:flex; align-items:center; gap:9px; background:#edf4fa; border-radius:5px; padding:9px; margin-top:5px; min-height:48px; color:#285c83; }
+.orchard-markets > svg { flex-shrink:0; width:26px; height:26px; }
+.orchard-markets > svg:last-child { margin-left:auto; width:25px; }
+.orchard-markets strong { display:block; font-size:10px; color:#25354d; }
+.orchard-markets span { display:block; font-size:9px; color:#4f6179; line-height:13px; }
+.orchard-expenses .orchard-split { height:calc(100% - 34px); align-items:center; gap:6px; }
+.orchard-expenses .orchard-donut { flex-basis:48%; }
+.orchard-expenses .orchard-legend li { margin-bottom:7px; font-size:9px; }
+.orchard-expenses .orchard-legend strong { font-size:10px; }
+.orchard-expenses .orchard-legend small { display:inline; font-size:9px; }
+.orchard-expenses .orchard-split { height:auto; min-height:195px; }
+.orchard-expenses .orchard-legend { max-height:none; overflow:visible; }
+.orchard-expenses .orchard-donut-label strong { font-size:11px; white-space:nowrap; }
+.orchard-expense-farms { border-top:1px solid #e5edf3; margin-top:8px; padding-top:8px; }
+.orchard-expense-farms h3 { margin:0 0 6px; font-size:11px; font-weight:700; }
+.orchard-expense-farms > div { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:3px 6px; padding:5px 0; font-size:9px; }
+.orchard-expense-farms span { display:flex; align-items:center; gap:4px; }
+.orchard-expense-farms svg { width:13px; height:13px; color:#a17d00; }
+.orchard-expense-farms strong { color:#256b2a; font-weight:600; }
+.orchard-expense-total { border-top:1px solid #e5edf3; margin-top:4px; }
+.orchard-health-rows { border-top:1px solid #edf0f3; padding-top:1px; }
+.orchard-health-row { display:grid; grid-template-columns:22px minmax(0,1fr) 22px minmax(60px,1fr); gap:8px; align-items:center; min-height:35px; border-bottom:1px solid #f1f4f6; font-size:10px; }
+.orchard-health-row > svg { width:21px; height:21px; }
+.orchard-health-row strong { font-size:11px; }
+.orchard-progress { height:13px; border-radius:5px; overflow:hidden; background:#e6ebf1; }
+.orchard-progress > span { display:block; height:100%; border-radius:4px; transition:width .2s; }
+.orchard-health-note { font-size:9px; color:#738092; padding-top:5px; text-align:right; }
+.orchard-production-row { display:grid; grid-template-columns:1.58fr 1.17fr 1fr 1.16fr; gap:7px; margin-top:7px; }
+.orchard-production-row > .orchard-panel { min-height:172px; }
+.orchard-table-scroll { overflow:auto; }
+.orchard-dashboard table { width:100%; border-collapse:collapse; font-size:10px; line-height:14px; text-align:center; color:#34435a; }
+.orchard-dashboard th { font-size:9px; font-weight:600; padding:3px 5px 5px; line-height:12px; border-bottom:1px solid #e9eef3; white-space:nowrap; }
+.orchard-dashboard td { padding:5px; border-bottom:1px solid #eef2f6; }
+.orchard-dashboard tbody tr:last-child td { border-bottom:0; }
+.orchard-dashboard td:first-child,.orchard-dashboard th:first-child { text-align:left; }
+.orchard-dashboard td small { display:block; font-size:9px; font-weight:400; color:#657187; }
+.orchard-dashboard td a { font-weight:700; }
+.orchard-dashboard td a:hover { text-decoration:underline; }
+.orchard-dashboard tfoot { border-top:1px solid #dce4ee; font-weight:750; }
+.orchard-status { display:inline-block; min-width:65px; padding:1px 8px; border-radius:6px; background:#d7f1cd; color:#326534; font-size:9px; white-space:nowrap; }
+.orchard-status.amber { background:#fff0ae; color:#82610b; }
+.orchard-status.blue { background:#d2e9fc; color:#366689; }
+.orchard-status.neutral { background:#e8edf1; color:#5c6975; }
+.orchard-variety-body { display:flex; align-items:center; gap:7px; position:relative; }
+.orchard-varieties .orchard-donut { flex-basis:42%; height:clamp(115px,9.5vw,152px); }
+.orchard-varieties .orchard-donut-label strong { font-size:16px; }
+.orchard-varieties .orchard-legend { z-index:1; padding-right:32px; }
+.orchard-varieties .orchard-legend li { margin-bottom:6px; }
+.orchard-varieties .orchard-legend span { font-size:9px; }
+.orchard-varieties .orchard-legend strong,.orchard-varieties .orchard-legend small { font-size:9px; display:inline; }
+.orchard-variety-body > img { width:31%; max-height:108px; object-fit:contain; position:absolute; right:-7px; bottom:-3px; opacity:.95; }
+.orchard-harvest-tiles { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:8px; }
+.orchard-harvest-tiles > div { display:flex; align-items:center; gap:7px; border-radius:4px; padding:10px 7px; background:#e9f7df; }
+.orchard-harvest-tiles > div:last-child { background:#e6f3fc; }
+.orchard-harvest-tiles svg { width:29px; height:29px; color:#4f9b40; flex-shrink:0; }
+.orchard-harvest-tiles > div:last-child svg { color:#376486; }
+.orchard-harvest-tiles span { font-size:9px; }
+.orchard-harvest-tiles strong { display:block; white-space:nowrap; font-size:18px; font-weight:800; line-height:25px; color:#182f3e; }
+.orchard-harvest-tiles em { font-size:11px; font-style:normal; }
+.orchard-harvest-tiles small { font-size:9px; }
+.orchard-harvest > .orchard-progress { height:17px; margin-top:12px; border-radius:8px; }
+.orchard-harvest > p { font-size:9px; text-align:center; margin-top:8px; color:#556477; }
+.orchard-harvest > p span { margin:0 5px; }
+.orchard-tasks table { font-size:9px; text-align:left; }
+.orchard-tasks th { font-size:9px; text-align:left; padding:1px 3px 4px; }
+.orchard-tasks td { padding:3px; font-size:9px; line-height:12px; }
+.orchard-tasks td:first-child { white-space:nowrap; }
+.orchard-tasks .orchard-status { min-width:0; font-size:8px; padding:0 4px; border-radius:3px; }
+.orchard-farms { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; margin-top:7px; }
+.orchard-farm { overflow:hidden; border-radius:6px; background:#fff; }
+.orchard-farm > header { display:flex; justify-content:space-between; gap:10px; align-items:center; padding:5px 11px; background:linear-gradient(90deg,#235833,#367144); color:white; min-height:29px; }
+.orchard-dashboard .orchard-farm h2 { display:flex; gap:6px; align-items:center; font-size:13px; line-height:18px; font-weight:650; color:#fff; }
+.orchard-farm h2 svg { width:23px; height:23px; }
+.orchard-farm h2 small { font-size:10px; font-weight:400; white-space:nowrap; }
+.orchard-farm header > span { font-size:9px; white-space:nowrap; }
+.orchard-farm header i { font-style:normal; margin:0 5px; }
+.orchard-farm .orchard-table-scroll { padding:2px 10px 6px; }
+.orchard-farm td { padding:3px 6px; font-size:10px; line-height:13px; }
+.orchard-farm td:first-child,.orchard-farm th:first-child { text-align:center; }
+.orchard-farm .orchard-status { min-width:100px; }
+.orchard-empty { color:#687b8d; padding:20px 4px; font-size:11px; text-align:center; }
+.orchard-loading { background:#fff; padding:80px 20px; text-align:center; border-radius:6px; }
+.orchard-error { padding:12px; margin-bottom:8px; background:#fff0ef; border:1px solid #e5aaa1; border-radius:5px; color:#9b2929; font-size:12px; }
+@keyframes orchard-spin { to { transform:rotate(360deg); } }
+.orchard-spin { animation:orchard-spin 1s linear infinite; }
+@media (min-width:1700px) { .orchard-metric { min-height:105px; } .orchard-metric-icon { width:46px; height:46px; flex-basis:46px; } .orchard-panel-heading { margin-bottom:10px; } .orchard-health-row { min-height:41px; } }
+@media (max-width:1250px) and (min-width:1051px) { .orchard-metric { gap:5px; padding:10px 6px; } .orchard-metric-icon { width:32px; height:32px; flex-basis:32px; } .orchard-metric-icon svg { width:23px; } .orchard-metric h2 { font-size:9px!important; } .orchard-panel { padding:7px; } .orchard-dashboard .orchard-panel-heading h2 { font-size:11px; gap:5px; } .orchard-tabs button { padding:3px 5px; font-size:8px; } .orchard-health-row { gap:5px; font-size:9px; } .orchard-harvest-tiles > div { padding:8px 4px; gap:4px; } .orchard-harvest-tiles svg { width:22px; } .orchard-harvest-tiles strong { font-size:15px; } .orchard-farm header > span { font-size:8px; } }
+@media (max-width:1050px) { .orchard-metrics { grid-template-columns:repeat(4,minmax(0,1fr)); } .orchard-metric strong { font-size:23px; } .orchard-analysis { grid-template-columns:1.25fr 1fr; } .orchard-production-row { grid-template-columns:1.25fr 1fr; } .orchard-business-chart { height:185px; } .orchard-donut { height:150px; } .orchard-panel-heading h2 { font-size:13px; } .orchard-health-row { min-height:33px; } .orchard-farm > header { flex-wrap:wrap; gap:2px; } .orchard-farm header > span { padding-left:29px; } .orchard-variety-body > img { width:30%; } }
+@media (max-width:620px) { .admin-shell:has(.orchard-dashboard) .admin-scroll-content { padding:0 8px 95px; } .orchard-toolbar { flex-wrap:wrap; gap:4px 8px; padding:9px 2px; } .orchard-toolbar > span { order:3; flex-basis:100%; } .orchard-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); } .orchard-metric { min-height:88px; gap:8px; } .orchard-metric strong { font-size:24px; } .orchard-metrics > .orchard-metric:last-child { min-height:88px; } .orchard-metric h2 { font-size:10px; } .orchard-analysis,.orchard-production-row,.orchard-farms { grid-template-columns:minmax(0,1fr); } .orchard-panel { padding:11px; } .orchard-dashboard .orchard-panel-heading h2 { font-size:13px; } .orchard-business-chart { height:205px; } .orchard-donut { height:175px; } .orchard-expenses .orchard-split { height:auto; } .orchard-health-row { min-height:36px; grid-template-columns:24px 1fr 24px 1fr; } .orchard-health-note { text-align:left; } .orchard-varieties .orchard-donut { height:160px; } .orchard-varieties .orchard-legend { padding-right:50px; } .orchard-variety-body > img { max-height:135px; } .orchard-production-row > .orchard-panel { min-height:0; } .orchard-dashboard table { font-size:10px; } .orchard-tasks td { font-size:10px; } .orchard-farm th { white-space:normal; } .orchard-farm .orchard-status { min-width:0; } .orchard-farm td { padding:4px 3px; } .orchard-farm header > span { font-size:9px; } .orchard-harvest-tiles { margin-top:12px; } .orchard-harvest-tiles > div { padding:14px 9px; } .orchard-harvest > p { margin-bottom:4px; } }
+@media (prefers-reduced-motion:reduce) { .orchard-spin { animation:none; } .orchard-progress > span { transition:none; } }
+/* The shared admin typography uses !important. These reference-sized headings
+   intentionally override it only inside this dashboard. */
+.orchard-dashboard .orchard-toolbar h1 { font-size:17px!important; line-height:24px!important; letter-spacing:0!important; }
+.orchard-dashboard .orchard-metric h2 { font-size:10px!important; line-height:14px!important; letter-spacing:-.15px!important; }
+.orchard-dashboard .orchard-panel-heading h2 { font-size:13px!important; line-height:18px!important; letter-spacing:-.2px!important; }
+.orchard-dashboard .orchard-farm h2 { font-size:13px!important; line-height:18px!important; letter-spacing:0!important; }
+.orchard-dashboard table thead { background:#fff; }
+.orchard-dashboard table th { font-size:9px!important; line-height:12px!important; }
+.orchard-metrics > .orchard-metric:nth-child(n+2):nth-child(-n+5) .orchard-metric-icon { width:33px; height:33px; flex-basis:33px; }
+.orchard-metrics > .orchard-metric:nth-child(n+3):nth-child(-n+5) strong { font-size:clamp(14px,1.3vw,22px); letter-spacing:-.5px; }
+@media(max-width:1250px) and (min-width:1051px) { .orchard-dashboard .orchard-metric h2 { font-size:9px!important; } .orchard-dashboard .orchard-panel-heading h2 { font-size:11px!important; } .orchard-metrics > .orchard-metric:nth-child(n+2):nth-child(-n+5) .orchard-metric-icon { flex-basis:27px; width:27px; height:27px; } .orchard-metrics > .orchard-metric:nth-child(n+2):nth-child(-n+5) .orchard-metric-icon svg { width:20px; } }
+@media(max-width:1050px) { .orchard-metrics > .orchard-metric:nth-child(n+3):nth-child(-n+5) strong { font-size:22px; } }
+@media(max-width:620px) { .orchard-metrics > .orchard-metric:nth-child(n+3):nth-child(-n+5) strong { font-size:19px; } }
+
+
+.orchard-farm-summary { grid-column:span 2; align-self:start; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); min-width:0; background:linear-gradient(115deg,#fff 65%,#f1f7fc); border:1px solid #eaf3fa; border-radius:6px; box-shadow:0 1px 3px #5492ab0b; }
+.orchard-farm-summary .orchard-metric { background:none; border:0; border-radius:0; box-shadow:none; min-height:76px; padding:8px 6px; gap:6px; align-items:center; }
+.orchard-farm-summary .orchard-metric-icon { width:30px; height:30px; flex-basis:30px; background:#237a3518; color:#237a35; }
+.orchard-farm-summary .orchard-metric-icon.gold { background:#d9a80018; color:#a17d00; }
+.orchard-farm-summary .orchard-metric-icon svg { width:22px; height:22px; stroke-width:2; }
+.orchard-dashboard .orchard-farm-summary .orchard-metric h2 { white-space:normal; }
+.orchard-farm-summary .orchard-metric + .orchard-metric { border-left:1px solid #e5edf3; }
+@media(min-width:1051px) { .orchard-metrics { grid-template-columns:repeat(7,minmax(0,1fr)); } }
+.orchard-workspace-summaries { display:grid; grid-template-columns:1fr 1.5fr; gap:7px; margin-top:7px; }
+.orchard-record-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; }
+.orchard-record-grid > a { min-width:0; padding:8px; border:1px solid #e5edf3; border-radius:4px; background:#f8fbfd; }
+.orchard-record-grid > a:hover { background:#edf7ec; }
+.orchard-record-grid span { display:block; font-size:10px; font-weight:600; }
+.orchard-record-grid strong { display:block; font-size:17px; line-height:24px; overflow-wrap:anywhere; }
+.orchard-record-grid small { display:block; font-size:9px; line-height:13px; color:#4b5b70; }
+@media(max-width:1050px) { .orchard-workspace-summaries { grid-template-columns:1fr; } }
+@media(max-width:620px) {
+  .orchard-farm-summary { grid-column:1 / -1; }
+  .orchard-farm-summary .orchard-metric { flex-direction:row; align-items:center; text-align:left; gap:5px; padding:8px 5px; }
+  .orchard-farm-summary .orchard-metric-icon { width:24px; height:24px; flex-basis:24px; }
+  .orchard-farm-summary .orchard-metric-icon svg { width:18px; height:18px; }
+  .orchard-farm-summary .orchard-metric strong { font-size:20px; }
+  .orchard-dashboard .orchard-farm-summary .orchard-metric h2 { white-space:normal; }
+  .orchard-farm-summary .orchard-metric small { font-size:9px; }
+  .orchard-record-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+
+.orchard-analysis { align-items:start; grid-template-columns:1.65fr .9fr 1.18fr; }
+.orchard-expenses { grid-column:1 / -1; order:4; background:#fff; }
+.orchard-health { order:3; }
+@media(max-width:1050px) { .orchard-analysis { grid-template-columns:repeat(2,minmax(0,1fr)); } .orchard-health { grid-column:1/-1; } }
+@media(max-width:620px) { .orchard-analysis { grid-template-columns:minmax(0,1fr); } }
+/* Restore the compact expense card beside sales. */
+.orchard-analysis { grid-template-columns:1.65fr .9fr 1.05fr 1.18fr; }
+.orchard-expenses { grid-column:auto; order:initial; }
+.orchard-health { grid-column:auto; order:initial; }
+@media(max-width:1050px) { .orchard-analysis { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media(max-width:620px) { .orchard-analysis { grid-template-columns:minmax(0,1fr); } }
+.orchard-dashboard .orchard-expense-farms h3 { font-size:11px!important; line-height:15px!important; margin:0 0 5px; }
+.orchard-expenses .orchard-expense-farms > div { padding:3px 0; }
+
+.orchard-expenses { overflow:visible; position:relative; }
+.orchard-expenses:has(.expense-selection-popover) { z-index:30; }
+
+/* Keep the summary cards aligned with the measured performance card. */
+.orchard-analysis > .orchard-panel:not(.orchard-business) { height:var(--orchard-performance-height,280px); box-sizing:border-box; display:flex; flex-direction:column; }
+.orchard-analysis .orchard-panel-heading { flex-shrink:0; }
+.orchard-sales .orchard-split { flex:1; min-height:0; }
+.orchard-sales .orchard-markets { flex-shrink:0; margin-top:auto; }
+.orchard-expenses .expense-photo-layout { flex:1; min-height:0; width:100%; display:flex; flex-direction:column; }
+.orchard-expenses .expense-photo-visual { flex:1; min-height:0; width:100%; max-width:240px; display:flex; flex-direction:column; }
+.orchard-expenses .expense-photo-visual svg { flex:1; min-height:0; width:100%; height:100%; }
+.orchard-expenses .expense-photo-clear { flex-shrink:0; }
+.orchard-expenses .orchard-expense-farms { flex-shrink:0; }
+.orchard-expenses .orchard-expense-farms[open] { max-height:95px; overflow:auto; }
+.orchard-health-rows { flex:1; min-height:0; display:flex; flex-direction:column; }
+.orchard-health-row { flex:1; min-height:0; }
+.orchard-health-note { flex-shrink:0; }

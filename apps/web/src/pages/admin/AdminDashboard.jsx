@@ -1,205 +1,133 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  Activity, AlertCircle, ArrowRight, Banknote, Boxes, BriefcaseBusiness, CheckCircle2,
-  CalendarDays, Clock3, FileWarning, MessageSquareText, Package, RefreshCw, ShoppingCart, Sprout, Truck, Users,
-} from 'lucide-react';
-import CircleCediSign from '@/components/icons/CircleCediSign';
-import MetricCard from '@/components/shared/MetricCard';
-import PageHeader from '@/components/shared/PageHeader';
-import StatusBadge from '@/components/shared/StatusBadge';
-import { formatCurrency, formatNumber, timeAgo } from '@/components/shared/format';
-import { Button } from '@/components/ui/button';
-import { useToast } from '@/components/ui/use-toast';
+import { BarChart3, Bug, CircleDollarSign, ClipboardList, Clock3, Coins, Download, Droplets, Globe2, House, Leaf, MapPin, PackageOpen, Plane, ReceiptText, RefreshCw, Sprout, TrendingUp, Truck, Warehouse } from 'lucide-react';
+import { Bar, CartesianGrid, Cell, ComposedChart, Line, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { base44 } from '@/api/base44Client';
 import { subscribeToDataChanges } from '@/lib/data-sync';
-import {
-  Area, AreaChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
-} from 'recharts';
+import { buildOrchardDashboard, groupPerformance, percentage, readable } from '@/lib/orchard-dashboard';
+import { dashboardSources, loadDashboardRecords } from '@/lib/dashboard-sources';
+import { formatCostPercentage } from '@/lib/activity-cost-types';
+import ExpensePhotoChart from '@/components/farm/ExpensePhotoChart';
+import './orchard-dashboard.css';
 
-const emptyData = {
-  customers: [], orders: [], invoices: [], payments: [], expenses: [], farmExpenses: [], stock: [], products: [], farms: [],
-  harvests: [], harvestBatches: [], harvestGrades: [], deliveries: [], employees: [], purchaseOrders: [], applications: [], inquiries: [], calendarEvents: [],
-};
-const watchedEntities = ['Customer', 'Order', 'Invoice', 'Payment', 'Expense', 'FarmExpense', 'StockItem', 'Product', 'Farm', 'Harvest', 'HarvestBatch', 'HarvestGrade', 'Delivery', 'Employee', 'PurchaseOrder', 'JobApplication', 'Inquiry', 'CalendarEvent'];
-const isOpenOrder = (order) => !['delivered', 'cancelled', 'draft'].includes(order.status);
-const isSuccessfulOrder = (order) => !['cancelled', 'draft'].includes(order.status);
-const asAmount = (value) => Number(value || 0);
-const dateValue = (record, ...keys) => keys.map((key) => record?.[key]).find(Boolean) || record?.created_date;
-const isCurrentMonth = (value) => {
-  const date = new Date(value);
-  const now = new Date();
-  return !Number.isNaN(date.getTime()) && date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth();
-};
+const sources = dashboardSources;
+const colors = ['#51a545', '#f3c400', '#5d97d8', '#8b63bf', '#aab0b7'];
+
+const number = (value) => new Intl.NumberFormat('en-GH', { maximumFractionDigits: 1 }).format(value);
+const money = (value) => `₵${new Intl.NumberFormat('en-GH', { maximumFractionDigits: 0 }).format(value)}`;
+const compact = (value) => `₵${new Intl.NumberFormat('en-GH', { notation: 'compact', maximumFractionDigits: 1 }).format(value)}`;
+const pct = (value, total) => percentage(value, total) === null ? '—' : `${percentage(value, total)}%`;
+const farmPath = '/admin/farm-daily-activities/activities/farms';
+
+function Panel({ title, icon: Icon, className = '', action, children }) {
+  return <section className={`orchard-panel ${className}`}><header className="orchard-panel-heading"><h2><Icon aria-hidden="true" />{title}</h2>{action}</header>{children}</section>;
+}
+function Metric({ title, value, note, icon: Icon, tone = 'green', children }) {
+  return <section className="orchard-metric"><span className={`orchard-metric-icon ${tone}`}><Icon aria-hidden="true" /></span><div><h2>{title}</h2><strong>{value}</strong><small>{note}</small></div>{children}</section>;
+}
+function Donut({ rows, value, label, palette = colors }) {
+  const slices = rows.filter((row) => row.value > 0);
+  return <div className="orchard-donut" role="img" aria-label={`${label}: ${value}. ${slices.map((row) => `${row.name}: ${number(row.value)}`).join(', ')}`}><ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={slices.length ? slices : [{ name: 'No records', value: 1 }]} dataKey="value" nameKey="name" innerRadius="61%" outerRadius="96%" startAngle={90} endAngle={-270} stroke="#fff" strokeWidth={1} isAnimationActive={false}>{(slices.length ? slices : [{}]).map((row, index) => <Cell key={row.name || index} fill={slices.length ? palette[rows.indexOf(row) % palette.length] : '#e4ebef'} />)}</Pie>{slices.length > 0 && <Tooltip formatter={(amount, name) => [number(amount), name]} />}</PieChart></ResponsiveContainer><div className="orchard-donut-label"><strong>{value}</strong><small>{label}</small></div></div>;
+}
+function Legend({ rows, total, currency = false, palette = colors, percentageFormatter = pct }) {
+  return <ul className="orchard-legend">{rows.map((row, index) => <li key={row.name}><i style={{ backgroundColor: palette[index % palette.length] }} /><div><span>{row.name}</span><strong>{percentageFormatter(row.value, total)}</strong><small>{currency ? money(row.value) : `${number(row.value)} tons`}</small></div></li>)}{!rows.length && <li className="orchard-empty">No records yet</li>}</ul>;
+}
+function Status({ value }) { return <span className={`orchard-status ${/fruit|progress|prun/i.test(value) ? 'amber' : /flower|schedul|plan/i.test(value) ? 'blue' : /inactive|record/i.test(value) ? 'neutral' : ''}`}>{readable(value)}</span>; }
+function Progress({ value, label, color = '#51a545' }) { return <div className="orchard-progress" role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={value ?? undefined} aria-valuetext={value == null ? 'Not recorded' : `${value}%`}><span style={{ width: `${Math.min(100, Math.max(0, value || 0))}%`, backgroundColor: color }} /></div>; }
 
 export default function AdminDashboard() {
-  const { toast } = useToast();
-  const [data, setData] = useState(emptyData);
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const loadDashboard = async (showToast = false) => {
+  const [period, setPeriod] = useState('Monthly');
+  const [exporting, setExporting] = useState(false);
+  const generation = useRef(0);
+  const analysisRef = useRef(null);
+  const year = new Date().getFullYear();
+  const load = useCallback(async () => {
+    const request = ++generation.current;
     setLoading(true);
-    setError('');
     try {
-      const results = await Promise.all(watchedEntities.map((entity) => base44.entities[entity].list('-created_date', 250).catch(() => [])));
-      const next = Object.fromEntries(Object.keys(emptyData).map((key, index) => [key, results[index] || []]));
-      setData(next);
-      if (showToast) toast({ title: 'Dashboard refreshed', description: 'All summaries now reflect the latest database records.' });
-    } catch (loadError) {
-      setError(loadError.message || 'Dashboard data could not be loaded.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadDashboard();
-    let timer;
-    const unsubscribe = subscribeToDataChanges(() => {
-      clearTimeout(timer);
-      timer = setTimeout(() => loadDashboard(), 180);
-    }, watchedEntities);
-    return () => { clearTimeout(timer); unsubscribe(); };
+      const records = await loadDashboardRecords(base44.entities);
+      if (request !== generation.current) return;
+      setData(records);
+      setError('');
+    } catch (failure) { if (request === generation.current) setError(failure.message || 'Dashboard records could not be loaded.'); }
+    finally { if (request === generation.current) setLoading(false); }
   }, []);
-
-  const metrics = useMemo(() => {
-    const successfulOrders = data.orders.filter(isSuccessfulOrder);
-    const monthOrders = successfulOrders.filter((order) => isCurrentMonth(dateValue(order, 'order_date')));
-    const completedPayments = data.payments.filter((payment) => !['failed', 'cancelled'].includes(payment.status));
-    const monthPayments = completedPayments.filter((payment) => isCurrentMonth(dateValue(payment, 'payment_date')));
-    const monthExpenses = [...data.expenses, ...data.farmExpenses].filter((expense) => isCurrentMonth(dateValue(expense, 'expense_date')));
-    const pendingInvoices = data.invoices.filter((invoice) => invoice.status !== 'paid');
-    const lowStock = data.stock.filter((item) => asAmount(item.quantity_on_hand) <= asAmount(item.reorder_level));
-    const upcomingHarvests = data.calendarEvents
-      .filter((item) => item.harvest_period_id && new Date(item.start_at) >= new Date() && !['completed', 'cancelled'].includes(item.status))
-      .sort((left, right) => new Date(left.start_at) - new Date(right.start_at));
-    return {
-      successfulOrders,
-      salesMtd: monthOrders.reduce((sum, order) => sum + asAmount(order.total_amount), 0),
-      paidMtd: monthPayments.reduce((sum, payment) => sum + asAmount(payment.amount), 0),
-      expensesMtd: monthExpenses.reduce((sum, expense) => sum + asAmount(expense.amount), 0),
-      outstanding: pendingInvoices.reduce((sum, invoice) => sum + asAmount(invoice.balance_due ?? invoice.total_amount), 0),
-      openOrders: data.orders.filter(isOpenOrder), pendingInvoices, lowStock,
-      activeDeliveries: data.deliveries.filter((delivery) => ['scheduled', 'in_transit', 'dispatched'].includes(delivery.status)),
-      upcomingHarvests,
-      nextHarvest: upcomingHarvests[0] || null,
-    };
-  }, [data]);
-
-  const monthlyTrend = useMemo(() => buildMonthlyTrend(data.orders, data.payments), [data.orders, data.payments]);
-  const harvestQuality = useMemo(() => buildHarvestQuality(data.harvests, data.harvestGrades), [data.harvests, data.harvestGrades]);
-  const recentOrders = [...data.orders].sort((a, b) => new Date(dateValue(b, 'order_date')) - new Date(dateValue(a, 'order_date'))).slice(0, 5);
-
-  const exportDashboard = async () => {
-    const { jsPDF } = await import('jspdf');
-    const doc = new jsPDF();
-    const rows = [
-      ['Sales value this month', formatCurrency(metrics.salesMtd)], ['Payments this month', formatCurrency(metrics.paidMtd)],
-      ['Outstanding invoices', formatCurrency(metrics.outstanding)], ['Expenses this month', formatCurrency(metrics.expensesMtd)],
-      ['Orders in progress', metrics.openOrders.length], ['Active deliveries', metrics.activeDeliveries.length],
-      ['Upcoming harvest schedules', metrics.upcomingHarvests.length],
-      ['Customers', data.customers.length], ['Products', data.products.length], ['Active farms', data.farms.filter((farm) => farm.status !== 'inactive').length],
-      ['Staff', data.employees.length], ['Low stock items', metrics.lowStock.length], ['Pending applications', data.applications.filter((item) => !['hired', 'rejected'].includes(item.status)).length],
-    ];
-    doc.setFontSize(17); doc.text('JBA GreenGold — Business Summary', 14, 18);
-    doc.setFontSize(9); doc.text(`Generated ${new Date().toLocaleString('en-GH')}`, 14, 25);
-    doc.setFontSize(11); rows.forEach(([label, value], index) => doc.text(`${label}: ${value}`, 14, 38 + index * 8));
-    doc.save(`dashboard-summary-${new Date().toISOString().slice(0, 10)}.pdf`);
-    toast({ title: 'Dashboard PDF exported' });
+  useEffect(() => {
+    load(); let timer;
+    const unsubscribe = subscribeToDataChanges(() => { clearTimeout(timer); timer = setTimeout(load, 180); }, Object.values(sources));
+    const refreshVisible = () => { if (document.visibilityState === 'visible') load(); };
+    window.addEventListener('focus', refreshVisible);
+    const interval = setInterval(refreshVisible, 60000);
+    return () => { generation.current += 1; clearTimeout(timer); clearInterval(interval); window.removeEventListener('focus', refreshVisible); unsubscribe(); };
+  }, [load]);
+  const model = useMemo(() => buildOrchardDashboard(data || {}, year), [data, year]);
+  const chart = useMemo(() => groupPerformance(model.months, period, year), [model, period, year]);
+  useEffect(() => {
+    const analysis = analysisRef.current;
+    const reference = analysis?.querySelector('.orchard-business');
+    if (!reference) return;
+    const syncHeight = () => analysis.style.setProperty('--orchard-performance-height', `${reference.getBoundingClientRect().height}px`);
+    syncHeight();
+    const observer = new ResizeObserver(syncHeight);
+    observer.observe(reference);
+    return () => observer.disconnect();
+  }, [Boolean(data)]);
+  const exportPdf = async () => {
+    setExporting(true);
+    try {
+      const { jsPDF } = await import('jspdf');
+      const doc = new jsPDF();
+      doc.setFontSize(18); doc.text(`Orchard dashboard | ${year}`, 14, 20);
+      doc.setFontSize(10); doc.text(`Generated ${new Date().toLocaleString('en-GH')}`, 14, 29);
+      const rows = [['Main farms', model.farms.length], ['Farm blocks', model.blocks.length], ['Recorded production (tons)', number(model.harvested)], ['Forecast production (tons)', number(model.forecast)], ['Sales revenue (GHS)', number(model.revenue)], ['Activity costs (GHS)', number(model.cost)], ['Revenue less activity costs (GHS)', number(model.profit)], ...model.production.map((farm) => [farm.name, `${number(farm.tonnes)} tons`])];
+      rows.forEach(([label, value], index) => { const line = index % 26; if (index > 0 && line === 0) doc.addPage(); doc.text(`${label}: ${value}`, 14, 42 + line * 9); });
+      doc.save(`orchard-dashboard-${year}.pdf`);
+    } catch { setError('The PDF could not be exported. Please try again.'); }
+    finally { setExporting(false); }
   };
-
-  return (
-    <div className="admin-dashboard">
-      <PageHeader title="Dashboard">
-        <Button variant="outline" size="sm" onClick={exportDashboard}>Export PDF</Button>
-        <Button size="sm" onClick={() => loadDashboard(true)} disabled={loading}><RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />Refresh</Button>
-      </PageHeader>
-      {error && <div role="alert" className="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
-
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard title="Sales value (MTD)" value={formatCurrency(metrics.salesMtd)} icon={ShoppingCart} color="primary" subtitle={`${data.orders.filter((order) => isCurrentMonth(dateValue(order, 'order_date'))).length} orders this month`} />
-        <MetricCard title="Payments received (MTD)" value={formatCurrency(metrics.paidMtd)} icon={Banknote} color="green" subtitle="Confirmed receipts" />
-        <MetricCard title="Orders in progress" value={String(metrics.openOrders.length)} icon={Clock3} color="blue" subtitle="Confirmed through dispatch" />
-        <MetricCard title="Outstanding invoices" value={formatCurrency(metrics.outstanding)} icon={FileWarning} color="red" subtitle={`${metrics.pendingInvoices.length} awaiting payment`} />
+  const sales = model.sales.filter((row) => row.value > 0);
+  const salesPalette = sales.map((row) => row.name === 'Export Sales' ? colors[0] : row.name === 'Local Sales' ? colors[1] : colors[2]);
+  const health = [{ label: 'Tree Health', icon: Leaf }, { label: 'Irrigation Coverage', icon: Droplets }, { label: 'Pest & Disease Status', icon: Bug }, { label: 'Harvest Readiness', icon: Sprout }, { label: 'Packhouse Readiness', icon: Warehouse }];
+  return <div className="orchard-dashboard" data-preserve-colors="true">
+    <div className="orchard-toolbar"><div><button type="button" onClick={exportPdf} disabled={!data || exporting}><Download />{exporting ? 'Exporting…' : 'Export PDF'}</button><button type="button" onClick={load} disabled={loading}><RefreshCw className={loading ? 'orchard-spin' : ''} />Refresh</button></div></div>
+    {error && <div className="orchard-error" role="alert">{error} {data ? 'Showing the last loaded records.' : 'Use Refresh to retry.'}</div>}
+    {!data ? <div className="orchard-loading" role="status">{loading ? 'Loading orchard dashboard…' : 'Dashboard data unavailable.'}</div> : <>
+      <div className="orchard-metrics">
+        <div className="orchard-farm-summary" role="group" aria-label="Farm overview">
+        <Metric title="Total Main Farms" value={model.farms.length} note="Farms under management" icon={MapPin} />
+        <Metric title="Total Farm Blocks" value={model.blocks.length} note="Across all main farms" icon={MapPin} tone="gold" />
+        <Metric title="Mango Varieties" value={model.varietyNames.length} note={model.varietyNames.join(', ') || 'No varieties recorded'} icon={Sprout} />
+        </div>
+        <Metric title="Total Production" value={<>{number(model.harvested)} <em>tons</em></>} note={`${year} recorded output`} icon={PackageOpen} />
+        <Metric title="Total Revenue" value={money(model.revenue)} note={`${year} sales value`} icon={Coins} />
+        <Metric title="Total Cost" value={money(model.cost)} note={`${year} activity costs`} icon={ReceiptText} tone="red" />
+        <Metric title="Sales Balance" value={money(model.profit)} note="Order sales less activity costs" icon={BarChart3} />
+        <Metric title="Sales Mix" value={<><em>{pct(model.sales[0].value, model.revenue)} Export</em></>} note={`${pct(model.sales[1].value, model.revenue)} Local · ${pct(model.sales[2].value, model.revenue)} Unclassified`} icon={Truck}><div className="orchard-sales-mix" aria-label="Sales mix">{model.revenue > 0 && model.sales.map((row, index) => <span key={row.name} title={`${row.name}: ${pct(row.value, model.revenue)}`} style={{ width: `${row.value / model.revenue * 100}%`, backgroundColor: colors[index] }} />)}</div></Metric>
       </div>
-
-      <div className="mt-6 grid gap-6 lg:grid-cols-3">
-        <section className="rounded-xl border border-border bg-card p-5 shadow-sm lg:col-span-2">
-          <div><h2 className="text-section-title">Sales and payments</h2><p className="text-xs text-muted-foreground">Rolling six-month value in Ghana cedis (₵), calculated from live orders and receipts.</p></div>
-          <ResponsiveContainer width="100%" height={280} className="mt-4"><AreaChart data={monthlyTrend}>
-            <defs><linearGradient id="salesFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#2e7d32" stopOpacity={0.28} /><stop offset="100%" stopColor="#2e7d32" stopOpacity={0} /></linearGradient></defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" /><XAxis dataKey="month" fontSize="var(--text-caption)" /><YAxis fontSize="var(--text-caption)" tickFormatter={compactAmount} />
-            <Tooltip formatter={(value, name) => [formatCurrency(value), name === 'sales' ? 'Sales value' : 'Payments']} contentStyle={{ borderRadius: 10, border: '1px solid hsl(var(--border))' }} />
-            <Area type="monotone" dataKey="sales" stroke="#2e7d32" strokeWidth={2} fill="url(#salesFill)" /><Area type="monotone" dataKey="payments" stroke="#43a047" strokeWidth={2} fillOpacity={0} />
-          </AreaChart></ResponsiveContainer>
-        </section>
-        <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
-          <h2 className="text-section-title">Harvest quality</h2><p className="text-xs text-muted-foreground">Recorded quantity by grade.</p>
-          {harvestQuality.length ? <><ResponsiveContainer width="100%" height={220}><PieChart><Pie data={harvestQuality} dataKey="value" nameKey="name" innerRadius={48} outerRadius={76} paddingAngle={3}>{harvestQuality.map((entry) => <Cell key={entry.name} fill={entry.color} />)}</Pie><Tooltip formatter={(value) => `${formatNumber(value)} kg`} /></PieChart></ResponsiveContainer><div className="grid grid-cols-2 gap-2">{harvestQuality.map((item) => <div key={item.name} className="flex items-center gap-2 text-xs"><span className="h-2.5 w-2.5 rounded-full" style={{ background: item.color }} /><span className="truncate">{item.name}</span><strong>{formatNumber(item.value)}</strong></div>)}</div></> : <div className="grid h-[260px] place-items-center text-sm text-muted-foreground">No graded harvests yet.</div>}
-        </section>
+      <div className="orchard-workspace-summaries">
+        {model.departments.map((department) => <Panel key={department.title} title={department.title} icon={department.title === 'Production Summary' ? Sprout : TrendingUp} className="orchard-workspace-summary">
+          <div className="orchard-record-grid">{department.items.map((item) => <Link key={item.label} to={item.path}><span>{item.label}</span><strong>{item.currency ? money(item.value) : number(item.value)}</strong><small>{item.note}</small></Link>)}</div>
+        </Panel>)}
       </div>
-
-      <div className="dashboard-small-metrics mt-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-6">
-        <SmallMetric label="Customers" value={data.customers.length} icon={Users} path="/admin/crm" />
-        <SmallMetric label="Products" value={data.products.length} icon={Package} path="/admin/content" />
-        <SmallMetric label="Active farms" value={data.farms.filter((farm) => farm.status !== 'inactive').length} icon={Sprout} path="/admin/farm-daily-activities/activities/farms" />
-        <SmallMetric label="Staff" value={data.employees.length} icon={Activity} path="/admin/hr" />
-        <SmallMetric label="Active deliveries" value={metrics.activeDeliveries.length} icon={Truck} path="/admin/logistics" />
-        <SmallMetric label="Low stock" value={metrics.lowStock.length} icon={Boxes} path="/admin/inventory" alert={metrics.lowStock.length > 0} />
-      </div>
-
-      <div className="mt-6 grid gap-6 xl:grid-cols-[1.2fr_1fr]">
-        <Panel title="Recent orders" path="/admin/orders">
-          {recentOrders.length ? recentOrders.map((order) => <div key={order.id} className="flex items-center justify-between gap-4 border-b border-border px-4 py-3 last:border-0"><div className="min-w-0"><p className="truncate text-sm font-semibold">{order.order_number}</p><p className="truncate text-xs text-muted-foreground">{order.customer_name} · {timeAgo(dateValue(order, 'order_date'))} · {order.source || 'admin'}</p></div><div className="shrink-0 text-right"><p className="text-sm font-semibold text-blue-600">{formatCurrency(order.total_amount)}</p><StatusBadge status={order.status} /></div></div>) : <Empty label="No orders recorded." />}
+      <div className="orchard-analysis" ref={analysisRef}>
+        <Panel title="Business Performance" icon={TrendingUp} className="orchard-business" action={<div className="orchard-tabs" aria-label="Performance period">{['Monthly', 'Quarterly', 'Yearly'].map((item) => <button key={item} type="button" aria-pressed={period === item} onClick={() => setPeriod(item)}>{item}</button>)}</div>}>
+          <div className="orchard-business-chart"><ResponsiveContainer width="100%" height="100%"><ComposedChart data={chart} margin={{ top: 8, right: 7, left: -14, bottom: 0 }}><CartesianGrid stroke="#e8edf0" vertical={false} /><XAxis dataKey="name" tick={{ fontSize: 10, fill: '#546174' }} axisLine={{ stroke: '#cbd5df' }} tickLine={false} interval={0} /><YAxis tickFormatter={compact} tick={{ fontSize: 10, fill: '#546174' }} axisLine={false} tickLine={false} width={62} /><Tooltip formatter={(value, label) => [money(value), readable(label)]} /><Bar name="Revenue" dataKey="revenue" fill="#72b86c" maxBarSize={15} isAnimationActive={false} /><Bar name="Cost" dataKey="cost" fill="#e64e52" maxBarSize={15} isAnimationActive={false} /><Line name="Profit" dataKey="profit" stroke="#3266cc" strokeWidth={2} dot={{ r: 3, fill: '#3266cc', stroke: '#fff', strokeWidth: 1 }} isAnimationActive={false} /></ComposedChart></ResponsiveContainer></div><div className="orchard-chart-key"><span><i style={{ background: '#72b86c' }} />Revenue (₵)</span><span><i style={{ background: '#e64e52' }} />Cost (₵)</span><span><i style={{ background: '#3266cc' }} />Profit (₵)</span></div>
         </Panel>
-        <Panel title="Invoices awaiting payment" path="/admin/sales">
-          {metrics.pendingInvoices.slice(0, 5).length ? metrics.pendingInvoices.slice(0, 5).map((invoice) => <div key={invoice.id} className="flex items-center justify-between gap-4 border-b border-border px-4 py-3 last:border-0"><div className="min-w-0"><p className="truncate text-sm font-semibold">{invoice.invoice_number}</p><p className="truncate text-xs text-muted-foreground">{invoice.customer_name} · {invoice.order_number || 'Manual invoice'}</p></div><div className="shrink-0 text-right"><p className="text-sm font-semibold text-amber-700">{formatCurrency(invoice.balance_due ?? invoice.total_amount)}</p><StatusBadge status={invoice.status} /></div></div>) : <Empty label="All invoices are paid." success />}
-        </Panel>
-        <Panel title="Low stock alerts" path="/admin/inventory" icon={AlertCircle}>
-          {metrics.lowStock.slice(0, 5).length ? metrics.lowStock.slice(0, 5).map((item) => <div key={item.id} className="flex items-center justify-between gap-4 border-b border-border px-4 py-3 last:border-0"><div><p className="text-sm font-semibold">{item.product_name}</p><p className="text-xs text-muted-foreground">{item.warehouse_name || 'Warehouse not set'} · {item.sku || 'No SKU'}</p></div><div className="text-right"><p className="text-sm font-semibold text-amber-700">{formatNumber(item.quantity_on_hand)} {item.unit_of_measure || ''}</p><p className="text-xs text-muted-foreground">Reorder {formatNumber(item.reorder_level)}</p></div></div>) : <Empty label="Stock levels are healthy." success />}
-        </Panel>
-        <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
-          <h2 className="text-section-title">Operating summary</h2>
-          <div className="mt-4 grid gap-x-6 gap-y-4 sm:grid-cols-2">
-            <OperatingStat label="Expenses this month" value={formatCurrency(metrics.expensesMtd)} icon={CircleCediSign} path="/admin/finance" />
-            <OperatingStat label="Purchase orders" value={data.purchaseOrders.length} icon={BriefcaseBusiness} path="/admin/procurement" />
-            <OperatingStat label="Harvest records" value={data.harvests.length + data.harvestBatches.length} icon={Sprout} path="/admin/farm-daily-activities/activities/overview" />
-            <OperatingStat label="Upcoming harvests" value={metrics.upcomingHarvests.length} icon={CalendarDays} path="/admin/farm-daily-activities/activities/overview" />
-            <OperatingStat label="Next harvest" value={metrics.nextHarvest ? new Date(metrics.nextHarvest.start_at).toLocaleDateString('en-GH', { day: 'numeric', month: 'short' }) : 'Not scheduled'} icon={Clock3} path="/admin/farm-daily-activities/activities/overview" />
-            <OperatingStat label="Open applications" value={data.applications.filter((item) => !['hired', 'rejected'].includes(item.status)).length} icon={Users} path="/admin/applications" />
-            <OperatingStat label="New client inquiries" value={data.inquiries.filter((item) => item.status === 'new' || !item.status).length} icon={MessageSquareText} path="/admin/inquiries" />
-            <OperatingStat label="Upcoming activities" value={data.calendarEvents.filter((item) => new Date(item.start_at) >= new Date() && !['completed', 'cancelled'].includes(item.status)).length} icon={CalendarDays} path="/admin/calendar" />
-          </div>
-        </section>
+        <Panel title="Sales Breakdown" icon={CircleDollarSign} className="orchard-sales"><div className="orchard-split"><Donut rows={sales} value={compact(model.revenue)} label="Total Revenue" palette={salesPalette} /><Legend rows={sales} total={model.revenue} currency palette={salesPalette} /></div><div className="orchard-markets"><Globe2 /><div><strong>Export Markets</strong><span>{model.markets.join(' | ') || 'No export destinations recorded'}</span></div><Plane /></div></Panel>
+        <Panel title="Expense Breakdown" icon={ReceiptText} className="orchard-expenses"><ExpensePhotoChart rows={model.expenses} total={model.expenseTotal} /><details className="orchard-expense-farms"><summary>Cost Split by Main Farm</summary>{model.expenseFarms.map((farm) => <div key={farm.name}><span><MapPin aria-hidden="true" />{farm.name}</span><strong>{money(farm.value)} · {formatCostPercentage(farm.value, model.expenseTotal)}</strong></div>)}<div className="orchard-expense-total"><span>Total Cost</span><strong>{money(model.expenseTotal)}</strong></div></details></Panel>
+        <Panel title="Orchard Health & Operations" icon={Sprout} className="orchard-health"><div className="orchard-health-rows">{health.map(({ label, icon: Icon }, index) => <div className="orchard-health-row" key={label}><Icon style={{ color: index === 1 ? '#519fe0' : index === 3 ? '#dfaf00' : '#42894e' }} /><span>{label}</span><strong title="No percentage assessment is recorded">—</strong><Progress value={null} label={label} /></div>)}</div><p className="orchard-health-note">Percentage assessments not recorded</p></Panel>
       </div>
-    </div>
-  );
+      <div className="orchard-production-row">
+        <Panel title="Production Overview" icon={BarChart3} className="orchard-production"><div className="orchard-table-scroll"><table><thead><tr><th>Main Farm</th><th>Blocks</th><th>Total Production<br />(tons)</th><th>Share</th><th>Status</th></tr></thead><tbody>{model.production.map((farm) => <tr key={farm.id}><td><Link to={farmPath}>{farm.name}</Link><small>{farm.location || farm.region}</small></td><td>{farm.blocks.length}</td><td>{number(farm.tonnes)}</td><td>{pct(farm.tonnes, model.harvested)}</td><td><Status value={farm.status} /></td></tr>)}{model.unallocated > 0 && <tr><td>Unallocated output</td><td>—</td><td>{number(model.unallocated)}</td><td>{pct(model.unallocated, model.harvested)}</td><td>—</td></tr>}</tbody><tfoot><tr><td>Total</td><td>{model.blocks.length}</td><td>{number(model.harvested)}</td><td>{model.harvested > 0 ? '100%' : '—'}</td><td /></tr></tfoot></table></div></Panel>
+        <Panel title="Variety Distribution (All Blocks)" icon={Leaf} className="orchard-varieties"><div className="orchard-variety-body"><Donut rows={model.varieties} value={`${number(model.harvested)} tons`} label="Total Production" /><Legend rows={model.varieties} total={model.harvested} /><img src="/pages/export/mango-basket.webp" alt="Fresh orchard mangoes" /></div></Panel>
+        <Panel title="Harvest & Sales Status" icon={Sprout} className="orchard-harvest"><div className="orchard-harvest-tiles"><div><PackageOpen /><span>Harvested<strong>{number(model.harvested)} <em>tons</em></strong><small>{model.forecast > 0 ? `${pct(model.harvested, model.forecast)} of forecast` : 'Recorded output'}</small></span></div><div><Clock3 /><span>Remaining<strong>{model.forecast > 0 ? number(model.remaining) : '—'} <em>tons</em></strong><small>{model.forecast > 0 ? `${pct(model.remaining, model.forecast)} of forecast` : 'No forecast recorded'}</small></span></div></div><Progress value={percentage(model.harvested, model.forecast)} label="Harvest progress" /><p>{number(model.harvested)} tons harvested <span>|</span> {model.forecast > 0 ? `${number(model.remaining)} tons remaining` : 'Forecast unavailable'}</p></Panel>
+        <Panel title="Upcoming Farm Tasks" icon={ClipboardList} className="orchard-tasks" action={<Link to="/admin/calendar">View All</Link>}><div className="orchard-table-scroll"><table><thead><tr><th>Date</th><th>Task</th><th>Farm / Block</th><th>Status</th></tr></thead><tbody>{model.tasks.slice(0, 6).map((task) => <tr key={task.id}><td>{new Date(task.date).toLocaleDateString('en', { month: 'short', day: '2-digit' })}</td><td title={task.title}>{task.title}</td><td>{task.scope}</td><td><Status value={task.status || 'scheduled'} /></td></tr>)}</tbody></table>{!model.tasks.length && <div className="orchard-empty">No upcoming farm tasks scheduled</div>}</div></Panel>
+      </div>
+      <div className="orchard-farms">{model.production.map((farm, index) => <section className="orchard-farm" key={farm.id}><header><h2><House /><Link to={farmPath}>{farm.name || `Main Farm ${index + 1}`}</Link><small>({farm.blocks.length} Blocks)</small></h2><span>Total Production: <b>{number(farm.tonnes)} tons</b> <i>|</i> {pct(farm.tonnes, model.harvested)} of total</span></header><div className="orchard-table-scroll"><table><thead><tr><th>Block</th><th>Area (acres)</th><th>Mango Variety</th><th>Est. Yield (tons)</th><th>Current Status</th></tr></thead><tbody>{farm.blocks.map((block) => <tr key={block.id}><td>{block.block_code || block.name}</td><td>{block.area_acres == null ? '—' : number(block.area_acres)}</td><td>{block.mango_variety || '—'}</td><td>{block.forecast_yield_kg == null ? '—' : number(block.forecast_yield_kg / 1000)}</td><td><Status value={block.farming_stage || block.status} /></td></tr>)}</tbody></table>{!farm.blocks.length && <div className="orchard-empty">No blocks recorded</div>}</div></section>)}</div>
+    </>}
+  </div>;
 }
-
-function buildMonthlyTrend(orders, payments) {
-  const formatter = new Intl.DateTimeFormat('en-GH', { month: 'short' });
-  return Array.from({ length: 6 }, (_, index) => {
-    const date = new Date(); date.setDate(1); date.setHours(0, 0, 0, 0); date.setMonth(date.getMonth() - (5 - index));
-    const year = date.getFullYear(); const monthIndex = date.getMonth();
-    const inBucket = (value) => { const current = new Date(value); return current.getFullYear() === year && current.getMonth() === monthIndex; };
-    return {
-      month: formatter.format(date),
-      sales: orders.filter((order) => isSuccessfulOrder(order) && inBucket(dateValue(order, 'order_date'))).reduce((sum, order) => sum + asAmount(order.total_amount), 0),
-      payments: payments.filter((payment) => !['failed', 'cancelled'].includes(payment.status) && inBucket(dateValue(payment, 'payment_date'))).reduce((sum, payment) => sum + asAmount(payment.amount), 0),
-    };
-  });
-}
-
-function buildHarvestQuality(harvests, harvestGrades) {
-  const totals = new Map();
-  harvestGrades.forEach((grade) => totals.set(grade.grade || grade.quality_grade || 'Unspecified', (totals.get(grade.grade || grade.quality_grade || 'Unspecified') || 0) + asAmount(grade.quantity_kg || grade.total_quantity || 1)));
-  harvests.forEach((harvest) => { if (harvest.quality_grade) totals.set(harvest.quality_grade, (totals.get(harvest.quality_grade) || 0) + asAmount(harvest.total_quantity || harvest.quantity_kg || 1)); });
-  const colors = ['#2e7d32', '#43a047', '#66bb6a', '#c8e6c9', '#5f7565'];
-  return [...totals.entries()].map(([name, value], index) => ({ name, value, color: colors[index % colors.length] })).filter((item) => item.value > 0);
-}
-function compactAmount(value) { return value >= 1_000_000 ? `₵${Math.round(value / 1_000_000)}M` : value >= 1_000 ? `₵${Math.round(value / 1_000)}K` : `₵${value}`; }
-function SmallMetric({ label, value, icon: Icon, path, alert }) { return <Link to={path} className="rounded-xl border border-border bg-card p-4 shadow-sm transition hover:border-primary/40 hover:shadow"><div className="flex items-center justify-between"><span className="text-xs text-muted-foreground">{label}</span><Icon className={`h-4 w-4 ${alert ? 'text-amber-600' : 'text-primary'}`} /></div><p className="mt-2 text-2xl font-bold">{value}</p></Link>; }
-function Panel({ title, path, icon: Icon, children }) { return <section className="overflow-hidden rounded-xl border border-border bg-card shadow-sm"><div className="flex items-center justify-between border-b border-border px-4 py-3"><h2 className="flex items-center gap-2 text-section-title">{Icon && <Icon className="h-4 w-4 text-amber-600" />}{title}</h2><Link to={path} className="flex items-center gap-1 text-xs font-semibold text-primary">View all <ArrowRight className="h-3 w-3" /></Link></div>{children}</section>; }
-function Empty({ label, success }) { return <div className="p-8 text-center text-sm text-muted-foreground">{success && <CheckCircle2 className="mx-auto mb-2 h-7 w-7 text-emerald-600" />}{label}</div>; }
-function OperatingStat({ label, value, icon: Icon, path }) { const cost = /cost|expense/i.test(label); const yieldMetric = /yield|harvest/i.test(label); const tone = cost ? 'text-rose-600' : yieldMetric ? 'text-emerald-700' : 'text-primary'; return <Link to={path} className="flex items-center gap-3 rounded-lg p-2 transition hover:bg-muted"><span className={`grid h-9 w-9 place-items-center rounded-lg ${cost ? 'bg-rose-100' : yieldMetric ? 'bg-emerald-100' : 'bg-primary/10'}`}><Icon className={`h-4 w-4 ${tone}`} /></span><span><span className="block text-xs text-muted-foreground">{label}</span><strong className={`text-sm ${tone}`}>{value}</strong></span></Link>; }
