@@ -1,8 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { ACTIVITY_COST_TYPES, buildCostTypeBreakdown, normalizeCostType } from './activity-cost-types';
+import { ACTIVITY_COST_TYPES, buildCostTypeBreakdown, normalizeCostType, formatCostPercentage } from './activity-cost-types';
 import { buildFarmOperationsAnalytics } from './farm-operations-analytics';
 
 describe('cost type breakdown', () => {
+  it('keeps small expenses visible in percentages shared by the dashboard and analytics', () => {
+    expect(formatCostPercentage(6475174, 6485269)).toBe('99.8%');
+    expect(formatCostPercentage(3630, 6485269)).toBe('<0.1%');
+    expect(formatCostPercentage(0, 6485269)).toBe('0%');
+    expect(formatCostPercentage(0, 0)).toBe('0%');
+  });
   it('groups by the recorded cost type, never the farm activity category, preserving the total', () => {
     const analytics = buildFarmOperationsAnalytics({ dailyActivities: [
       { actual_cost: 100, cost_type: 'Food', category: 'Pruning' },

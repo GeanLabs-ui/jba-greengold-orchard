@@ -6,7 +6,7 @@ import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowDown, CalendarDays, ChartNoAxesCombined, Pencil,
-  House, Banknote, MapPin, ReceiptText, Coins, Plus, Sprout, TrendingUp, Trophy,
+  House, Banknote, MapPin, ReceiptText, Coins, Sprout, TrendingUp, Trophy,
 } from 'lucide-react';
 import {
   Bar, CartesianGrid, ComposedChart, Line,
@@ -262,6 +262,14 @@ export default function FarmOperationsAnalytics({ data }) {
   const blockCurrencyTick = value => value === 0 ? '₵0' : Math.abs(value) >= 1000000 ? `₵${(value / 1000000).toFixed(1)}m` : `₵${(value / 1000).toFixed(1)}k`;
 
   const mostProfitableBlock = blockPerformanceRows.slice().sort((a, b) => b.margin - a.margin)[0];
+  const blockTotals = blockPerformanceRows.reduce((totals, row) => ({ cost: totals.cost + row.cost, revenue: totals.revenue + row.revenue, yieldTonnes: totals.yieldTonnes + row.yieldTonnes }), { cost: 0, revenue: 0, yieldTonnes: 0 });
+  const metricLeaderKey = { cost: 'cost', revenue: 'revenue', yield: 'yieldTonnes' }[blockMetric];
+  const metricLeader = metricLeaderKey ? blockPerformanceRows.slice().sort((a, b) => b[metricLeaderKey] - a[metricLeaderKey])[0] : null;
+  const blockSummaryText = !blockPerformanceRows.length ? 'No blocks match the current selection.' : blockMetric === 'all'
+    ? `Charted totals: cost ${formatCedis(blockTotals.cost)}, revenue ${formatCedis(blockTotals.revenue)}, and yield ${wholeNumber(blockTotals.yieldTonnes)} tonnes. Revenue is ${formatCedis(Math.abs(blockTotals.revenue - blockTotals.cost))} ${blockTotals.revenue >= blockTotals.cost ? 'above' : 'below'} cost.`
+    : blockMetric === 'yield'
+      ? `Total recorded yield: ${wholeNumber(blockTotals.yieldTonnes)} tonnes. Highest yield: ${metricLeader?.blockLabel || '—'} (${wholeNumber(metricLeader?.yieldTonnes || 0)} tonnes).`
+      : `Total ${blockMetric}: ${formatCedis(blockTotals[blockMetric])}. Highest ${blockMetric}: ${metricLeader?.blockLabel || '—'} (${formatCedis(metricLeader?.[metricLeaderKey] || 0)}).`;
   const highestYieldBlock = blockPerformanceRows.slice().sort((a, b) => b.yieldTonnes - a.yieldTonnes)[0];
   const lowestCostBlock = blockPerformanceRows.slice().sort((a, b) => a.cost - b.cost)[0];
   const revenueMargin = totalRevenue > 0 ? Math.max(0, ((totalRevenue - totalCost) / totalRevenue) * 100) : 0;
@@ -269,6 +277,14 @@ export default function FarmOperationsAnalytics({ data }) {
   const recentActivities = filteredActivities.slice().sort((a, b) => (
     (recordDate(b, ['activity_date', 'created_date']) || 0) - (recordDate(a, ['activity_date', 'created_date']) || 0)
   )).slice(0, 6);
+  const performanceHighlightsPanel = <AnalyticsPanel title="Performance Highlights" className="analytics-highlights">
+            <div className="space-y-3 p-3">
+              <PerformanceHighlight icon={Trophy} tone="green" label="Most Profitable Block" value={mostProfitableBlock?.blockLabel || '—'} detail={`Profit: ${formatCedis(mostProfitableBlock?.margin || 0)}`} gauge={totalRevenue ? Math.min(100, Math.max(0, ((mostProfitableBlock?.margin || 0) / totalRevenue) * 100)) : 0} />
+              <PerformanceHighlight icon={Sprout} tone="blue" label="Highest Yield" value={highestYieldBlock?.blockLabel || '—'} detail={`${wholeNumber(highestYieldBlock?.yieldTonnes || 0)} tonnes`} />
+              <PerformanceHighlight icon={Coins} tone="red" label="Lowest Cost" value={lowestCostBlock?.blockLabel || '—'} detail={formatCedis(lowestCostBlock?.cost || 0)} />
+              <PerformanceHighlight icon={ChartNoAxesCombined} tone="green" label="Revenue Performance" value={totalRevenue >= totalCost ? 'Strong' : 'Needs attention'} detail={`${wholeNumber(revenueMargin)}% margin this period`} gauge={revenueMargin} />
+            </div>
+          </AnalyticsPanel>;
   const costBreakdownPanel = <CostBreakdown costRows={costRows} farmFor={farmFor} rangeLabel={range.label} />;
   const recentActivitiesPanel = <AnalyticsPanel title="Recent Farm Activities" className="analytics-recent" action={<button type="button" onClick={() => navigate('/admin/farm-daily-activities/activities/records')} className="text-caption font-semibold text-[#256b2a] hover:underline">View all activities ›</button>}>
     {recentActivities.length ? <div className="divide-y divide-border">{recentActivities.slice(0, 5).map((row, index) => {
@@ -305,7 +321,6 @@ export default function FarmOperationsAnalytics({ data }) {
         {Array.from({ length: Math.max(2030, now.getFullYear(), trendYear) - 2026 + 1 }, (_, index) => 2026 + index).map((year) => <option key={year} value={year}>{year}</option>)}
       </select>
     </label>
-    <Button className="h-7 bg-[#2e7d32] px-2.5 text-caption text-white hover:bg-[#1b5e20]" onClick={() => navigate('/admin/farm-daily-activities/activities/create')}><Plus className="mr-1 h-3 w-3" />Add Activity</Button>
   </div>;
   return (
     <div className="farm-analytics space-y-3 pb-4">
@@ -350,19 +365,17 @@ export default function FarmOperationsAnalytics({ data }) {
                 </ComposedChart>
               </ResponsiveContainer>
             </div></div> : <EmptyState>No blocks match this selection.</EmptyState>}
+            <footer className="farm-trend-summary analytics-block-summary">
+              <TrendingUp className="farm-trend-summary-icon" aria-hidden="true" />
+              <div><strong>Block Performance:</strong><p>{blockSummaryText}</p></div>
+              <span className="farm-trend-tagline"><Sprout aria-hidden="true" />Healthy Farms<br />Brighter Tomorrows</span>
+            </footer>
           </AnalyticsPanel>
       } />
-          <AnalyticsPanel title="Performance Highlights" className="analytics-highlights">
-            <div className="space-y-3 p-3">
-              <PerformanceHighlight icon={Trophy} tone="green" label="Most Profitable Block" value={mostProfitableBlock?.blockLabel || '—'} detail={`Profit: ${formatCedis(mostProfitableBlock?.margin || 0)}`} gauge={totalRevenue ? Math.min(100, Math.max(0, ((mostProfitableBlock?.margin || 0) / totalRevenue) * 100)) : 0} />
-              <PerformanceHighlight icon={Sprout} tone="blue" label="Highest Yield" value={highestYieldBlock?.blockLabel || '—'} detail={`${wholeNumber(highestYieldBlock?.yieldTonnes || 0)} tonnes`} />
-              <PerformanceHighlight icon={Coins} tone="red" label="Lowest Cost" value={lowestCostBlock?.blockLabel || '—'} detail={formatCedis(lowestCostBlock?.cost || 0)} />
-              <PerformanceHighlight icon={ChartNoAxesCombined} tone="green" label="Revenue Performance" value={totalRevenue >= totalCost ? 'Strong' : 'Needs attention'} detail={`${wholeNumber(revenueMargin)}% margin this period`} gauge={revenueMargin} />
-            </div>
-          </AnalyticsPanel>
+          {costBreakdownPanel}
           <div className="analytics-activity-cost-row">
             {recentActivitiesPanel}
-            {costBreakdownPanel}
+            {performanceHighlightsPanel}
           </div>
       </div>
 
