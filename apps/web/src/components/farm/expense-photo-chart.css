@@ -71,3 +71,15 @@
 @media(max-width:620px) { .expense-selection-popover.is-left,.expense-selection-popover.is-right { top:calc(100% + 5px)!important; left:50%; right:auto; transform:translateX(-50%); width:170px; } }
 /* Rendered at document level so chart/card scroll containers cannot clip it. */
 .expense-selection-popover.expense-selection-floating { position:fixed; transform:none; right:auto; width:170px; max-width:calc(100vw - 16px); z-index:1000; box-sizing:border-box; background:rgba(255,255,255,.58); }
+
+/* All cost types stay readable, even when their slice is tiny or zero. */
+.expense-category-legend { list-style:none; margin:12px 0 0; padding:0; display:grid; gap:3px; }
+.expense-category-legend li { min-width:0; }
+.expense-category-legend button { display:grid; grid-template-columns:9px minmax(0,1fr) auto 52px; align-items:center; gap:8px; width:100%; min-height:32px; padding:6px 8px; border:1px solid transparent; border-radius:6px; background:transparent; color:#203e4d; text-align:left; cursor:pointer; font-size:12px; line-height:1.4; }
+.expense-category-legend button:hover,.expense-category-legend button[aria-pressed=true] { background:#f4f8f5; border-color:var(--expense-color); }
+.expense-category-legend button:focus-visible { outline:2px solid #246438; outline-offset:2px; }
+.expense-legend-dot { width:9px; height:9px; border-radius:50%; background:var(--expense-color); }
+.expense-legend-name { overflow-wrap:anywhere; font-weight:600; }
+.expense-legend-amount { font-weight:650; font-variant-numeric:tabular-nums; }
+.expense-legend-percent { text-align:right; color:#526575; font-variant-numeric:tabular-nums; }
+@media(max-width:380px) { .expense-category-legend button { grid-template-columns:8px minmax(0,1fr) auto 45px; gap:5px; padding:6px 3px; font-size:11px; } }

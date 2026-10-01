@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { formatCostPercentage } from '@/lib/activity-cost-types';
+import { ACTIVITY_COST_TYPES, formatCostPercentage } from '@/lib/activity-cost-types';
 import { expenseChartPreviewRows } from '@/lib/expense-chart-preview';
 import './expense-photo-chart.css';
 
@@ -24,7 +24,8 @@ function wedge(start, end) {
 
 export default function ExpensePhotoChart({ rows: liveRows, total: liveTotal, selectionName, onSelectionChange }) {
   const preview = import.meta.env.DEV;
-  const rows = preview ? expenseChartPreviewRows : liveRows;
+  const sourceRows = preview ? expenseChartPreviewRows : liveRows;
+  const rows = ACTIVITY_COST_TYPES.map(type => ({ ...type, value: sourceRows.find(row => row.name === type.name)?.value || 0 }));
   const total = preview ? rows.reduce((sum, row) => sum + row.value, 0) : liveTotal;
   const [localSelection, setLocalSelection] = useState(null);
   const visual = useRef(null);
@@ -75,7 +76,7 @@ export default function ExpensePhotoChart({ rows: liveRows, total: liveTotal, se
   }, [selected, popupOnLeft, popupAnchorY]);
   const popup = selected && <div ref={popupRef} className="expense-selection-popover expense-selection-floating" role="status" aria-live="polite" style={{ '--selected-color': colors[rows.findIndex(row => row.name === selected)], ...popupPosition }}>
         <button type="button" aria-label="Close expense details" onClick={() => setSelected(null)}>×</button>
-        <strong>{selected === 'Labor' ? 'Labour' : selected}</strong>
+        <strong>{selected}</strong>
         <dl><div><dt>Amount</dt><dd>{money(rows.find(row => row.name === selected)?.value)}</dd></div><div><dt>Percentage</dt><dd>{formatCostPercentage(rows.find(row => row.name === selected)?.value || 0, total)}</dd></div></dl>
       </div>;
   return <div className="expense-photo-layout">
@@ -107,7 +108,7 @@ export default function ExpensePhotoChart({ rows: liveRows, total: liveTotal, se
           {!preview && <text x="180" y="245" textAnchor="middle" className="expense-photo-period">All recorded dates</text>}
         </g>
         <g transform="translate(0 22) scale(1 .82)">{segments.filter(row => row.value > 0 && row.value / total >= .04).map(row => {
-          const name = row.name === 'Labor' ? 'Labour' : row.name;
+          const name = row.name;
           const fontSize = Math.min(13, (row.end - row.start) * 119 / (name.length * .65));
           return <text key={row.name} transform={selected === row.name ? `translate(${Math.cos(row.middle) * 46} ${Math.sin(row.middle) * 46 - 5})` : undefined} className="expense-slice-name" pointerEvents="none" fill="white" fontSize={fontSize} fontWeight="700"><textPath href={`#${id}-name-${row.index}`} startOffset="50%" textAnchor="middle">{name}</textPath></text>;
         })}</g>
@@ -116,5 +117,15 @@ export default function ExpensePhotoChart({ rows: liveRows, total: liveTotal, se
       <span className="sr-only" aria-live="polite">{scene?.[1] || 'Select an expense slice to view its photo and details'}</span>
       {selected && <button className="expense-photo-clear" type="button" onClick={() => setSelected(null)}>Clear selection</button>}
     </div>
+    <ul className="expense-category-legend" aria-label="Expense amounts by cost type">
+      {segments.map(row => <li key={row.name}>
+        <button type="button" style={{ '--expense-color': colors[row.index] }} aria-pressed={selected === row.name} onClick={() => choose(row.name)}>
+          <span className="expense-legend-dot" aria-hidden="true" />
+          <span className="expense-legend-name">{row.name}</span>
+          <span className="expense-legend-amount">{money(row.value)}</span>
+          <span className="expense-legend-percent">{formatCostPercentage(row.value, total)}</span>
+        </button>
+      </li>)}
+    </ul>
   </div>;
 }
