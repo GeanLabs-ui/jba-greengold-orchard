@@ -220,9 +220,3 @@
 .orchard-health-rows { flex:1; min-height:0; display:flex; flex-direction:column; }
 .orchard-health-row { flex:1; min-height:0; }
 .orchard-health-note { flex-shrink:0; }
-
-/* Give the shared expense chart room for every category and its amount. */
-.orchard-analysis > .orchard-panel.orchard-expenses { height:auto; min-height:var(--orchard-performance-height,280px); }
-.orchard-expenses .expense-photo-visual { flex:none; min-height:190px; }
-.orchard-expenses .expense-photo-visual svg { flex:none; height:auto; }
-.orchard-expenses .expense-category-legend { flex-shrink:0; width:100%; }

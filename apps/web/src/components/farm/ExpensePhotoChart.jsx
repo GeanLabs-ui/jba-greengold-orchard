@@ -14,6 +14,7 @@ const scenes = {
   Others: ['community', 'JBA community gathering'],
 };
 const colors = ['#e9af09', '#2865f5', '#ee3436', '#ee1489', '#2baa55', '#8222dd', '#28a8ea'];
+const labelPositions = [[28, 30], [332, 30], [28, 105], [332, 105], [28, 220], [332, 250], [28, 305]];
 const money = value => `GH₵ ${Number(value || 0).toLocaleString('en-GH', { maximumFractionDigits: 2 })}`;
 const point = (angle, radius) => [180 + Math.cos(angle) * radius, 176 + Math.sin(angle) * radius];
 function wedge(start, end) {
@@ -42,7 +43,8 @@ export default function ExpensePhotoChart({ rows: liveRows, total: liveTotal, se
     cursor += total > 0 ? row.value / total * Math.PI * 2 : 0;
     // Two arcs represent a full circle without the coincident-endpoint SVG limitation.
     const end = Math.min(cursor, start + Math.PI * 2 - 0.000001);
-    return { ...row, index, start, end, middle: (start + end) / 2 };
+    const labelFontSize = Math.min(13, (end - start) * 119 / (row.name.length * .65));
+    return { ...row, index, start, end, middle: (start + end) / 2, labelFontSize, ringLabel: row.value > 0 && labelFontSize >= 10 };
   });
   const choose = name => setSelected(selected === name ? null : name);
   const selectedSegment = segments.find(row => row.name === selected);
@@ -93,6 +95,12 @@ export default function ExpensePhotoChart({ rows: liveRows, total: liveTotal, se
             return <path key={row.name} id={`${id}-name-${row.index}`} d={`M${a} A119 119 0 ${row.end - row.start > Math.PI ? 1 : 0} ${reverse ? 0 : 1} ${b}`} />;
           })}
         </defs>
+        {segments.filter(row => !row.ringLabel).map(row => {
+          const [x, y] = labelPositions[row.index];
+          const left = x < 180;
+          const [anchorX, anchorY] = point(row.middle, 145);
+          return <polyline key={row.name} points={`${anchorX},${22 + anchorY * .82} ${left ? 12 : 348},${22 + anchorY * .82} ${left ? 12 : 348},${y + 3} ${x},${y + 3}`} fill="none" stroke={colors[row.index]} strokeWidth="1.5" strokeDasharray={row.value ? undefined : '3 3'} pointerEvents="none" />;
+        })}
         <g transform="translate(0 22) scale(1 .82)">
           <g transform="translate(0 32)" className="expense-slice-depth">{segments.filter(row => row.value > 0).map(row => <path key={row.name} d={wedge(row.start, row.end)} fill={colors[row.index]} transform={selected === row.name ? `translate(${Math.cos(row.middle) * 46} ${Math.sin(row.middle) * 46 - 5})` : undefined} />)}</g>
           {Array.from({ length: 31 }, (_, layer) => <g key={layer} transform={`translate(0 ${31 - layer})`} className="expense-slice-depth">{segments.filter(row => row.value > 0).map(row => <path key={row.name} d={wedge(row.start, row.end)} fill={colors[row.index]} transform={selected === row.name ? `translate(${Math.cos(row.middle) * 46} ${Math.sin(row.middle) * 46 - 5})` : undefined} />)}</g>)}
@@ -107,25 +115,23 @@ export default function ExpensePhotoChart({ rows: liveRows, total: liveTotal, se
           <text x="180" y="223" textAnchor="middle" className="expense-photo-total">{money(total)}</text>
           {!preview && <text x="180" y="245" textAnchor="middle" className="expense-photo-period">All recorded dates</text>}
         </g>
-        <g transform="translate(0 22) scale(1 .82)">{segments.filter(row => row.value > 0 && row.value / total >= .04).map(row => {
+        <g transform="translate(0 22) scale(1 .82)">{segments.filter(row => row.ringLabel).map(row => {
           const name = row.name;
-          const fontSize = Math.min(13, (row.end - row.start) * 119 / (name.length * .65));
-          return <text key={row.name} transform={selected === row.name ? `translate(${Math.cos(row.middle) * 46} ${Math.sin(row.middle) * 46 - 5})` : undefined} className="expense-slice-name" pointerEvents="none" fill="white" fontSize={fontSize} fontWeight="700"><textPath href={`#${id}-name-${row.index}`} startOffset="50%" textAnchor="middle">{name}</textPath></text>;
+          return <text key={row.name} data-cost-category={row.name} transform={selected === row.name ? `translate(${Math.cos(row.middle) * 46} ${Math.sin(row.middle) * 46 - 5})` : undefined} className="expense-slice-name" pointerEvents="none" fill="white" fontSize={row.labelFontSize} fontWeight="700"><textPath href={`#${id}-name-${row.index}`} startOffset="50%" textAnchor="middle">{name}</textPath></text>;
         })}</g>
+        {segments.filter(row => !row.ringLabel).map(row => {
+          const [x, y] = labelPositions[row.index];
+          const left = x < 180;
+          return <g key={row.name} data-cost-category={row.name} className="expense-ring-callout" role="button" tabIndex={0} aria-label={`Select ${row.name}: ${formatCostPercentage(row.value, total)}, ${money(row.value)}`} aria-pressed={selected === row.name} onClick={() => choose(row.name)} onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); choose(row.name); } }}>
+            <title>{row.name}: {money(row.value)} ({formatCostPercentage(row.value, total)})</title>
+            <text x={x} y={y} textAnchor={left ? 'end' : 'start'} className="expense-ring-callout-name">{row.name}</text>
+            <text x={x} y={y + 16} textAnchor={left ? 'end' : 'start'} className="expense-ring-callout-percent" fill={colors[row.index]}>{formatCostPercentage(row.value, total)}</text>
+          </g>;
+        })}
       </svg>
       {popup && (typeof document === 'undefined' ? popup : createPortal(popup, document.body))}
       <span className="sr-only" aria-live="polite">{scene?.[1] || 'Select an expense slice to view its photo and details'}</span>
       {selected && <button className="expense-photo-clear" type="button" onClick={() => setSelected(null)}>Clear selection</button>}
     </div>
-    <ul className="expense-category-legend" aria-label="Expense amounts by cost type">
-      {segments.map(row => <li key={row.name}>
-        <button type="button" style={{ '--expense-color': colors[row.index] }} aria-pressed={selected === row.name} onClick={() => choose(row.name)}>
-          <span className="expense-legend-dot" aria-hidden="true" />
-          <span className="expense-legend-name">{row.name}</span>
-          <span className="expense-legend-amount">{money(row.value)}</span>
-          <span className="expense-legend-percent">{formatCostPercentage(row.value, total)}</span>
-        </button>
-      </li>)}
-    </ul>
   </div>;
 }
