@@ -8,7 +8,7 @@ export function formatCurrency(amount) {
 
 export function formatNumber(num) {
   if (num === null || num === undefined) return '0';
-  return Number(num).toLocaleString('en-US', { maximumFractionDigits: 2 });
+  return Number(num).toLocaleString('en-US', { maximumFractionDigits: 0 });
 }
 
 export function formatDate(date) {

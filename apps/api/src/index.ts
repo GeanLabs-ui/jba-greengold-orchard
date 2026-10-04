@@ -16,6 +16,7 @@ import activityLogRouter from './modules/activity-log.js';
 import supportRouter from './modules/support.js';
 import accountRouter from './modules/account.js';
 import { runCalendarReminders } from './calendar-reminders.js';
+import { runOperationNotifications } from './operation-notifications.js';
 import { purgeExpiredRateLimitWindows, purgeExpiredVerificationTokens } from './maintenance.js';
 
 const app = new Hono<{ Bindings: Env; Variables: AppVariables }>();
@@ -75,6 +76,9 @@ app.use('/api/v1/entities/Notification', async (c, next) => {
     await runCalendarReminders(c.env).catch((error) => {
       console.error(JSON.stringify({ event: 'calendar_reminder_poll_failed', requestId: c.get('requestId'), error: error instanceof Error ? error.message : 'Unknown error' }));
     });
+    if (c.get('user')?.role !== 'customer') await runOperationNotifications(c.env).catch((error) => {
+      console.error(JSON.stringify({ event: 'operation_notification_poll_failed', error: String(error) }));
+    });
   }
   await next();
 });
@@ -121,6 +125,7 @@ const worker: ExportedHandler<Env> = {
     context.waitUntil(
       Promise.all([
         runCalendarReminders(env, now),
+        runOperationNotifications(env, now),
         purgeExpiredRateLimitWindows(env),
         purgeExpiredVerificationTokens(env),
       ])

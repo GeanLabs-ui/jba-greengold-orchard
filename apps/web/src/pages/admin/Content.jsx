@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import PageHeader from '@/components/shared/PageHeader';
 import PageSkeleton from '@/components/shared/PageSkeleton';
 import StatusBadge from '@/components/shared/StatusBadge';
@@ -24,12 +25,14 @@ const postFields = [
 const slugify = (value) => String(value).trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
 export default function NewsPosts() {
+  const [params] = useSearchParams();
+  const recordId = params.get('record');
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const load = () => {
     setLoading(true);
-    base44.entities.NewsPost.list('-published_at', 50).then((postRecords) => {
+    base44.entities.NewsPost.listAll('-published_at').then((postRecords) => {
       setPosts(postRecords || []);
     }).catch(() => {}).finally(() => setLoading(false));
   };
@@ -50,7 +53,7 @@ export default function NewsPosts() {
       <PageHeader>
         <AdminCreateDialog title="New Post" description="Create a news post for the public site." buttonLabel="New Post" fields={postFields} onCreate={createPost} onCreated={load} submitLabel="Create Post" />
       </PageHeader>
-          {loading ? <PageSkeleton variant="table" contentOnly /> : <DataTable items={posts} columns={[
+          {loading ? <PageSkeleton variant="table" contentOnly /> : <DataTable items={recordId ? posts.filter((post) => post.id === recordId) : posts} columns={[
             { key: 'title', label: 'Title' }, { key: 'category', label: 'Category' }, { key: 'author_name', label: 'Author' },
             { key: 'published_at', label: 'Published', format: formatDate }, { key: 'status', label: 'Status', render: (value) => <StatusBadge status={value} /> },
           ]} />}

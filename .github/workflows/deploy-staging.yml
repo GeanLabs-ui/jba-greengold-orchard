@@ -41,6 +41,11 @@ jobs:
       - run: npm run check
       - name: Reject destructive database migrations
         run: npm run db:check-migrations
+      - name: Capture encrypted task-log baseline
+        run: node scripts/audit-task-log-release.mjs before
+        env:
+          DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+          BOOK5_IMPORT_KEY: ${{ secrets.BOOK5_IMPORT_KEY }}
       - name: Apply staging database migrations
         id: migrations
         shell: bash
@@ -101,6 +106,19 @@ jobs:
           }
           wait_for_status "${{ vars.APP_URL }}/api/v1/health" "ok"
           wait_for_status "${{ vars.APP_URL }}/api/v1/ready" "ready"
+      - name: Verify preserved task-log records and dates
+        run: node scripts/audit-task-log-release.mjs after
+        env:
+          DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+          BOOK5_IMPORT_KEY: ${{ secrets.BOOK5_IMPORT_KEY }}
+      - name: Save encrypted task-log verification evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: task-log-release-evidence
+          path: test-results/task-log-release/*.enc
+          if-no-files-found: ignore
+          retention-days: 14
       - name: Install Chromium for deployment verification
         run: npx playwright install --with-deps chromium
       - name: Verify deployed desktop and mobile browser flows

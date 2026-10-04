@@ -1,3 +1,6 @@
+import { taskLogProfile } from '@/lib/task-log-profile';
+import { subscribeToDataChanges } from '@/lib/data-sync';
+import { formatCurrency } from '@/components/shared/format';
 import { scopeLabel } from '@/lib/farm-scope';
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
@@ -144,11 +147,13 @@ export default function FarmsAdmin() {
     setLoading(true);
     setError("");
     try {
-      const [response, varietyResponse] = await Promise.all([
+      const [response, varietyResponse, records, blocks] = await Promise.all([
         base44.farms.list({ limit: 250 }),
         base44.farms.cropVarieties().catch(() => []),
+        base44.entities.DailyActivity.listAll("-activity_date"),
+        base44.entities.FarmBlock.listAll(),
       ]);
-      setFarms(response || []);
+      setFarms((response || []).map((farm) => ({ ...farm, task_log: taskLogProfile({ ...farm, blocks: blocks.filter((block) => String(block.farm_id) === String(farm.id)) }, records, { start: `${new Date().getFullYear()}-01-01`, end: new Date().toISOString().slice(0, 10) }) })));
       setCatalogVarieties(varietyResponse || []);
     } catch (loadError) {
       setError(loadError.message || "Unable to load farms.");
@@ -159,6 +164,7 @@ export default function FarmsAdmin() {
 
   useEffect(() => {
     loadFarms();
+    return subscribeToDataChanges(loadFarms, ["DailyActivity", "Farm", "FarmBlock"]);
   }, [loadFarms]);
   const locations = useMemo(() => farmLocationOptions(farms), [farms]);
   const varieties = useMemo(
@@ -380,6 +386,11 @@ export default function FarmsAdmin() {
                     <FarmMetric icon={Trees} label="Trees" value={cardNumber(farm.total_trees, 0)} detail="trees" palette={palette} />
                     <FarmMetric icon={CalendarDays} label="Harvest" value={harvestName} detail={harvestPeriod} palette={palette} />
                   </div>
+                  <dl className="mt-3 grid grid-cols-3 gap-2 text-caption" aria-label="Daily Task Log actual totals">
+                    <div><dt>Actual Cost</dt><dd className="mt-1 font-semibold">{formatCurrency(farm.task_log.totalCost)}</dd></div>
+                    <div><dt>Actual Revenue</dt><dd className="mt-1 font-semibold">{formatCurrency(farm.task_log.totalRevenue)}</dd></div>
+                    <div><dt>Actual Yield</dt><dd className="mt-1 font-semibold">{formatNumber(farm.task_log.totalYieldKg / 1000)} tonnes</dd></div>
+                  </dl>
                   <div className={`mt-3 rounded-lg p-3 ${palette.panel}`}>
                     <div className="flex items-start gap-2.5">
                       <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full bg-background/70 ${palette.metric}`}>

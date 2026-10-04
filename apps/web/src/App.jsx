@@ -220,6 +220,7 @@ const AuthenticatedApp = () => {
             <Route index element={<FarmDailyActivities />} />
             <Route path="activities/farms/:farmId" element={<FarmProfileAdmin />} />
             <Route path="activities/farms/:farmId/blocks/:blockId" element={<BlockProfileAdmin />} />
+            <Route path="activities/upcoming" element={<Navigate to="/admin/calendar" replace />} />
             <Route path="activities/master-schedule/:taskId" element={<MasterScheduleTask />} />
             <Route path="harvests/*" element={<Navigate to="/admin/farm-daily-activities/activities/overview" replace />} />
             <Route path="*" element={<FarmDailyActivities />} />

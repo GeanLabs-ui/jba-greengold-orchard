@@ -23,6 +23,9 @@ describe('finance data sources', () => {
       { id: 'one', activity_code: 'DA-1', activity_date: '2026-08-01', title: 'Pruning', actual_cost: 200, responsible: 'Team A' },
       { id: 'two', activity_code: 'DA-2', actual_cost: 0 },
       { id: 'three', activity_code: 'DA-3', actual_cost: -20 },
+      { id: 'cancelled', actual_cost: 500, status: 'Cancelled' },
+      { id: 'archived', actual_cost: 500, archived_at: '2026-08-02' },
+      { id: 'deleted', actual_cost: 500, status: 'deleted' },
     ]);
 
     expect(rows).toHaveLength(1);

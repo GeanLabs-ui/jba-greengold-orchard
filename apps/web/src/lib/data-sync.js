@@ -12,7 +12,7 @@ export function publishDataChange(entity, action = 'update', recordId = null) {
   }
 }
 
-export function subscribeToDataChanges(handler, entities = []) {
+export function subscribeToDataChanges(handler, entities = [], { refreshOnFocus = false, refreshIntervalMs = 0 } = {}) {
   if (typeof window === 'undefined') return () => {};
   const accepted = new Set(entities);
   const shouldHandle = (detail) => !accepted.size || accepted.has(detail?.entity);
@@ -31,8 +31,22 @@ export function subscribeToDataChanges(handler, entities = []) {
 
   window.addEventListener(DATA_CHANGED_EVENT, onLocalChange);
   window.addEventListener('storage', onStorageChange);
+  const refreshVisible = () => {
+    if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
+    handler({ action: 'refresh', timestamp: Date.now() });
+  };
+  if (refreshOnFocus) {
+    window.addEventListener('focus', refreshVisible);
+    if (typeof document !== 'undefined') document.addEventListener('visibilitychange', refreshVisible);
+  }
+  const timer = refreshIntervalMs > 0 ? window.setInterval(refreshVisible, refreshIntervalMs) : null;
   return () => {
     window.removeEventListener(DATA_CHANGED_EVENT, onLocalChange);
     window.removeEventListener('storage', onStorageChange);
+    if (refreshOnFocus) {
+      window.removeEventListener('focus', refreshVisible);
+      if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', refreshVisible);
+    }
+    if (timer !== null) window.clearInterval(timer);
   };
 }

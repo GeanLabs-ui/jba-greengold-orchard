@@ -130,9 +130,9 @@ export default function MasterScheduleTask({ modal = false, onClose, taskId: pro
   useEffect(() => {
     let active = true;
     Promise.all([
-      base44.entities.FarmProject.list('project_code', 250),
-      base44.entities.FarmTask.list('-created_date', 250),
-      base44.entities.FarmNote.list('-created_date', 250),
+      base44.entities.FarmProject.listAll('project_code'),
+      base44.entities.FarmTask.listAll('-created_date'),
+      base44.entities.FarmNote.listAll('-created_date'),
     ])
       .then(([projects, taskRecords, notes]) => {
         const record = (projects || []).find((project) => project.id === taskId);

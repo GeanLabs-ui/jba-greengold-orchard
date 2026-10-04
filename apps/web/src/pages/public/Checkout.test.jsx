@@ -80,7 +80,7 @@ describe('checkout inside the client portal', () => {
     expect(html).toContain('Payment method');
     expect(html).toContain('Your order');
     expect(html).toContain('Place order');
-    expect(html).toContain('75.00');
+    expect(html).toContain('₵ 75');
     state.controls.find((control) => control['aria-label'] === 'Close checkout').onClick();
     expect(state.cart.clearCart).not.toHaveBeenCalled();
     expect(state.navigate).not.toHaveBeenCalled();

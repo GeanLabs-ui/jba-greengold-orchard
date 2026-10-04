@@ -1,0 +1,86 @@
+/* Shared content alignment. Keep centred marketing compositions and numeric
+   table columns in their existing alignment; only headings need to wrap. */
+:where(main, .platform-auth, [role="dialog"], [role="alertdialog"])
+  :where(h1, h2, h3, .text-card-title, [data-ui="card-title"]) {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+:where(main, [role="dialog"], [role="alertdialog"])
+  :is(h1, h2, h3).truncate {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+/* A title and its actions share a row until the available width requires
+   another line. Nested icon/title groups stay together. */
+:where(.admin-page-content, .portal-scroll-content, [role="dialog"])
+  :where(header.flex:not(.flex-col), div.flex:not(.flex-col)):has(> :is(h2, h3, [data-ui="card-title"])) {
+  min-width: 0;
+  flex-wrap: wrap;
+  row-gap: .5rem;
+}
+:where(.admin-page-content, .portal-scroll-content, [role="dialog"])
+  :where(header.flex:not(.flex-col), div.flex:not(.flex-col)) > :where(h2, h3, [data-ui="card-title"]) {
+  flex: 1 1 10rem;
+}
+:where(.admin-page-content, .portal-scroll-content, [role="dialog"])
+  :is(div.flex):has(> svg + :is(h2, h3)) {
+  align-items: flex-start;
+}
+:where(.admin-page-content, .portal-scroll-content, [role="dialog"])
+  :where(div.flex):has(> svg + :is(h2, h3)) > svg {
+  flex-shrink: 0;
+}
+:where(main, [role="dialog"])
+  :is(h2.flex, h3.flex, .card-icon-heading) {
+  min-width: 0;
+  align-items: flex-start;
+  text-align: start;
+}
+:where(main, [role="dialog"])
+  :where(h2, h3, .card-icon-heading) > svg {
+  flex-shrink: 0;
+}
+:where(main, [role="dialog"]) :is(h2.flex, h3.flex) > svg {
+  margin-top: .2em;
+}
+:where(main, [role="dialog"]) .card-heading-text {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+[data-ui="card"], [data-ui="card-content"], [data-ui="card-header"] {
+  min-width: 0;
+}
+[data-ui="card-header"] > * { min-width: 0; max-width: 100%; }
+.metric-card > .metric-card-heading { gap: .75rem; }
+.metric-card-heading > .metric-card-copy { min-width: 0; }
+.metric-card-heading > [data-ui="metric-icon"] { flex-shrink: 0; }
+.metric-card-copy :is(.text-kpi-label, .text-kpi-value, .text-caption) {
+  overflow-wrap: anywhere;
+}
+.metric-card-copy .text-kpi-label { min-height: calc(2 * var(--leading-kpi-label)); }
+
+/* Custom chart and service cards use the same title/action contract. */
+.dashboard-chart-title, .dashboard-section-heading, .dl-status-heading {
+  flex-wrap: wrap;
+  row-gap: .5rem;
+}
+.dashboard-chart-title > h2, .dl-card-title > h3 { min-width: 0; flex: 1; }
+.dashboard-chart-title > a, .dl-card-title > span { flex-shrink: 0; }
+.dl-card-title { align-items: flex-start; }
+.farm-analytics .farm-performance-trends .farm-trend-heading {
+  align-items: flex-start;
+}
+
+@media (max-width: 639px) {
+  :where(.admin-page-content, .portal-scroll-content)
+    header.flex:has(> div > :is(h2, h3)) {
+    flex-wrap: wrap;
+    row-gap: .5rem;
+  }
+}

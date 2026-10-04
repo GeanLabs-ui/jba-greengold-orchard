@@ -33,7 +33,7 @@ const initialMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padS
 const initialYear = String(today.getFullYear());
 
 const dateValue = (record, fields) => fields.map((field) => record?.[field]).find(Boolean);
-const compactCedis = (value) => value >= 1_000_000 ? `₵${Math.round(value / 1_000_000)}M` : value >= 1_000 ? `₵${Math.round(value / 1_000)}K` : `₵${value}`;
+const compactCedis = (value) => value >= 1_000_000 ? `₵${Math.round(value / 1_000_000)}M` : value >= 1_000 ? `₵${Math.round(value / 1_000)}K` : `₵${Math.round(value)}`;
 
 const chartWindow = (selection, sales, expenses) => {
   if (selection.mode === 'month' && selection.month) {
@@ -272,7 +272,7 @@ export default function Finance() {
           <BarChart data={monthlyData}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
             <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize="var(--text-caption)" />
-            <YAxis stroke="hsl(var(--muted-foreground))" fontSize="var(--text-caption)" tickFormatter={compactCedis} />
+            <YAxis allowDecimals={false} stroke="hsl(var(--muted-foreground))" fontSize="var(--text-caption)" tickFormatter={compactCedis} />
             <Tooltip contentStyle={{ borderRadius: '0.75rem', border: '1px solid hsl(var(--border))' }} formatter={(value) => formatCurrency(value)} />
             <Bar dataKey="expenses" name="Activity expenses" fill="#355e3b" radius={[4, 4, 0, 0]} />
             <Bar dataKey="sales" name="Website revenue" fill="#2e7d32" radius={[4, 4, 0, 0]} />

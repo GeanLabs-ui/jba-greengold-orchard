@@ -3,9 +3,9 @@ import { MapPin } from 'lucide-react';
 import { buildCostTypeBreakdown, formatCostPercentage as percent } from '@/lib/activity-cost-types';
 import ExpensePhotoChart from './ExpensePhotoChart';
 import './cost-breakdown.css';
-const money = value => `₵${Number(value || 0).toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
+const money = value => `₵${Number(value || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
 const colors = ['#ffbf00', '#087aff', '#ff1919', '#f31b89', '#0cb32b', '#8500ff', '#00aff5'];
-export default function CostBreakdown({ costRows, farmFor }) {
+export default function CostBreakdown({ costRows, farmFor, rangeLabel = 'All recorded dates' }) {
   const [selection, setSelection] = useState(null);
   const categories = buildCostTypeBreakdown(costRows);
   const total = categories.reduce((sum,item) => sum + item.value, 0);
@@ -25,7 +25,7 @@ export default function CostBreakdown({ costRows, farmFor }) {
   return <section className="cost-breakdown" aria-label="Expense Breakdown">
     {selection && <button type="button" className="cost-clear-selection" onClick={() => setSelection(null)}>Clear selection</button>}
     <span className="sr-only" aria-live="polite">{focus ? `${focus.name}: ${money(focus.value)}, ${percent(focus.value,total)}` : `Total cost: ${money(total)}`}</span>
-    <h2 className="expense-breakdown-heading">Expense Breakdown</h2><ExpensePhotoChart rows={categories} total={total} selectionName={selection?.kind === 'category' ? selection.name : null} onSelectionChange={name => select('category', name || 'all')} />
+    <h2 className="expense-breakdown-heading">Expense Breakdown</h2><ExpensePhotoChart seedData rows={categories} total={total} rangeLabel={rangeLabel} />
     <details className="cost-farm-split"><summary>Cost Split by Main Farm</summary>
 
       <div className="cost-farm-items">

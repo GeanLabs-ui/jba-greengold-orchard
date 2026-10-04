@@ -1,3 +1,4 @@
+import { buildFarmCalendarEvents } from './production-calendar';
 import { amount, invoiceBalance, outstandingInvoice } from './admin-dashboard';
 import { activityCost, activityRevenue, activityYieldKg, activityMatchesBlock, buildFarmOperationsAnalytics, normalizeStatus } from './farm-operations-analytics';
 import { matchesFarmScope } from './farm-scope';
@@ -27,7 +28,7 @@ export function buildOrchardDashboard(data, year = new Date().getFullYear(), now
   const forecast = sum(blocks, (row) => Math.max(0, amount(row.forecast_yield_kg))) / 1000;
   // The expense card mirrors the overview's default All dates breakdown,
   // including its positive-cost rows and canonical category normalization.
-  const expenseAnalytics = buildFarmOperationsAnalytics(data);
+  const expenseAnalytics = buildFarmOperationsAnalytics({ ...data, dailyActivities: (data.dailyActivities || []).filter(active) });
   const expenses = buildCostTypeBreakdown(expenseAnalytics.costRows);
   const expenseTotal = expenseAnalytics.totalCost;
   const expenseFarmMap = new Map();
@@ -61,6 +62,12 @@ export function buildOrchardDashboard(data, year = new Date().getFullYear(), now
     const matches = farms.filter((farm) => matchesFarmScope(row, `farm:${farm.id}`, { farms, blocks }));
     return matches.length === 1 ? matches[0].id : null;
   };
+  blocks.forEach((block) => {
+    const rows = activities.filter((row) => String(recordBlock(row)?.id || '') === String(block.id));
+    block.actual_yield_kg = sum(rows, activityYieldKg);
+    block.actual_cost = sum(rows, activityCost);
+    block.actual_revenue = sum(rows, activityRevenue);
+  });
   const production = farms.map((farm) => {
     const farmBlocks = blocks.filter((block) => String(block.farm_id) === String(farm.id));
     const rows = activities.filter((row) => String(recordFarm(row) || '') === String(farm.id));
@@ -79,14 +86,14 @@ export function buildOrchardDashboard(data, year = new Date().getFullYear(), now
   const varietyNames = [...new Set([...blocks, ...farms].flatMap(varietiesOf))].sort();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const events = data.calendarEvents || [];
-  const scheduled = [
-    ...(data.farmProjects || []).filter((row) => row.programme_code === PROGRAMME_CODE).map((row) => ({ ...row, id: `project-${row.id}`, date: row.due_date || row.start_date })),
-    ...(data.farmTasks || []).filter((row) => !row.calendar_event_id || !events.some((event) => event.id === row.calendar_event_id)).map((row) => ({ ...row, id: `task-${row.id}`, date: row.completion_due_at || row.due_date || row.planned_start_at || row.planned_start })),
-    ...(data.dailyActivities || []).filter((row) => (!row.calendar_event_id || !events.some((event) => event.id === row.calendar_event_id)) && (!row.farm_task_id || !(data.farmTasks || []).some((task) => task.id === row.farm_task_id))).map((row) => ({ ...row, id: `activity-${row.id}`, date: row.activity_date })),
-    ...events.map((row) => ({ ...row, id: `calendar-${row.id}`, date: row.start_at })),
-  ];
-  const tasks = scheduled.filter((row) => active(row) && !closed(row) && row.date && new Date(row.date) >= today)
-    .map((row) => ({ ...row, title: row.title || row.activity_title || row.description || readable(row.category), scope: row.block_name || row.field_area || row.farm_name || blocks.find((block) => block.id === row.block_id)?.block_code || farms.find((farm) => farm.id === row.farm_id)?.name || 'Unassigned' }))
+  const scheduled = buildFarmCalendarEvents(data).map((row) => ({ ...row,
+    sourceId: row.source_id || row.id,
+    id: row.source_entity ? row.id : `calendar-${row.id}`,
+    path: `/admin/calendar?event=${encodeURIComponent(row.id)}`,
+    date: row.start_at,
+  }));
+  const tasks = scheduled.filter((row) => row.sourceId && active(row) && !closed(row) && Number(row.progress_percent || 0) < 100 && row.date && new Date(row.date) >= today)
+    .map((row) => ({ ...row, title: row.title || row.activity_title || row.description || readable(row.category), scope: row.block_name || row.field_area || row.farm_name || blocks.find((block) => String(block.id) === String(row.block_id))?.block_code || farms.find((farm) => String(farm.id) === String(row.farm_id))?.name || 'Unassigned' }))
     .sort((a, b) => new Date(a.date) - new Date(b.date));
   const markets = [...new Set((data.exports || []).filter(active).map((row) => row.destination_country || row.destination).filter(Boolean))];
   const productionPath = '/admin/farm-daily-activities';

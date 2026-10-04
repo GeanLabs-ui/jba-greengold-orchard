@@ -1,3 +1,6 @@
+import TaskLogMetrics from '@/components/farm/TaskLogMetrics';
+import { farmWithTaskLog } from '@/lib/task-log-profile';
+import { subscribeToDataChanges } from '@/lib/data-sync';
 import { scopeLabel } from '@/lib/farm-scope';
 import AdminActionButton from '@/components/admin/AdminActionButton';
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -140,11 +143,11 @@ function BlockStage({ icon: Icon, label, scheduled }) {
 
 function BlockOverviewCard({ block, activityPeriods }) {
   const activities = activityPeriods.filter((period) => period.block_id === block.id);
-  const fertilizer = activities.some((period) => /fertili/i.test(period.activity_type));
-  const flowering = activities.some((period) => /flower|induction/i.test(period.activity_type));
+  const fertilizer = activities.some((period) => /fertili/i.test(period.category || period.activity_type));
+  const flowering = activities.some((period) => /flower|induction/i.test(period.category || period.activity_type));
   const harvest = Boolean(blockHarvest(block));
   const scheduled = [fertilizer, flowering, harvest].filter(Boolean).length;
-  const completed = activities.filter((period) => period.status === "completed").length;
+  const completed = activities.filter((period) => String(period.status).toLowerCase() === "completed").length;
   return (
     <Link
       to={`/admin/farm-daily-activities/activities/farms/${block.farm_id}/blocks/${block.id}`}
@@ -194,7 +197,8 @@ export default function FarmProfileAdmin() {
     setLoading(true);
     setError("");
     try {
-      setFarm(await base44.farms.get(farmId, { start, end }));
+      const [profile, records] = await Promise.all([base44.farms.get(farmId, { start, end }), base44.entities.DailyActivity.listAll("-activity_date")]);
+      setFarm(farmWithTaskLog(profile, records, { start, end }));
     } catch (loadError) {
       setError(loadError.message || "Unable to load this farm.");
     } finally {
@@ -204,6 +208,7 @@ export default function FarmProfileAdmin() {
 
   useEffect(() => {
     loadFarm();
+    return subscribeToDataChanges(loadFarm, ["DailyActivity", "Farm", "FarmBlock"]);
   }, [loadFarm]);
 
   useEffect(() => {
@@ -266,13 +271,13 @@ export default function FarmProfileAdmin() {
       const matching = source.filter(matcher);
       return {
         count: new Set(matching.map((period) => period.block_id).filter(Boolean)).size,
-        completed: matching.filter((period) => period.status === "completed").length,
+        completed: matching.filter((period) => String(period.status).toLowerCase() === "completed").length,
       };
     };
     return {
       total,
-      fertilizer: summarize((period) => /fertili/i.test(period.activity_type)),
-      flowering: summarize((period) => /flower|induction/i.test(period.activity_type)),
+      fertilizer: summarize((period) => /fertili/i.test(period.category || period.activity_type)),
+      flowering: summarize((period) => /flower|induction/i.test(period.category || period.activity_type)),
       harvest: summarize(() => true, farmHarvestPeriods),
     };
   }, [activeBlocks.length, activityPeriods, farmHarvestPeriods]);
@@ -311,6 +316,7 @@ export default function FarmProfileAdmin() {
 
   return (
     <div className="space-y-2.5 pb-10">
+      <TaskLogMetrics model={farm.task_log} />
       <Button variant="ghost" asChild className="-ml-3 h-8 px-3 text-sm text-slate-600 hover:text-emerald-800">
         <Link to="/admin/farm-daily-activities/activities/farms">
           <ArrowLeft className="mr-2 h-4 w-4" />
@@ -346,7 +352,7 @@ export default function FarmProfileAdmin() {
                   </div>
                   <div className="flex gap-1.5">
                     <span className="text-lime-300"><TrendingUp className="h-4 w-4" /></span>
-                    <div><dt className="text-emerald-100/80">Yield in period</dt><dd className="font-semibold">{analytics.yieldRecordCount ? `${formatNumber(analytics.totalYieldKg)} kg` : "No data yet"}</dd></div>
+                    <div><dt className="text-emerald-100/80">Yield in period</dt><dd className="font-semibold">{analytics.yieldRecordCount ? `${formatNumber(analytics.totalYieldKg / 1000)} tonnes` : "No data yet"}</dd></div>
                   </div>
                 </dl>
               </div>
@@ -459,7 +465,7 @@ export default function FarmProfileAdmin() {
             {farm.yield_records?.length ? (
               <div className="mt-3"><YieldChart records={farm.yield_records} title="" /></div>
             ) : (
-              <div className="grid min-h-36 place-items-center text-center"><div><span className="mx-auto grid h-10 w-10 place-items-center rounded-lg bg-blue-50 text-blue-400"><TrendingUp className="h-5 w-5" /></span><p className="mt-2 text-caption font-semibold text-slate-700">No yield data for this period</p><p className="mt-1 text-caption text-slate-500">Once block yield records are added, actual and forecast trends will appear here.</p></div></div>
+              <div className="grid min-h-36 place-items-center text-center"><div><span className="mx-auto grid h-10 w-10 place-items-center rounded-lg bg-blue-50 text-blue-400"><TrendingUp className="h-5 w-5" /></span><p className="mt-2 text-caption font-semibold text-slate-700">No yield data for this period</p><p className="mt-1 text-caption text-slate-500">Yield entered in the Daily Task Log appears here for the selected period.</p></div></div>
             )}
           </article>
           <article className="min-h-60 rounded-lg border border-slate-100 bg-white p-4 shadow-[0_2px_12px_rgba(15,23,42,0.03)]">
@@ -469,7 +475,7 @@ export default function FarmProfileAdmin() {
             <dl className="mt-5 grid grid-cols-2 gap-x-4 gap-y-5 text-caption">
               <div><dt className="text-slate-500">Allocated</dt><dd className="mt-1 font-semibold text-slate-700">{formatNumber(analytics.totalAllocatedSizeAcres || 0)} ac</dd></div>
               <div><dt className="text-slate-500">Unallocated</dt><dd className="mt-1 font-semibold text-slate-700">{unallocated == null ? "No data yet" : `${formatNumber(unallocated)} ac`}</dd></div>
-              <div><dt className="text-slate-500">Yield / acre</dt><dd className="mt-1 font-semibold text-slate-700">{analytics.yieldPerAcre == null ? "No data yet" : `${formatNumber(analytics.yieldPerAcre)} kg`}</dd></div>
+              <div><dt className="text-slate-500">Yield / acre</dt><dd className="mt-1 font-semibold text-slate-700">{analytics.yieldPerAcre == null ? "No data yet" : `${formatNumber(analytics.yieldPerAcre / 1000)} tonnes`}</dd></div>
               <div><dt className="text-slate-500">Current stage</dt><dd className="mt-1 font-semibold text-slate-700">{currentStage}</dd></div>
             </dl>
           </article>

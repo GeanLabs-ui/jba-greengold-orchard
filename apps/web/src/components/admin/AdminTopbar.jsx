@@ -1,6 +1,6 @@
 import AdminActionButton from '@/components/admin/AdminActionButton';
-import React, { useEffect, useMemo, useState } from 'react';
-import { Bell, LogOut, Menu, RefreshCw, Search, UserRoundCog } from 'lucide-react';
+import React, { useContext, useEffect, useMemo, useState } from 'react';
+import { Bell, Download, LogOut, Menu, RefreshCw, Search, UserRoundCog } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import BrandLogo from '@/components/shared/BrandLogo';
 import { Input } from '@/components/ui/input';
@@ -9,9 +9,10 @@ import { useAuth } from '@/lib/AuthContext';
 import { base44 } from '@/api/base44Client';
 import { subscribeToDataChanges } from '@/lib/data-sync';
 import { timeAgo } from '@/components/shared/format';
-import { getSafeRedirectTarget } from '@/lib/safe-redirect';
-import { canAccessAdminPath, defaultAdminPath } from '@/lib/access-control';
+import { notificationDestination } from '@/lib/notification-destination';
+import { canAccessAdminPath } from '@/lib/access-control';
 import AdminHorizontalNav from './AdminHorizontalNav';
+import { DashboardExportContext } from './DashboardExportContext';
 import './admin-topbar.css';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -36,6 +37,7 @@ const adminDestinations = [
 ];
 
 export default function AdminTopbar({ onMenuClick }) {
+  const { exportAction } = useContext(DashboardExportContext);
   const { user, logout, updateUserProfile } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -47,10 +49,10 @@ export default function AdminTopbar({ onMenuClick }) {
   const [profileName, setProfileName] = useState('');
   const [savingProfile, setSavingProfile] = useState(false);
 
-  const loadNotifications = () => base44.entities.Notification.list('-created_date', 20).then((items) => setNotifications(items || [])).catch(() => {});
+  const loadNotifications = () => base44.entities.Notification.listAll('-created_date').then((items) => setNotifications((items || []).filter((item) => item.status !== 'archived'))).catch(() => {});
   useEffect(() => {
     loadNotifications();
-    const unsubscribe = subscribeToDataChanges(loadNotifications, ['Notification', 'Order', 'Invoice', 'Payment', 'Inquiry', 'CalendarEvent']);
+    const unsubscribe = subscribeToDataChanges(loadNotifications, ['Notification', 'Order', 'Invoice', 'Payment', 'Inquiry', 'CalendarEvent', 'FarmProject', 'FarmTask', 'DailyActivity', 'WorkOrder', 'Product', 'NewsPost']);
     const interval = window.setInterval(loadNotifications, 30000);
     return () => { clearInterval(interval); unsubscribe(); };
   }, []);
@@ -80,20 +82,24 @@ export default function AdminTopbar({ onMenuClick }) {
   const refreshCurrentPage = () => window.location.reload();
   const openNotification = async (notification) => {
     setNotifOpen(false);
-    if (notification.status !== 'read') await base44.entities.Notification.update(notification.id, { status: 'read', read_date: new Date().toISOString() }).catch(() => {});
-    const safeDestination = typeof notification.destination === 'string' && !notification.destination.includes('\\')
-      ? getSafeRedirectTarget(notification.destination, '')
-      : '';
-    let destination = '/admin/documents';
-    if (safeDestination.startsWith('/admin/')) destination = safeDestination;
-    else if (notification.inquiry_id || notification.type === 'inquiry') destination = `/admin/inquiries${notification.inquiry_id ? `?inquiry=${encodeURIComponent(notification.inquiry_id)}` : ''}`;
-    else if (notification.order_number || notification.type === 'order') destination = `/admin/orders${notification.order_id ? `?order=${encodeURIComponent(notification.order_id)}` : ''}`;
-    else if (notification.invoice_number || notification.type === 'payment') destination = `/admin/sales${notification.invoice_number ? `?invoice=${encodeURIComponent(notification.invoice_number)}` : ''}`;
-    navigate(canAccessAdminPath(user, destination) ? destination : defaultAdminPath(user));
+    if (notification.status !== 'read') {
+      try {
+        await base44.entities.Notification.update(notification.id, { status: 'read', read_date: new Date().toISOString() });
+        setNotifications((current) => current.map((item) => item.id === notification.id ? { ...item, status: 'read' } : item));
+      } catch (error) { toast({ title: 'Could not mark notification read', description: error.message, variant: 'destructive' }); }
+    }
+    const destination = notificationDestination(notification);
+    if (!destination) { toast({ title: 'No source linked', description: 'This older notification has no source record.' }); return; }
+    if (!canAccessAdminPath(user, destination)) { toast({ title: 'Access restricted', description: 'Your role cannot open this notification source.' }); return; }
+    navigate(destination);
   };
   const deleteNotification = async (notification) => {
     setNotifications((current) => current.filter((item) => item.id !== notification.id));
-    await base44.entities.Notification.delete(notification.id).catch(loadNotifications);
+    try { await base44.entities.Notification.delete(notification.id); }
+    catch (error) {
+      await loadNotifications();
+      toast({ title: 'Could not delete notification', description: error.message, variant: 'destructive' });
+    }
   };
   const displayName = user?.full_name || user?.email || 'Admin User';
   const openProfile = () => {
@@ -135,13 +141,16 @@ export default function AdminTopbar({ onMenuClick }) {
         <Button variant="ghost" size="icon" className="hidden sm:inline-flex" onClick={refreshCurrentPage} aria-label="Refresh current page" title="Refresh current page">
           <RefreshCw className="h-5 w-5" />
         </Button>
+        {exportAction && <Button variant="ghost" size="icon" onClick={exportAction.onExport} disabled={!exportAction.ready || exportAction.exporting} aria-label={exportAction.exporting ? 'Downloading dashboard PDF' : 'Download dashboard PDF'} title="Download dashboard PDF" data-html2canvas-ignore="true">
+          <Download className="h-5 w-5" />
+        </Button>}
         <div className="relative">
           <Button variant="ghost" size="icon" onClick={() => setNotifOpen((open) => !open)} aria-label={`Notifications${unread ? `, ${unread} unread` : ''}`}>
-            <Bell className="h-5 w-5" />{unread > 0 && <span className="absolute right-1 top-1 min-w-4 rounded-full bg-destructive px-1 text-caption font-bold leading-4 text-white">{unread > 9 ? '9+' : unread}</span>}
+            <Bell className="h-5 w-5" />{unread > 0 && <span className="absolute right-1 top-1 min-w-4 rounded-full bg-destructive px-1 text-caption font-bold leading-4 text-white">{unread}</span>}
           </Button>
           {notifOpen && <div className="admin-notification-panel fixed inset-x-4 top-16 mt-2 md:absolute md:inset-x-auto md:right-0 md:top-auto md:w-[22rem] overflow-hidden rounded-lg border border-border bg-card shadow-xl">
             <div className="flex items-center justify-between border-b px-4 py-3"><p className="text-sm font-semibold">Notifications</p><span className="text-xs text-muted-foreground">{unread} unread</span></div>
-            <div className="max-h-80 overflow-y-auto p-2">{notifications.length ? notifications.map((notification) => <div key={notification.id} className="group flex rounded-md hover:bg-muted"><button type="button" onClick={() => openNotification(notification)} className="min-w-0 flex-1 px-3 py-2.5 text-left"><span className="flex items-start justify-between gap-3"><span className="text-sm font-medium">{notification.title}</span>{notification.status !== 'read' && <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-primary" />}</span><span className="mt-1 block text-xs leading-5 text-muted-foreground">{notification.message}</span><span className="mt-1 block text-caption text-muted-foreground">{timeAgo(notification.created_date)}</span></button>{notification.status === 'read' && <AdminActionButton action="delete" type="button" onClick={() => deleteNotification(notification)} aria-label={`Delete notification: ${notification.title}`} title="Delete notification" />}</div>) : <p className="px-3 py-8 text-center text-sm text-muted-foreground">No notifications yet.</p>}</div>
+            <div className="max-h-80 overflow-y-auto p-2">{notifications.length ? notifications.map((notification) => <div key={notification.id} className="group flex rounded-md hover:bg-muted"><button type="button" onClick={() => openNotification(notification)} className="min-w-0 flex-1 px-3 py-2.5 text-left"><span className="flex items-start justify-between gap-3"><span className="text-sm font-medium">{notification.title}</span>{notification.status !== 'read' && <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-primary" />}</span><span className="mt-1 block text-xs leading-5 text-muted-foreground">{notification.message}</span><span className="mt-1 block text-caption text-muted-foreground">{timeAgo(notification.created_date)}</span></button>{<AdminActionButton action="delete" type="button" onClick={() => deleteNotification(notification)} aria-label={`Delete notification: ${notification.title}`} title="Delete notification" />}</div>) : <p className="px-3 py-8 text-center text-sm text-muted-foreground">No notifications yet.</p>}</div>
           </div>}
         </div>
         <DropdownMenu>

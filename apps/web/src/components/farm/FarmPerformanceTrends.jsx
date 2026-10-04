@@ -24,7 +24,7 @@ function MoneyTick({ x, y, payload }) {
 
 function TrendValueLabel({ x, y, width = 0, value, color, line, compact }) {
   if (value == null || Number(value) === 0) return null;
-  return <text x={Number(x) + Number(width) / 2} y={Number(y) + (Number(value) < 0 ? 17 : line ? -18 : -10)} textAnchor="middle" fill={Number(value) < 0 ? '#ff304b' : color} fontSize={12} fontWeight={700}>{compact && value >= 100000 ? `${(value / 1000000).toFixed(1)}M` : whole(value)}</text>;
+  return <text x={Number(x) + Number(width) / 2} y={Number(y) + (Number(value) < 0 ? 17 : line ? -18 : -10)} textAnchor="middle" fill={Number(value) < 0 ? '#ff304b' : color} fontSize={12} fontWeight={700}>{compact && value >= 100000 ? whole(value) : whole(value)}</text>;
 }
 
 function TrendChart({ rows, monthly, title, rangeControl }) {

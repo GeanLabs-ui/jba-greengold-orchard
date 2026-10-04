@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils';
 import {
   CALENDAR_CATEGORIES, CALENDAR_STATUSES, dateKey, downloadICalendar,
   eventToDailyActivityPayload, eventToTaskPayload, googleCalendarUrl,
-  isReminderDue, outlookCalendarUrl,
+  isReminderDue, outlookCalendarUrl, buildFarmCalendarEvents, calendarStatusToTask,
 } from '@/lib/production-calendar';
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -110,20 +110,24 @@ export default function ProductionCalendar() {
   const load = useCallback(async ({ quiet = false } = {}) => {
     if (!quiet) setLoading(true);
     try {
-      const [calendarEvents, farmRecords, connectionRecords, blockRecords] = await Promise.all([
-        base44.entities.CalendarEvent.list('start_at', 250).catch(() => []),
+      const [calendarEvents, farmRecords, connectionRecords, blockRecords, farmProjects, farmTasks, dailyActivities] = await Promise.all([
+        base44.entities.CalendarEvent.listAll('start_at'),
         base44.entities.Farm.list('name', 250).catch(() => []),
         base44.entities.CalendarConnection.list('-created_date', 20).catch(() => []),
         base44.entities.FarmBlock.listAll(),
+        base44.entities.FarmProject.listAll(),
+        base44.entities.FarmTask.listAll(),
+        base44.entities.DailyActivity.listAll(),
       ]);
-      setEvents(calendarEvents || []);
+      const combinedEvents = buildFarmCalendarEvents({ calendarEvents, farmProjects, farmTasks, dailyActivities });
+      setEvents(combinedEvents);
       setFarms(farmRecords || []);
       setBlocks(blockRecords || []);
       setConnections(connectionRecords || []);
       processReminders(calendarEvents || []).catch(() => {});
       const requested = searchParams.get('event');
       if (requested) {
-        const match = calendarEvents.find((item) => item.id === requested);
+        const match = combinedEvents.find((item) => String(item.id) === requested);
         if (match) {
           setSelectedDate(dateKey(match.start_at));
           const parsed = new Date(match.start_at);
@@ -143,9 +147,11 @@ export default function ProductionCalendar() {
     const unsubscribe = subscribeToDataChanges(() => {
       clearTimeout(timer);
       timer = window.setTimeout(() => load({ quiet: true }), 150);
-    }, ['CalendarEvent', 'CalendarConnection']);
-    const reminderTimer = window.setInterval(() => processReminders(events).catch(() => {}), 60_000);
-    return () => { clearTimeout(timer); clearInterval(reminderTimer); unsubscribe(); };
+    }, ['CalendarEvent', 'CalendarConnection', 'FarmProject', 'FarmTask', 'DailyActivity']);
+    const reminderTimer = window.setInterval(() => { processReminders(events).catch(() => {}); if (document.visibilityState === 'visible') load({ quiet: true }); }, 60_000);
+    const refresh = () => load({ quiet: true });
+    window.addEventListener('focus', refresh);
+    return () => { clearTimeout(timer); clearInterval(reminderTimer); unsubscribe(); window.removeEventListener('focus', refresh); };
   }, [events, load, processReminders]);
 
   const byDate = useMemo(() => events.reduce((map, event) => {
@@ -178,6 +184,11 @@ export default function ProductionCalendar() {
   };
 
   const startEdit = (event) => {
+    if (event.source_entity) {
+      setSearchParams({ event: event.id });
+      setSelectedDate(dateKey(event.start_at));
+      return;
+    }
     setEditing(event);
     setForm({
       ...blankForm(dateKey(event.start_at)), ...event,
@@ -250,6 +261,15 @@ export default function ProductionCalendar() {
   const quickStatus = async (event, status) => {
     const progress = status === 'completed' ? 100 : Number(event.progress_percent || 0);
     try {
+      if (event.source_entity) {
+        await base44.entities[event.source_entity].update(event.source_id, {
+          status: event.source_entity === 'DailyActivity' ? status === 'completed' ? 'Completed' : status === 'in_progress' ? 'In Progress' : status : calendarStatusToTask(status),
+          progress_percent: progress,
+        });
+        await load({ quiet: true });
+        toast({ title: `${event.title}: ${STATUS_LABELS[status]}` });
+        return;
+      }
       const updated = await base44.entities.CalendarEvent.update(event.id, { status, progress_percent: progress });
       await syncRelatedRecords(updated);
       if (updated.harvest_period_id) {
@@ -341,7 +361,7 @@ export default function ProductionCalendar() {
                 )}>
                   <span className={cn('grid h-7 w-7 place-items-center rounded-full text-xs font-semibold', key === todayKey() && 'bg-primary text-primary-foreground')}>{day.getDate()}</span>
                   <div className="mt-1 space-y-1">
-                    {dayEvents.slice(0, 3).map((item) => <span key={item.id} className={cn('block truncate rounded border px-1.5 py-1 text-caption font-semibold', STATUS_STYLES[item.status] || STATUS_STYLES.scheduled)}>{formatTime(item)} · {item.title}</span>)}
+                    {dayEvents.slice(0, 3).map((item) => <span key={item.id} className={cn('block truncate rounded border px-1.5 py-1 text-caption font-semibold', STATUS_STYLES[item.status] || STATUS_STYLES.scheduled, searchParams.get('event') === String(item.id) && 'ring-2 ring-primary')} aria-current={searchParams.get('event') === String(item.id) ? 'true' : undefined}>{formatTime(item)} · {item.title}</span>)}
                     {dayEvents.length > 3 && <span className="block px-1 text-caption font-medium text-muted-foreground">+{dayEvents.length - 3} more</span>}
                   </div>
                 </button>
@@ -357,9 +377,14 @@ export default function ProductionCalendar() {
           </div>
           <div className="max-h-[620px] overflow-y-auto p-3">
             {selectedEvents.length ? selectedEvents.map((event) => (
-              <div key={event.id} role="button" tabIndex={0} onClick={() => startEdit(event)} onKeyDown={(keyEvent) => ['Enter', ' '].includes(keyEvent.key) && startEdit(event)} className="mb-2 block w-full cursor-pointer rounded-lg border border-border p-3 text-left transition hover:border-primary/40 hover:bg-muted/40">
+              <div key={event.id} role="button" tabIndex={0} onClick={() => startEdit(event)} onKeyDown={(keyEvent) => ['Enter', ' '].includes(keyEvent.key) && startEdit(event)} className={cn('mb-2 block w-full cursor-pointer rounded-lg border border-border p-3 text-left transition hover:border-primary/40 hover:bg-muted/40', searchParams.get('event') === String(event.id) && 'border-primary ring-2 ring-primary/30')} aria-current={searchParams.get('event') === String(event.id) ? 'true' : undefined}>
                 <div className="flex items-start justify-between gap-3"><span className="text-sm font-semibold leading-5">{event.title}</span><span className={cn('shrink-0 rounded-full border px-2 py-0.5 text-caption font-bold', STATUS_STYLES[event.status])}>{STATUS_LABELS[event.status]}</span></div>
                 <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground"><Clock3 className="h-3.5 w-3.5" />{formatTime(event)}{event.assigned_to_name ? ` · ${event.assigned_to_name}` : ''}</p>
+                {searchParams.get('event') === String(event.id) && <div className="mt-3 space-y-2 text-sm">
+                  {(event.description || event.notes) && <p className="whitespace-pre-wrap">{event.description || event.notes}</p>}
+                  <p>{event.block_name || event.field_area || event.farm_name || blocks.find((block) => String(block.id) === String(event.block_id))?.block_code || farms.find((farm) => String(farm.id) === String(event.farm_id))?.name || 'Unassigned'}</p>
+                  <p>Completion: {Number(event.progress_percent || 0)}%</p>
+                </div>}
                 <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-muted"><span className="block h-full rounded-full bg-primary" style={{ width: `${Math.min(100, Number(event.progress_percent || 0))}%` }} /></div>
                 <div className="mt-2 flex gap-1" onClick={(click) => click.stopPropagation()}>
                   {event.status !== 'in_progress' && !['completed', 'cancelled'].includes(event.status) && <TinyAction onClick={() => quickStatus(event, 'in_progress')}>Start</TinyAction>}

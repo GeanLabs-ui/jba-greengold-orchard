@@ -8,9 +8,9 @@ export const canManageBlocks = (role) => BLOCK_WRITE_ROLES.has(String(role || ''
 export const canChangeBlockStatus = (role) => BLOCK_STATUS_ROLES.has(String(role || '').toLowerCase());
 export const canMergeBlocks = (role) => BLOCK_MERGE_ROLES.has(String(role || '').toLowerCase());
 
-export const formatNumber = (value, maximumFractionDigits = 1) => {
+export const formatNumber = (value) => {
   if (value === null || value === undefined || Number.isNaN(Number(value))) return 'No data yet';
-  return new Intl.NumberFormat('en-GH', { maximumFractionDigits }).format(Number(value));
+  return new Intl.NumberFormat('en-GH', { maximumFractionDigits: 0 }).format(Number(value));
 };
 
 export const formatDate = (value) => {

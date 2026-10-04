@@ -8,6 +8,7 @@ import '@/typography.css'
 import '@/platform-consistency.css'
 import '@/public-heroes.css'
 import '@/mobile-responsive.css'
+import '@/card-alignment.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <App />

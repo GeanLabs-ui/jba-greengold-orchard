@@ -35,9 +35,9 @@ export default function DataTable({
         <article key={item.id || i} className={`mobile-record ${selectedId === item.id ? 'ring-2 ring-primary' : ''}`}>
           {selectable && <label className="flex min-h-11 items-center gap-3"><input type="checkbox" aria-label={`Select row ${i + 1}`} checked={selectedIds.includes(item.id)} onChange={(event) => onSelectedIdsChange?.(event.target.checked ? [...selectedIds, item.id] : selectedIds.filter((id) => id !== item.id))} />Select record</label>}
           <dl className="mobile-record-fields">
-            {columns.slice(0, 3).map((col) => <div key={col.key}><dt>{col.label}</dt><dd className={semanticTone(col)}>{col.render ? col.render(item[col.key], item) : col.format ? col.format(item[col.key]) : item[col.key] ?? '—'}</dd></div>)}
+            {columns.slice(0, 3).map((col) => <div key={col.key}><dt>{col.label}</dt><dd className={semanticTone(col)}>{col.render ? col.render(item[col.key], item) : col.format ? col.format(item[col.key]) : (typeof item[col.key] === 'number' ? Math.round(item[col.key]).toLocaleString() : item[col.key] ?? '—')}</dd></div>)}
           </dl>
-          {columns.length > 3 && <details className="mobile-record-details"><summary>More details</summary><dl className="mobile-record-fields">{columns.slice(3).map((col) => <div key={col.key}><dt>{col.label}</dt><dd className={semanticTone(col)}>{col.render ? col.render(item[col.key], item) : col.format ? col.format(item[col.key]) : item[col.key] ?? '—'}</dd></div>)}</dl></details>}
+          {columns.length > 3 && <details className="mobile-record-details"><summary>More details</summary><dl className="mobile-record-fields">{columns.slice(3).map((col) => <div key={col.key}><dt>{col.label}</dt><dd className={semanticTone(col)}>{col.render ? col.render(item[col.key], item) : col.format ? col.format(item[col.key]) : (typeof item[col.key] === 'number' ? Math.round(item[col.key]).toLocaleString() : item[col.key] ?? '—')}</dd></div>)}</dl></details>}
           {(onRowClick || rowActions) && <div className="mobile-record-actions">{onRowClick && <button type="button" className="rounded border border-border px-3 py-2 font-semibold text-primary" onClick={() => onRowClick(item)}>View record</button>}{rowActions?.(item)}</div>}
         </article>
       ))}
@@ -67,7 +67,7 @@ export default function DataTable({
                 const val = item[col.key];
                 return (
                   <td key={col.key} className={`px-4 py-3 ${semanticTone(col)} ${col.align === 'right' ? 'text-right' : ''}`}>
-                    {col.render ? col.render(val, item) : col.format ? col.format(val) : val || '—'}
+                    {col.render ? col.render(val, item) : col.format ? col.format(val) : (typeof val === 'number' ? Math.round(val).toLocaleString() : val || '—')}
                   </td>
                 );
               })}

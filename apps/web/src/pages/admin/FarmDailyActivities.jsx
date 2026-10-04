@@ -473,10 +473,9 @@ const activityLogColumns = [
   { key: 'responsible', label: 'Responsible', className: 'w-[116px]', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => item.responsible || item.assigned_workers || item.supervisor_name },
   { key: 'contact', label: 'Contact', className: 'w-[92px]', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => item.contact },
   { key: 'block_name', label: 'Farm Block', className: 'w-[102px]', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => blockLabel(item) },
-  { key: 'projected_cost', label: 'Projected Cost', className: 'w-[96px] text-center', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => <span className="font-semibold text-[#2e7d32]">{formatCurrency(item.projected_cost)}</span> },
   { key: 'actual_cost', label: 'Actual Cost', className: 'w-[96px] text-center', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => <span className="font-semibold text-[#2e7d32]">{formatCurrency(item.actual_cost ?? item.cost)}</span> },
   { key: 'revenue', label: 'Actual Revenue', className: 'w-[84px] text-center', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => <span className="font-semibold text-[#2e7d32]">{formatCurrency(item.actual_revenue ?? item.revenue)}</span> },
-  { key: 'output_quantity_kg', label: 'Harvest / Output kg', className: 'w-[104px] text-center', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => <span className="font-semibold text-[#2e7d32]">{formatNumber(activityYieldKg(item))} kg</span> },
+  { key: 'output_quantity_kg', label: 'Actual Yield (tonnes)', className: 'w-[104px] text-center', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => <span className="font-semibold text-[#2e7d32]">{formatNumber(activityYieldKg(item) / 1000)} tonnes</span> },
   { key: 'cost_type', label: 'Type of Cost', className: 'w-[86px] text-center', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => item.cost_type ? normalizeCostType(item.cost_type) : '—' },
   { key: 'notes', label: 'Notes', className: 'w-[170px]', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => item.notes },
 ];
@@ -545,9 +544,7 @@ const DailyActivityLog = ({
   const pageStart = (safePage - 1) * rowsPerPage;
   const pageItems = visibleItems.slice(pageStart, pageStart + rowsPerPage);
   const selectedItem = visibleItems.find((item, index) => rowId(item, index) === selectedId) || null;
-  const totalProjectedCost = visibleItems.reduce((sum, item) => sum + asNumber(item.projected_cost), 0);
   const totalActualCost = visibleItems.reduce((sum, item) => sum + asNumber(item.actual_cost ?? item.cost), 0);
-  const totalProjectedRevenue = visibleItems.reduce((sum, item) => sum + asNumber(item.projected_revenue), 0);
   const totalActualRevenue = visibleItems.reduce((sum, item) => sum + asNumber(item.actual_revenue ?? item.revenue), 0);
   const totalOutput = visibleItems.reduce((sum, item) => sum + activityYieldKg(item), 0);
   const completedCount = visibleItems.filter((item) => String(item.status || '').toLowerCase() === 'completed').length;
@@ -602,20 +599,19 @@ const DailyActivityLog = ({
       { label: 'Responsible', width: 70, value: (item) => item.responsible || item.assigned_workers || item.supervisor_name },
       { label: 'Contact', width: 65, value: (item) => item.contact },
       { label: 'Farm Block', width: 56, value: (item) => blockLabel(item) },
-      { label: 'Projected Cost', width: 63, value: (item) => item.projected_cost },
       { label: 'Actual Cost', width: 63, value: (item) => item.actual_cost ?? item.cost },
       { label: 'Actual Revenue', width: 65, value: (item) => item.actual_revenue ?? item.revenue },
-      { label: 'Harvest / Output kg', width: 66, value: (item) => `${formatNumber(activityYieldKg(item))} kg` },
+      { label: 'Actual Yield (tonnes)', width: 66, value: (item) => `${formatNumber(activityYieldKg(item) / 1000)} tonnes` },
       { label: 'Type of Cost', width: 55, value: (item) => item.cost_type ? normalizeCostType(item.cost_type) : '—' },
       { label: 'Notes', width: 105, value: (item) => item.notes },
     ];
     const groupHeaders = [
       { label: 'Activity', count: 4, fill: [234, 248, 232], text: [22, 115, 41] },
       { label: 'Assignment & Inputs', count: 5, fill: [237, 244, 255], text: [59, 111, 201] },
-      { label: 'Financials & Output', count: 5, fill: [255, 240, 242], text: [225, 75, 90] },
+      { label: 'Financials & Output', count: 4, fill: [255, 240, 242], text: [225, 75, 90] },
       { label: 'Record', count: 1, fill: [246, 240, 255], text: [128, 90, 213] },
     ];
-    const money = (value) => `GHS ${asNumber(value).toLocaleString('en-GH', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+    const money = (value) => `GHS ${asNumber(value).toLocaleString('en-GH', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
     const dateLabel = { all: 'All dates', today: 'Today', week: 'This week', month: 'This month', custom: 'Custom range' }[dateFilter];
     const selectedBlock = farmBlockFilterOptions.find((option) => option.value === farmBlockFilter)?.label || 'Farm A&B';
     const filters = [dateLabel, selectedBlock, activityTypeFilter === 'All' ? 'All activity types' : activityTypeFilter, statusFilter === 'All' ? 'All status' : statusFilter].join('  |  ');
@@ -639,9 +635,9 @@ const DailyActivityLog = ({
 
       const summaries = [
         { label: 'TOTAL ACTIVITIES', value: formatNumber(visibleItems.length), fill: [247, 252, 247], text: [22, 115, 41] },
-        { label: 'PROJECTED / ACTUAL COST', value: `${money(totalProjectedCost)} / ${money(totalActualCost)}`, fill: [255, 248, 248], text: [225, 75, 90] },
-        { label: 'PROJECTED / ACTUAL REVENUE', value: `${money(totalProjectedRevenue)} / ${money(totalActualRevenue)}`, fill: [245, 249, 255], text: [37, 99, 235] },
-        { label: 'HARVEST OUTPUT', value: `${formatNumber(totalOutput)} kg`, fill: [255, 251, 235], text: [180, 83, 9] },
+        { label: 'ACTUAL COST', value: money(totalActualCost), fill: [255, 248, 248], text: [225, 75, 90] },
+        { label: 'ACTUAL REVENUE', value: money(totalActualRevenue), fill: [245, 249, 255], text: [37, 99, 235] },
+        { label: 'HARVEST OUTPUT', value: `${formatNumber(totalOutput / 1000)} tonnes`, fill: [255, 251, 235], text: [180, 83, 9] },
         { label: 'COMPLETION RATE', value: `${completedPercent}%`, fill: [250, 245, 255], text: [124, 58, 237] },
       ];
       const cardGap = 8;
@@ -769,16 +765,14 @@ const DailyActivityLog = ({
         <div className="px-0 pt-4 md:pl-6 md:pt-0 xl:border-r xl:border-slate-200 xl:pr-6">
           <p className="mb-1 font-semibold text-[#256b2a]">Financials</p>
           {[
-            ['Projected Cost', formatCurrency(item.projected_cost)],
             ['Actual Cost', formatCurrency(item.actual_cost ?? item.cost)],
-            ['Projected Revenue', formatCurrency(item.projected_revenue)],
             ['Actual Revenue', formatCurrency(item.actual_revenue ?? item.revenue)],
           ].map(([label, value]) => <p key={label} className="grid grid-cols-[132px_1fr] gap-3"><span className={label.includes('Revenue') ? 'text-blue-600' : 'text-rose-600'}>{label}</span><span className={label.includes('Revenue') ? 'font-semibold text-blue-600' : 'font-semibold text-rose-600'}>{value}</span></p>)}
         </div>
         <div className="px-0 pt-4 md:pr-6 xl:border-r xl:border-slate-200 xl:pl-6 xl:pt-0">
           <p className="mb-1 font-semibold text-[#256b2a]">Production</p>
           {[
-            ['Harvest / Output', `${formatNumber(activityYieldKg(item))} kg`],
+            ['Actual Yield', `${formatNumber(activityYieldKg(item) / 1000)} tonnes`],
             ['Farm Block', blockLabel(item)],
             ['Main Farm', item.farm_name],
           ].map(([label, value]) => <p key={label} className="grid grid-cols-[132px_1fr] gap-3"><span className={label === 'Harvest / Output' ? 'text-emerald-700' : 'text-slate-600'}>{label}</span><span className={label === 'Harvest / Output' ? 'font-semibold text-emerald-700' : ''}>{displayValue(value)}</span></p>)}
@@ -913,7 +907,7 @@ const DailyActivityLog = ({
             <tr className="h-8">
               <th colSpan={4} className="sticky top-0 z-30 h-8 border border-slate-100 bg-[#f4fbf5] px-2 py-1 text-center text-caption font-semibold text-[#256b2a]">Activity</th>
               <th colSpan={5} className="sticky top-0 z-30 h-8 border border-slate-100 bg-[#f4fbf5] px-2 py-1 text-center text-caption font-semibold text-[#3b7a57]">Assignment &amp; Inputs</th>
-              <th colSpan={5} className="sticky top-0 z-30 h-8 border border-slate-100 bg-[#f4fbf5] px-2 py-1 text-center text-caption font-semibold text-[#355e3b]">Financials &amp; Output</th>
+              <th colSpan={4} className="sticky top-0 z-30 h-8 border border-slate-100 bg-[#f4fbf5] px-2 py-1 text-center text-caption font-semibold text-[#355e3b]">Financials &amp; Output</th>
               <th colSpan={1} className="sticky top-0 z-30 h-8 border border-slate-100 bg-[#f4fbf5] px-2 py-1 text-center text-caption font-semibold text-[#3b7a57]">Record</th>
             </tr>
             <tr className="h-14">
@@ -1043,8 +1037,10 @@ export default function FarmDailyActivities() {
   const [activityTypeFilter, setActivityTypeFilter] = useState('All');
   const [deletingActivityId, setDeletingActivityId] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [data, setData] = useState({});
   const [selectedRecords, setSelectedRecords] = useState({});
+  const loadGeneration = useRef(0);
 
   const selectRecord = (key, record) => {
     setSelectedRecords((current) => ({ ...current, [key]: record?.id }));
@@ -1055,12 +1051,13 @@ export default function FarmDailyActivities() {
   );
 
   const load = useCallback((showLoading = true) => {
+    const request = ++loadGeneration.current;
     if (showLoading) setLoading(true);
     return Promise.all([
-      base44.entities.Farm.listAll('-created_date').catch(() => []),
-      base44.entities.FarmBlock.listAll('-created_date').catch(() => []),
+      base44.entities.Farm.listAll('-created_date'),
+      base44.entities.FarmBlock.listAll('-created_date'),
       base44.entities.Worker.listAll('-created_date').catch(() => []),
-      base44.entities.DailyActivity.listAll('-activity_date').catch(() => []),
+      base44.entities.DailyActivity.listAll('-activity_date'),
       base44.entities.WorkOrder.listAll('-scheduled_date').catch(() => []),
       base44.entities.HarvestBatch.listAll('-harvest_date').catch(() => []),
       base44.entities.HarvestGrade.listAll('-created_date').catch(() => []),
@@ -1111,6 +1108,8 @@ export default function FarmDailyActivities() {
       auditLogs,
       farmNotes,
     ]) => {
+      if (request !== loadGeneration.current) return;
+      setLoadError('');
       setData({
         farms,
         blocks,
@@ -1139,7 +1138,9 @@ export default function FarmDailyActivities() {
         auditLogs,
         farmNotes,
       });
-    }).finally(() => setLoading(false));
+    }).catch(error => {
+      if (request === loadGeneration.current) setLoadError(error.message || 'Task log and analytics could not be refreshed.');
+    }).finally(() => { if (request === loadGeneration.current) setLoading(false); });
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -1155,8 +1156,9 @@ export default function FarmDailyActivities() {
       'InputUsage', 'InventoryUsage', 'QualityCheck', 'WasteLoss', 'WeatherLog',
       'FarmExpense', 'DailyReport', 'Approval', 'Notification', 'Certification',
       'StockMovement', 'FarmFinanceRecord', 'FarmComplianceRecord', 'AuditLog', 'FarmNote',
-    ]);
+    ], { refreshOnFocus: true, refreshIntervalMs: 60000 });
     return () => {
+      loadGeneration.current += 1;
       window.clearTimeout(refreshTimer);
       unsubscribe();
     };
@@ -1214,12 +1216,13 @@ export default function FarmDailyActivities() {
     return resolveOperationalScope(payload, data.farms, data.blocks);
   };
 
-  const notify = (title, message, type = 'farm_operations') => (
+  const notify = (title, message, type = 'farm_operations', source = {}) => (
     base44.entities.Notification.create({
       title,
       message,
       type,
       notification_type: type,
+      ...source,
       channel: 'Admin',
       status: 'new',
     }).catch(() => null)
@@ -1387,7 +1390,6 @@ export default function FarmDailyActivities() {
       category: payload.cost_type || (payload.category === 'Harvesting' ? 'Labour' : payload.category),
       description: payload.description || payload.title || payload.activity_title || payload.category,
       amount: cost,
-      projected_cost: asNumber(payload.projected_cost),
       actual_cost: asNumber(payload.actual_cost || cost),
       cost_type: payload.cost_type,
       labour_cost: asNumber(payload.labour_cost),
@@ -1664,7 +1666,7 @@ export default function FarmDailyActivities() {
       }).catch(() => null),
       createDocumentRecord('Daily Report PDFs', activityCode),
       createApproval('Daily Activity', activityCode, payload.status === 'Approved' ? 'Approved' : 'Requested'),
-      notify('Activity awaiting review', `${activityCode} ${payload.category} recorded for ${farmBlock.farm_name}.`, 'daily_activity'),
+      notify('Activity awaiting review', `${activityCode} ${payload.category} recorded for ${farmBlock.farm_name}.`, 'daily_activity', { entity_name: 'DailyActivity', record_id: activity.id }),
       isHarvest ? syncHarvestBatch({
         harvest_date: payload.activity_date || today,
         ...farmBlock,
@@ -2052,11 +2054,9 @@ export default function FarmDailyActivities() {
     { name: 'contact', label: 'Contact', type: 'tel', placeholder: 'Phone number' },
     { name: 'block_id', label: 'Farm Block', type: 'select', options: [...farmSelectOptions(data.farms).map((option) => ({ ...option, value: `farm:${option.value}` })), { value: '__all__', label: 'Farm A&B' }, ...blockOptions, { value: '__shared__', label: 'Select multiple blocks' }], defaultValue: blockOptions[0]?.value, required: true },
     { name: 'shared_scope', label: 'Shared farms / blocks', type: 'farm-scope-multi', options: blockOptions },
-    { name: 'projected_cost', label: 'Projected Cost (₵)', type: 'number', defaultValue: 0 },
     { name: 'actual_cost', label: 'Actual Cost (₵)', type: 'number', defaultValue: 0 },
-    { name: 'projected_revenue', label: 'Projected Revenue (₵)', type: 'number', defaultValue: 0 },
     { name: 'actual_revenue', label: 'Actual Revenue (₵)', type: 'number', defaultValue: 0 },
-    { name: 'output_quantity_kg', label: 'Harvest / Output Quantity (kg)', type: 'number', defaultValue: 0 },
+    { name: 'output_quantity_kg', label: 'Actual Yield (tonnes)', type: 'number', defaultValue: 0, inputScale: 1000, step: 1 },
     { name: 'cost_type', label: 'Type of Cost', type: 'select', options: selectOptions(activityCostTypes), defaultValue: 'Labor', required: true },
     { name: 'category', label: 'Farm Task Type', type: 'select', options: selectOptions(activityCategories), defaultValue: 'Land Clearing', required: true },
     { name: 'notes', label: 'Notes', type: 'textarea', wide: true },
@@ -2468,7 +2468,7 @@ export default function FarmDailyActivities() {
       buttonIcon={Pencil}
       actionIcon="edit"
       fields={fields}
-      initialValues={record && fields.some((field) => field.name === 'shared_scope') ? { ...record, cost_type: normalizeCostType(record.cost_type), block_id: activityScopeValue(record), shared_scope: record.shared_scope || record.block_name || '' } : record || {}}
+      initialValues={record && fields.some((field) => field.name === 'shared_scope') ? { ...record, output_quantity_kg: activityYieldKg(record), cost_type: normalizeCostType(record.cost_type), block_id: activityScopeValue(record), shared_scope: record.shared_scope || record.block_name || '' } : record || {}}
       formVariant={fields.some((field) => field.name === 'shared_scope') ? 'daily-activity-log' : undefined}
       onSubmit={(payload) => onSubmit(record, payload)}
       onCreated={load}
@@ -2654,14 +2654,14 @@ export default function FarmDailyActivities() {
             <Pie data={chartData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} label>
               {chartData.map((entry) => <Cell key={entry.name} fill={entry.color || '#6b8e23'} />)}
             </Pie>
-            <Tooltip />
+            <Tooltip formatter={(value) => formatNumber(value)} />
           </PieChart>
         ) : (
           <BarChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
             <XAxis dataKey="name" fontSize="var(--text-caption)" />
-            <YAxis fontSize="var(--text-caption)" />
-            <Tooltip />
+            <YAxis allowDecimals={false} tickFormatter={formatNumber} fontSize="var(--text-caption)" />
+            <Tooltip formatter={(value) => formatNumber(value)} />
             <Bar dataKey="value" fill="#6b8e23" radius={[4, 4, 0, 0]} />
           </BarChart>
         )}
@@ -2671,6 +2671,16 @@ export default function FarmDailyActivities() {
 
   const renderScreen = () => {
     if (loading) return <PageSkeleton variant={activeScreen === 'Operations Analytics Overview' ? 'analytics' : 'page'} />;
+
+    const sourceParams = new URLSearchParams(location.search);
+    const sourceId = sourceParams.get('record');
+    const sourceCode = sourceParams.get('code');
+    if (sourceId || sourceCode) {
+      const sourceRows = [...(data.dailyActivities || []), ...(data.workOrders || []), ...(data.harvestBatches || [])];
+      const source = sourceRows.find((row) => sourceId ? row.id === sourceId : row.activity_code === sourceCode);
+      if (!source) return <Panel title="Notification source"><p>This record is no longer available.</p></Panel>;
+      return renderDetail(source, Object.entries(source).filter(([key]) => !['id', 'photos', 'videos'].includes(key)).map(([key, value]) => [key.replaceAll('_', ' '), typeof value === 'object' ? JSON.stringify(value) : value]));
+    }
 
     let activities = filterRows(data.dailyActivities || [], ['activity_code', 'title', 'item_tag', 'responsible', 'contact', 'farm_name', 'block_name', 'category', 'cost_type', 'supervisor_name', 'notes']);
     let workOrders = filterRows(data.workOrders || [], ['work_order_code', 'title', 'farm_name', 'block_name', 'category']);
@@ -3125,6 +3135,7 @@ export default function FarmDailyActivities() {
       </div> : null}
 
       <main className="min-w-0">
+        {loadError && <div role="alert" className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">{loadError} <button type="button" className="underline" onClick={() => load(false)}>Retry refresh</button></div>}
         {renderScreen()}
       </main>
     </div>

@@ -69,7 +69,7 @@ function MergedKpi({ first, second }) {
     {[first, second].map(({ icon: Icon, label, value, remaining, onClick }) => {
       const Tag = onClick ? 'button' : 'div';
       return <Tag className="analytics-kpi-half" key={label} {...(onClick ? { type: 'button', onClick, 'aria-label': `Edit ${label}` } : {})}>
-        <span className="analytics-kpi-icon"><Icon size={22} /></span><div><p>{label}{onClick ? <Pencil size={11} className="ml-1 inline-block" /> : null}</p><strong>{value}</strong>{remaining != null ? <span className="analytics-kpi-remaining">{remaining}</span> : null}</div>
+        <span className="analytics-kpi-icon"><Icon size={22} /></span><div><p className="analytics-kpi-label"><span>{label}</span>{onClick ? <Pencil size={11} aria-hidden="true" /> : null}</p><strong>{value}</strong><span className="analytics-kpi-remaining" aria-hidden={remaining == null ? true : undefined}>{remaining ?? "\u00a0"}</span></div>
       </Tag>;
     })}
   </div>;
@@ -110,7 +110,7 @@ function EmptyState({ children = 'No records match this selection.' }) {
 
 export default function FarmOperationsAnalytics({ data }) {
   const navigate = useNavigate();
-  const now = useMemo(() => new Date(), []);
+  const now = useMemo(() => new Date(), [data]);
   const [period, setPeriod] = useState('all');
   const [farmFilter, setFarmFilter] = useState('all');
   const [blockMetric, setBlockMetric] = useState('all');
@@ -176,7 +176,7 @@ export default function FarmOperationsAnalytics({ data }) {
     if (period === '30d') start.setDate(start.getDate() - 29);
     if (period === '6m') start.setMonth(start.getMonth() - 5, 1);
     if (period === 'year') start.setMonth(0, 1);
-    if (period === 'all') return { start: null, end, label: 'All recorded dates' };
+    if (period === 'all') return { start: null, end: null, label: 'All recorded dates' };
     if (period === 'custom') {
       const customRangeStart = customStart ? new Date(`${customStart}T00:00:00`) : null;
       const customRangeEnd = customEnd ? new Date(`${customEnd}T23:59:59.999`) : null;
@@ -258,8 +258,8 @@ export default function FarmOperationsAnalytics({ data }) {
   const blockMoneyCeiling = Math.max(1000, Math.ceil(blockMoneyMax / 1000) * 1000);
   const blockYieldCeiling = Math.max(4, Math.ceil(Math.max(0, ...blockPerformanceRows.map(row => row.yieldTonnes))));
   const blockMoneyTicks = Array.from({ length: 5 }, (_, index) => blockMoneyCeiling * index / 4);
-  const blockYieldTicks = Array.from({ length: 5 }, (_, index) => blockYieldCeiling * index / 4);
-  const blockCurrencyTick = value => value === 0 ? '₵0' : Math.abs(value) >= 1000000 ? `₵${(value / 1000000).toFixed(1)}m` : `₵${(value / 1000).toFixed(1)}k`;
+  const blockYieldTicks = Array.from({ length: 5 }, (_, index) => Math.round(blockYieldCeiling * index / 4));
+  const blockCurrencyTick = value => `₵${wholeNumber(value)}`;
 
   const mostProfitableBlock = blockPerformanceRows.slice().sort((a, b) => b.margin - a.margin)[0];
   const blockTotals = blockPerformanceRows.reduce((totals, row) => ({ cost: totals.cost + row.cost, revenue: totals.revenue + row.revenue, yieldTonnes: totals.yieldTonnes + row.yieldTonnes }), { cost: 0, revenue: 0, yieldTonnes: 0 });
@@ -357,7 +357,7 @@ export default function FarmOperationsAnalytics({ data }) {
                   <CartesianGrid vertical={false} stroke="#edf4ee" />
                   <XAxis dataKey="blockLabel" axisLine={false} tickLine={false} interval={0} tick={{ fontSize: 12 }} />
                   <YAxis yAxisId="currency" domain={[0, blockMoneyCeiling]} ticks={blockMoneyTicks} interval={0} allowDecimals={false} tickFormatter={blockCurrencyTick} axisLine={false} tickLine={false} width={60} tick={{ fontSize: 12 }} />
-                  <YAxis yAxisId="yield" orientation="right" allowDecimals={false} tickFormatter={(value) => `${Number(value.toFixed(2))}t`} domain={[0, blockYieldCeiling]} ticks={blockYieldTicks} interval={0} axisLine={false} tickLine={false} width={48} tick={{ fontSize: 12 }} />
+                  <YAxis yAxisId="yield" orientation="right" allowDecimals={false} tickFormatter={(value) => `${wholeNumber(value)}t`} domain={[0, blockYieldCeiling]} ticks={blockYieldTicks} interval={0} axisLine={false} tickLine={false} width={48} tick={{ fontSize: 12 }} />
                   <Tooltip labelFormatter={(_, payload) => { const block = payload?.[0]?.payload; return block ? `${block.farmName} · ${block.blockLabel}` : ''; }} formatter={(value, name) => [name === 'Yield (tonnes)' ? `${wholeNumber(value)} tonnes` : `₵${wholeNumber(value)}`, name]} cursor={{ stroke: '#d1d5db', fill: 'transparent' }} contentStyle={{ fontSize: 12, border: '1px solid #e5e7eb' }} />
                   {(blockMetric === 'all' || blockMetric === 'cost') && <Bar yAxisId="currency" dataKey="cost" name="Cost (₵)" fill={COST} maxBarSize={30} radius={[2, 2, 0, 0]} />}
                   {(blockMetric === 'all' || blockMetric === 'revenue') && <Bar yAxisId="currency" dataKey="revenue" name="Revenue (₵)" fill={REVENUE} maxBarSize={30} radius={[2, 2, 0, 0]} />}
@@ -388,7 +388,7 @@ export default function FarmOperationsAnalytics({ data }) {
           <form onSubmit={saveProjection} className="space-y-4">
             <label className="block space-y-2 text-sm" htmlFor="projection-value">
               <span>{PROJECTIONS[editingProjection]?.label} ({PROJECTIONS[editingProjection]?.unit})</span>
-              <Input id="projection-value" type="number" min="0" step="0.01" required autoFocus value={projectionDraft} disabled={savingProjection} onChange={(event) => { setProjectionDraft(event.target.value); setProjectionFeedback(''); }} />
+              <Input id="projection-value" type="number" min="0" step="1" required autoFocus value={projectionDraft} disabled={savingProjection} onChange={(event) => { setProjectionDraft(event.target.value); setProjectionFeedback(''); }} />
             </label>
             {projectionFeedback ? <p role="status" className="text-sm">{projectionFeedback}</p> : null}
             {projectionError ? <p role="alert" className="text-sm text-destructive">{projectionError}</p> : null}

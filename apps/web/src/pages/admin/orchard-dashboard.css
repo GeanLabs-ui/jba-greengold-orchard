@@ -21,7 +21,7 @@
 .orchard-metric-icon.gold { background:linear-gradient(135deg,#f7d739,#d5a800); }
 .orchard-metric-icon.red { background:linear-gradient(135deg,#f47878,#d43d40); }
 .orchard-metric-icon svg { width:26px; height:26px; stroke-width:1.7; }
-.orchard-metric > div { min-width:0; flex:1; }
+.orchard-metric > div:not(.orchard-sales-mix) { min-width:0; flex:1; container-type:inline-size; text-align:left; }
 .orchard-dashboard .orchard-metric h2 { font-size:10px; font-weight:700; line-height:14px; white-space:nowrap; letter-spacing:-.15px; color:#24334d; }
 .orchard-metric strong { display:block; font-size:clamp(17px,1.7vw,27px); font-weight:800; line-height:1.3; letter-spacing:-.7px; white-space:nowrap; color:#172640; }
 .orchard-farm-summary .orchard-metric strong { font-size:22px; line-height:1.1; }
@@ -34,11 +34,13 @@
 .orchard-metrics > .orchard-metric:last-child small { margin:0; }
 .orchard-analysis { display:grid; grid-template-columns:1.65fr .9fr 1.05fr 1.18fr; gap:7px; margin-top:7px; }
 .orchard-panel { min-width:0; border:1px solid #eaf3fa; border-radius:6px; padding:9px 10px; background:linear-gradient(110deg,#fff 75%,#fbfdff); overflow:hidden; }
-.orchard-panel-heading { display:flex; align-items:center; justify-content:space-between; gap:6px; min-height:24px; margin-bottom:7px; }
-.orchard-dashboard .orchard-panel-heading h2 { display:flex; align-items:center; gap:7px; font-size:13px; font-weight:750; line-height:18px; letter-spacing:-.2px; color:#1d2d45; }
+.orchard-panel-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; min-height:36px; margin-bottom:7px; text-align:left; }
+.orchard-dashboard .orchard-panel-heading h2 { display:flex; flex:1; min-width:0; align-items:flex-start; gap:7px; font-size:13px; font-weight:750; line-height:18px; letter-spacing:-.2px; color:#1d2d45; text-align:left; }
+.orchard-panel-heading h2 > span { flex:1; min-width:0; padding-top:2px; overflow-wrap:break-word; }
+.orchard-panel-heading > :not(h2) { flex-shrink:0; margin-top:2px; }
 .orchard-panel-heading h2 > svg { color:#408748; width:23px; height:23px; flex-shrink:0; stroke-width:2.5; }
 .orchard-panel-heading > a { font-size:9px; white-space:nowrap; }
-.orchard-tabs { display:flex; background:#edf2f7; border-radius:4px; padding:2px; }
+.orchard-tabs { display:flex; flex-wrap:wrap; justify-content:flex-end; max-width:50%; background:#edf2f7; border-radius:4px; padding:2px; }
 .orchard-tabs button { padding:4px 8px; color:#41516b; font-size:9px; line-height:12px; border-radius:3px; }
 .orchard-tabs button[aria-pressed=true] { color:#fff; background:#1e504a; }
 .orchard-business-chart { height:clamp(155px,13.5vw,224px); width:100%; }
@@ -174,7 +176,7 @@
 .orchard-record-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; }
 .orchard-record-grid > a { min-width:0; padding:8px; border:1px solid #e5edf3; border-radius:4px; background:#f8fbfd; }
 .orchard-record-grid > a:hover { background:#edf7ec; }
-.orchard-record-grid span { display:block; font-size:10px; font-weight:600; }
+.orchard-record-grid span { display:block; min-height:28px; font-size:10px; line-height:14px; font-weight:600; text-align:left; }
 .orchard-record-grid strong { display:block; font-size:17px; line-height:24px; overflow-wrap:anywhere; }
 .orchard-record-grid small { display:block; font-size:9px; line-height:13px; color:#4b5b70; }
 @media(max-width:1050px) { .orchard-workspace-summaries { grid-template-columns:1fr; } }
@@ -220,3 +222,26 @@
 .orchard-health-rows { flex:1; min-height:0; display:flex; flex-direction:column; }
 .orchard-health-row { flex:1; min-height:0; }
 .orchard-health-note { flex-shrink:0; }
+
+.orchard-task-link { display:block; color:inherit; }
+.orchard-task-link:hover { color:#256b2a; text-decoration:underline; }
+.orchard-task-link:focus-visible { outline:2px solid #256b2a; outline-offset:2px; }
+
+.orchard-block-link { display:block; color:inherit; }
+.orchard-block-link:hover { color:#256b2a; text-decoration:underline; }
+.orchard-block-link:focus-visible { outline:2px solid #256b2a; outline-offset:2px; }
+
+/* Keep metric labels and values aligned even when a label needs two lines. */
+.orchard-dashboard .orchard-metric h2 { min-height:28px; white-space:normal; }
+.orchard-dashboard .orchard-metrics > .orchard-metric strong { font-size:clamp(12px,13cqw,27px); }
+.orchard-dashboard .orchard-metrics > .orchard-metric:last-child strong { font-size:clamp(12px,18cqw,22px); }
+.orchard-farm-summary { align-self:stretch; }
+.orchard-farm-summary .orchard-metric { align-items:flex-start; padding-top:13px; }
+.orchard-farm-summary .orchard-metric-icon { margin-top:2px; }
+.orchard-record-grid > a { text-align:left; }
+.orchard-dashboard .orchard-farm h2 { min-width:0; text-align:left; flex-wrap:wrap; }
+.orchard-farm h2 svg { flex-shrink:0; }
+@media(max-width:620px) {
+  .orchard-metrics > .orchard-metric { flex-direction:column; gap:6px; }
+  .orchard-metrics > .orchard-metric > div:not(.orchard-sales-mix) { width:100%; }
+}

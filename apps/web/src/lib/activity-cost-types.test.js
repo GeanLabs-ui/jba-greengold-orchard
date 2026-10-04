@@ -4,8 +4,13 @@ import { buildFarmOperationsAnalytics } from './farm-operations-analytics';
 
 describe('cost type breakdown', () => {
   it('keeps small expenses visible in percentages shared by the dashboard and analytics', () => {
-    expect(formatCostPercentage(6475174, 6485269)).toBe('99.8%');
-    expect(formatCostPercentage(3630, 6485269)).toBe('<0.1%');
+    expect(formatCostPercentage(6475174, 6485269)).toBe('>99%');
+    expect(formatCostPercentage(3630, 6485269)).toBe('<1%');
+    expect(formatCostPercentage(12465, 6491269)).toBe('<1%');
+    expect(formatCostPercentage(3630, 6491269)).toBe('<1%');
+    expect(formatCostPercentage(1, 1000000)).toBe('<1%');
+    expect(formatCostPercentage(999999, 1000000)).toBe('>99%');
+    expect(formatCostPercentage(100, 100)).toBe('100%');
     expect(formatCostPercentage(0, 6485269)).toBe('0%');
     expect(formatCostPercentage(0, 0)).toBe('0%');
   });

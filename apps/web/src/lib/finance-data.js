@@ -41,6 +41,8 @@ export function dailyActivityCost(activity) {
 
 export function activityExpenseRows(activities = []) {
   return activities
+    .filter((activity) => !activity.archived_at
+      && !['archived', 'cancelled', 'canceled', 'deleted'].includes(normalized(activity.status)))
     .map((activity) => ({
       ...activity,
       expense_number: activity.activity_code || `ACT-${String(activity.id || '').slice(0, 8)}`,
