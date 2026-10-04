@@ -115,7 +115,7 @@ export default function Logistics() {
                 </div>
                 <div className="mt-3 text-sm text-muted-foreground">
                   <p>Type: <span className="capitalize">{v.vehicle_type?.replace('_', ' ')}</span></p>
-                  {v.capacity_kg && <p>Capacity: {v.capacity_kg.toLocaleString()} kg</p>}
+                  {v.capacity_kg && <p>Capacity: {v.capacity_kg.toLocaleString(undefined, { maximumFractionDigits: 0 })} kg</p>}
                   {v.driver_name && <p>Driver: {v.driver_name}</p>}
                 </div>
               </div>

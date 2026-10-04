@@ -76,7 +76,7 @@ const MasterTaskField = ({ label, children }) => (
 
 const MasterTaskSection = ({ icon: Icon, title, children }) => (
   <section className="rounded-xl border border-slate-200/90 bg-white p-3">
-    <h3 className="mb-2 flex items-center gap-2 text-[#256b2a] text-card-title"><Icon className="h-[18px] w-[18px]" strokeWidth={1.9} />{title}</h3>
+    <h3 className="mb-2 flex items-center gap-2 text-[#256b2a] text-card-title"><Icon className="h-[18px] w-[18px]" strokeWidth={1.9} /><span className="card-heading-text">{title}</span></h3>
     {children}
   </section>
 );

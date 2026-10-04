@@ -1,3 +1,5 @@
+import { PROGRAMME_CODE } from '../data/dailyRoutineProgramme';
+
 const CALENDAR_STATUS_TO_TASK = {
   scheduled: 'not_started',
   in_progress: 'in_progress',
@@ -198,4 +200,34 @@ export function outlookCalendarUrl(event) {
     location: event.farm_name || '',
   });
   return `https://outlook.office.com/calendar/0/deeplink/compose?${query}`;
+}
+
+// Calendar markers are derived from saved farm records so edits and removals
+// stay synchronized without creating duplicate calendar/task records.
+export function buildFarmCalendarEvents(data) {
+  const events = data.calendarEvents || [];
+  const hasEvent = (id) => id && events.some((event) => String(event.id) === String(id));
+  const tasks = data.farmTasks || [];
+  const sources = [
+    ...(data.farmProjects || []).filter((row) => row.programme_code === PROGRAMME_CODE).map((row) => [row, 'FarmProject', 'project', row.due_date || row.start_date]),
+    ...tasks.filter((row) => !hasEvent(row.calendar_event_id)).map((row) => [row, 'FarmTask', 'task', row.completion_due_at || row.due_date || row.planned_start_at || row.planned_start]),
+    ...(data.dailyActivities || []).filter((row) => !hasEvent(row.calendar_event_id) && !tasks.some((task) => row.farm_task_id && String(task.id) === String(row.farm_task_id))).map((row) => [row, 'DailyActivity', 'activity', row.activity_date]),
+  ];
+  const projected = sources.filter(([row, , , date]) => row.id && !row.archived_at && date && Number.isFinite(new Date(date).getTime())).map(([row, entity, prefix, date]) => {
+    const day = dateKey(date);
+    const end = new Date(`${day}T00:00:00Z`);
+    end.setUTCDate(end.getUTCDate() + 1);
+    const normalized = String(row.status || '').toLowerCase().replaceAll(' ', '_');
+    const status = Number(row.progress_percent || 0) >= 100 || normalized === 'completed' ? 'completed'
+      : ['cancelled', 'deferred', 'archived', 'inactive', 'merged'].includes(normalized) ? 'cancelled'
+      : ['in_progress', 'blocked'].includes(normalized) ? normalized : 'scheduled';
+    return { ...row, id: `${prefix}-${row.id}`, source_entity: entity, source_id: row.id,
+      title: row.title || row.activity_title || row.description || row.category || 'Farm task',
+      description: row.description || row.comments || row.notes || '',
+      assigned_to_name: row.assigned_to_name || row.owner_name || row.responsible || row.assigned_workers || '',
+      start_at: `${day}T00:00:00.000Z`, end_at: end.toISOString(), all_day: true,
+      reminders_enabled: false, status,
+    };
+  });
+  return [...events, ...projected];
 }

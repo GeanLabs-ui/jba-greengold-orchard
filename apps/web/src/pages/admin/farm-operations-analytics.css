@@ -40,6 +40,17 @@
 .analytics-kpi-half:is(button):focus-visible { outline: 2px solid white; outline-offset: 2px; }
 .analytics-kpi-half + .analytics-kpi-half { border-left: 1px solid #ffffff85; padding-left: 10px; margin-left: 8px; }
 .analytics-kpi-half p { font-size: var(--text-kpi-label); }
+.admin-shell .farm-analytics .analytics-kpis .analytics-kpi { height:auto; min-height:96px; }
+.admin-shell .farm-analytics .analytics-kpi-merged .analytics-kpi-half { align-items:flex-start; }
+.farm-analytics .analytics-kpi-half > div { flex:1; display:grid; grid-template-rows:36px auto 14px; align-content:start; }
+.admin-shell .farm-analytics .analytics-kpi-half .analytics-kpi-label { display:flex; align-items:flex-start; gap:4px; line-height:18px; text-align:left; }
+.analytics-kpi-label > span { min-width:0; }
+.analytics-kpi-label > svg { flex-shrink:0; margin-top:3px; }
+.admin-shell .farm-analytics .analytics-kpi--revenue .analytics-kpi-label { white-space:nowrap; font-size:clamp(11px,.85vw,16px); gap:3px; }
+.analytics-kpi--revenue .analytics-kpi-label > span { flex-shrink:0; }
+.farm-analytics .analytics-kpi-half .analytics-kpi-icon { margin-top:2px; }
+.farm-analytics .analytics-kpi-half strong { margin-top:0; }
+.farm-analytics .analytics-kpi-half .analytics-kpi-remaining { margin-top:0; align-self:end; }
 .analytics-kpi-icon { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: #ffffff22; flex-shrink: 0; }
 .analytics-legend { display: flex; align-items: center; gap: 16px; font-size: var(--text-caption); color: #536078; white-space: nowrap; }
 .analytics-legend span { display: inline-flex; gap: 6px; align-items: center; }
@@ -190,7 +201,7 @@
 }
 /* Compact expense chart beside the rotating trends; highlights below. */
 .analytics-overview-grid > .cost-breakdown { grid-column:auto; border-radius:12px; align-self:start; }
-.analytics-overview-grid > .cost-breakdown .expense-breakdown-heading { padding:10px 12px 0; margin-bottom:0; font-size:16px!important; }
+.analytics-overview-grid > .cost-breakdown .expense-breakdown-heading { padding:20px 24px 16px; margin:0; font-size:20px!important; line-height:25px!important; text-align:left; }
 .analytics-overview-grid > .cost-breakdown .cost-farm-split { padding:10px; margin:0 10px 10px; border-radius:8px; }
 .analytics-overview-grid > .cost-breakdown .cost-farm-split h3 { font-size:12px!important; margin-bottom:8px; }
 .analytics-overview-grid > .cost-breakdown .cost-farm-items { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
@@ -215,3 +226,12 @@
 .analytics-block-summary { margin-top:auto; }
 .analytics-block-summary > div { min-width:0; }
 @media(max-width:700px) { .analytics-block-summary .farm-trend-tagline { display:none; } }
+.admin-shell .farm-analytics .analytics-kpis .analytics-kpi { height:auto; min-height:96px; }
+.farm-analytics .analytics-kpi--gold { justify-content:flex-start; }
+.farm-analytics .analytics-kpi--gold .analytics-kpi-main { align-items:flex-start; }
+.farm-analytics .analytics-kpi--gold .analytics-kpi-symbol { margin-top:2px; }
+.farm-analytics .analytics-kpi--gold .analytics-kpi-main p { min-height:36px; line-height:18px; }
+.farm-analytics .analytics-kpi--gold strong { margin-top:0; }
+@media(max-width:767px) {
+  .analytics-overview-grid > .cost-breakdown .expense-breakdown-heading { padding:16px 12px; font-size:18px!important; }
+}

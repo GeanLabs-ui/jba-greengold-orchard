@@ -5,6 +5,43 @@ import { buildFarmOperationsAnalytics } from './farm-operations-analytics';
 import { buildCostTypeBreakdown } from './activity-cost-types';
 
 describe('orchard reference dashboard', () => {
+  it('routes upcoming saved work to its source using the original encoded record IDs', () => {
+    const result = buildOrchardDashboard({
+      farmProjects: [{ id: 'main/1', programme_code: PROGRAMME_CODE, title: 'Main task', due_date: '2026-10-02' }],
+      farmTasks: [
+        { id: 'child', parent_project_id: 'main/1', title: 'Subtask', due_date: '2026-10-03' },
+        { id: 'standalone', title: 'Standalone', due_date: '2026-10-04' },
+        { id: 'linked', calendar_event_id: 'missing/event', title: 'Linked', due_date: '2026-10-05' },
+      ],
+      dailyActivities: [{ id: 'log/1', activity_date: '2026-10-06', title: 'Daily log' }],
+      calendarEvents: [{ id: 'event/1', start_at: '2026-10-07', title: 'Calendar event' }],
+    }, 2026, new Date('2026-10-01T12:00:00Z'));
+    expect(result.tasks.map(({ path }) => path)).toEqual([
+      '/admin/calendar?event=project-main%2F1',
+      '/admin/calendar?event=task-child',
+      '/admin/calendar?event=task-standalone',
+      '/admin/calendar?event=task-linked',
+      '/admin/calendar?event=activity-log%2F1',
+      '/admin/calendar?event=event%2F1',
+    ]);
+  });
+  it('uses persisted scope and excludes archived, cancelled, completed and invalid upcoming work', () => {
+    const result = buildOrchardDashboard({
+      farms: [{ id: 'farm', name: 'Live Farm' }], blocks: [{ id: 'block', block_code: 'Live Block' }],
+      farmTasks: [
+        { id: 'open', farm_id: 'farm', due_date: '2027-01-01', title: 'Next year' },
+        { id: 'block-task', block_id: 'block', due_date: '2026-10-01', title: 'Today' },
+        { id: 'archived', archived_at: '2026-09-01', due_date: '2026-10-02' },
+        { id: 'cancelled', status: 'cancelled', due_date: '2026-10-02' },
+        { id: 'done', status: 'completed', due_date: '2026-10-02' },
+        { id: 'full', progress_percent: 100, due_date: '2026-10-02' },
+        { id: 'invalid', due_date: 'bad date' },
+      ],
+    }, 2026, new Date('2026-10-01T12:00:00Z'));
+    expect(result.tasks.map(({ id, scope }) => ({ id, scope }))).toEqual([
+      { id: 'task-block-task', scope: 'Live Block' }, { id: 'task-open', scope: 'Live Farm' },
+    ]);
+  });
   it('reads the expense card from the same all-date rows and categories as operations analytics', () => {
     const data = { dailyActivities: [
       { activity_date: '2026-01-01', actual_cost: 100, cost_type: 'labour' },
@@ -46,6 +83,7 @@ describe('orchard reference dashboard', () => {
       { activity_date: '2026-01-01', farm_name: 'Farm A&B', output_quantity_kg: 400 },
     ] }, 2026);
     expect(result.production.map((row) => row.tonnes)).toEqual([1.2, 0]);
+    expect(result.blocks[0].actual_yield_kg).toBe(1200);
     expect(result.unallocated).toBe(0.4);
     expect(result.varieties).toEqual([{ name: 'Keitt', value: 1.2 }, { name: 'Unclassified', value: 0.4 }]);
     expect(result.forecast).toBe(0);

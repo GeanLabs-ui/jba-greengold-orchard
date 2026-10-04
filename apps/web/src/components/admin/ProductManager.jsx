@@ -1,5 +1,6 @@
 import AdminActionButton from '@/components/admin/AdminActionButton';
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { mergeCatalog, PRODUCT_CATEGORIES, formatProductPrice } from '@/data/productCatalog';
@@ -14,6 +15,8 @@ import DataTable from '@/components/shared/DataTable';
 const emptyProduct = { name: '', description: '', category: 'fresh', price: '', image: '', status: 'published' };
 
 export default function ProductManager() {
+  const [params] = useSearchParams();
+  const recordId = params.get('record');
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -75,7 +78,7 @@ export default function ProductManager() {
     <div className="flex flex-wrap items-center justify-end gap-3"><Button disabled={loading || !!error} onClick={() => edit(emptyProduct)}><Plus className="mr-2 h-4 w-4" />Add Product</Button></div>
     {notice && <p role="status" className="text-green-700">{notice}</p>}
     {error && <p role="alert">{error} <Button variant="outline" onClick={load}>Retry</Button></p>}
-    {loading ? <p role="status">Loading products…</p> : <DataTable items={products} columns={[
+    {loading ? <p role="status">Loading products…</p> : <DataTable items={recordId ? products.filter((product) => product.recordId === recordId || product.id === recordId) : products} columns={[
       { key: 'name', label: 'Product', render: (name, product) => <div className="flex items-center gap-3"><img src={product.image} alt="" className="h-12 w-12 rounded object-contain" /><span>{name}</span></div> },
       { key: 'category', label: 'Category', render: value => PRODUCT_CATEGORIES.find(category => category.id === value)?.label || value },
       { key: 'price', label: 'Price', format: formatProductPrice },

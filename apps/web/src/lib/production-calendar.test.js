@@ -5,6 +5,7 @@ import {
   eventToDailyActivityPayload,
   eventToTaskPayload,
   isReminderDue,
+  buildFarmCalendarEvents,
 } from './production-calendar';
 
 const event = {
@@ -24,6 +25,18 @@ const event = {
 };
 
 describe('production calendar synchronization', () => {
+  it('marks saved tasks on their due dates and reflects updated dates, statuses and descriptions', () => {
+    const task = { id: 't1', title: 'Calibrate equipment', due_date: '2026-10-15', planned_start: '2026-10-01', comments: 'Check nozzle pressure', assigned_to_name: 'Spray Lead' };
+    const [event] = buildFarmCalendarEvents({ farmTasks: [task] });
+    expect(event).toMatchObject({ id: 'task-t1', source_id: 't1', source_entity: 'FarmTask', start_at: '2026-10-15T00:00:00.000Z', end_at: '2026-10-16T00:00:00.000Z', description: 'Check nozzle pressure', status: 'scheduled', all_day: true, reminders_enabled: false });
+    const [updated] = buildFarmCalendarEvents({ farmTasks: [{ ...task, due_date: '2026-11-02', status: 'completed', comments: 'Calibration complete' }] });
+    expect(updated).toMatchObject({ id: event.id, start_at: '2026-11-02T00:00:00.000Z', status: 'completed', description: 'Calibration complete' });
+    expect(buildFarmCalendarEvents({ farmTasks: [{ ...task, archived_at: '2026-10-02' }] })).toEqual([]);
+    expect(buildFarmCalendarEvents({ farmTasks: [] })).toEqual([]);
+  });
+  it('keeps native calendar IDs and does not duplicate their linked farm tasks or logs', () => {
+    expect(buildFarmCalendarEvents({ calendarEvents: [event], farmTasks: [{ id: 'task', calendar_event_id: event.id, due_date: '2026-08-05' }], dailyActivities: [{ id: 'log', calendar_event_id: event.id, activity_date: '2026-08-05' }] })).toEqual([event]);
+  });
   it('preserves block and combined scopes when synchronizing calendar records', () => {
     for (const scope of [
       { farm_id: 'farm-b', farm_name: 'Farm B', block_id: 'block-b3', block_name: 'B3', block_code: 'B3', shared_scope: '' },

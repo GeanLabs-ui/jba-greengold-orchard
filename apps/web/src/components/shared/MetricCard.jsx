@@ -14,10 +14,10 @@ export default function MetricCard({ title, value, icon: Icon, trend, trendUp, c
 
   return (
     <div className="metric-card rounded border border-border bg-card p-5 shadow-none transition-colors hover:border-primary/35">
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
+      <div className="metric-card-heading flex items-start justify-between">
+        <div className="metric-card-copy flex-1">
           <p className="text-kpi-label text-muted-foreground">{title}</p>
-          <p className="mt-2 text-kpi-value">{value}</p>
+          <p className="mt-2 text-kpi-value">{typeof value === 'number' ? Math.round(value).toLocaleString() : value}</p>
           {subtitle && <p className="mt-1 text-caption text-muted-foreground">{subtitle}</p>}
         </div>
         {Icon && (

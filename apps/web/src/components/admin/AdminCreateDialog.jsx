@@ -58,6 +58,10 @@ export default function AdminCreateDialog({
   const initialValues = useMemo(() => ({
     ...buildInitialValues(fields),
     ...(providedInitialValues || {}),
+    // A field may display a different unit while preserving the stored unit.
+    ...Object.fromEntries(fields.filter((field) => field.inputScale && providedInitialValues).map((field) => [
+      field.name, Math.round(Number(providedInitialValues[field.name] ?? field.defaultValue ?? 0) / field.inputScale),
+    ])),
     ...(providedInitialValues && !providedInitialValues.farm_id && scopeLabel(providedInitialValues.farm_name) === 'Farm A&B'
       && fields.some((field) => field.name === 'farm_id' && field.options?.some((option) => option.value === '__all__'))
       ? { farm_id: '__all__' } : {}),
@@ -87,7 +91,7 @@ export default function AdminCreateDialog({
 
     const payload = fields.reduce((next, field) => {
       const rawValue = values[field.name];
-      next[field.name] = field.type === 'number' && rawValue !== '' ? Number(rawValue) : rawValue;
+      next[field.name] = field.type === 'number' && rawValue !== '' ? Math.round(Number(rawValue)) * (field.inputScale || 1) : rawValue;
       return next;
     }, {});
 
@@ -160,7 +164,7 @@ export default function AdminCreateDialog({
           <Input
             id={field.name}
             type={field.type || 'text'}
-            step={field.step ?? (formVariant === 'daily-activity-log' && field.type === 'number' ? 'any' : undefined)}
+            step={field.step ?? (field.type === 'number' ? 1 : undefined)}
             required={field.required}
             value={value}
             onChange={(event) => updateValue(field.name, event.target.value)}
@@ -223,9 +227,7 @@ export default function AdminCreateDialog({
               <div className="grid gap-2.5 md:grid-cols-2">
                 <DailySection title="Financials & output" icon={CircleDollarSign} tone="border-[#e8f5e9] bg-[#f9fcfa] text-[#2e7d32]">
                   <div className="grid gap-x-3 gap-y-3 sm:grid-cols-3">
-                    {dailyField('projected_cost', 'grid min-w-0 grid-rows-[1fr_auto]')}
                     {dailyField('actual_cost', 'grid min-w-0 grid-rows-[1fr_auto]')}
-                    {dailyField('projected_revenue', 'grid min-w-0 grid-rows-[1fr_auto]')}
                     {dailyField('actual_revenue', 'grid min-w-0 grid-rows-[1fr_auto]')}
                     {dailyField('output_quantity_kg', 'grid min-w-0 grid-rows-[1fr_auto]')}
                   </div>

@@ -30,7 +30,7 @@ const Field = ({ label, children, hint }) => (
 
 const BlockSection = ({ icon: Icon, title, children, className = '' }) => (
   <section className={`block-editor-section rounded-lg border border-slate-200 bg-white p-2 ${className}`}>
-    <h3 className="mb-1 flex items-center gap-1.5 text-emerald-900 text-card-title"><Icon className="h-4 w-4 text-emerald-700" />{title}</h3>
+    <h3 className="mb-1 flex items-center gap-1.5 text-emerald-900 text-card-title"><Icon className="h-4 w-4 text-emerald-700" /><span className="card-heading-text">{title}</span></h3>
     {children}
   </section>
 );

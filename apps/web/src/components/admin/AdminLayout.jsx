@@ -5,6 +5,7 @@ import usePinnedPageNavigation from '@/components/shared/usePinnedPageNavigation
 import AdminSidebar from './AdminSidebar';
 import AdminTopbar from './AdminTopbar';
 import AdminMobileNav from './AdminMobileNav';
+import { DashboardExportContext } from './DashboardExportContext';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/lib/AuthContext';
@@ -15,6 +16,7 @@ export default function AdminLayout() {
   const location = useLocation();
   const scrollRef = useRef(null);
   usePinnedPageNavigation(scrollRef, location.pathname);
+  const [exportAction, setExportAction] = useState(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const canAccessPage = canAccessAdminPath(user, location.pathname);
 
@@ -24,6 +26,7 @@ export default function AdminLayout() {
   }, []);
 
   return (
+    <DashboardExportContext.Provider value={{ exportAction, setExportAction }}>
     <div data-preserve-colors={location.pathname.replace(/\/$/, '') === '/admin/farm-daily-activities/activities/overview' ? 'true' : undefined} className="admin-shell app-surface flex h-[100dvh] overflow-hidden bg-background md:h-screen">
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
         <SheetContent side="left" className="flex w-[min(19rem,86vw)] flex-col bg-[#2e7d32] p-0 text-white">
@@ -55,5 +58,6 @@ export default function AdminLayout() {
       </div>
       <AdminMobileNav user={user} />
     </div>
+    </DashboardExportContext.Provider>
   );
 }

@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import React, { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ACTIVITY_COST_TYPES, formatCostPercentage } from '@/lib/activity-cost-types';
 import { expenseChartPreviewRows } from '@/lib/expense-chart-preview';
@@ -14,8 +14,7 @@ const scenes = {
   Others: ['community', 'JBA community gathering'],
 };
 const colors = ['#e9af09', '#2865f5', '#ee3436', '#ee1489', '#2baa55', '#8222dd', '#28a8ea'];
-const labelPositions = [[28, 30], [332, 30], [28, 105], [332, 105], [28, 220], [332, 250], [28, 305]];
-const money = value => `GH₵ ${Number(value || 0).toLocaleString('en-GH', { maximumFractionDigits: 2 })}`;
+const money = value => `GH₵ ${Number(value || 0).toLocaleString('en-GH', { maximumFractionDigits: 0 })}`;
 const point = (angle, radius) => [180 + Math.cos(angle) * radius, 176 + Math.sin(angle) * radius];
 function wedge(start, end) {
   const a = point(start, 145), b = point(end, 145), c = point(end, 88), d = point(start, 88);
@@ -23,11 +22,11 @@ function wedge(start, end) {
   return `M${a} A145 145 0 ${large} 1 ${b} L${c} A88 88 0 ${large} 0 ${d} Z`;
 }
 
-export default function ExpensePhotoChart({ rows: liveRows, total: liveTotal, selectionName, onSelectionChange }) {
-  const preview = import.meta.env.DEV;
-  const sourceRows = preview ? expenseChartPreviewRows : liveRows;
+export default function ExpensePhotoChart({ rows: recordedRows = [], seedData = false, selectionName, onSelectionChange, rangeLabel = 'All recorded dates' }) {
+  const sourceRows = seedData ? expenseChartPreviewRows : recordedRows;
   const rows = ACTIVITY_COST_TYPES.map(type => ({ ...type, value: sourceRows.find(row => row.name === type.name)?.value || 0 }));
-  const total = preview ? rows.reduce((sum, row) => sum + row.value, 0) : liveTotal;
+  const total = rows.reduce((sum, row) => sum + row.value, 0);
+  const recordedTotal = ACTIVITY_COST_TYPES.reduce((sum, type) => sum + Number(recordedRows.find(row => row.name === type.name)?.value || 0), 0);
   const [localSelection, setLocalSelection] = useState(null);
   const visual = useRef(null);
   const popupRef = useRef(null);
@@ -36,6 +35,7 @@ export default function ExpensePhotoChart({ rows: liveRows, total: liveTotal, se
   const setSelected = name => onSelectionChange ? onSelectionChange(name) : setLocalSelection(name);
   const id = useId().replace(/:/g, '');
   const scene = scenes[selected];
+  const selectedRecordedValue = Number(recordedRows.find(row => row.name === selected)?.value || 0);
   const photo = scene ? scene[0] ? `/pages/expenses/${scene[0]}.webp` : '/pages/sustainability-community.png' : '/pages/export/mango-basket.webp';
   let cursor = -Math.PI / 2;
   const segments = rows.map((row, index) => {
@@ -43,8 +43,7 @@ export default function ExpensePhotoChart({ rows: liveRows, total: liveTotal, se
     cursor += total > 0 ? row.value / total * Math.PI * 2 : 0;
     // Two arcs represent a full circle without the coincident-endpoint SVG limitation.
     const end = Math.min(cursor, start + Math.PI * 2 - 0.000001);
-    const labelFontSize = Math.min(13, (end - start) * 119 / (row.name.length * .65));
-    return { ...row, index, start, end, middle: (start + end) / 2, labelFontSize, ringLabel: row.value > 0 && labelFontSize >= 10 };
+    return { ...row, index, start, end, middle: (start + end) / 2 };
   });
   const choose = name => setSelected(selected === name ? null : name);
   const selectedSegment = segments.find(row => row.name === selected);
@@ -79,55 +78,34 @@ export default function ExpensePhotoChart({ rows: liveRows, total: liveTotal, se
   const popup = selected && <div ref={popupRef} className="expense-selection-popover expense-selection-floating" role="status" aria-live="polite" style={{ '--selected-color': colors[rows.findIndex(row => row.name === selected)], ...popupPosition }}>
         <button type="button" aria-label="Close expense details" onClick={() => setSelected(null)}>×</button>
         <strong>{selected}</strong>
-        <dl><div><dt>Amount</dt><dd>{money(rows.find(row => row.name === selected)?.value)}</dd></div><div><dt>Percentage</dt><dd>{formatCostPercentage(rows.find(row => row.name === selected)?.value || 0, total)}</dd></div></dl>
+        <dl><div><dt>Amount</dt><dd>{money(selectedRecordedValue)}</dd></div><div><dt>Percentage</dt><dd>{formatCostPercentage(selectedRecordedValue, recordedTotal)}</dd></div></dl>
       </div>;
   return <div className="expense-photo-layout">
-
     <div ref={visual} className="expense-photo-visual">
       <svg viewBox="-15 -15 390 350" aria-label="Expense chart with category photographs">
         <defs>
           <clipPath id={`${id}-photo`}><circle cx="180" cy="176" r="88" /></clipPath>
           <radialGradient id={`${id}-gloss`} cx="40%" cy="25%" r="80%"><stop stopColor="#fff" stopOpacity=".24" /><stop offset=".65" stopColor="#fff" stopOpacity="0" /><stop offset=".9" stopColor="#fff" stopOpacity=".2" /><stop offset="1" stopColor="#650000" stopOpacity=".3" /></radialGradient>
           <filter id={`${id}-shadow`} x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="10" stdDeviation="9" floodColor="#5b3024" floodOpacity=".27" /></filter>
-          {segments.filter(row => row.value > 0).map(row => {
-            const reverse = Math.sin(row.middle) > 0;
-            const a = point(reverse ? row.end : row.start, 119), b = point(reverse ? row.start : row.end, 119);
-            return <path key={row.name} id={`${id}-name-${row.index}`} d={`M${a} A119 119 0 ${row.end - row.start > Math.PI ? 1 : 0} ${reverse ? 0 : 1} ${b}`} />;
-          })}
         </defs>
-        {segments.filter(row => !row.ringLabel).map(row => {
-          const [x, y] = labelPositions[row.index];
-          const left = x < 180;
-          const [anchorX, anchorY] = point(row.middle, 145);
-          return <polyline key={row.name} points={`${anchorX},${22 + anchorY * .82} ${left ? 12 : 348},${22 + anchorY * .82} ${left ? 12 : 348},${y + 3} ${x},${y + 3}`} fill="none" stroke={colors[row.index]} strokeWidth="1.5" strokeDasharray={row.value ? undefined : '3 3'} pointerEvents="none" />;
-        })}
         <g transform="translate(0 22) scale(1 .82)">
           <g transform="translate(0 32)" className="expense-slice-depth">{segments.filter(row => row.value > 0).map(row => <path key={row.name} d={wedge(row.start, row.end)} fill={colors[row.index]} transform={selected === row.name ? `translate(${Math.cos(row.middle) * 46} ${Math.sin(row.middle) * 46 - 5})` : undefined} />)}</g>
           {Array.from({ length: 31 }, (_, layer) => <g key={layer} transform={`translate(0 ${31 - layer})`} className="expense-slice-depth">{segments.filter(row => row.value > 0).map(row => <path key={row.name} d={wedge(row.start, row.end)} fill={colors[row.index]} transform={selected === row.name ? `translate(${Math.cos(row.middle) * 46} ${Math.sin(row.middle) * 46 - 5})` : undefined} />)}</g>)}
           {segments.filter(row => row.value > 0 && Math.sin(row.start) > 0).map(row => { const [x, y] = point(row.start, 145); return <path key={`cut-${row.name}`} d={`M${x} ${y} V${y + 32}`} stroke="white" strokeWidth="3" pointerEvents="none" />; })}
           <image href={photo} x="92" y="88" width="176" height="176" preserveAspectRatio="xMidYMid slice" clipPath={`url(#${id}-photo)`}><title>{scene?.[1] || 'Fresh orchard mangoes'}</title></image>
           {total <= 0 && <circle cx="180" cy="176" r="116.5" fill="none" stroke="#e5ebef" strokeWidth="57" />}
-          {segments.filter(row => row.value > 0).map(row => <path key={row.name} d={wedge(row.start, row.end)} transform={selected === row.name ? `translate(${Math.cos(row.middle) * 46} ${Math.sin(row.middle) * 46 - 5})` : undefined} fill={colors[row.index]} stroke="none" role="button" tabIndex="0" aria-label={`Select ${row.name}: ${formatCostPercentage(row.value, total)}, ${money(row.value)}`} aria-pressed={selected === row.name} onClick={() => choose(row.name)} onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); choose(row.name); } }}><title>{row.name}: {money(row.value)}</title></path>)}
+          {segments.filter(row => row.value > 0).map(row => <path key={row.name} d={wedge(row.start, row.end)} transform={selected === row.name ? `translate(${Math.cos(row.middle) * 46} ${Math.sin(row.middle) * 46 - 5})` : undefined} fill={colors[row.index]} stroke="none" role="button" tabIndex="0" aria-label={`Select ${row.name}: ${formatCostPercentage(Number(recordedRows.find(item => item.name === row.name)?.value || 0), recordedTotal)}, ${money(recordedRows.find(item => item.name === row.name)?.value)}`} aria-pressed={selected === row.name} onClick={() => choose(row.name)} onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); choose(row.name); } }}></path>)}
           {segments.filter(row => row.value > 0).map(row => <path key={`gloss-${row.name}`} d={wedge(row.start, row.end)} fill={`url(#${id}-gloss)`} transform={selected === row.name ? `translate(${Math.cos(row.middle) * 46} ${Math.sin(row.middle) * 46 - 5})` : undefined} pointerEvents="none" />)}
           {segments.filter(row => row.value > 0).map(row => { const a = point(row.start, 88), b = point(row.start, 145); return <path key={`radial-cut-${row.name}`} d={`M${a} L${b}`} stroke="white" strokeWidth={row.end - row.start > .12 ? 5 : .7} pointerEvents="none" />; })}
           <circle cx="180" cy="176" r="88" fill="none" stroke="#ffffff88" strokeWidth="2" pointerEvents="none" />
+          {seedData && segments.map(row => {
+            const [x, y] = point(row.middle, 117);
+            return <text key={`percent-${row.name}`} x={x} y={y} textAnchor="middle" dominantBaseline="middle" className="expense-photo-ring-percent" pointerEvents="none" transform={selected === row.name ? `translate(${Math.cos(row.middle) * 46} ${Math.sin(row.middle) * 46 - 5})` : undefined}>{formatCostPercentage(Number(recordedRows.find(item => item.name === row.name)?.value || 0), recordedTotal)}</text>;
+          })}
           <text x="180" y="201" textAnchor="middle" className="expense-photo-total-label">Total Cost</text>
-          <text x="180" y="223" textAnchor="middle" className="expense-photo-total">{money(total)}</text>
-          {!preview && <text x="180" y="245" textAnchor="middle" className="expense-photo-period">All recorded dates</text>}
+          <text x="180" y="223" textAnchor="middle" className="expense-photo-total">{money(recordedTotal)}</text>
+          <text x="180" y="245" textAnchor="middle" className="expense-photo-period">{rangeLabel}</text>
         </g>
-        <g transform="translate(0 22) scale(1 .82)">{segments.filter(row => row.ringLabel).map(row => {
-          const name = row.name;
-          return <text key={row.name} data-cost-category={row.name} transform={selected === row.name ? `translate(${Math.cos(row.middle) * 46} ${Math.sin(row.middle) * 46 - 5})` : undefined} className="expense-slice-name" pointerEvents="none" fill="white" fontSize={row.labelFontSize} fontWeight="700"><textPath href={`#${id}-name-${row.index}`} startOffset="50%" textAnchor="middle">{name}</textPath></text>;
-        })}</g>
-        {segments.filter(row => !row.ringLabel).map(row => {
-          const [x, y] = labelPositions[row.index];
-          const left = x < 180;
-          return <g key={row.name} data-cost-category={row.name} className="expense-ring-callout" role="button" tabIndex={0} aria-label={`Select ${row.name}: ${formatCostPercentage(row.value, total)}, ${money(row.value)}`} aria-pressed={selected === row.name} onClick={() => choose(row.name)} onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); choose(row.name); } }}>
-            <title>{row.name}: {money(row.value)} ({formatCostPercentage(row.value, total)})</title>
-            <text x={x} y={y} textAnchor={left ? 'end' : 'start'} className="expense-ring-callout-name">{row.name}</text>
-            <text x={x} y={y + 16} textAnchor={left ? 'end' : 'start'} className="expense-ring-callout-percent" fill={colors[row.index]}>{formatCostPercentage(row.value, total)}</text>
-          </g>;
-        })}
       </svg>
       {popup && (typeof document === 'undefined' ? popup : createPortal(popup, document.body))}
       <span className="sr-only" aria-live="polite">{scene?.[1] || 'Select an expense slice to view its photo and details'}</span>

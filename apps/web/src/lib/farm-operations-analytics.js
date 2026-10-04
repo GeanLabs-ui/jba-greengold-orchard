@@ -57,6 +57,8 @@ export function activityMatchesBlock(activity, block) {
     return Boolean(leftValue && rightValue && leftValue === rightValue);
   };
   const blockLabels = [block.name, block.block_name, block.block_code];
+  if (activity.block_id) return String(activity.block_id) === String(block.id);
+  if (activity.farm_id && block.farm_id && String(activity.farm_id) !== String(block.farm_id)) return false;
   return hasSameValue(activity.block_id, block.id)
     || blockLabels.some((label) => hasSameValue(activity.block_name, label))
     || blockLabels.some((label) => hasSameValue(activity.block_code, label));
@@ -83,16 +85,19 @@ export function buildFarmOperationsAnalytics(
   const farmFor = (row) => {
     const block = blockFor(row);
     if (/^(?:farm\s*)?A\s*&\s*B$/i.test(asText(row.farm_name))) return 'Farm A&B';
-    return farmNameByLabel.get(asText(row.farm_name).toLowerCase())
+    return farmNameById.get(String(block?.farm_id))
+      || scopeLabel(block?.farm_name)
+      || farmNameByLabel.get(asText(row.farm_name).toLowerCase())
       || farmNameById.get(String(row.farm_id))
       || scopeLabel(block?.farm_name)
       || farmNameById.get(String(block?.farm_id))
       || 'Unassigned farm';
   };
   const matchesFarm = (row) => farmId === 'all'
-    || String(row.farm_id) === String(farmId)
+    || (blockFor(row)?.farm_id ? String(blockFor(row).farm_id) === String(farmId) : (
+    String(row.farm_id) === String(farmId)
     || (selectedFarmName && farmFor(row) === selectedFarmName)
-    || (farmCode(selectedFarmName) && matchesFarmScope(row, farmCode(selectedFarmName), { farms, blocks }));
+    || (farmCode(selectedFarmName) && matchesFarmScope(row, farmCode(selectedFarmName), { farms, blocks }))));
   const matchesBlock = (row) => blockId === 'all'
     || String(row.block_id) === String(blockId)
     || String(blockFor(row)?.id) === String(blockId)
@@ -110,7 +115,9 @@ export function buildFarmOperationsAnalytics(
     && (blockId === 'all' || String(farm.id) === String(selectedBlock?.farm_id)));
   const visibleBlocks = blocks.filter((block) => isActiveStructure(block) && matchesFarm(block)
     && (blockId === 'all' || String(block.id) === String(blockId)));
-  const activities = dailyActivities.filter((activity) => matchesFarm(activity) && matchesBlock(activity) && matchesPeriod(activity));
+  const activities = dailyActivities.filter((activity) => !activity.archived_at
+    && !['archived', 'cancelled', 'canceled', 'deleted'].includes(normalizeStatus(activity.status))
+    && matchesFarm(activity) && matchesBlock(activity) && matchesPeriod(activity));
   const costRows = activities
     .map((activity) => ({
       ...activity,

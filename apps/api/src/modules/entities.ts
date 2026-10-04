@@ -709,6 +709,22 @@ router.post("/:entity", async (c) => {
           )
         `;
       }
+      const newRecordRoutes: Record<string, string> = {
+        Product: '/admin/marketing/products', NewsPost: '/admin/marketing/news-posts',
+        HarvestBatch: '/admin/farm-daily-activities/activities/records',
+      };
+      if (newRecordRoutes[name]) {
+        await transaction`
+          INSERT INTO entity_records (id, entity_name, organization_id, data, created_by, updated_by, created_at, updated_at)
+          VALUES (${crypto.randomUUID()}, 'Notification', ${user?.organizationId || null}, ${sql.json({
+            title: `New ${name === 'NewsPost' ? 'news post' : name === 'HarvestBatch' ? 'harvest batch' : 'product'} added`,
+            message: String(payload.name || payload.title || payload.batch_number || 'A new record is available.'),
+            type: 'new_record', notification_type: 'new_record', channel: 'Admin', status: 'new',
+            entity_name: name, record_id: id,
+            destination: `${newRecordRoutes[name]}?record=${id}&entity=${name}`,
+          })}, ${user?.id || null}, ${user?.id || null}, ${now}, ${now})
+        `;
+      }
     });
     return c.json(
       {
