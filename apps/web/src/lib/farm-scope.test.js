@@ -22,7 +22,9 @@ describe('admin farm scopes', () => {
   it('orders the two farms and combined summary before exactly ten concise blocks', () => {
     const options = farmScopeOptions(farms, [...blocks.slice().reverse(), { id: 'old-a6', name: 'Block A6', farm_id: 'farm-a' }]);
     expect(options.map((option) => option.label)).toEqual(FARM_SCOPE_OPTIONS.map((option) => option.label));
-    expect(options[0].value).toBe('farm:farm-a');
+    expect(options[0]).toEqual({ value: 'all', label: 'A&B' });
+    expect(options[1].value).toBe('farm:farm-a');
+    expect(options[2].value).toBe('farm:farm-b');
     expect(options[3].value).toBe('block:id-A1');
   });
   it('normalizes historical block prefixes and preserves multi-block scopes', () => {

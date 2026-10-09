@@ -499,6 +499,8 @@ const DailyActivityLog = ({
   onDelete,
   renderEditAction,
 }) => {
+  const linkedActivityId = new URLSearchParams(useLocation().search).get('activityId');
+  const openedLinkedActivity = useRef(null);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
   const [dateFilter, setDateFilter] = useState('all');
@@ -738,6 +740,16 @@ const DailyActivityLog = ({
   useEffect(() => {
     if (selectedId && !selectedItem) closeDetails();
   }, [visibleItems, selectedId, selectedItem]);
+
+  useEffect(() => {
+    if (!linkedActivityId || openedLinkedActivity.current === linkedActivityId) return;
+    const index = visibleItems.findIndex(item => item.id === linkedActivityId);
+    if (index < 0) return;
+    openedLinkedActivity.current = linkedActivityId;
+    setCurrentPage(Math.floor(index / rowsPerPage) + 1);
+    setSelectedId(linkedActivityId);
+    setPinnedId(linkedActivityId);
+  }, [linkedActivityId, visibleItems, rowsPerPage]);
 
   const renderActivityDetails = (item, itemId) => (
     <section
@@ -2052,7 +2064,7 @@ export default function FarmDailyActivities() {
     { name: 'quantity_used', label: 'Quantity', type: 'number', defaultValue: 0 },
     { name: 'responsible', label: 'Responsible', placeholder: 'Person or team responsible', required: true },
     { name: 'contact', label: 'Contact', type: 'tel', placeholder: 'Phone number' },
-    { name: 'block_id', label: 'Farm Block', type: 'select', options: [...farmSelectOptions(data.farms).map((option) => ({ ...option, value: `farm:${option.value}` })), { value: '__all__', label: 'Farm A&B' }, ...blockOptions, { value: '__shared__', label: 'Select multiple blocks' }], defaultValue: blockOptions[0]?.value, required: true },
+    { name: 'block_id', label: 'Farm Block', type: 'select', options: [{ value: '__all__', label: 'A&B' }, ...farmSelectOptions(data.farms).map((option) => ({ ...option, value: `farm:${option.value}` })), ...blockOptions, { value: '__shared__', label: 'Select multiple blocks' }], defaultValue: blockOptions[0]?.value, required: true },
     { name: 'shared_scope', label: 'Shared farms / blocks', type: 'farm-scope-multi', options: blockOptions },
     { name: 'actual_cost', label: 'Actual Cost (₵)', type: 'number', defaultValue: 0 },
     { name: 'actual_revenue', label: 'Actual Revenue (₵)', type: 'number', defaultValue: 0 },

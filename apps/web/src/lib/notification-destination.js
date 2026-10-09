@@ -15,6 +15,6 @@ export function notificationDestination(item) {
   if (type === 'order') return '/admin/marketing/orders';
   if (item.invoice_number || type === 'payment') return `/admin/marketing/sales?invoice=${encodeURIComponent(item.invoice_number || '')}`;
   if (type === 'inquiry') return '/admin/client-management/inquiries';
-  const routes = { work_order: '/admin/farm-daily-activities/activities/records', farm_operations: '/admin/farm-daily-activities/activities/master-schedule', procurement: '/admin/procurement', harvest: '/admin/farm-daily-activities/activities/records', daily_report: '/admin/farm-daily-activities/reports/daily', input_usage: '/admin/inventory' };
+  const routes = { work_order: '/admin/farm-daily-activities/activities/records', farm_operations: '/admin/farm-daily-activities/activities/master-schedule', procurement: '/admin/procurement', harvest: '/admin/farm-daily-activities/activities/records', daily_report: '/admin/farm-daily-activities/activities/overview', input_usage: '/admin/inventory' };
   return routes[type] || null;
 }

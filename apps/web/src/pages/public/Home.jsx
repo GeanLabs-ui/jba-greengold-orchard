@@ -122,6 +122,8 @@ const qualityStandards = [
     description: 'Ghana Standards Authority and food-safety requirements guide the care we bring to every local operation.',
     image: 'https://images.pexels.com/photos/31095043/pexels-photo-31095043.jpeg?auto=compress&cs=tinysrgb&w=1600',
     imageAlt: 'Farmer inspecting ripe mangoes in an orchard',
+    fallbackImage: '/pages/farm-gallery-1.webp',
+    fallbackAlt: 'Mango orchard',
     icon: ShieldCheck,
   },
   {
@@ -130,6 +132,8 @@ const qualityStandards = [
     description: 'Traceability and quality systems support confident market access and dependable cross-border supply.',
     image: 'https://images.pexels.com/photos/36967907/pexels-photo-36967907.jpeg?auto=compress&cs=tinysrgb&w=1600',
     imageAlt: 'Farmers loading freshly harvested mangoes together',
+    fallbackImage: '/pages/local-supply-wholesale.webp',
+    fallbackAlt: 'Mango wholesale supply',
     icon: MapPinned,
   },
   {
@@ -138,6 +142,8 @@ const qualityStandards = [
     description: 'Export-ready handling helps us meet the expectations of customers and partners around the world.',
     image: 'https://images.pexels.com/photos/34406344/pexels-photo-34406344.jpeg?auto=compress&cs=tinysrgb&w=1600',
     imageAlt: 'Cargo ship carrying containers for international export',
+    fallbackImage: '/pages/export/sea.webp',
+    fallbackAlt: 'International sea freight',
     icon: Globe2,
   },
 ];
@@ -274,10 +280,10 @@ function QualityStandardsShowcase() {
         </motion.div>
 
         <div className="mt-7 grid gap-4 md:grid-cols-3">
-          {qualityStandards.map(({ label, title, description, image, imageAlt, icon: Icon }, index) => (
+          {qualityStandards.map(({ label, title, description, image, imageAlt, fallbackImage, fallbackAlt, icon: Icon }, index) => (
             <motion.article key={label} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ delay: index * 0.1, duration: 0.45 }} className="group overflow-hidden border border-[#e8f5e9] bg-white shadow-[0_12px_30px_rgba(18,63,27,.08)]">
               <div className="h-36 overflow-hidden bg-[#f4fbf5]">
-                <img src={image} alt={imageAlt} className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105" loading="lazy" />
+                <img src={image} alt={imageAlt} onError={(event) => { const img = event.currentTarget; if (img.getAttribute('src') !== fallbackImage) { img.src = fallbackImage; img.alt = fallbackAlt; } }} className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105" loading="lazy" />
               </div>
               <div className="p-4 sm:p-5">
                 <div className="flex items-center gap-3 text-[#2e7d32]"><span className="grid h-8 w-8 place-items-center rounded-full bg-[#f4fbf5] text-[#123524]"><Icon className="h-[18px] w-[18px]" /></span><p className="text-[11px] font-black tracking-[0.13em]">{label}</p></div>

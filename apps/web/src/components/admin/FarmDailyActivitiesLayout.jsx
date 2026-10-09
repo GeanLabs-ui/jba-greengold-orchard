@@ -1,6 +1,8 @@
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import DeploymentRecoveryBoundary from '@/components/shared/DeploymentRecoveryBoundary';
 import { getFarmDailyActivitiesNavigationState } from '@/lib/farm-daily-activities-route';
+import { ChevronDown } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 export default function FarmDailyActivitiesLayout() {
   const location = useLocation();
@@ -15,6 +17,23 @@ export default function FarmDailyActivitiesLayout() {
         <nav className="flex min-w-0 max-w-full items-center gap-2 overflow-x-auto scrollbar-thin" aria-label="Farm daily activities navigation">
           {items.map((child) => {
             const isChildActive = activeItem?.path === child.path;
+            if (child.children) {
+              return (
+                <DropdownMenu key={child.path}>
+                  <DropdownMenuTrigger asChild>
+                    <button type="button" className={`flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${isChildActive ? 'bg-primary text-primary-foreground shadow-sm' : 'border border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
+                      {location.pathname.endsWith('/issues') && child.screen === 'Risk Register' ? 'Risk and Issue Report' : child.title}<ChevronDown className="h-3.5 w-3.5" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    {child.children.map((page) => {
+                      const isPageActive = location.pathname === page.path || location.pathname.startsWith(`${page.path}/`);
+                      return <DropdownMenuItem key={page.path} onSelect={() => navigate(page.path)} aria-current={isPageActive ? 'page' : undefined} className={isPageActive ? 'bg-muted font-semibold' : ''}>{page.title}</DropdownMenuItem>;
+                    })}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              );
+            }
             return (
               <button
                 key={child.path}

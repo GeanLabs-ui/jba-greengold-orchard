@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { validateObjectiveAlignment } from "./objective-alignment.js";
 import { z } from "zod";
 import { closeDatabase, createDatabase } from "../db.js";
 import type { AppVariables, AuthUser } from "../middleware/auth.js";
@@ -57,6 +58,7 @@ const ENTITY_NAMES = new Set([
   "ActivityInput",
   "FarmAttendance",
   "Equipment",
+  "Issue",
   "EquipmentUsage",
   "FarmInput",
   "InputUsage",
@@ -112,6 +114,7 @@ const CUSTOMER_READ = new Set([
 const adminRoles = new Set(["super_admin", "admin"]);
 const ROLE_READ_ENTITIES: Partial<Record<AuthUser["role"], Set<string>>> = {
   farm_manager: new Set([
+    "Issue",
     "Farm",
     "FarmBlock",
     "Harvest",
@@ -154,6 +157,7 @@ const ROLE_READ_ENTITIES: Partial<Record<AuthUser["role"], Set<string>>> = {
     "FarmAnalyticsProjection",
   ]),
   farm_supervisor: new Set([
+    "Issue",
     "Farm",
     "FarmBlock",
     "Harvest",
@@ -265,6 +269,7 @@ const ROLE_WRITE_ENTITIES: Partial<Record<AuthUser["role"], Set<string>>> = {
     ),
   ),
   farm_supervisor: new Set([
+    "Issue",
     "Harvest",
     "FarmProcessLog",
     "FarmTask",
@@ -648,6 +653,10 @@ router.post("/:entity", async (c) => {
           403,
         );
     }
+    if (name === "DailyActivity" && user) {
+      const alignmentError = await validateObjectiveAlignment(sql, payload, user.organizationId);
+      if (alignmentError) return c.json({ error: { code: 'INVALID_OBJECTIVE_LINK', message: alignmentError }, requestId: c.get('requestId') }, 422);
+    }
     if (isCanonicalFarmEntity(name) && user) {
       try {
         const data = await createCanonicalFarmEntity(
@@ -803,6 +812,15 @@ router.patch("/:entity/:id", async (c) => {
     );
   const sql = createDatabase(c.env);
   try {
+    if (name === "DailyActivity") {
+      const existing = c.req.param("id") ? (await sql<{ data: JsonObject }[]>`SELECT data FROM entity_records WHERE id = ${c.req.param("id")} AND entity_name = 'DailyActivity' AND organization_id IS NOT DISTINCT FROM ${user!.organizationId}`)[0]?.data : null;
+      const merged = { ...(existing || {}), ...payload };
+      const linkChanged = !existing || ['related_objective', 'related_sub_objective', 'related_kpi', 'activity_date', 'farm_id', 'block_id'].some(key => merged[key] !== existing[key]);
+      if (linkChanged) {
+        const alignmentError = await validateObjectiveAlignment(sql, merged, user!.organizationId);
+        if (alignmentError) return c.json({ error: { code: 'INVALID_OBJECTIVE_LINK', message: alignmentError }, requestId: c.get('requestId') }, 422);
+      }
+    }
     if (isCanonicalFarmEntity(name)) {
       try {
         const data = await updateCanonicalFarmEntity(

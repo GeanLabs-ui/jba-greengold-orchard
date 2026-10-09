@@ -1066,7 +1066,7 @@ export default function DailyRoutineCheck({ initialView = 'dashboard', riskOnly 
         <form className="drc-form-grid" onSubmit={addFieldLog}>
           <Field label="Log type"><select name="type" required>{LOG_TYPES.map((type) => <option key={type}>{type}</option>)}</select></Field>
           <Field label="Date"><input name="entry_date" type="date" required defaultValue={TODAY} /></Field>
-          <Field label="Farm / block"><select name="block_id" required>{farmSelectOptions(shared.farms).map((option) => <option key={option.value} value={`farm:${option.value}`}>{option.label}</option>)}<option value="__all__">Farm A&B</option>{blockSelectOptions(shared.blocks).map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></Field>
+          <Field label="Farm / block"><select name="block_id" required><option value="__all__">A&amp;B</option>{farmSelectOptions(shared.farms).map((option) => <option key={option.value} value={`farm:${option.value}`}>{option.label}</option>)}{blockSelectOptions(shared.blocks).map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></Field>
           <Field label="Responsible person"><input name="owner" required minLength="2" maxLength="120" /></Field>
           <Field label="Observation / action" full><textarea name="notes" rows="4" required minLength="3" maxLength="4000" /></Field>
           <Field label="Result / follow-up" full><input name="result" maxLength="2000" /></Field>

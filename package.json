@@ -39,16 +39,16 @@
   },
   "devDependencies": {
     "brace-expansion": "1.1.21",
+    "braces": "file:./vendor/braces-3.0.4-jba.1.tgz",
     "concurrently": "^9.2.1",
     "drizzle-orm": "^0.45.2",
     "esbuild": "0.25.12",
     "js-yaml": "4.3.2",
     "playwright": "1.63.0",
-    "sharp": "0.35.4",
+    "sharp": "0.35.5",
     "vite": "6.4.3",
     "vitest": "4.1.11",
-    "wrangler": "4.145.0",
-    "braces": "file:./vendor/braces-3.0.4-jba.1.tgz"
+    "wrangler": "4.149.0"
   },
   "overrides": {
     "brace-expansion": "$brace-expansion",
@@ -60,6 +60,7 @@
     "vite": {
       "esbuild": "0.25.12"
     },
-    "braces": "$braces"
+    "braces": "$braces",
+    "postcss-selector-parser": "7.1.6"
   }
 }

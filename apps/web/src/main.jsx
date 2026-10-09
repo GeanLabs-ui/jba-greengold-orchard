@@ -10,9 +10,30 @@ import '@/public-heroes.css'
 import '@/mobile-responsive.css'
 import '@/card-alignment.css'
 
-ReactDOM.createRoot(document.getElementById('root')).render(
+async function clearLocalPreviewWorker() {
+  if (!import.meta.env.DEV || !['localhost', '127.0.0.1'].includes(window.location.hostname) || !('serviceWorker' in navigator)) return false;
+  const registrations = await navigator.serviceWorker.getRegistrations();
+  const appWorkers = registrations.filter(registration => [registration.active, registration.waiting, registration.installing].some(worker => worker && new URL(worker.scriptURL).pathname === '/sw.js'));
+  const controlled = navigator.serviceWorker.controller && new URL(navigator.serviceWorker.controller.scriptURL).pathname === '/sw.js';
+  await Promise.all(appWorkers.map(registration => registration.unregister()));
+  if ('caches' in window) {
+    const keys = await caches.keys();
+    await Promise.all(keys.filter(key => key.startsWith('jba-shell-')).map(key => caches.delete(key)));
+  }
+  if (controlled && !sessionStorage.getItem('jba-dev-worker-cleared')) {
+    sessionStorage.setItem('jba-dev-worker-cleared', '1');
+    window.location.reload();
+    return true;
+  }
+  return false;
+}
+
+clearLocalPreviewWorker().catch(() => false).then(reloading => {
+  if (reloading) return;
+  ReactDOM.createRoot(document.getElementById('root')).render(
   <App />
 )
+});
 
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => {
