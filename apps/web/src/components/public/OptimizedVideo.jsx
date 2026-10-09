@@ -4,6 +4,16 @@ import React, { useEffect, useRef, useState } from 'react';
 export default function OptimizedVideo({ desktop, mobile, poster, priority = false, className, ...props }) {
   const ref = useRef(null);
   const [ready, setReady] = useState(priority);
+  const resume = () => {
+    const video = ref.current;
+    if (!video || document.hidden || props.autoPlay === false) return;
+    const bounds = video.getBoundingClientRect();
+    if (bounds.bottom > -200 && bounds.top < window.innerHeight + 200) {
+      // Set the property as well as the attribute before requesting autoplay.
+      video.muted = props.muted !== false;
+      video.play().catch(() => {});
+    }
+  };
   useEffect(() => {
     if (ready) ref.current.load();
   }, [ready, desktop, mobile]);
@@ -25,7 +35,7 @@ export default function OptimizedVideo({ desktop, mobile, poster, priority = fal
     document.addEventListener('visibilitychange', visibility);
     return () => { observer.disconnect(); document.removeEventListener('visibilitychange', visibility); };
   }, []);
-  return <video ref={ref} poster={poster} autoPlay muted loop playsInline preload={priority ? 'auto' : 'none'} className={className} {...props}>
+  return <video ref={ref} poster={poster} autoPlay muted loop playsInline preload={priority ? 'auto' : 'none'} className={className} {...props} onLoadedData={(event) => { resume(); props.onLoadedData?.(event); }}>
     {ready && <>
       {mobile && <source src={mobile} media="(max-width: 767px)" type="video/mp4" />}
       <source src={desktop} type="video/mp4" />

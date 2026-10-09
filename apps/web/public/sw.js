@@ -12,6 +12,8 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const request = event.request;
   const url = new URL(request.url);
+  // A worker installed by a local production preview must never cache Vite sources.
+  if (['localhost', '127.0.0.1'].includes(self.location.hostname)) return;
   if (request.method !== 'GET' || url.origin !== self.location.origin || url.pathname.startsWith('/api/')) return;
 
   if (request.mode === 'navigate') {

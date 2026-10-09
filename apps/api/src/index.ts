@@ -5,6 +5,7 @@ import { closeDatabase, createDatabase } from './db.js';
 import { loadSession, type AppVariables } from './middleware/auth.js';
 import authRouter from './modules/auth.js';
 import entitiesRouter from './modules/entities.js';
+import objectivesRouter from './modules/objectives.js';
 import applicationsRouter from './modules/applications.js';
 import filesRouter from './modules/files.js';
 import productImagesRouter from './modules/product-images.js';
@@ -86,6 +87,7 @@ app.use('/api/v1/entities/Notification', async (c, next) => {
 const api = app.basePath('/api/v1');
 api.route('/auth', authRouter);
 api.route('/entities', entitiesRouter);
+api.route('/objectives', objectivesRouter);
 api.route('/applications', applicationsRouter);
 api.route('/files', filesRouter);
 api.route('/product-images', productImagesRouter);

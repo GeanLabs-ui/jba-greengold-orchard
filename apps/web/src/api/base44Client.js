@@ -599,7 +599,9 @@ const account = {
   reviews: () => request('/account/admin/reviews'),
   review: (id, payload) => request(`/account/admin/reviews/${encodeURIComponent(id)}`, { method: 'POST', body: payload }),
 };
-const apiBase44 = { auth, entities, applications, commerce, files, farms, staff, activityLog, account };
+const objectives = { list: () => request('/objectives'), save: async (body) => { const data = await request('/objectives', { method: 'POST', body }); publishDataChange('ObjectiveCycle'); return data; } };
+
+const apiBase44 = { objectives, auth, entities, applications, commerce, files, farms, staff, activityLog, account };
 
 // The demo/preview client (and its seeded demo credentials) is only pulled into the
 // bundle when demo mode is actually enabled at build/runtime, via a dynamic import.

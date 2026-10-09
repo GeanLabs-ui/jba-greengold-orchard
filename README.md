@@ -19,6 +19,10 @@ Production monorepo for the public website, customer portal, staff workspace, an
 
 Always start the Farm app from this repository root. The web server is fixed to port `5173` and will stop with a clear workspace message if another checkout is already using that port; it will not silently start on `5174` or another fallback port.
 
+The local API uses Miniflare's default `Request.cf` metadata, avoiding external Cloudflare metadata fetches and their startup timeouts. Deployment commands continue to use Cloudflare normally.
+
+If Windows Smart App Control blocks `workerd.exe`, the API cannot start and `dev:all` also stops the web server. `dev:api` detects this before Wrangler starts and prints a specific diagnostic. `npm run dev:web` can serve public pages for review while the runtime issue is resolved, but database-backed features still need the API. Check Windows Security / Code Integrity for the blocked Cloudflare runtime; do not change database configuration to fix this operating-system error.
+
 Local PostgreSQL binds to `127.0.0.1:15432`. This avoids the Windows reserved port range that can include the former port `54329`. Existing checkouts should use port `15432` in `.env` and `apps/api/.dev.vars` (including any Hyperdrive local connection string). The protected Docker volume remains `farmactualproject_mango_farm_postgres_data`; changing the port does not create a new database or run migrations.
 
 For routine work with an existing local database, use `npm run dev` (or the equivalent `npm run dev:local`). Neither command runs migrations. Run `npm run db:migrate` separately only when migrations are intentionally required. Local backups are kept outside Docker under `.backups/database`.

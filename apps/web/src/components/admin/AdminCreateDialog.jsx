@@ -19,6 +19,7 @@ import AdminActionButton from '@/components/admin/AdminActionButton';
 import FarmScopeMultiSelect from '@/components/farm/FarmScopeMultiSelect';
 import { scopeLabel } from '@/lib/farm-scope';
 import './daily-activity-dialog.css';
+import ObjectiveAlignment from '@/components/farm/ObjectiveAlignment';
 
 const buildInitialValues = (fields) => (
   fields.reduce((values, field) => ({
@@ -91,9 +92,15 @@ export default function AdminCreateDialog({
 
     const payload = fields.reduce((next, field) => {
       const rawValue = values[field.name];
-      next[field.name] = field.type === 'number' && rawValue !== '' ? Math.round(Number(rawValue)) * (field.inputScale || 1) : rawValue;
+      next[field.name] = field.type === 'number' && rawValue !== '' ? (field.allowDecimals ? Number(rawValue) : Math.round(Number(rawValue))) * (field.inputScale || 1) : rawValue;
       return next;
     }, {});
+
+    if (dailyActivityForm || fields.some(field => field.name === 'activity_date') && fields.some(field => field.name === 'title')) {
+      payload.related_objective = values.related_objective || '';
+      payload.related_sub_objective = values.related_sub_objective || '';
+      payload.related_kpi = values.related_kpi || '';
+    }
 
     try {
       await (onSubmit || onCreate)(payload);
@@ -164,7 +171,7 @@ export default function AdminCreateDialog({
           <Input
             id={field.name}
             type={field.type || 'text'}
-            step={field.step ?? (field.type === 'number' ? 1 : undefined)}
+            step={field.allowDecimals ? 'any' : field.step ?? (field.type === 'number' ? 1 : undefined)}
             required={field.required}
             value={value}
             onChange={(event) => updateValue(field.name, event.target.value)}
@@ -237,6 +244,7 @@ export default function AdminCreateDialog({
                 </DailySection>
               </div>
 
+              <ObjectiveAlignment values={values} onChange={updateValue} />
               {saveError && <p role="alert" className="text-body-sm text-red-700">{saveError}</p>}
               <div className="flex items-center justify-end gap-2 pt-1">
                 <DialogClose asChild>
@@ -259,6 +267,7 @@ export default function AdminCreateDialog({
               <div className="grid gap-4 sm:grid-cols-2">
                 {fields.map((field) => renderField(field, field.wide ? 'sm:col-span-2' : ''))}
               </div>
+              {fields.some(field => field.name === 'activity_date') && fields.some(field => field.name === 'title') && <ObjectiveAlignment values={values} onChange={updateValue} />}
               <Button type="submit" className="w-full gradient-mango text-white" disabled={saving}>
                 {saving ? 'Saving...' : submitLabel}
               </Button>

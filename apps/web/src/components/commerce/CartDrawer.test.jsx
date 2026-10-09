@@ -53,7 +53,7 @@ describe('basket popup', () => {
     expect(html).toContain('aria-label="Close basket"');
     expect(html).toContain('Order summary');
     expect(html).toContain('Continue to checkout');
-    expect(html).toContain('₵ 600');
+    expect(html).toContain('<dt>Total</dt><dd>₵ 600</dd>');
     expect(html).toContain('24 items');
     expect(html).toContain('Next basket page');
     expect(html.match(/<article/g)).toHaveLength(1);

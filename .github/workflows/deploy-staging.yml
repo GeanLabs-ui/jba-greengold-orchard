@@ -46,6 +46,11 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
           BOOK5_IMPORT_KEY: ${{ secrets.BOOK5_IMPORT_KEY }}
+      - name: Capture encrypted business-data baseline
+        run: node scripts/audit-business-data-release.mjs before
+        env:
+          DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+          BOOK5_IMPORT_KEY: ${{ secrets.BOOK5_IMPORT_KEY }}
       - name: Apply staging database migrations
         id: migrations
         shell: bash
@@ -59,6 +64,10 @@ jobs:
       - name: Verify approved Main Activities and preserved previous schedule
         if: steps.migrations.outputs.schedule_updated == 'true'
         run: node scripts/verify-main-activities.mjs
+        env:
+          DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+      - name: Verify PostgreSQL storage for new fields
+        run: node scripts/verify-release-field-storage.mjs
         env:
           DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
       - name: Deploy staging API
@@ -111,6 +120,19 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
           BOOK5_IMPORT_KEY: ${{ secrets.BOOK5_IMPORT_KEY }}
+      - name: Verify existing business data remains preserved
+        run: node scripts/audit-business-data-release.mjs after
+        env:
+          DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+          BOOK5_IMPORT_KEY: ${{ secrets.BOOK5_IMPORT_KEY }}
+      - name: Save encrypted business-data preservation evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: business-data-release-evidence
+          path: test-results/business-data-release/*.enc
+          if-no-files-found: ignore
+          retention-days: 14
       - name: Save encrypted task-log verification evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

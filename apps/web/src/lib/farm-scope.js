@@ -1,9 +1,9 @@
 // Display labels and reporting scopes; persisted farm/block IDs remain unchanged.
 export const BLOCK_CODES = ['A1', 'A2', 'A3', 'A4', 'A5', 'B1', 'B2', 'B3', 'B4', 'B5'];
 export const FARM_SCOPE_OPTIONS = [
+  { value: 'all', label: 'A&B' },
   { value: 'A', label: 'Farm A' },
   { value: 'B', label: 'Farm B' },
-  { value: 'all', label: 'Farm A&B' },
   ...BLOCK_CODES.map((code) => ({ value: code, label: code })),
 ];
 const text = (value) => String(value || '').trim();
@@ -58,8 +58,8 @@ export function blockSelectOptions(blocks = []) {
 
 export function farmScopeOptions(farms = [], blocks = []) {
   return [
+    { value: 'all', label: 'A&B' },
     ...farmSelectOptions(farms).map((option) => ({ ...option, value: `farm:${option.value}` })),
-    { value: 'all', label: 'Farm A&B' },
     ...blockSelectOptions(blocks).map((option) => ({ ...option, value: `block:${option.value}` })),
   ];
 }

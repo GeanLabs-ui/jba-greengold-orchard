@@ -20,7 +20,7 @@ export function getFarmDailyActivitiesNavigationState(pathname) {
     : section.children;
   const activeItem = [...items]
     .sort((left, right) => right.path.length - left.path.length)
-    .find((child) => routeMatches(pathname, child.path))
+    .find((child) => routeMatches(pathname, child.path) || child.children?.some((page) => routeMatches(pathname, page.path)))
     || items[0];
 
   return { section, items, activeItem };

@@ -3,6 +3,7 @@ import { businessPages } from './business-navigation';
 export const ADMIN_ACCESS_ROLES = ['super_admin', 'admin', 'farm_manager', 'farm_supervisor', 'inventory_officer', 'quality_officer', 'finance_officer', 'hr_officer', 'sales_officer', 'logistics_officer', 'content_editor', 'auditor'];
 
 export const ADMIN_PAGE_ACCESS = [
+  { key: 'objectives', label: 'Objectives', path: '/admin/objectives', group: 'System' },
   { key: 'dashboard', label: 'Dashboard', path: '/admin', group: 'Overview' },
   { key: 'crm', label: 'CRM', path: '/admin/crm', group: 'Business' },
   { key: 'inquiries', label: 'Client Inquiries', path: '/admin/inquiries', group: 'Business' },
@@ -27,8 +28,8 @@ export const ADMIN_PAGE_ACCESS = [
 
 export const ROLE_PAGE_DEFAULTS = {
   admin: ADMIN_PAGE_ACCESS.map((page) => page.key),
-  farm_manager: ['dashboard', 'farms', 'calendar', 'farm_daily_activities', 'inventory', 'procurement'],
-  farm_supervisor: ['dashboard', 'farms', 'calendar', 'farm_daily_activities'],
+  farm_manager: ['objectives', 'dashboard', 'farms', 'calendar', 'farm_daily_activities', 'inventory', 'procurement'],
+  farm_supervisor: ['objectives', 'dashboard', 'farms', 'calendar', 'farm_daily_activities'],
   inventory_officer: ['dashboard', 'inventory', 'procurement'],
   quality_officer: ['dashboard', 'farm_daily_activities', 'documents'],
   finance_officer: ['dashboard', 'finance', 'reports'],
@@ -36,7 +37,7 @@ export const ROLE_PAGE_DEFAULTS = {
   sales_officer: ['dashboard', 'crm', 'inquiries', 'sales', 'orders'],
   logistics_officer: ['dashboard', 'orders', 'logistics', 'export_ops'],
   content_editor: ['dashboard', 'content'],
-  auditor: ['dashboard', 'documents', 'reports', 'system_log'],
+  auditor: ['objectives', 'dashboard', 'documents', 'reports', 'system_log'],
 };
 
 const normalizeRole = (role) => String(role || '').trim().toLowerCase();

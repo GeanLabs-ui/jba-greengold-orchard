@@ -51,6 +51,7 @@ const Privacy = lazy(() => import('@/pages/public/Privacy'));
 const Terms = lazy(() => import('@/pages/public/Terms'));
 // Admin pages
 const AdminDashboard = lazy(() => import('@/pages/admin/AdminDashboard'));
+const Objectives = lazy(() => import('@/pages/admin/Objectives'));
 const CRM = lazy(() => import('@/pages/admin/CRM'));
 const Inquiries = lazy(() => import('@/pages/admin/Inquiries'));
 const Sales = lazy(() => import('@/pages/admin/Sales'));
@@ -59,6 +60,9 @@ const Inventory = lazy(() => import('@/pages/admin/Inventory'));
 const FarmProfileAdmin = lazy(() => import('@/pages/admin/FarmProfileAdmin'));
 const BlockProfileAdmin = lazy(() => import('@/pages/admin/BlockProfileAdmin'));
 const FarmDailyActivities = lazy(() => import('@/pages/admin/FarmDailyActivities'));
+const Issues = lazy(() => import('@/pages/admin/Issues'));
+const HarvestOperations = lazy(() => import('@/pages/admin/HarvestOperations'));
+const ToolsEquipment = lazy(() => import('@/pages/admin/ToolsEquipment'));
 const MasterScheduleTask = lazy(() => import('@/pages/admin/MasterScheduleTask'));
 const ProductionCalendar = lazy(() => import('@/pages/admin/ProductionCalendar'));
 const Logistics = lazy(() => import('@/pages/admin/Logistics'));
@@ -218,6 +222,11 @@ const AuthenticatedApp = () => {
           <Route path="harvests" element={<Navigate to="/admin/farm-daily-activities/activities/overview" replace />} />
           <Route path="farm-daily-activities" element={<FarmDailyActivitiesLayout />}>
             <Route index element={<FarmDailyActivities />} />
+            <Route path="equipment/*" element={<Navigate to="/admin/farm-daily-activities/activities/tools-equipment" replace />} />
+            <Route path="reports/*" element={<Navigate to="/admin/farm-daily-activities/activities/overview" replace />} />
+            <Route path="activities/issues" element={<Issues />} />
+            <Route path="activities/harvest" element={<HarvestOperations />} />
+            <Route path="activities/tools-equipment" element={<ToolsEquipment />} />
             <Route path="activities/farms/:farmId" element={<FarmProfileAdmin />} />
             <Route path="activities/farms/:farmId/blocks/:blockId" element={<BlockProfileAdmin />} />
             <Route path="activities/upcoming" element={<Navigate to="/admin/calendar" replace />} />
@@ -234,6 +243,7 @@ const AuthenticatedApp = () => {
           <Route path="applications" element={<Applications />} />
           <Route path="content" element={<LegacyBusinessRedirect to="/admin/marketing/products" />} />
           <Route path="documents" element={<Documents />} />
+          <Route path="objectives" element={<Objectives />} />
           <Route path="reports" element={<Reports />} />
           <Route path="system-log" element={<SystemLog />} />
           <Route path="settings" element={<SettingsPage />} />

@@ -1,4 +1,5 @@
 import {
+  Target,
   Banknote,
   ClipboardList,
   BarChart3,
@@ -46,6 +47,7 @@ export const adminNavSections = [
     title: 'System',
     icon: Settings,
     items: [
+      { label: 'Objectives', path: '/admin/objectives', icon: Target },
       { label: 'HR', path: '/admin/hr', icon: UserCog },
       { label: 'Applications ATS', path: '/admin/applications', icon: FileCheck2 },
       { label: 'Documents', path: '/admin/documents', icon: FolderOpen },
