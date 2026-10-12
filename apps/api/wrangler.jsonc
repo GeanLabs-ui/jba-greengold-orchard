@@ -112,17 +112,17 @@
       "hyperdrive": [
         {
           "binding": "HYPERDRIVE",
-          "id": "34566fb0a761426d88d1b5c3dee98e03"
+          "id": "9e171a949bc0414d80effcf09e57ceda"
         }
       ],
       "r2_buckets": [
         {
           "binding": "PRIVATE_FILES",
-          "bucket_name": "jba-greengold-files-production"
+          "bucket_name": "jba-greengold-files-staging"
         },
         {
           "binding": "PRIVATE_FILES_BACKUP",
-          "bucket_name": "jba-greengold-files-production-backup"
+          "bucket_name": "jba-greengold-files-staging-backup"
         }
       ],
       "observability": {
