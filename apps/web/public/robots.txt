@@ -6,4 +6,4 @@ Disallow: /login
 Disallow: /register
 Disallow: /api/
 
-Sitemap: https://jbagreengoldorchard.farm/sitemap.xml
+Sitemap: https://jbagreengold.com/sitemap.xml

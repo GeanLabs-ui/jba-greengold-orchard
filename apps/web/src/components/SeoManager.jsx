@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 
-const SITE_URL = 'https://jbagreengoldorchard.farm';
+const SITE_URL = 'https://jbagreengold.com';
 const pages = {
   '/': ['JBA GreenGold Orchard', 'Premium mango production, local supply, and export from Ghana.'],
   '/about': ['About JBA GreenGold Orchard', 'Learn about our orchard, people, and responsible mango production.'],
