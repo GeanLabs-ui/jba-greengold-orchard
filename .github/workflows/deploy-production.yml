@@ -1,9 +1,13 @@
 name: Deploy production
 
 on:
-  push:
-    branches: [main]
+  # Manual release only; branch merges must not trigger a production deployment.
   workflow_dispatch:
+    inputs:
+      confirm_cutover:
+        description: 'Enter APPROVE_JBA_CUTOVER after backups and bindings are verified'
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -15,6 +19,7 @@ concurrency:
 
 jobs:
   deploy:
+    if: ${{ github.ref == 'refs/heads/main' && inputs.confirm_cutover == 'APPROVE_JBA_CUTOVER' }}
     environment: production
     runs-on: ubuntu-latest
     timeout-minutes: 25
@@ -54,10 +59,7 @@ jobs:
       - run: npm run check
       - name: Reject destructive database migrations
         run: npm run db:check-migrations
-      - name: Apply production database migrations
-        run: npm run db:migrate
-        env:
-          DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+      # Cutover never applies database migrations. Run separately after review.
       - name: Deploy production API
         uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v4.0.0
         with:
