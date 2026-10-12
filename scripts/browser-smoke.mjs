@@ -9,10 +9,12 @@ const output = 'test-results/browser-smoke';
 await mkdir(output, { recursive: true });
 const browser = await chromium.launch();
 const results = [];
+let activePage;
 try {
   for (const [device, viewport] of Object.entries({ desktop: { width: 1440, height: 1000 }, mobile: { width: 390, height: 844 } })) {
     const context = await browser.newContext({ viewport, reducedMotion: 'reduce' });
     const page = await context.newPage();
+    activePage = page;
     const errors = [];
     const consoleErrors = [];
     page.on('pageerror', error => errors.push(error.message));
@@ -40,6 +42,7 @@ try {
         await page.goto(origin + route, { waitUntil: 'load' });
       }
       if (route === '/about') {
+        await page.locator('.ab-founders').scrollIntoViewIfNeeded();
         await page.getByRole('heading', { name: 'John Boakye Asante', exact: true }).waitFor();
         const portrait = page.getByRole('img', { name: 'Benedict Oppong Asante, Co-Founder', exact: true });
         await portrait.scrollIntoViewIfNeeded();
@@ -60,6 +63,10 @@ try {
   }
   console.log('Browser smoke passed: desktop/mobile rendering, product filters, navigation, and asset/runtime checks.');
 } catch (error) {
+  if (activePage && !activePage.isClosed()) {
+    await activePage.screenshot({ path: `${output}/failure.png`, fullPage: true }).catch(() => {});
+    results.push({ url: activePage.url(), headings: await activePage.locator('h1, h2, h3').allTextContents().catch(() => []) });
+  }
   results.push({ status: 'failed', error: error.message });
   throw error;
 } finally {
