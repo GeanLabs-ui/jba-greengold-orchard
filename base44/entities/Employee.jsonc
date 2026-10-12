@@ -25,20 +25,19 @@
     },
     "department": {
       "type": "string",
-      "title": "Department",
-      "enum": [
-        "sales",
-        "operations",
-        "finance",
-        "hr",
-        "logistics",
-        "farm",
-        "warehouse",
-        "procurement",
-        "export",
-        "management"
-      ],
-      "default": "operations"
+      "title": "Department Name"
+    },
+    "department_id": {
+      "type": "string",
+      "title": "Main Department ID"
+    },
+    "sub_department_id": {
+      "type": "string",
+      "title": "Sub-department ID"
+    },
+    "reports_to_id": {
+      "type": "string",
+      "title": "Reports To Employee ID"
     },
     "job_title": {
       "type": "string",
@@ -60,6 +59,22 @@
       "title": "Hire Date",
       "format": "date"
     },
+    "joining_at": {
+      "type": "string",
+      "title": "Joining Date and Time",
+      "format": "date-time"
+    },
+    "workspace_role": {
+      "type": "string",
+      "title": "System Role"
+    },
+    "page_access": {
+      "type": "array",
+      "title": "Admin Page Access",
+      "items": {
+        "type": "string"
+      }
+    },
     "status": {
       "type": "string",
       "title": "Status",
@@ -79,6 +94,11 @@
     "avatar_url": {
       "type": "string",
       "title": "Avatar URL",
+      "format": "uri"
+    },
+    "photo_url": {
+      "type": "string",
+      "title": "Staff Photo",
       "format": "uri"
     },
     "address": {

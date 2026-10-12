@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Download, FileCheck, Receipt, FileBarChart } from 'lucide-react';
 import PageHeader from '@/components/shared/PageHeader';
-import { formatDate } from '@/components/shared/format';
+import { formatCurrency, formatDate } from '@/components/shared/format';
 import { Button } from '@/components/ui/button';
 import { base44 } from '@/api/base44Client';
+import PageSkeleton from '@/components/shared/PageSkeleton';
 
 export default function PortalDocuments() {
   const [contracts, setContracts] = useState([]);
@@ -28,15 +29,15 @@ export default function PortalDocuments() {
         {docCategories.map((cat) => (
           <div key={cat.title} className="rounded-xl border border-border bg-card p-5 shadow-sm">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10"><cat.icon className="h-5 w-5 text-primary" /></div>
-            <h3 className="mt-3 font-semibold">{cat.title}</h3>
+            <h3 className="mt-3 text-card-title">{cat.title}</h3>
             <p className="text-xs text-muted-foreground">{cat.desc}</p>
             <p className="mt-2 font-heading text-2xl font-bold">{cat.count}</p>
           </div>
         ))}
       </div>
 
-      <h3 className="mb-3 font-heading font-semibold">Contracts</h3>
-      {loading ? <div className="h-48 animate-pulse rounded-xl bg-muted" /> : (
+      <h3 className="mb-3 text-card-title">Contracts</h3>
+      {loading ? <PageSkeleton contentOnly /> : (
         <div className="space-y-3">
           {contracts.length > 0 ? contracts.map((c) => (
             <div key={c.id} className="flex items-center justify-between rounded-xl border border-border bg-card p-4 shadow-sm">
@@ -48,7 +49,7 @@ export default function PortalDocuments() {
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <span className="font-semibold text-sm">{new Intl.NumberFormat().format(c.value_amount || 0)} {c.currency}</span>
+                <span className="font-semibold text-sm">{formatCurrency(c.value_amount)}</span>
                 {c.document_url && <Button variant="outline" size="sm"><Download className="mr-1 h-3 w-3" /> Download</Button>}
               </div>
             </div>

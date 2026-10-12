@@ -66,7 +66,7 @@ export default function ResetPassword() {
       )}
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="password">New Password</Label>
+          <Label className="text-label" htmlFor="password">New Password</Label>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
             <Input
@@ -76,6 +76,8 @@ export default function ResetPassword() {
               autoFocus
               placeholder="••••••••"
               value={newPassword}
+              minLength={12}
+              maxLength={128}
               onChange={(e) => setNewPassword(e.target.value)}
               className="pl-10 h-12"
               required
@@ -83,7 +85,7 @@ export default function ResetPassword() {
           </div>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="confirm">Confirm Password</Label>
+          <Label className="text-label" htmlFor="confirm">Confirm Password</Label>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
             <Input
@@ -92,6 +94,8 @@ export default function ResetPassword() {
               autoComplete="new-password"
               placeholder="••••••••"
               value={confirmPassword}
+              minLength={12}
+              maxLength={128}
               onChange={(e) => setConfirmPassword(e.target.value)}
               className="pl-10 h-12"
               required

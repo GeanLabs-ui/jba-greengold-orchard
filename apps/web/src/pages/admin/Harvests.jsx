@@ -1,3 +1,4 @@
+import { farmSelectOptions, blockSelectOptions, resolveOperationalScope, blockLabel } from '@/lib/farm-scope';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   Calendar,
@@ -14,6 +15,7 @@ import {
   UserRoundCheck,
 } from 'lucide-react';
 import PageHeader from '@/components/shared/PageHeader';
+import PageSkeleton from '@/components/shared/PageSkeleton';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { formatCurrency, formatDate, formatNumber } from '@/components/shared/format';
 import { Button } from '@/components/ui/button';
@@ -291,7 +293,7 @@ const processEntityConfig = {
       { key: 'planting_date', label: 'Planting', format: formatDate },
       { key: 'expected_harvest_start', label: 'Harvest Start', format: formatDate },
       { key: 'target_yield_kg', label: 'Target kg', align: 'right', format: formatNumber },
-      { key: 'budget_amount', label: 'Budget', align: 'right', format: formatCurrency },
+      { key: 'budget_amount', label: 'Budget Cost', semantic: 'cost', align: 'right', format: formatCurrency },
       { key: 'status', label: 'Status', render: (value) => <StatusBadge status={value} /> },
     ],
   },
@@ -306,7 +308,7 @@ const processEntityConfig = {
       { key: 'project_type', label: 'Type' },
       { key: 'farm_name', label: 'Farm' },
       { key: 'due_date', label: 'Due', format: formatDate },
-      { key: 'budget_amount', label: 'Budget', align: 'right', format: formatCurrency },
+      { key: 'budget_amount', label: 'Budget Cost', semantic: 'cost', align: 'right', format: formatCurrency },
       { key: 'progress_percent', label: 'Progress', render: (value) => <Progress value={asNumber(value)} className="h-2 min-w-24" /> },
       { key: 'status', label: 'Status', render: (value) => <StatusBadge status={value} /> },
     ],
@@ -332,16 +334,26 @@ export default function Harvests({ embedded = false }) {
       base44.entities.Farm.list('-created_date').catch(() => []),
       base44.entities.FarmBlock.list('-created_date').catch(() => []),
       base44.entities.Harvest.list('-harvest_date').catch(() => []),
+      base44.entities.HarvestBatch.list('-harvest_date').catch(() => []),
       base44.entities.FarmProcessLog.list('-created_date').catch(() => []),
       base44.entities.FarmTask.list('-due_date').catch(() => []),
       base44.entities.CropPlan.list('-created_date').catch(() => []),
       base44.entities.FarmProject.list('-due_date').catch(() => []),
       base44.auth.me().catch(() => null),
     ])
-      .then(([farmData, blockData, harvestData, logData, taskData, cropPlanData, projectData, user]) => {
+      .then(([farmData, blockData, harvestData, batchData, logData, taskData, cropPlanData, projectData, user]) => {
         setFarms(farmData || []);
         setBlocks(blockData || []);
-        setHarvests(harvestData || []);
+        setHarvests([
+          ...(harvestData || []),
+          ...(batchData || []).map((batch) => ({
+            ...batch,
+            total_quantity: batch.total_quantity ?? batch.quantity_harvested_kg,
+            quality_grade: batch.quality_grade || 'Processed ledger',
+            team_lead: batch.team_lead || batch.supervisor || batch.team,
+            harvest_season: batch.harvest_season || (batch.harvest_date ? `${String(batch.harvest_date).slice(0, 4)} harvest` : ''),
+          })),
+        ]);
         setLogs(logData || []);
         setTasks(taskData || []);
         setCropPlans(cropPlanData || []);
@@ -367,23 +379,7 @@ export default function Harvests({ embedded = false }) {
   });
 
   const createOperationalRecord = (entityName) => (payload) => {
-    const farm = farms.find((item) => item.id === payload.farm_id);
-    const block = blocks.find((item) => item.id === payload.block_id);
-    const nextPayload = {
-      ...payload,
-      farm_name: farm?.name || payload.farm_name || 'Unassigned Farm',
-      block_name: block?.name || payload.block_name || '',
-    };
-
-    if (payload.farm_id === 'unassigned_farm') {
-      nextPayload.farm_id = '';
-      nextPayload.farm_name = 'Unassigned Farm';
-    }
-
-    if (payload.block_id === 'unassigned_block') {
-      nextPayload.block_id = '';
-      nextPayload.block_name = '';
-    }
+    const nextPayload = { ...payload, ...resolveOperationalScope(payload, farms, blocks) };
 
     const generatedCodeField = codeField[entityName];
     if (generatedCodeField && !nextPayload[generatedCodeField]) {
@@ -399,17 +395,8 @@ export default function Harvests({ embedded = false }) {
   const activeProjects = projects.filter((project) => !['completed', 'cancelled'].includes(project.status)).length;
 
   const recentLogs = useMemo(() => logs.slice(0, 5), [logs]);
-  const farmOptions = useMemo(() => (
-    farms.length > 0
-      ? farms.map((farm) => ({ value: farm.id, label: farm.name }))
-      : [{ value: 'unassigned_farm', label: 'Unassigned Farm' }]
-  ), [farms]);
-
-  const blockOptions = useMemo(() => (
-    blocks.length > 0
-      ? blocks.map((block) => ({ value: block.id, label: `${block.name} (${block.farm_name || 'Farm'})` }))
-      : [{ value: 'unassigned_block', label: 'No Block' }]
-  ), [blocks]);
+  const farmOptions = useMemo(() => [...farmSelectOptions(farms), { value: '__all__', label: 'Farm A&B' }], [farms]);
+  const blockOptions = useMemo(() => blockSelectOptions(blocks), [blocks]);
 
   const activeProcessConfig = processEntityConfig[view];
   const processItems = {
@@ -511,9 +498,9 @@ export default function Harvests({ embedded = false }) {
           <p className="text-xs text-muted-foreground">Open Tasks</p>
         </div>
         <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-          <CalendarDays className="h-5 w-5 text-blue-500" />
-          <p className="mt-2 font-heading text-2xl font-bold">{formatNumber(targetYield)} kg</p>
-          <p className="text-xs text-muted-foreground">Crop Plan Target</p>
+          <CalendarDays className="h-5 w-5 text-emerald-600" />
+          <p className="mt-2 font-heading text-2xl font-bold text-emerald-700">{formatNumber(targetYield)} kg</p>
+          <p className="text-xs text-emerald-700">Crop Plan Target</p>
         </div>
         <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
           <Pickaxe className="h-5 w-5 text-amber-500" />
@@ -523,13 +510,13 @@ export default function Harvests({ embedded = false }) {
       </div>
 
       {loading ? (
-        <div className="h-96 animate-pulse rounded-xl bg-muted" />
+        <PageSkeleton contentOnly />
       ) : view === 'process' ? (
         <div className="grid gap-5 xl:grid-cols-[1.15fr_0.85fr]">
           <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <h2 className="font-heading text-lg font-bold">Farm Process Phases</h2>
+                <h2 className="text-section-title">Farm Process Phases</h2>
                 <p className="text-sm text-muted-foreground">Each phase has its own activity log and completion progress.</p>
               </div>
               <StatusBadge status={logs.some((log) => log.status === 'blocked') ? 'blocked' : 'active'} />
@@ -558,7 +545,7 @@ export default function Harvests({ embedded = false }) {
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="text-xs font-semibold text-muted-foreground">Phase {index + 1}</span>
-                          <h3 className="font-heading text-base font-bold">{phase.label}</h3>
+                          <h3 className="text-card-title">{phase.label}</h3>
                         </div>
                         <p className="mt-1 text-sm text-muted-foreground">{phase.description}</p>
                         <div className="mt-3">
@@ -583,7 +570,7 @@ export default function Harvests({ embedded = false }) {
           </section>
 
           <aside className="rounded-xl border border-border bg-card p-5 shadow-sm">
-            <h2 className="font-heading text-lg font-bold">Recent Activity</h2>
+            <h2 className="text-section-title">Recent Activity</h2>
             <div className="mt-4 space-y-3">
               {recentLogs.map((log) => {
                 const phase = phases.find((item) => item.key === log.phase);
@@ -652,7 +639,7 @@ export default function Harvests({ embedded = false }) {
               { key: 'phase', label: 'Phase', render: (value) => phases.find((phase) => phase.key === value)?.label || value },
               { key: 'activity_title', label: 'Activity' },
               { key: 'farm_name', label: 'Farm' },
-              { key: 'block_name', label: 'Block' },
+              { key: 'block_name', label: 'Block', render: (item) => blockLabel(item) },
               { key: 'performed_by_name', label: 'Who' },
               { key: 'activity_date', label: 'Date', render: (value, item) => displayDateTime(value, item.start_time) },
               { key: 'quantity', label: 'Qty', align: 'right', render: (value, item) => value ? `${formatNumber(value)} ${item.unit_of_measure || ''}` : '' },

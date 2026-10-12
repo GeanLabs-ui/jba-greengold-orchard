@@ -1,121 +1,326 @@
-import React, { useEffect, useState } from 'react';
-import { Banknote, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
-import PageHeader from '@/components/shared/PageHeader';
+import { FARM_SCOPE_OPTIONS } from '@/lib/farm-scope';
+import AdminActionButton from '@/components/admin/AdminActionButton';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Banknote, CalendarDays, Filter, MapPin, RotateCcw, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
 import StatusBadge from '@/components/shared/StatusBadge';
+import PageSkeleton from '@/components/shared/PageSkeleton';
 import { formatCurrency, formatDate } from '@/components/shared/format';
 import DataTable from '@/components/shared/DataTable';
 import MetricCard from '@/components/shared/MetricCard';
-import AdminCreateDialog from '@/components/admin/AdminCreateDialog';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/use-toast';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { base44 } from '@/api/base44Client';
+import { subscribeToDataChanges } from '@/lib/data-sync';
+import { useAuth } from '@/lib/AuthContext';
+import {
+  activityExpenseRows,
+  buildMonthlyFinanceData,
+  matchesDateSelection,
+  matchesFarmSelection,
+  outstandingWebsiteInvoices,
+  sumAmounts,
+  websiteSales,
+} from '@/lib/finance-data';
 
-const monthlyData = [
-  { month: 'Jan', revenue: 42, expenses: 28 },
-  { month: 'Feb', revenue: 55, expenses: 32 },
-  { month: 'Mar', revenue: 48, expenses: 30 },
-  { month: 'Apr', revenue: 67, expenses: 38 },
-  { month: 'May', revenue: 79, expenses: 42 },
-  { month: 'Jun', revenue: 92, expenses: 48 },
-];
+const canClearActivityCosts = (user) => (
+  ['super_admin', 'admin', 'farm_manager'].includes(String(user?.role || '').trim().toLowerCase())
+);
 
-const expenseFields = [
-  { name: 'category', label: 'Category', required: true },
-  { name: 'vendor_name', label: 'Vendor' },
-  { name: 'expense_date', label: 'Expense Date', type: 'date', required: true },
-  { name: 'amount', label: 'Amount', type: 'number', required: true },
-  {
-    name: 'status',
-    label: 'Status',
-    type: 'select',
-    defaultValue: 'pending',
-    options: [
-      { value: 'pending', label: 'Pending' },
-      { value: 'approved', label: 'Approved' },
-      { value: 'paid', label: 'Paid' },
-    ],
-  },
-];
+const yearOptions = Array.from({ length: 15 }, (_, index) => 2026 + index);
+const today = new Date();
+const initialMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+const initialYear = String(today.getFullYear());
+
+const dateValue = (record, fields) => fields.map((field) => record?.[field]).find(Boolean);
+const compactCedis = (value) => value >= 1_000_000 ? `₵${Math.round(value / 1_000_000)}M` : value >= 1_000 ? `₵${Math.round(value / 1_000)}K` : `₵${Math.round(value)}`;
+
+const chartWindow = (selection, sales, expenses) => {
+  if (selection.mode === 'month' && selection.month) {
+    const [year, month] = selection.month.split('-').map(Number);
+    return { anchor: new Date(year, month - 1, 1), months: 1 };
+  }
+  if (selection.mode === 'year' && selection.year) {
+    return { anchor: new Date(Number(selection.year), 11, 1), months: 12 };
+  }
+
+  const recordDates = [
+    ...sales.map((record) => dateValue(record, ['order_date', 'created_date'])),
+    ...expenses.map((record) => dateValue(record, ['expense_date', 'created_date'])),
+  ].map((value) => new Date(value)).filter((date) => !Number.isNaN(date.getTime()));
+  const customStart = selection.mode === 'custom' && selection.start ? new Date(`${selection.start}T00:00:00`) : null;
+  const customEnd = selection.mode === 'custom' && selection.end ? new Date(`${selection.end}T23:59:59`) : null;
+  const start = customStart || (recordDates.length ? new Date(Math.min(...recordDates)) : today);
+  const end = customEnd || (recordDates.length ? new Date(Math.max(...recordDates)) : today);
+  const span = ((end.getFullYear() - start.getFullYear()) * 12) + end.getMonth() - start.getMonth() + 1;
+  return { anchor: end, months: Math.min(24, Math.max(1, span)) };
+};
 
 export default function Finance() {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [activities, setActivities] = useState([]);
+  const [orders, setOrders] = useState([]);
   const [invoices, setInvoices] = useState([]);
-  const [payments, setPayments] = useState([]);
-  const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState('');
+  const [structure, setStructure] = useState({ farms: [], blocks: [] });
+  const [farmFilter, setFarmFilter] = useState('all');
+  const [dateMode, setDateMode] = useState('all');
+  const [monthFilter, setMonthFilter] = useState(initialMonth);
+  const [yearFilter, setYearFilter] = useState(initialYear);
+  const [customStart, setCustomStart] = useState('');
+  const [customEnd, setCustomEnd] = useState('');
 
-  const load = () => {
-    setLoading(true);
-    Promise.all([
-      base44.entities.Invoice.list('-invoice_date', 50),
-      base44.entities.Payment.list('-payment_date', 50),
-      base44.entities.Expense.list('-expense_date', 50),
-    ]).then(([invs, pays, exps]) => {
-      setInvoices(invs || []);
-      setPayments(pays || []);
-      setExpenses(exps || []);
-      setLoading(false);
-    }).catch(() => setLoading(false));
+  const load = useCallback((showLoading = true) => {
+    if (showLoading) setLoading(true);
+    return Promise.all([
+      base44.entities.DailyActivity.listAll('-activity_date'),
+      base44.entities.Order.listAll('-order_date'),
+      base44.entities.Invoice.listAll('-invoice_date'),
+      base44.entities.Farm.listAll(),
+      base44.entities.FarmBlock.listAll(),
+    ]).then(([activityRecords, orderRecords, invoiceRecords, farms, blocks]) => {
+      setStructure({ farms: farms || [], blocks: blocks || [] });
+      setActivities(activityRecords || []);
+      setOrders(orderRecords || []);
+      setInvoices(invoiceRecords || []);
+    }).catch((error) => {
+      toast({ title: 'Finance data could not be loaded', description: error.message, variant: 'destructive' });
+    }).finally(() => setLoading(false));
+  }, [toast]);
+
+  useEffect(() => {
+    load();
+    let timer;
+    const unsubscribe = subscribeToDataChanges(() => {
+      clearTimeout(timer);
+      timer = setTimeout(() => load(false), 120);
+    }, ['DailyActivity', 'FarmExpense', 'Order', 'Invoice', 'Farm', 'FarmBlock']);
+    return () => { clearTimeout(timer); unsubscribe(); };
+  }, [load]);
+
+  const dateSelection = useMemo(() => ({
+    mode: dateMode,
+    month: monthFilter,
+    year: yearFilter,
+    start: customStart,
+    end: customEnd,
+  }), [dateMode, monthFilter, yearFilter, customStart, customEnd]);
+  const allExpenses = useMemo(() => activityExpenseRows(activities), [activities]);
+  const allSales = useMemo(() => websiteSales(orders), [orders]);
+  const allOutstandingInvoices = useMemo(() => {
+    const orderById = new Map(orders.map((order) => [order.id, order]));
+    const orderByNumber = new Map(orders.map((order) => [order.order_number, order]));
+    return outstandingWebsiteInvoices(invoices).map((invoice) => {
+      const order = orderById.get(invoice.order_id) || orderByNumber.get(invoice.order_number) || {};
+      return {
+        ...order,
+        ...invoice,
+        farm_name: invoice.farm_name || order.farm_name,
+        farm_code: invoice.farm_code || order.farm_code,
+        block_name: invoice.block_name || order.block_name,
+        block_code: invoice.block_code || order.block_code,
+        items: invoice.items || order.items,
+      };
+    });
+  }, [invoices, orders]);
+  const expenses = useMemo(() => allExpenses.filter((expense) => (
+    matchesFarmSelection(expense, farmFilter, structure)
+    && matchesDateSelection(dateValue(expense, ['expense_date', 'created_date']), dateSelection)
+  )), [allExpenses, farmFilter, dateSelection, structure]);
+  const sales = useMemo(() => allSales.filter((sale) => (
+    matchesFarmSelection(sale, farmFilter, structure)
+    && matchesDateSelection(dateValue(sale, ['order_date', 'created_date']), dateSelection)
+  )), [allSales, farmFilter, dateSelection, structure]);
+  const outstandingInvoices = useMemo(() => allOutstandingInvoices.filter((invoice) => (
+    matchesFarmSelection(invoice, farmFilter, structure)
+    && matchesDateSelection(dateValue(invoice, ['invoice_date', 'created_date']), dateSelection)
+  )), [allOutstandingInvoices, farmFilter, dateSelection, structure]);
+  const totalSales = sumAmounts(sales, 'total_amount');
+  const totalExpenses = sumAmounts(expenses, 'amount');
+  const outstanding = outstandingInvoices.reduce((sum, invoice) => (
+    sum + Number(invoice.balance_due ?? invoice.total_amount ?? 0)
+  ), 0);
+  const netProfit = totalSales - totalExpenses;
+  const monthlyData = useMemo(() => {
+    const window = chartWindow(dateSelection, sales, expenses);
+    return buildMonthlyFinanceData(sales, expenses, window.anchor, window.months);
+  }, [dateSelection, sales, expenses]);
+
+  const resetFilters = () => {
+    setFarmFilter('all');
+    setDateMode('all');
+    setMonthFilter(initialMonth);
+    setYearFilter(initialYear);
+    setCustomStart('');
+    setCustomEnd('');
   };
 
-  useEffect(() => { load(); }, []);
+  const deleteActivityCost = async (activity) => {
+    if (!activity?.id || !canClearActivityCosts(user)) return;
+    const label = activity.description || activity.title || activity.activity_code || 'this activity';
+    const confirmed = window.confirm(
+      `Delete the financial cost for ${label}? The Daily Activity record will remain, but its actual and itemized costs will be cleared from Finance.`,
+    );
+    if (!confirmed) return;
 
-  const createExpense = (payload) => base44.entities.Expense.create({
-    ...payload,
-    expense_number: `EXP-${Date.now().toString().slice(-6)}`,
-  });
+    setDeletingId(activity.id);
+    try {
+      await base44.entities.DailyActivity.update(activity.id, {
+        actual_cost: 0,
+        cost: 0,
+        labour_cost: 0,
+        equipment_cost: 0,
+        fuel_cost: 0,
+        input_cost: 0,
+        transport_cost: 0,
+        expense_id: null,
+        expense_code: null,
+        expense_recorded_at: null,
+      });
 
-  const totalRevenue = payments.reduce((s, p) => s + (p.amount || 0), 0);
-  const totalExpenses = expenses.reduce((s, e) => s + (e.amount || 0), 0);
-  const outstanding = invoices.filter((i) => i.status !== 'paid').reduce((s, i) => s + (i.balance_due || 0), 0);
-  const netProfit = totalRevenue - totalExpenses;
+      if (activity.expense_id) {
+        await base44.entities.FarmExpense.delete(activity.expense_id).catch((error) => {
+          if (error.status !== 404) throw error;
+        });
+      }
+
+      setActivities((current) => current.map((item) => (
+        item.id === activity.id
+          ? { ...item, actual_cost: 0, cost: 0 }
+          : item
+      )));
+      toast({ title: 'Financial cost deleted', description: 'The Daily Activity itself was preserved.' });
+    } catch (error) {
+      toast({ title: 'Financial cost could not be deleted', description: error.message, variant: 'destructive' });
+      await load(false);
+    } finally {
+      setDeletingId('');
+    }
+  };
 
   return (
     <div>
-      <PageHeader title="Finance" description="Revenue, expenses, payments, and financial summaries.">
-        <AdminCreateDialog
-          title="Record Expense"
-          description="Add an expense to finance tracking."
-          buttonLabel="Record Expense"
-          fields={expenseFields}
-          onCreate={createExpense}
-          onCreated={load}
-          submitLabel="Record Expense"
-        />
-      </PageHeader>
+      <h1 className="mb-6 text-page-title">Finance</h1>
+      <div data-page-navigation className="mb-6 rounded-xl border border-border bg-card p-4 shadow-sm">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-sm font-semibold"><Filter className="h-4 w-4 text-primary" />Filters</div>
+          {(farmFilter !== 'all' || dateMode !== 'all') && (
+            <Button type="button" size="sm" variant="ghost" onClick={resetFilters}><RotateCcw />Reset</Button>
+          )}
+        </div>
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <label className="space-y-1.5 text-muted-foreground text-label">
+            <span className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" />Farm / Block</span>
+            <select value={farmFilter} onChange={(event) => setFarmFilter(event.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-sm outline-none focus:ring-2 focus:ring-ring">
+              {FARM_SCOPE_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            </select>
+          </label>
+
+          <label className="space-y-1.5 text-muted-foreground text-label">
+            <span className="flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5" />Date Filter</span>
+            <select value={dateMode} onChange={(event) => setDateMode(event.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-sm outline-none focus:ring-2 focus:ring-ring">
+              <option value="all">All Dates</option>
+              <option value="month">Monthly</option>
+              <option value="year">Yearly</option>
+              <option value="custom">Custom Date</option>
+            </select>
+          </label>
+
+          {dateMode === 'month' && (
+            <label className="space-y-1.5 text-muted-foreground text-label">
+              <span>Month</span>
+              <input type="month" value={monthFilter} onChange={(event) => setMonthFilter(event.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-sm outline-none focus:ring-2 focus:ring-ring" />
+            </label>
+          )}
+
+          {dateMode === 'year' && (
+            <label className="space-y-1.5 text-muted-foreground text-label">
+              <span>Year</span>
+              <select value={yearFilter} onChange={(event) => setYearFilter(event.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-sm outline-none focus:ring-2 focus:ring-ring">
+                {yearOptions.map((year) => <option key={year} value={year}>{year}</option>)}
+              </select>
+            </label>
+          )}
+
+          {dateMode === 'custom' && (
+            <>
+              <label className="space-y-1.5 text-muted-foreground text-label">
+                <span>Start Date</span>
+                <input type="date" value={customStart} max={customEnd || undefined} onChange={(event) => setCustomStart(event.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-sm outline-none focus:ring-2 focus:ring-ring" />
+              </label>
+              <label className="space-y-1.5 text-muted-foreground text-label">
+                <span>End Date</span>
+                <input type="date" value={customEnd} min={customStart || undefined} onChange={(event) => setCustomEnd(event.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-sm outline-none focus:ring-2 focus:ring-ring" />
+              </label>
+            </>
+          )}
+        </div>
+      </div>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard title="Total Revenue" value={formatCurrency(totalRevenue)} icon={TrendingUp} color="green" subtitle="From payments" />
-        <MetricCard title="Total Expenses" value={formatCurrency(totalExpenses)} icon={TrendingDown} color="red" subtitle="Recorded" />
-        <MetricCard title="Outstanding" value={formatCurrency(outstanding)} icon={Wallet} color="amber" subtitle="Unpaid invoices" />
-        <MetricCard title="Net Profit" value={formatCurrency(netProfit)} icon={Banknote} color={netProfit >= 0 ? 'green' : 'red'} subtitle="Revenue - Expenses" />
+        <MetricCard title="Total Revenue" value={formatCurrency(totalSales)} icon={TrendingUp} color="blue" subtitle="From website sales" />
+        <MetricCard title="Total Expenses" value={formatCurrency(totalExpenses)} icon={TrendingDown} color="red" subtitle="From Daily Activity costs" />
+        <MetricCard title="Outstanding" value={formatCurrency(outstanding)} icon={Wallet} color="amber" subtitle="Unpaid website invoices" />
+        <MetricCard title="Net Profit" value={formatCurrency(netProfit)} icon={Banknote} color={netProfit >= 0 ? 'green' : 'red'} subtitle="Revenue − Expenses" />
       </div>
 
       <div className="mt-6 rounded-xl border border-border bg-card p-5 shadow-sm">
-        <h3 className="font-heading font-semibold">Revenue vs Expenses (GHS M)</h3>
+        <h3 className="text-card-title">Website Sales vs Daily Activity Expenses (₵)</h3>
         <ResponsiveContainer width="100%" height={280} className="mt-4">
           <BarChart data={monthlyData}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-            <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-            <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
-            <Tooltip contentStyle={{ borderRadius: '0.75rem', border: '1px solid hsl(var(--border))' }} />
-            <Bar dataKey="revenue" fill="hsl(150 45% 42%)" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="expenses" fill="hsl(0 72% 51%)" radius={[4, 4, 0, 0]} />
+            <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize="var(--text-caption)" />
+            <YAxis allowDecimals={false} stroke="hsl(var(--muted-foreground))" fontSize="var(--text-caption)" tickFormatter={compactCedis} />
+            <Tooltip contentStyle={{ borderRadius: '0.75rem', border: '1px solid hsl(var(--border))' }} formatter={(value) => formatCurrency(value)} />
+            <Bar dataKey="expenses" name="Activity expenses" fill="#355e3b" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="sales" name="Website revenue" fill="#2e7d32" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
 
-      <div className="mt-6">
-        <h3 className="mb-3 font-heading font-semibold">Recent Expenses</h3>
-        {loading ? <div className="h-48 animate-pulse rounded-xl bg-muted" /> : (
-          <DataTable items={expenses} columns={[
-            { key: 'expense_number', label: 'Expense #' },
-            { key: 'category', label: 'Category' },
-            { key: 'expense_date', label: 'Date', format: formatDate },
-            { key: 'vendor_name', label: 'Vendor' },
-            { key: 'amount', label: 'Amount', align: 'right', format: (v) => formatCurrency(v) },
-            { key: 'status', label: 'Status', render: (v) => <StatusBadge status={v} /> },
+      <section className="mt-6">
+        <div className="mb-3">
+          <h3 className="text-card-title">Daily Activity Expenses</h3>
+          <p className="mt-1 text-xs text-muted-foreground">Deleting a financial cost preserves the operational Daily Activity record.</p>
+        </div>
+        {loading ? <PageSkeleton contentOnly /> : (
+          <DataTable
+            items={expenses}
+            emptyMessage="No Daily Activity costs match the selected filters."
+            columns={[
+              { key: 'expense_number', label: 'Activity #' },
+              { key: 'description', label: 'Activity' },
+              { key: 'expense_date', label: 'Date', format: formatDate },
+              { key: 'category', label: 'Cost Type' },
+              { key: 'vendor_name', label: 'Responsible' },
+              { key: 'amount', label: 'Actual Cost', align: 'right', format: formatCurrency },
+              { key: 'status', label: 'Status', render: (value) => <StatusBadge status={String(value || '').toLowerCase()} label={value} /> },
+            ]}
+            rowActions={canClearActivityCosts(user) ? (activity) => (
+              <AdminActionButton action="delete" type="button" disabled={deletingId === activity.id} onClick={() => deleteActivityCost(activity)} label="Delete" />
+            ) : undefined}
+          />
+        )}
+      </section>
+
+      <section className="mt-6">
+        <div className="mb-3">
+          <h3 className="text-card-title">Recent Website Sales</h3>
+          <p className="mt-1 text-xs text-muted-foreground">Orders placed by customers through the public website.</p>
+        </div>
+        {loading ? <PageSkeleton contentOnly /> : (
+          <DataTable items={sales} emptyMessage="No website sales match the selected filters." columns={[
+            { key: 'order_number', label: 'Order #' },
+            { key: 'order_date', label: 'Date', format: formatDate },
+            { key: 'customer_name', label: 'Customer' },
+            { key: 'payment_status', label: 'Payment', render: (value) => <StatusBadge status={value || 'pending'} /> },
+            { key: 'total_amount', label: 'Total', semantic: 'revenue', align: 'right', format: formatCurrency },
+            { key: 'status', label: 'Order Status', render: (value) => <StatusBadge status={value} /> },
           ]} />
         )}
-      </div>
+      </section>
     </div>
   );
 }

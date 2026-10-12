@@ -1,0 +1,138 @@
+.farm-performance-trends { min-width: 0; }
+.farm-trend-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; }
+.farm-trend-note { margin-top: 8px; font-size: 12px; color: #64748b; }
+.farm-analytics .farm-performance-trends .farm-trend-card,
+.farm-analytics .analytics-block-chart { min-width: 0; padding: 22px 24px 16px; background: #fff; border: 1px solid #dce5df; border-radius: 12px !important; box-shadow: 0 2px 8px rgb(22 48 35 / 3%) !important; }
+.farm-analytics .farm-performance-trends .farm-trend-card h3 { margin: 0; font-size: 20px !important; line-height: 1.3 !important; font-weight: 700 !important; letter-spacing: -.02em; color: #172b24; }
+.farm-analytics .farm-performance-trends .farm-trend-card > p { margin: 5px 0 16px; font-size: 13px !important; line-height: 1.5 !important; color: #64748b; }
+.farm-trend-legend { display: flex; flex-wrap: wrap; gap: 10px 24px; margin: 0 0 14px; }
+.farm-trend-legend span { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; color: #526259; }
+.farm-trend-legend i { width: 9px; height: 9px; border-radius: 50%; }
+.analytics-chart-key { flex-shrink: 0; margin: 0 0 14px; padding: 10px 12px; background: #f7faf8; border: 1px solid #e4ebe6; border-radius: 7px; }
+.analytics-measurement-key { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin: 0; font-size: 12px; color: #334b3c; }
+.analytics-measurement-key strong { font-weight: 600; }
+.analytics-measurement-key > span + span { border-left: 1px solid #d6e0d9; padding-left: 14px; }
+.analytics-target-key { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 18px; margin-top: 8px; font-size: 12px; }
+.analytics-target-key > span { display: inline-flex; align-items: center; gap: 6px; }
+.analytics-target-key .analytics-target-label { color: #64748b; }
+.analytics-target-key i { width: 16px; border-top: 2px dashed currentColor; }
+.analytics-plot-scroll { overflow-x: auto; }
+.farm-trend-plot { height: 360px; min-width: 640px; }
+.farm-analytics .analytics-block-chart > header { padding: 0 0 16px; min-height: 42px; }
+.farm-analytics .analytics-block-chart > header h2 { font-size: 20px; line-height: 1.3; font-weight: 700; color: #172b24; }
+.farm-analytics .analytics-block-chart-body { padding: 0; }
+.farm-analytics .recharts-cartesian-grid line { stroke: #dfe7e3; stroke-width: 1; }
+.farm-analytics .recharts-cartesian-axis-tick-value { fill: #526259; font-size: 12px; }
+@media (max-width: 700px) {
+  .farm-analytics .farm-performance-trends .farm-trend-card,
+  .farm-analytics .analytics-block-chart { padding: 16px 12px 12px; border-radius: 10px !important; }
+  .farm-analytics .farm-performance-trends .farm-trend-card h3,
+  .farm-analytics .analytics-block-chart > header h2 { font-size: 18px !important; }
+  .farm-trend-legend { gap: 8px 16px; }
+  .analytics-target-key { gap: 7px 12px; }
+  .analytics-target-label { width: 100%; }
+  .farm-trend-plot { height: 360px; }
+}
+
+
+/* Yearly reference: grouped financial bars, yield line and a live summary. */
+.farm-analytics .farm-performance-trends .farm-trend-heading { display: flex; align-items: center; gap: 20px; margin-bottom: 28px; }
+.farm-trend-heading > div { flex: 1; min-width: 0; }
+.farm-analytics .farm-performance-trends .farm-trend-heading p { margin: 5px 0 0; color: #536a8a; font-size: 16px; line-height: 1.5; }
+.farm-trend-icon { width: 58px; height: 58px; padding: 12px; border-radius: 16px; flex-shrink: 0; color: #149342; background: #effaf4; }
+.farm-trend-range-control { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 1px solid #dce5f0; border-radius: 12px; background: white; flex-shrink: 0; }
+.farm-trend-range-control > svg { width: 22px; color: #13933f; }
+.farm-analytics .farm-performance-trends select.farm-trend-range { border: 0; background: transparent; color: #23395e; font-size: 15px; padding: 0 6px; min-height: 24px; }
+.farm-analytics .farm-performance-trends :is(.farm-trend-card--yearly, .farm-trend-card--monthly) { padding: 26px 24px; background: #fff; border-color: #e1e9f4; border-radius: 18px !important; box-shadow: 0 5px 24px rgb(50 80 120 / 5%) !important; }
+.farm-analytics .farm-performance-trends :is(.farm-trend-card--yearly, .farm-trend-card--monthly) h3 { color: #0c1c3e; font-size: 26px !important; }
+:is(.farm-trend-card--yearly, .farm-trend-card--monthly) .farm-trend-legend { gap: 18px 36px; margin-bottom: 18px; }
+:is(.farm-trend-card--yearly, .farm-trend-card--monthly) .farm-trend-legend span { font-size: 16px; color: #536a8a; gap: 12px; }
+:is(.farm-trend-card--yearly, .farm-trend-card--monthly) .farm-trend-legend i { width: 18px; height: 18px; }
+:is(.farm-trend-card--yearly, .farm-trend-card--monthly) .farm-trend-plot { height: 440px; }
+.farm-analytics :is(.farm-trend-card--yearly, .farm-trend-card--monthly) .recharts-cartesian-grid line { stroke: #dbe4f1; }
+.farm-trend-summary { display: flex; align-items: center; gap: 24px; padding: 18px; margin-top: 24px; background: #effaf4; border-radius: 14px; color: #11843a; }
+.farm-trend-summary-icon { width: 54px; height: 54px; padding: 10px; background: #fff; border-radius: 14px; flex-shrink: 0; }
+.farm-trend-summary > div { flex: 1; border-left: 1px solid #b3dfc9; padding-left: 24px; }
+.farm-trend-summary strong { font-size: 18px; }
+.farm-trend-summary p { margin: 6px 0 0; color: #386477; font-size: 14px; line-height: 1.6; }
+.farm-trend-tagline { display: flex; align-items: center; gap: 10px; font-size: 14px; line-height: 1.4; }
+.farm-trend-tagline svg { width: 32px; height: 32px; }
+@media (max-width: 700px) {
+  .farm-analytics .farm-performance-trends :is(.farm-trend-card--yearly, .farm-trend-card--monthly) { padding: 18px 12px; }
+  .farm-analytics .farm-performance-trends .farm-trend-heading { flex-wrap: wrap; gap: 12px; }
+  .farm-analytics .farm-performance-trends :is(.farm-trend-card--yearly, .farm-trend-card--monthly) h3 { font-size: 20px !important; }
+  .farm-analytics .farm-performance-trends .farm-trend-heading p { font-size: 13px; }
+  .farm-trend-icon { width: 44px; height: 44px; padding: 9px; }
+  .farm-trend-range-control { margin-left: 56px; padding: 8px 12px; }
+  :is(.farm-trend-card--yearly, .farm-trend-card--monthly) .farm-trend-legend { gap: 12px 18px; }
+  :is(.farm-trend-card--yearly, .farm-trend-card--monthly) .farm-trend-legend span { font-size: 13px; gap: 7px; }
+  :is(.farm-trend-card--yearly, .farm-trend-card--monthly) .farm-trend-legend i { width: 12px; height: 12px; }
+  .farm-trend-summary { gap: 12px; padding: 14px; flex-wrap: wrap; }
+  .farm-trend-summary > div { padding-left: 12px; }
+  .farm-trend-tagline { margin-left: 66px; }
+}
+
+@media (max-width: 700px) {
+  :is(.farm-trend-card--yearly, .farm-trend-card--monthly) .farm-trend-heading > div { flex-basis: calc(100% - 56px); }
+}
+
+.farm-trend-card--monthly .farm-trend-plot { height: 520px; }
+
+/* Restore the compact block comparison independently of performance trend cards. */
+.farm-analytics .analytics-block-chart { padding: 10px 12px 12px; border: 1px solid #e5e7eb; border-radius: 0 !important; box-shadow: none !important; }
+.farm-analytics .analytics-block-chart > header { min-height: 36px; padding: 0 0 16px; }
+.farm-analytics .analytics-block-chart > header h2 { font-size: 20px; }
+.farm-analytics .analytics-block-chart .recharts-cartesian-grid line { stroke: #edf4ee; }
+@media (max-width: 767px) {
+  .farm-analytics .analytics-block-chart { height: 285px; }
+  .farm-analytics .analytics-block-chart > header h2 { font-size: 16px; }
+}
+
+.analytics-chart-rotation { min-width: 0; }
+.analytics-chart-rotation-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 10px; }
+.analytics-chart-rotation-controls button { padding: 6px 12px; border: 1px solid #dce5df; border-radius: 6px; background: #fff; color: #526259; font-size: 12px; }
+.analytics-chart-rotation-controls button[aria-pressed="true"] { background: #effaf4; color: #11843a; border-color: #a8d5b9; }
+.analytics-chart-rotation-controls button:focus-visible { outline: 2px solid #11843a; outline-offset: 2px; }
+.analytics-chart-rotation-controls .analytics-chart-rotation-pause { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; }
+.analytics-chart-rotation-stage { position: relative; min-width: 0; }
+.analytics-chart-slide { position: absolute; inset: 0; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+.analytics-chart-slide--size-reference { position: relative; inset: auto; }
+.analytics-chart-slide > article { flex: 1; min-height: 0; }
+.farm-analytics .analytics-chart-slide .analytics-block-chart { height: 100%; min-height: 0; flex: 1; padding: 26px 24px; border-radius: 18px !important; border-color: #e1e9f4; }
+.analytics-chart-slide .farm-trend-card { display: flex; flex-direction: column; }
+.analytics-chart-slide .farm-trend-summary { margin-top: auto; }
+.analytics-chart-slide .analytics-plot-scroll { margin-bottom: 24px; }
+@media (max-width: 700px) {
+  .farm-analytics .analytics-chart-slide .analytics-block-chart { padding: 18px 12px; }
+}
+
+/* The monthly card alone determines the carousel height at every viewport. */
+.analytics-chart-slide .farm-trend-card--yearly .farm-trend-plot { height: 520px; }
+.farm-analytics .analytics-chart-slide .analytics-block-chart-body { flex: 0 1 520px; height: 520px; }
+
+/* Compact shared viewport: avoid a full-screen chart on wide monitors. */
+.analytics-chart-rotation { width: 100%; max-width: 1040px; margin-inline: auto; }
+.farm-analytics .analytics-chart-rotation .farm-trend-card,
+.farm-analytics .analytics-chart-rotation .analytics-block-chart { padding: 18px 16px; }
+.farm-analytics .analytics-chart-rotation .farm-trend-heading { gap: 12px; margin-bottom: 16px; }
+.farm-analytics .analytics-chart-rotation .farm-trend-heading h3 { font-size: 20px !important; }
+.farm-analytics .analytics-chart-rotation .farm-trend-heading p { font-size: 13px; }
+.analytics-chart-rotation .farm-trend-icon { width: 44px; height: 44px; padding: 9px; }
+.analytics-chart-rotation .farm-trend-range-control { padding: 8px 10px; }
+.analytics-chart-rotation .farm-trend-legend { margin-bottom: 10px; gap: 12px 24px; }
+.analytics-chart-rotation .farm-trend-legend span { font-size: 13px; gap: 8px; }
+.analytics-chart-rotation .farm-trend-legend i { width: 12px; height: 12px; }
+.analytics-chart-rotation .farm-trend-card .farm-trend-plot { height: 300px; }
+.analytics-chart-rotation .analytics-plot-scroll { margin-bottom: 14px; }
+.analytics-chart-rotation .farm-trend-summary { padding: 12px; gap: 14px; }
+.analytics-chart-rotation .farm-trend-summary-icon { width: 40px; height: 40px; padding: 8px; }
+.analytics-chart-rotation .farm-trend-summary > div { padding-left: 14px; }
+.analytics-chart-rotation .farm-trend-summary strong { font-size: 15px; }
+.analytics-chart-rotation .farm-trend-summary p { font-size: 12px; margin-top: 4px; }
+.analytics-chart-rotation .farm-trend-tagline { font-size: 12px; }
+.farm-analytics .analytics-chart-rotation .analytics-block-chart-body { flex: 1; height: auto; }
+@media (max-width: 700px) {
+  .farm-analytics .analytics-chart-rotation .farm-trend-heading h3 { font-size: 17px !important; }
+  .farm-analytics .analytics-chart-rotation .farm-trend-card,
+  .farm-analytics .analytics-chart-rotation .analytics-block-chart { padding: 14px 12px; }
+}

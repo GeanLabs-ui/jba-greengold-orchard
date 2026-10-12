@@ -1,0 +1,13 @@
+# Local test authentication
+
+Start with `npm run dev`, then open `http://localhost:5173/register`. Enter a name, email, and a password of at least 12 characters to create a customer. Registration signs in immediately; after logout, use the same email/password at `/login`. Existing email addresses are rejected and never converted or overwritten.
+
+For quick testing, `/login` offers the seeded customer and `/staff-login` offers the seeded administrator. These passwordless fixtures are `customer@local-test.invalid` and `admin@local-test.invalid`. Only the designated fixture can be selected for each login audience. Run `npm run dev:seed` if the server was already running before this change; seeding is idempotent and refuses to modify an existing identity with a different role or email.
+
+Local accounts use normal database sessions, HttpOnly cookies, CSRF validation, ownership filtering, and role checks. Verification is explicitly simulated for these development accounts; it does not approve identity documents or verify ownership of a real email address. Customer registration hardcodes the customer role and rejects additional role fields.
+
+The server enables both local endpoints only when `APP_ENV=local`, `LOCAL_TEST_LOGIN_ENABLED=true`, and `DATABASE_URL` targets the protected localhost PostgreSQL database on port `54329`, database `mango_farm`. An HTTP hostname or frontend flag cannot enable them. Staging and production explicitly disable the flag, and their environment names independently reject requests. Local account IDs are also rejected during password login and session loading outside this gate, including if development records or sessions are copied elsewhere.
+
+To disable local test authentication, set `LOCAL_TEST_LOGIN_ENABLED=false` in `apps/api/.dev.vars` and restart the API. This also invalidates access through existing local test sessions. No Google OAuth is configured for localhost; staging Google settings are unchanged.
+
+Validation: the full suite passed 348 tests across 47 files, including an opt-in PostgreSQL transaction test for registration, duplicate-email rejection, password re-login, wrong-role rejection, existing-account sessions, five ownership scopes, CSRF, and logout. Registration test records are rolled back. Live HTTP checks verified both seeded sessions and opposite-role API rejection. Browser checks verified the local registration form, seeded customer portal, seeded admin dashboard, and access-denied screens in both wrong-role directions. Build, API typecheck, and web lint passed. See `ACCOUNT_SECURITY_REVIEW.md` for the separate legacy data findings.

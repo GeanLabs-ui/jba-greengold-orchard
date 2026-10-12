@@ -1,0 +1,13 @@
+/* Keep the task editor above the fixed admin navigation at every viewport size. */
+body:has(.daily-activity-dialog) [data-ui='dialog-overlay'] {
+  z-index: 180;
+}
+
+[data-ui='dialog-content'].daily-activity-dialog {
+  z-index: 190;
+  overscroll-behavior: contain;
+}
+
+body:has(.daily-activity-dialog) [data-radix-popper-content-wrapper] {
+  z-index: 220 !important;
+}

@@ -1,0 +1,157 @@
+name: Deploy staging
+
+on:
+  push:
+    branches: [staging]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment: staging
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Configure runner Git default branch
+        run: git config --global init.defaultBranch main
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - run: npm ci
+      - name: Audit all dependencies
+        run: npm audit --audit-level=low
+      - name: Verify staging database and service bindings
+        run: npm run deploy:verify -- --env=staging
+        env:
+          DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+          APP_URL: ${{ vars.APP_URL }}
+          GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_CLIENT_ID }}
+          TURNSTILE_SITE_KEY: ${{ vars.TURNSTILE_SITE_KEY }}
+          TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      - run: npm run check
+      - name: Reject destructive database migrations
+        run: npm run db:check-migrations
+      - name: Capture encrypted task-log baseline
+        run: node scripts/audit-task-log-release.mjs before
+        env:
+          DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+          BOOK5_IMPORT_KEY: ${{ secrets.BOOK5_IMPORT_KEY }}
+      - name: Capture encrypted business-data baseline
+        run: node scripts/audit-business-data-release.mjs before
+        env:
+          DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+          BOOK5_IMPORT_KEY: ${{ secrets.BOOK5_IMPORT_KEY }}
+      - name: Apply staging database migrations
+        id: migrations
+        shell: bash
+        run: |
+          npm run db:migrate | tee migration-output.log
+          if grep -q '^Applied 0020_post_harvest_main_activities.sql$' migration-output.log; then
+            echo 'schedule_updated=true' >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+      - name: Verify approved Main Activities and preserved previous schedule
+        if: steps.migrations.outputs.schedule_updated == 'true'
+        run: node scripts/verify-main-activities.mjs
+        env:
+          DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+      - name: Verify PostgreSQL storage for new fields
+        run: node scripts/verify-release-field-storage.mjs
+        env:
+          DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+      - name: Deploy staging API
+        uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v4.0.0
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: apps/api
+          environment: staging
+          secrets: |
+            TURNSTILE_SECRET_KEY
+            GOOGLE_CLIENT_ID
+          command: deploy --env staging --keep-vars
+        env:
+          TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
+          GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_CLIENT_ID }}
+      - name: Build Pages application
+        run: npm run build:web
+        env:
+          VITE_TURNSTILE_SITE_KEY: ${{ vars.TURNSTILE_SITE_KEY }}
+          VITE_GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_CLIENT_ID }}
+      - name: Deploy staging Pages branch
+        uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v4.0.0
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: apps/web
+          command: pages deploy dist --project-name=jba-greengold-orchard --branch=staging
+      - name: Smoke test frontend and database readiness
+        run: |
+          curl --fail --retry 5 --retry-delay 5 --silent --show-error "${{ vars.APP_URL }}/" > /dev/null
+          wait_for_status() {
+            url="$1"
+            expected="$2"
+            for attempt in $(seq 1 12); do
+              body="$(curl --fail --silent --show-error "$url" 2>/dev/null || true)"
+              if node -e 'try { const body = JSON.parse(process.argv[1]); process.exit(body.status === process.argv[2] ? 0 : 1); } catch { process.exit(1); }' "$body" "$expected"; then
+                return 0
+              fi
+              echo "Waiting for $url to report $expected (attempt $attempt/12)"
+              sleep 5
+            done
+            echo "$url did not report $expected after deployment" >&2
+            return 1
+          }
+          wait_for_status "${{ vars.APP_URL }}/api/v1/health" "ok"
+          wait_for_status "${{ vars.APP_URL }}/api/v1/ready" "ready"
+      - name: Verify preserved task-log records and dates
+        run: node scripts/audit-task-log-release.mjs after
+        env:
+          DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+          BOOK5_IMPORT_KEY: ${{ secrets.BOOK5_IMPORT_KEY }}
+      - name: Verify existing business data remains preserved
+        run: node scripts/audit-business-data-release.mjs after
+        env:
+          DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+          BOOK5_IMPORT_KEY: ${{ secrets.BOOK5_IMPORT_KEY }}
+      - name: Save encrypted business-data preservation evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: business-data-release-evidence
+          path: test-results/business-data-release/*.enc
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Save encrypted task-log verification evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: task-log-release-evidence
+          path: test-results/task-log-release/*.enc
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Install Chromium for deployment verification
+        run: npx playwright install --with-deps chromium
+      - name: Verify deployed desktop and mobile browser flows
+        run: node scripts/browser-smoke.mjs
+        env:
+          BROWSER_BASE_URL: ${{ vars.APP_URL }}
+      - name: Save browser verification evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: staging-browser-verification
+          path: test-results/browser-smoke
+          if-no-files-found: ignore
+          retention-days: 14

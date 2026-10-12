@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { FolderOpen, FileText, Award, Download } from 'lucide-react';
 import PageHeader from '@/components/shared/PageHeader';
+import PageSkeleton from '@/components/shared/PageSkeleton';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { formatDate } from '@/components/shared/format';
 import { Button } from '@/components/ui/button';
@@ -49,7 +50,7 @@ export default function Documents() {
 
   return (
     <div>
-      <PageHeader title="Document Management" description="Certifications, notifications, and business documents.">
+      <PageHeader title="Documents">
         <AdminCreateDialog
           title="Upload Document"
           description="Register a certification or business document record."
@@ -68,7 +69,7 @@ export default function Documents() {
         </TabsList>
 
         <TabsContent value="certifications" className="mt-4">
-          {loading ? <div className="h-64 animate-pulse rounded-xl bg-muted" /> : (
+          {loading ? <PageSkeleton variant="table" contentOnly /> : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {certifications.length > 0 ? certifications.map((cert) => (
                 <div key={cert.id} className="rounded-xl border border-border bg-card p-5 shadow-sm">
@@ -76,7 +77,7 @@ export default function Documents() {
                     <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10"><Award className="h-5 w-5 text-primary" /></div>
                     <StatusBadge status={cert.status} />
                   </div>
-                  <h3 className="mt-3 font-semibold">{cert.name}</h3>
+                  <h3 className="mt-3 text-card-title">{cert.name}</h3>
                   <p className="text-xs text-muted-foreground">{cert.issuer}</p>
                   <div className="mt-3 text-sm text-muted-foreground">
                     <p>Valid: {formatDate(cert.valid_from)} → {formatDate(cert.valid_to)}</p>
@@ -96,7 +97,7 @@ export default function Documents() {
         </TabsContent>
 
         <TabsContent value="notifications" className="mt-4">
-          {loading ? <div className="h-64 animate-pulse rounded-xl bg-muted" /> : (
+          {loading ? <PageSkeleton variant="table" contentOnly /> : (
             <DataTable items={notifications} columns={[
               { key: 'title', label: 'Title' },
               { key: 'channel', label: 'Channel' },

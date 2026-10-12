@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { CreditCard, Wallet } from 'lucide-react';
 import PageHeader from '@/components/shared/PageHeader';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { formatCurrency, formatDate } from '@/components/shared/format';
 import MetricCard from '@/components/shared/MetricCard';
 import DataTable from '@/components/shared/DataTable';
+import PageSkeleton from '@/components/shared/PageSkeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { base44 } from '@/api/base44Client';
 
@@ -38,8 +40,8 @@ export default function PortalPayments() {
       <Tabs defaultValue="invoices">
         <TabsList><TabsTrigger value="invoices">Invoices</TabsTrigger><TabsTrigger value="payments">Payment History</TabsTrigger></TabsList>
         <TabsContent value="invoices" className="mt-4">
-          {loading ? <div className="h-64 animate-pulse rounded-xl bg-muted" /> : (
-            <DataTable items={invoices} columns={[
+          {loading ? <PageSkeleton contentOnly /> : (
+            <DataTable items={invoices} rowActions={(invoice) => invoice.source === 'website' && invoice.order_id && invoice.status !== 'paid' ? <Link className="font-semibold text-primary underline" to={`/portal/payments/return?order=${encodeURIComponent(invoice.order_id)}`}>Pay invoice</Link> : null} columns={[
               { key: 'invoice_number', label: 'Invoice #' },
               { key: 'invoice_date', label: 'Date', format: formatDate },
               { key: 'due_date', label: 'Due', format: formatDate },
@@ -50,7 +52,7 @@ export default function PortalPayments() {
           )}
         </TabsContent>
         <TabsContent value="payments" className="mt-4">
-          {loading ? <div className="h-64 animate-pulse rounded-xl bg-muted" /> : (
+          {loading ? <PageSkeleton contentOnly /> : (
             <DataTable items={payments} columns={[
               { key: 'payment_reference', label: 'Reference' },
               { key: 'invoice_number', label: 'Invoice' },

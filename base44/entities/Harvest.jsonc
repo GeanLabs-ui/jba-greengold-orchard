@@ -25,7 +25,8 @@
       "enum": [
         "early",
         "main",
-        "late"
+        "late",
+        "off_season"
       ],
       "default": "main"
     },

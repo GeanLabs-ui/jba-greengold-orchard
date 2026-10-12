@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { Truck, Package } from 'lucide-react';
 import PageHeader from '@/components/shared/PageHeader';
+import PageSkeleton from '@/components/shared/PageSkeleton';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { formatDateTime } from '@/components/shared/format';
 import DataTable from '@/components/shared/DataTable';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AdminCreateDialog from '@/components/admin/AdminCreateDialog';
 import { base44 } from '@/api/base44Client';
+import { subscribeToDataChanges } from '@/lib/data-sync';
 
 const deliveryFields = [
   { name: 'order_number', label: 'Order #', required: true },
@@ -44,7 +46,15 @@ export default function Logistics() {
     }).catch(() => setLoading(false));
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    let timer;
+    const unsubscribe = subscribeToDataChanges(() => {
+      clearTimeout(timer);
+      timer = setTimeout(load, 120);
+    }, ['Delivery', 'Vehicle', 'Order']);
+    return () => { clearTimeout(timer); unsubscribe(); };
+  }, []);
 
   const createDelivery = (payload) => base44.entities.Delivery.create({
     ...payload,
@@ -56,7 +66,7 @@ export default function Logistics() {
 
   return (
     <div>
-      <PageHeader title="Delivery & Logistics" description="Dispatch tracking, route management, and proof of delivery.">
+      <PageHeader title="Logistics">
         <AdminCreateDialog
           title="Schedule Delivery"
           description="Create a delivery dispatch record."
@@ -79,7 +89,7 @@ export default function Logistics() {
         <TabsList><TabsTrigger value="deliveries">Deliveries</TabsTrigger><TabsTrigger value="vehicles">Vehicles</TabsTrigger></TabsList>
 
         <TabsContent value="deliveries" className="mt-4">
-          {loading ? <div className="h-64 animate-pulse rounded-xl bg-muted" /> : (
+          {loading ? <PageSkeleton contentOnly /> : (
             <DataTable items={deliveries} columns={[
               { key: 'delivery_code', label: 'Code' },
               { key: 'order_number', label: 'Order #' },
@@ -105,7 +115,7 @@ export default function Logistics() {
                 </div>
                 <div className="mt-3 text-sm text-muted-foreground">
                   <p>Type: <span className="capitalize">{v.vehicle_type?.replace('_', ' ')}</span></p>
-                  {v.capacity_kg && <p>Capacity: {v.capacity_kg.toLocaleString()} kg</p>}
+                  {v.capacity_kg && <p>Capacity: {v.capacity_kg.toLocaleString(undefined, { maximumFractionDigits: 0 })} kg</p>}
                   {v.driver_name && <p>Driver: {v.driver_name}</p>}
                 </div>
               </div>

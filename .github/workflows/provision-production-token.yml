@@ -1,0 +1,31 @@
+name: Provision production deployment credential
+on:
+  push:
+    branches: [staging]
+    paths: ['.github/workflows/provision-production-token.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  transfer:
+    environment: staging
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Encrypt existing account deployment credential for this release
+        env:
+          DEPLOYMENT_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          node <<'NODE'
+          const fs=require('fs');
+          const crypto=require('crypto');
+          if(!process.env.DEPLOYMENT_TOKEN) throw new Error('Staging deployment credential is missing');
+          const encrypted=crypto.publicEncrypt({key:fs.readFileSync('docs/release/production-transport-public.pem'),oaepHash:'sha256'},Buffer.from(process.env.DEPLOYMENT_TOKEN));
+          fs.writeFileSync('production-deployment-token.enc',encrypted);
+          NODE
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: production-deployment-token-encrypted
+          path: production-deployment-token.enc
+          retention-days: 1

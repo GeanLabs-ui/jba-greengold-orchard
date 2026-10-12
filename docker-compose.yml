@@ -1,0 +1,23 @@
+name: farmactualproject
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: mango_farm
+      POSTGRES_USER: mango_farm
+      POSTGRES_PASSWORD: mango_farm_local_only
+    ports:
+      - "127.0.0.1:15432:5432"
+    volumes:
+      - mango_farm_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mango_farm -d mango_farm"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+volumes:
+  mango_farm_postgres_data:
+    name: farmactualproject_mango_farm_postgres_data
+    external: true

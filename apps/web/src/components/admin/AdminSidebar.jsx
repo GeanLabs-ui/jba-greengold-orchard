@@ -1,80 +1,122 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import BrandLogo from '@/components/shared/BrandLogo';
-import { farmDailyActivitiesNavigation } from '@/lib/farm-navigation';
 import {
-  LayoutDashboard, Users, ShoppingCart, Package, Warehouse, Truck,
-  Sprout, Scissors, UserCog, FileText, Banknote, Ship, BarChart3,
-  FolderOpen, Newspaper, Leaf, Settings, ChevronRight, FileCheck2,
-  PanelLeftClose, PanelLeftOpen, ClipboardList
+  ChevronDown, Leaf, PanelLeftClose, PanelLeftOpen,
 } from 'lucide-react';
-
-const navSections = [
-  {
-    title: 'Overview',
-    items: [
-      { label: 'Dashboard', path: '/admin', icon: LayoutDashboard },
-    ],
-  },
-  {
-    title: 'Operations',
-    items: [
-      { label: 'CRM', path: '/admin/crm', icon: Users },
-      { label: 'Sales', path: '/admin/sales', icon: ShoppingCart },
-      { label: 'Orders', path: '/admin/orders', icon: Package },
-      { label: 'Inventory', path: '/admin/inventory', icon: Warehouse },
-      { label: 'Logistics', path: '/admin/logistics', icon: Truck },
-    ],
-  },
-  {
-    title: 'Production',
-    items: [
-      { label: 'Farms', path: '/admin/farms', icon: Sprout },
-      { label: 'Harvests', path: '/admin/harvests', icon: Scissors },
-      { label: 'Farm Daily Activities', path: '/admin/farm-daily-activities', icon: ClipboardList },
-    ],
-  },
-  {
-    title: 'Business',
-    items: [
-      { label: 'Procurement', path: '/admin/procurement', icon: FileText },
-      { label: 'Finance', path: '/admin/finance', icon: Banknote },
-      { label: 'Export Ops', path: '/admin/export-ops', icon: Ship },
-      { label: 'Human Resources', path: '/admin/hr', icon: UserCog },
-      { label: 'Applications ATS', path: '/admin/applications', icon: FileCheck2 },
-    ],
-  },
-  {
-    title: 'System',
-    items: [
-      { label: 'Content', path: '/admin/content', icon: Newspaper },
-      { label: 'Documents', path: '/admin/documents', icon: FolderOpen },
-      { label: 'Reports', path: '/admin/reports', icon: BarChart3 },
-      { label: 'Settings', path: '/admin/settings', icon: Settings },
-    ],
-  },
-];
+import { base44 } from '@/api/base44Client';
+import { subscribeToDataChanges } from '@/lib/data-sync';
+import { useAuth } from '@/lib/AuthContext';
+import { canAccessAdminPath } from '@/lib/access-control';
+import { adminNavSections, dashboardItem, isAdminNavItemActive } from './admin-navigation';
 
 export default function AdminSidebar({ collapsed = false, onToggleCollapsed }) {
+  const { user } = useAuth();
   const location = useLocation();
-  const [fdaExpanded, setFdaExpanded] = useState(
-    location.pathname.startsWith('/admin/farm-daily-activities')
-  );
-  const prevPathnameRef = useRef(location.pathname);
+  const [expandedSections, setExpandedSections] = useState(() => new Set());
+  const [hoveredSection, setHoveredSection] = useState(null);
+  const [suppressedHoverSection, setSuppressedHoverSection] = useState(null);
+  const [attentionCounts, setAttentionCounts] = useState({ inquiries: 0, orders: 0, calendar: 0 });
 
   useEffect(() => {
-    const wasFDA = prevPathnameRef.current.startsWith('/admin/farm-daily-activities');
-    const isFDA = location.pathname.startsWith('/admin/farm-daily-activities');
+    let active = true;
+    let timer;
+    const loadCounts = () => Promise.all([
+      base44.entities.Inquiry.list('-created_date', 250).catch(() => []),
+      base44.entities.Order.list('-order_date', 250).catch(() => []),
+      base44.entities.CalendarEvent.list('start_at', 250).catch(() => []),
+      base44.account.reviews().catch(() => ({ verifications: [], changes: [] })),
+    ]).then(([inquiries, orders, calendarEvents, accountReviews]) => {
+      if (!active) return;
+      const now = new Date();
+      setAttentionCounts({
+        inquiries: inquiries.filter((item) => item.status === 'new' || !item.status).length + (accountReviews.verifications?.length || 0) + (accountReviews.changes?.length || 0),
+        orders: orders.filter((item) => item.status === 'confirmed').length,
+        calendar: calendarEvents.filter((item) => new Date(item.end_at || item.start_at) < now && !['completed', 'cancelled'].includes(item.status)).length,
+      });
+    });
+    loadCounts();
+    const unsubscribe = subscribeToDataChanges(() => {
+      clearTimeout(timer);
+      timer = setTimeout(loadCounts, 120);
+    }, ['Inquiry', 'Order', 'CalendarEvent']);
+    const interval = window.setInterval(loadCounts, 30000);
+    return () => { active = false; clearTimeout(timer); clearInterval(interval); unsubscribe(); };
+  }, []);
 
-    if (isFDA && !wasFDA) {
-      setFdaExpanded(true);
+  const isItemActive = (item) => isAdminNavItemActive(location.pathname, item);
+  const accessibleSections = adminNavSections
+    .map((section) => ({ ...section, items: section.items.filter((item) => canAccessAdminPath(user, item.path)) }))
+    .filter((section) => section.items.length > 0);
+  const activeSection = accessibleSections.find((section) => section.items.some((item) => !item.subheading && isItemActive(item)))?.title || null;
+
+  useEffect(() => {
+    if (!activeSection) return;
+    setExpandedSections((current) => {
+      if (current.has(activeSection)) return current;
+      return new Set(current).add(activeSection);
+    });
+  }, [location.pathname, activeSection]);
+
+  const toggleSection = (sectionTitle) => {
+    const isExpanded = expandedSections.has(sectionTitle);
+    setExpandedSections((current) => {
+      const next = new Set(current);
+      if (isExpanded) next.delete(sectionTitle);
+      else next.add(sectionTitle);
+      return next;
+    });
+    setSuppressedHoverSection(isExpanded ? sectionTitle : null);
+  };
+
+  const previewSection = (sectionTitle) => {
+    setSuppressedHoverSection(null);
+    setHoveredSection(sectionTitle);
+  };
+
+  const clearSectionPreview = (sectionTitle) => {
+    setHoveredSection((current) => current === sectionTitle ? null : current);
+    setSuppressedHoverSection((current) => current === sectionTitle ? null : current);
+  };
+
+  const renderItem = (item, compact = collapsed) => {
+    if (item.subheading) {
+      return compact ? null : (
+        <p key={item.path} className="mt-2 px-3 pb-1 pt-2 text-caption font-semibold uppercase tracking-wider text-muted-foreground">
+          {item.label}
+        </p>
+      );
     }
 
-    prevPathnameRef.current = location.pathname;
-  }, [location.pathname]);
+    const isActive = isItemActive(item);
+    const Icon = item.icon;
+    return (
+      <Link
+        key={item.path}
+        to={item.path}
+        title={compact ? item.label : undefined}
+        aria-current={isActive ? 'page' : undefined}
+        className={`group relative flex items-center rounded-lg py-2 text-sm font-medium transition-colors ${
+          compact ? 'justify-center px-2' : 'gap-3 px-3'
+        } ${
+          isActive
+            ? 'bg-primary/10 text-primary'
+            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+        }`}
+      >
+        <Icon className={`h-4 w-4 ${isActive ? 'text-primary' : ''}`} />
+        {!compact && item.label}
+        {item.countKey && attentionCounts[item.countKey] > 0 && (
+          <span className={`${compact ? 'absolute ml-7 -mt-5 h-2.5 w-2.5 p-0' : 'ml-auto min-w-5 px-1.5 py-0.5'} rounded-full bg-primary text-center text-caption font-bold text-primary-foreground`}>
+            {!compact && (attentionCounts[item.countKey] > 99 ? '99+' : attentionCounts[item.countKey])}
+          </span>
+        )}
+      </Link>
+    );
+  };
 
   return (
-    <aside className={`flex h-full shrink-0 flex-col border-r border-border bg-card transition-all duration-200 ${collapsed ? 'w-20' : 'w-64'}`}>
+    <aside className={`admin-sidebar flex h-full shrink-0 flex-col border-r border-border bg-card transition-all duration-200 ${collapsed ? 'w-20' : 'w-64'}`}>
       <div className={`flex h-16 items-center border-b border-border ${collapsed ? 'justify-center px-2' : 'gap-2 px-4'}`}>
         {!collapsed && <BrandLogo className="h-16" />}
         {onToggleCollapsed && (
@@ -90,91 +132,66 @@ export default function AdminSidebar({ collapsed = false, onToggleCollapsed }) {
         )}
       </div>
 
-      <nav className={`flex-1 overflow-y-auto scrollbar-thin py-4 ${collapsed ? 'px-2' : 'px-3'}`}>
-        {navSections.map((section) => (
-          <div key={section.title} className="mb-4">
-            {!collapsed && (
-              <p className="px-3 py-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                {section.title}
-              </p>
-            )}
-            {section.items.map((item) => {
-              const isActive = item.path === '/admin'
-                ? location.pathname === item.path
-                : location.pathname === item.path || location.pathname.startsWith(`${item.path}/`);
-              const Icon = item.icon;
-              const isFDA = item.path === '/admin/farm-daily-activities';
+      <nav className={`flex-1 overflow-y-auto scrollbar-thin py-4 ${collapsed ? 'px-2' : 'px-3'}`} aria-label="Admin navigation">
+        <div className="mb-3">
+          {!collapsed && <p className="px-3 py-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Overview</p>}
+          {renderItem(dashboardItem)}
+        </div>
 
-              if (isFDA) {
-                return (
-                  <div key={item.path} className="flex flex-col">
-                    <Link
-                      to="/admin/farm-daily-activities/dashboard"
-                      onClick={() => setFdaExpanded(!fdaExpanded)}
-                      title={collapsed ? item.label : undefined}
-                      className={`group flex items-center rounded-lg py-2 text-sm font-medium transition-colors ${
-                        collapsed ? 'justify-center px-2' : 'gap-3 px-3'
-                      } ${
-                        isActive
-                          ? 'bg-primary/10 text-primary'
-                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                      }`}
-                    >
-                      <Icon className={`h-4 w-4 ${isActive ? 'text-primary' : ''}`} />
-                      {!collapsed && <span>{item.label}</span>}
-                      {!collapsed && (
-                        <span className="ml-auto text-xs text-muted-foreground transition-transform">
-                          {fdaExpanded ? '▼' : '▶'}
-                        </span>
-                      )}
-                    </Link>
-                    {fdaExpanded && !collapsed && (
-                      <div className="ml-6 mt-1 flex flex-col gap-1 border-l border-border pl-3">
-                        {farmDailyActivitiesNavigation.map((subItem) => {
-                          const isSubActive = location.pathname.startsWith(subItem.path);
-                          const SubIcon = subItem.icon;
-                          return (
-                            <Link
-                              key={subItem.path}
-                              to={subItem.path}
-                              className={`flex items-center gap-2 rounded-md py-1.5 px-2 text-xs font-medium transition-colors ${
-                                isSubActive
-                                  ? 'bg-primary/10 text-primary font-semibold'
-                                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                              }`}
-                            >
-                              <SubIcon className="h-3.5 w-3.5" />
-                              <span>{subItem.title}</span>
-                            </Link>
-                          );
-                        })}
-                      </div>
-                    )}
+        {accessibleSections.map((section) => {
+          const isOpen = expandedSections.has(section.title)
+            || (hoveredSection === section.title && suppressedHoverSection !== section.title);
+          const hasActiveItem = section.items.some((item) => !item.subheading && isItemActive(item));
+          const SectionIcon = section.icon;
+
+          return (
+            <div
+              key={section.title}
+              className="relative mb-2"
+              onMouseEnter={() => previewSection(section.title)}
+              onMouseLeave={() => clearSectionPreview(section.title)}
+              onFocusCapture={() => previewSection(section.title)}
+              onBlurCapture={(event) => {
+                if (!event.currentTarget.contains(event.relatedTarget)) clearSectionPreview(section.title);
+              }}
+            >
+              <button
+                type="button"
+                aria-expanded={isOpen}
+                aria-controls={`admin-nav-${section.title.toLowerCase()}`}
+                aria-label={`${section.title} navigation`}
+                onClick={() => toggleSection(section.title)}
+                title={`${section.title} navigation`}
+                className={`flex w-full items-center rounded-lg py-2 text-left text-xs font-semibold uppercase tracking-wider transition-colors ${
+                  collapsed ? 'justify-center px-2' : 'gap-2 px-3'
+                } ${
+                  isOpen || hasActiveItem
+                    ? 'bg-muted/70 text-foreground'
+                    : 'text-muted-foreground hover:bg-muted/70 hover:text-foreground'
+                }`}
+              >
+                <SectionIcon className="h-4 w-4 shrink-0" />
+                {!collapsed && <span>{section.title}</span>}
+                {!collapsed && <ChevronDown className={`ml-auto h-4 w-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />}
+              </button>
+
+              <div
+                id={`admin-nav-${section.title.toLowerCase()}`}
+                className={`${
+                  collapsed
+                    ? `absolute left-[calc(100%+0.5rem)] top-0 z-50 w-64 rounded-xl border border-border bg-card p-2 shadow-xl transition-all duration-150 ${isOpen ? 'visible translate-x-0 opacity-100' : 'invisible -translate-x-1 opacity-0'}`
+                    : `grid overflow-hidden transition-[grid-template-rows,opacity] duration-200 ease-out ${isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`
+                }`}
+              >
+                <div className={`${collapsed ? '' : 'min-h-0 pt-1'}`}>
+                  <div className={collapsed ? 'flex flex-col' : 'ml-3 border-l border-border/80 pl-2'}>
+                    {section.items.map((item) => renderItem(item, false))}
                   </div>
-                );
-              }
-
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  title={collapsed ? item.label : undefined}
-                  className={`group flex items-center rounded-lg py-2 text-sm font-medium transition-colors ${
-                    collapsed ? 'justify-center px-2' : 'gap-3 px-3'
-                  } ${
-                    isActive
-                      ? 'bg-primary/10 text-primary'
-                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                  }`}
-                >
-                  <Icon className={`h-4 w-4 ${isActive ? 'text-primary' : ''}`} />
-                  {!collapsed && item.label}
-                  {isActive && !collapsed && <ChevronRight className="ml-auto h-4 w-4" />}
-                </Link>
-              );
-            })}
-          </div>
-        ))}
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </nav>
 
       <div className={`border-t border-border ${collapsed ? 'p-2' : 'p-3'}`}>

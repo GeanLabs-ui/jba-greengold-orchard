@@ -1,38 +1,36 @@
+@import url('https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&family=Roboto:wght@400;500;700;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 3.9%;
+    --background: 0 0% 97.3%;
+    --foreground: 0 0% 20.4%;
     --card: 0 0% 100%;
     --card-foreground: 0 0% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 3.9%;
-    --primary: 33 95% 52%;
+    --primary: 122 46% 34%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 150 30% 96%;
-    --secondary-foreground: 150 40% 20%;
-    --muted: 40 20% 96%;
-    --muted-foreground: 40 5% 45%;
-    --accent: 150 45% 42%;
-    --accent-foreground: 0 0% 100%;
+    --secondary: 122 36% 84%;
+    --secondary-foreground: 122 46% 25%;
+    --muted: 0 0% 94.9%;
+    --muted-foreground: 0 0% 34.1%;
+    --accent: 79 61% 50%;
+    --accent-foreground: 122 46% 20%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 98%;
-    --border: 40 15% 90%;
-    --input: 40 15% 90%;
-    --ring: 33 95% 52%;
-    --chart-1: 33 95% 52%;
-    --chart-2: 150 45% 42%;
-    --chart-3: 35 60% 55%;
-    --chart-4: 190 60% 45%;
-    --chart-5: 280 50% 55%;
-    --radius: 0.75rem;
-    --font-heading: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
-    --font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
-    --font-display: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
-    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    --border: 0 0% 92.2%;
+    --input: 0 0% 92.2%;
+    --ring: 79 61% 50%;
+    --chart-1: 122 46% 34%;
+    --chart-2: 122 39% 49%;
+    --chart-3: 123 39% 57%;
+    --chart-4: 79 61% 50%;
+    --chart-5: 123 42% 64%;
+    --radius: 0.375rem;    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-primary: 240 5.9% 10%;
@@ -79,8 +77,6 @@
   }
 }
 
-
-
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -88,14 +84,87 @@
 
   body {
     @apply bg-background text-foreground font-body antialiased;
+    min-width: 320px;
+    overflow-x: hidden;
+    -webkit-tap-highlight-color: transparent;
+    font-size: 15px;
+    line-height: 1.55;
   }
 
   h1, h2, h3, h4, h5, h6 {
     @apply font-heading;
+    font-weight: 500;
+    letter-spacing: -0.025em;
+  }
+
+  h1 { font-size: clamp(2rem, 4vw, 3.75rem); line-height: 1.04; }
+  h2 { font-size: clamp(1.75rem, 3vw, 2.5rem); line-height: 1.12; }
+  h3 { font-size: 1.25rem; line-height: 1.25; font-weight: 700; }
+  p { line-height: 1.5; }
+
+  button, input, select, textarea { font-family: inherit; }
+}
+
+/* Mobile shell defaults. These only apply below the tablet breakpoint, leaving
+   approved desktop compositions and navigation unchanged. */
+@media (max-width: 767px) {
+  html { min-height: 100%; background: hsl(var(--background)); }
+  body { min-height: 100dvh; }
+  input, select, textarea { font-size: 16px; }
+  .admin-shell main { scroll-padding-bottom: 6rem; }
+  .admin-shell [class*="overflow-x-auto"],
+  .admin-shell [class*="overflow-auto"] {
+    overscroll-behavior-inline: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+  .admin-mobile-nav {
+    box-shadow: 0 -10px 28px rgb(18 53 36/ 0.1);
   }
 }
 
 @layer utilities {
+  @keyframes skeleton-shimmer {
+    0% { background-position: 180% 0; }
+    100% { background-position: -180% 0; }
+  }
+
+  @keyframes skeleton-arrive {
+    from { opacity: 0; transform: translateY(3px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .skeleton-shimmer {
+    background-color: hsl(var(--primary) / 0.08);
+    background-image: linear-gradient(100deg, transparent 20%, hsl(var(--primary) / 0.13) 42%, hsl(var(--primary) / 0.2) 50%, hsl(var(--primary) / 0.13) 58%, transparent 80%);
+    background-size: 220% 100%;
+    animation: skeleton-shimmer 1.8s ease-in-out infinite;
+  }
+
+  .skeleton-shimmer.skeleton-on-dark {
+    background-color: rgb(255 255 255/ 0.08);
+    background-image: linear-gradient(100deg, transparent 20%, rgb(255 255 255/ 0.08) 42%, rgb(255 255 255/ 0.17) 50%, rgb(255 255 255/ 0.08) 58%, transparent 80%);
+  }
+
+  .route-skeleton {
+    animation: skeleton-arrive 180ms ease-out both;
+  }
+
+  /* A route skeleton may contain more than one hundred shapes. Keeping those
+     shapes static avoids a matching number of paint animations while the real
+     route chunk and data request are competing for the main thread. */
+  .route-skeleton .skeleton-shimmer,
+  .skeleton-shell .skeleton-shimmer {
+    animation: none;
+    background-image: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .skeleton-shimmer,
+    .route-skeleton {
+      animation: none;
+    }
+  }
+
   .text-balance {
     text-wrap: balance;
   }
@@ -112,14 +181,574 @@
     border-radius: 3px;
   }
   .glass {
-    background: rgba(255, 255, 255, 0.8);
+    background: rgb(255 255 255/ 0.92);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
   }
   .gradient-mango {
-    background: linear-gradient(135deg, hsl(33 95% 52%) 0%, hsl(18 85% 50%) 100%);
+    background: #2e7d32;
   }
   .gradient-leaf {
-    background: linear-gradient(135deg, hsl(150 45% 42%) 0%, hsl(150 35% 30%) 100%);
+    background: #256b2a;
   }
 }
+
+/* AGRIVI-inspired system: sober editorial type, a single agricultural green,
+   and light structural surfaces. It deliberately applies to reusable UI so
+   every public, portal, and admin route shares the same visual language. */
+.public-shell { background: #ffffff; }
+.public-shell main { background: #ffffff; }
+.public-shell section { position: relative; }
+.public-shell [class*="rounded-2xl"],
+.public-shell [class*="rounded-3xl"] { border-radius: 0.375rem; }
+.public-shell [class*="shadow-sm"],
+.public-shell [class*="shadow-md"],
+.public-shell [class*="shadow-lg"] { box-shadow: none; }
+
+.app-surface :is(input, textarea, select, [role="combobox"]) {
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  border-radius: 0.25rem;
+  box-shadow: none;
+}
+.app-surface :is(input, textarea, select):focus { border-color: #c8e6c9; }
+.app-surface [data-radix-popper-content-wrapper] { font-family: var(--font-body); }
+
+.app-surface table thead { background: #f9fcfa; }
+.app-surface table th { font-family: var(--font-heading); font-size: var(--text-label); font-weight: var(--weight-label); letter-spacing: var(--tracking-label); text-transform: none; }
+.app-surface table tr { border-color: #e8f5e9; }
+
+/* Canonical public typography. Semantic component roles live in typography.css. */
+.public-shell nav { font-family: var(--font-heading); font-size: 0.9375rem; font-weight: 700; }
+.public-shell main > section > div > p { font-size: clamp(1rem, 1.25vw, 1.25rem); font-weight: 300; line-height: 1.8; }
+.public-shell :is(label, .page-eyebrow) { font-family: var(--font-heading); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+.app-surface :is(nav, button, label, th) { font-family: var(--font-heading); }
+.app-surface label { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+
+.app-surface .rounded-xl,
+.app-surface .rounded-2xl,
+.app-surface .rounded-3xl { border-radius: 0.375rem; }
+.app-surface .shadow-sm,
+.app-surface .shadow-md { box-shadow: none; }
+
+.page-eyebrow { color: #2e7d32; font-family: var(--font-heading); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
+
+/* Admin-only JBA GreenGold color system. The class is mounted by AdminLayout so
+   Radix portals (dialogs, menus, sheets) inherit the same palette as the page. */
+.admin-theme {
+  --brand-green: #2e7d32;
+  --brand-deep-green: #256b2a;
+  --brand-leaf: #66bb6a;
+  --brand-gold: #c8e6c9;
+  --brand-blue: #43a047;
+  --brand-earth: #355e3b;
+  --brand-cream: #f9fcfa;
+  --brand-neutral: #f9fcfa;
+  --brand-gray: #5f7565;
+  --brand-charcoal: #123524;
+  --status-success: #43a047;
+  --status-warning: #a5d6a7;
+  --status-error: #355e3b;
+  --background: 210 17% 98%;
+  --foreground: 0 0% 20%;
+  --card: 0 0% 100%;
+  --card-foreground: 200 19.1% 18.4%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 200 19.1% 18.4%;
+  --primary: 104 40% 34%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 104 24% 94%;
+  --secondary-foreground: 104 40% 24%;
+  --muted: 210 17% 96%;
+  --muted-foreground: 210 5% 48%;
+  --accent: 104 24% 94%;
+  --accent-foreground: 104 40% 24%;
+  --destructive: 0 63.9% 55.5%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 210 11% 88%;
+  --input: 210 11% 84%;
+  --ring: 104 40% 34%;
+  --chart-1: 104 40% 34%;
+  --chart-2: 104 32% 48%;
+  --chart-3: 104 24% 63%;
+  --chart-4: 104 18% 73%;
+  --chart-5: 104 14% 82%;
+  color-scheme: light;
+}
+
+.admin-sidebar {
+  --card: 124.5 55.4% 23.7%;
+  --foreground: 0 0% 100%;
+  --muted: 124.2 46.3% 24.1%;
+  --muted-foreground: 114.3 39.6% 79.2%;
+  --primary: 43.5 80.4% 46.1%;
+  --primary-foreground: 125.3 55.6% 15.9%;
+  --border: 124.2 46.3% 24.1%;
+  background-color: #256b2a;
+  background-image: none;
+  color: hsl(var(--foreground));
+  box-shadow: 8px 0 24px rgb(18 53 36/ 0.08);
+}
+
+.admin-horizontal-menu {
+  --foreground: 0 0% 100%;
+  --muted: 124.2 46.3% 24.1%;
+  --muted-foreground: 114.3 39.6% 79.2%;
+  --primary: 43.5 80.4% 46.1%;
+  --primary-foreground: 125.3 55.6% 15.9%;
+  background-color: #256b2a;
+  background-image: none;
+  color: hsl(var(--foreground));
+  box-shadow: 0 8px 22px rgb(18 53 36/ 0.12);
+}
+
+.admin-avatar {
+  background: #c8e6c9;
+  color: #123524;
+  box-shadow: 0 0 0 3px #f4fbf5;
+}
+
+.admin-theme .metric-tone-primary {
+  background-image: none;
+  background-color: transparent;
+  color: #2e7d32;
+}
+
+.admin-theme .metric-tone-green {
+  background-image: none;
+  background-color: transparent;
+  color: #2e7d32;
+}
+
+.admin-theme .metric-tone-blue,
+.admin-theme .metric-tone-purple {
+  background-image: none;
+  background-color: transparent;
+  color: #3b7a57;
+}
+
+.admin-theme .metric-tone-red {
+  background-image: none;
+  background-color: transparent;
+  color: #355e3b;
+}
+
+.admin-theme .metric-tone-amber {
+  background-image: none;
+  background-color: transparent;
+  color: #c8e6c9;
+}
+
+/* AGRIVI monochrome admin system. These rules intentionally sit after the
+   legacy utility normalizers, giving every loaded admin route and sub-route
+   the same restrained green/gray visual language without changing its data
+   model or interactions. */
+.admin-theme {
+  --agrivi-primary: #2e7d32;
+  --agrivi-secondary: #43a047;
+  --agrivi-leaf: #66bb6a;
+  --agrivi-bright-leaf: #c8e6c9;
+  --agrivi-paper: #f9fcfa;
+  --agrivi-surface: #ffffff;
+  --agrivi-line: #e8f5e9;
+  --agrivi-ink: #123524;
+  --agrivi-muted: #355e3b;
+  --brand-green: #2e7d32;
+  --brand-deep-green: #256b2a;
+  --brand-leaf: #66bb6a;
+  --brand-gold: #c8e6c9;
+  --brand-blue: #43a047;
+  --brand-cream: #f9fcfa;
+  --brand-neutral: #f9fcfa;
+  --brand-gray: #355e3b;
+  --brand-charcoal: #123524;
+  --background: 0 0% 97.3%;
+  --foreground: 0 0% 20.4%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 20.4%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 20.4%;
+  --primary: 104 40% 34%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 104 35% 93%;
+  --secondary-foreground: 104 40% 27%;
+  --muted: 210 17% 96.1%;
+  --muted-foreground: 0 0% 34.1%;
+  --accent: 104 35% 93%;
+  --accent-foreground: 104 40% 27%;
+  --border: 0 0% 92.2%;
+  --input: 0 0% 92.2%;
+  --ring: 104 40% 34%;
+  --chart-1: 104 40% 34%;
+  --chart-2: 104 31% 37%;
+  --chart-3: 96 41% 55%;
+  --chart-4: 82 55% 42%;
+  --chart-5: 104 16% 65%;
+}
+
+.admin-theme .admin-sidebar,
+.admin-theme .admin-horizontal-menu {
+  --card: 104 40% 34%;
+  --foreground: 0 0% 100%;
+  --muted: 104 31% 37%;
+  --muted-foreground: 104 41% 82%;
+  --primary: 96 41% 55%;
+  --primary-foreground: 104 40% 20%;
+  --border: 104 31% 37%;
+  background: #2e7d32;
+  box-shadow: none;
+}
+.admin-theme .admin-avatar { background: #c8e6c9; color: #123524; box-shadow: 0 0 0 3px #f4fbf5; }
+.admin-theme .gradient-mango,
+.admin-theme .gradient-leaf { background: #2e7d32; }
+
+/* Recharts has inline SVG paint attributes, so normalize it separately. */
+.admin-theme .recharts-cartesian-grid line { stroke: #e8f5e9 !important; }
+.admin-theme .recharts-cartesian-axis-tick-value { fill: #355e3b !important; }
+/* Keep the three controls in each block checklist stage compact and aligned. */
+@media (min-width: 640px) {
+  div:has(> select[aria-label$=" period"]) {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 145px 106px !important;
+    align-items: center !important;
+  }
+}
+
+/* Yield reporting remains available in analytics, not on individual block profiles. */
+.block-profile-page section:has(#yield-chart-title) {
+  display: none;
+}
+
+/* Streamline individual block pages to the approved operational view. */
+.block-profile-page nav[aria-label="Breadcrumb"],
+.block-profile-page > header > div > div:first-child > p:first-child,
+.block-profile-page > header > div > div:last-child > div:first-child,
+.block-profile-page aside.space-y-4 > section:nth-of-type(2),
+.block-profile-page aside.space-y-4 > section:nth-of-type(3) {
+  display: none;
+}
+
+.block-profile-page > header > div > div:last-child {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+/* Put the block profile above the working panels, then align records and season work. */
+.block-profile-page > div:has(> aside.space-y-4) > div.space-y-4,
+.block-profile-page > div:has(> aside.space-y-4) > aside.space-y-4 {
+  display: contents;
+}
+
+/* Keep the block editor compact enough to show its complete form in one view. */
+.block-editor .space-y-1\.5 { gap: 0.2rem; }
+.block-editor label { font-size: 0.72rem; line-height: 1rem; }
+.block-editor input,
+.block-editor textarea,
+.block-editor button[role="combobox"] { min-height: 2rem; height: 2rem; font-size: 0.8rem; }
+.block-editor textarea { height: auto; min-height: 2rem; line-height: 0.9rem; }
+.block-editor-section h3 { line-height: 1.1rem; }
+
+@media (min-width: 1024px) {
+  .block-profile-page > div:has(> aside.space-y-4) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .block-profile-page > div:has(> aside.space-y-4) > div.space-y-4 > section:first-child {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .block-profile-page > div:has(> aside.space-y-4) > aside.space-y-4 > section:first-child {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .block-profile-page > div:has(> aside.space-y-4) > div.space-y-4 > section:nth-child(2) {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .block-profile-page > div:has(> aside.space-y-4) > div.space-y-4 > .block-activity-analytics {
+    grid-column: 1 / -1;
+    grid-row: 3;
+  }
+}
+
+/* Supplied platform palette: deep green anchors actions and hierarchy; yellow
+   green is reserved for hover, active, and selected states across every UI. */
+:root {
+  --platform-deep-green: #2e7d32;
+  --platform-medium-green: #43a047;
+  --platform-fresh-green: #66bb6a;
+  --platform-pastel-green: #a5d6a7;
+  --platform-light-green: #c8e6c9;
+  --platform-forest-green: #256b2a;
+  --platform-dark-green: #256b2a;
+  --platform-yellow-green: #c8e6c9;
+}
+.public-shell .gradient-mango,
+.public-shell .gradient-leaf { background: var(--platform-deep-green); }
+
+.admin-theme {
+  --agrivi-primary: var(--platform-deep-green);
+  --agrivi-secondary: var(--platform-medium-green);
+  --agrivi-leaf: var(--platform-fresh-green);
+  --agrivi-bright-leaf: var(--platform-yellow-green);
+  --brand-green: var(--platform-deep-green);
+  --brand-deep-green: var(--platform-forest-green);
+  --brand-leaf: var(--platform-fresh-green);
+  --brand-gold: var(--platform-yellow-green);
+  --brand-blue: var(--platform-medium-green);
+  --status-success: var(--platform-medium-green);
+  --primary: 122 46% 34%;
+  --secondary: 122 36% 84%;
+  --accent: 79 61% 50%;
+  --accent-foreground: 122 46% 20%;
+  --ring: 79 61% 50%;
+  --chart-1: 122 46% 34%;
+  --chart-2: 122 39% 49%;
+  --chart-3: 123 39% 57%;
+  --chart-4: 79 61% 50%;
+  --chart-5: 123 42% 64%;
+}
+
+.admin-theme .admin-sidebar,
+.admin-theme .admin-horizontal-menu { background: var(--platform-deep-green); }
+.admin-theme .admin-avatar { background: var(--platform-yellow-green); }
+.admin-theme .metric-tone-primary,
+.admin-theme .metric-tone-green,
+.admin-theme .metric-tone-blue,
+.admin-theme .metric-tone-purple,
+.admin-theme .metric-tone-red,
+.admin-theme .metric-tone-amber { color: var(--platform-deep-green); }
+
+/* The public Home support panel needs stable colour and responsive layout even
+   when the active utility stylesheet has not emitted an arbitrary-value class. */
+.public-shell .jba-whatsapp-support {
+  display: grid;
+  gap: 2rem;
+  background: transparent !important;
+  box-shadow: none;
+}
+
+.public-shell .jba-whatsapp-artwork {
+  width: 100%;
+  max-width: 34rem;
+  padding: 1.25rem 0.75rem;
+  background: #f9fcfa !important;
+  border-bottom: 4px solid #c8e6c9 !important;
+}
+
+.public-shell .jba-whatsapp-artwork img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 35rem;
+  object-fit: contain;
+}
+
+.public-shell .jba-whatsapp-content { color: #123524 !important; }
+.public-shell .jba-whatsapp-content h3 { color: #123524 !important; }
+.public-shell .jba-whatsapp-eyebrow { color: #2e7d32 !important; }
+.public-shell .jba-whatsapp-copy { color: #355e3b !important; }
+
+.public-shell .jba-whatsapp-primary {
+  background: #c8e6c9 !important;
+  color: #123524 !important;
+}
+
+.public-shell .jba-whatsapp-primary:hover { background: #ffffff !important; }
+
+.public-shell .jba-whatsapp-secondary {
+  border: 1px solid #2e7d32 !important;
+  color: #123524 !important;
+}
+
+.public-shell .jba-whatsapp-secondary:hover {
+  background: #c8e6c9 !important;
+  border-color: #c8e6c9 !important;
+  color: #123524 !important;
+}
+
+.public-shell .jba-whatsapp-proof { color: #355e3b !important; }
+.public-shell .jba-whatsapp-proof span {
+  width: 0.5rem;
+  height: 0.5rem;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: #c8e6c9 !important;
+}
+
+/* Keep the hero film sharp: contrast comes from a light directional wash,
+   never from a blur applied over the mango-orchard footage. */
+.public-shell .jba-home-hero { background: #123524 !important; }
+.public-shell .jba-home-hero-video {
+  filter: none !important;
+  -webkit-filter: none !important;
+  opacity: 1 !important;
+}
+
+.public-shell .jba-home-hero-overlay {
+  background: linear-gradient(90deg, rgba(18,53,36,0.76) 0%, rgba(18,53,36,0.68) 42%, rgba(18,53,36,0.38) 63%, rgba(18,53,36,0.12) 100%) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.public-shell .jba-home-hero-shade {
+  background: linear-gradient(0deg, rgba(18,53,36,0.22) 0%, transparent 58%) !important;
+}
+
+.public-shell .jba-home-hero-copy,
+.public-shell .jba-home-hero-aside {
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.public-shell .jba-home-hero-whatsapp {
+  background: rgba(255,255,255,0.12) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Every public-page hero follows the landing page's full-width frame. */
+.public-shell .jba-public-hero {
+  width: 100%;
+  height: 26rem !important;
+  min-height: 26rem !important;
+  max-height: 26rem;
+}
+
+.public-shell .jba-public-hero-content {
+  height: 100%;
+  min-height: 0 !important;
+}
+
+@media (min-width: 640px) {
+  .public-shell .jba-public-hero {
+    height: 28rem !important;
+    min-height: 28rem !important;
+    max-height: 28rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .public-shell .jba-public-hero {
+    height: 32rem !important;
+    min-height: 32rem !important;
+    max-height: 32rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .public-shell .jba-whatsapp-support {
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+    gap: 2.5rem;
+  }
+
+  .public-shell .jba-whatsapp-artwork {
+    padding: 1.25rem 1.5rem;
+    border-right: 4px solid #c8e6c9 !important;
+    border-bottom: 0 !important;
+  }
+}
+
+/* Product catalogue conveyor: the two matching sets create a seamless loop
+   that travels from left to right and pauses whenever a customer interacts. */
+.jba-product-marquee {
+  overflow: hidden;
+  padding-block: 0.25rem 1.5rem;
+  mask-image: linear-gradient(90deg, transparent, #000000 3%, #000000 97%, transparent);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000000 3%, #000000 97%, transparent);
+}
+
+.jba-product-marquee-track {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+  animation: jba-products-left-to-right 34s linear infinite;
+}
+
+.jba-product-marquee-set {
+  display: flex;
+  gap: 1rem;
+  padding-right: 1rem;
+}
+
+.jba-product-marquee-card {
+  width: clamp(15.5rem, 22vw, 17rem);
+  flex: 0 0 auto;
+}
+
+.jba-product-marquee:hover .jba-product-marquee-track,
+.jba-product-marquee:focus-within .jba-product-marquee-track {
+  animation-play-state: paused;
+}
+
+@keyframes jba-products-left-to-right {
+  from { transform: translateX(-50%); }
+  to { transform: translateX(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jba-product-marquee {
+    overflow-x: auto;
+    mask-image: none;
+    -webkit-mask-image: none;
+  }
+
+  .jba-product-marquee-track {
+    animation: none;
+    transform: none;
+  }
+
+  .jba-product-marquee-set[aria-hidden="true"] {
+    display: none;
+  }
+
+  .jba-product-marquee-card[aria-hidden="true"] {
+    display: none;
+  }
+}
+
+/* Put page spacing inside the content, not above the sticky scroll boundary. */
+.admin-scroll-content { --admin-page-inset: 16px; }
+.admin-page-content { padding-top: var(--admin-page-inset); }
+@media (min-width: 768px) {
+  .admin-scroll-content { --admin-page-inset: 24px; }
+}
+.farm-activities-sticky-nav::before {
+  content: ''; position: absolute; z-index: -1; pointer-events: none;
+  inset: 0 calc(8px - var(--admin-page-inset));
+  background: hsl(var(--background));
+}
+
+/* Page-specific navigation shares one measured, opaque sticky stack. */
+:is(.admin-scroll-content, .portal-scroll-content) [data-page-pinned] {
+  position: sticky !important;
+  top: var(--page-pin-top) !important;
+  z-index: var(--page-pin-layer, 40);
+  background-color: var(--company-page, #f4fbf5);
+  isolation: isolate;
+}
+:is(.admin-scroll-content, .portal-scroll-content) [data-page-pinned]::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+  inset: var(--page-pin-cover, -8px) calc(-1 * var(--admin-page-inset, 16px)) -8px;
+  background: var(--company-page, #f4fbf5);
+}
+.admin-scroll-content { scroll-padding-top: var(--page-navigation-height, 0px); }
+
+@media (max-width: 1199px) {
+  .admin-scroll-content .analytics-kpis[data-page-pinned] {
+    display: flex; overflow-x: auto; gap: 8px; padding-bottom: 4px;
+  }
+  .admin-scroll-content .analytics-kpis[data-page-pinned] > div {
+    flex: 0 0 200px; order: 0; height: 104px;
+  }
+  .admin-scroll-content .analytics-kpis[data-page-pinned] > .analytics-kpi-merged { flex-basis: 310px; }
+}
+
+.portal-scroll-content { --admin-page-inset: 16px; }

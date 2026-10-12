@@ -1,0 +1,70 @@
+/* Keep record controls consistent even inside page-specific tables and dialogs. */
+:root .admin-action-icon[data-admin-action] {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex: 0 0 32px !important;
+  width: 32px !important;
+  min-width: 32px !important;
+  max-width: 32px !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  padding: 0 !important;
+  gap: 0 !important;
+  border: 1px solid #dce9e4 !important;
+  border-radius: 5px !important;
+  background: #fff !important;
+  color: #32a467 !important;
+  box-shadow: none !important;
+  text-decoration: none !important;
+  cursor: pointer;
+  vertical-align: middle;
+}
+
+:root .admin-action-icon[data-admin-action='delete'] {
+  border-color: #ffe0e4 !important;
+  background: #fff5f6 !important;
+  color: #f0445b !important;
+}
+
+:root .admin-action-icon[data-admin-action] > svg {
+  width: 16px !important;
+  height: 16px !important;
+  margin: 0 !important;
+  color: inherit !important;
+  stroke: currentColor !important;
+  stroke-width: 1.75;
+  flex-shrink: 0;
+}
+
+:root .admin-action-icon[data-admin-action='edit']:not(:disabled):hover {
+  background: #effaf3 !important;
+  border-color: #a8d8bb !important;
+}
+
+:root .admin-action-icon[data-admin-action='delete']:not(:disabled):hover {
+  background: #ffe8ec !important;
+  border-color: #ffb8c3 !important;
+}
+
+:root .admin-action-icon[data-admin-action]:focus-visible {
+  outline: 2px solid currentColor !important;
+  outline-offset: 3px;
+}
+
+:root .admin-action-icon[data-admin-action]:disabled,
+:root .admin-action-icon[data-admin-action][data-disabled] {
+  opacity: .45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+:root td > .admin-action-icon[data-admin-action] + .admin-action-icon[data-admin-action] {
+  margin-left: 6px;
+}
+
+:root :is(.fa-actions, .drc-schedule-row-actions, .mobile-record-actions):has(> .admin-action-icon),
+:root div:has(> .admin-action-icon + .admin-action-icon) {
+  align-items: center;
+  gap: 6px;
+}

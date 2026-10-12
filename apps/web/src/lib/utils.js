@@ -1,5 +1,10 @@
 import { clsx } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { extendTailwindMerge } from "tailwind-merge"
+import typographyRoles from "./typography-roles.json"
+
+const twMerge = extendTailwindMerge({
+  extend: { classGroups: { "font-size": [{ text: typographyRoles }] } },
+})
 
 export function cn(...inputs) {
   return twMerge(clsx(inputs))

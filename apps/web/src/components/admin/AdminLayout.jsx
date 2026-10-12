@@ -1,39 +1,63 @@
-import React, { useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import React, { useEffect, useRef, useState } from 'react';
+import { Link, Outlet, useLocation } from 'react-router-dom';
+import { ShieldX } from 'lucide-react';
+import usePinnedPageNavigation from '@/components/shared/usePinnedPageNavigation';
 import AdminSidebar from './AdminSidebar';
 import AdminTopbar from './AdminTopbar';
+import AdminMobileNav from './AdminMobileNav';
+import { DashboardExportContext } from './DashboardExportContext';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
+import { useAuth } from '@/lib/AuthContext';
+import { canAccessAdminPath, defaultAdminPath } from '@/lib/access-control';
 
 export default function AdminLayout() {
+  const { user } = useAuth();
+  const location = useLocation();
+  const scrollRef = useRef(null);
+  usePinnedPageNavigation(scrollRef, location.pathname);
+  const [exportAction, setExportAction] = useState(null);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const canAccessPage = canAccessAdminPath(user, location.pathname);
+
+  useEffect(() => {
+    document.documentElement.classList.add('admin-theme');
+    return () => document.documentElement.classList.remove('admin-theme');
+  }, []);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-muted/30">
-      <div className="hidden lg:flex lg:flex-col">
-        <AdminSidebar
-          collapsed={sidebarCollapsed}
-          onToggleCollapsed={() => setSidebarCollapsed((collapsed) => !collapsed)}
-        />
-      </div>
-
+    <DashboardExportContext.Provider value={{ exportAction, setExportAction }}>
+    <div data-preserve-colors={location.pathname.replace(/\/$/, '') === '/admin/farm-daily-activities/activities/overview' ? 'true' : undefined} className="admin-shell app-surface flex h-[100dvh] overflow-hidden bg-background md:h-screen">
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-        <SheetContent side="left" className="w-64 p-0">
-          <SheetHeader className="px-4 py-3 border-b">
-            <SheetTitle className="text-left">Navigation</SheetTitle>
+        <SheetContent side="left" className="flex w-[min(19rem,86vw)] flex-col bg-[#2e7d32] p-0 text-white">
+          <SheetHeader className="shrink-0 border-b border-white/10 px-4 py-4">
+            <SheetTitle className="text-left text-white">Admin navigation</SheetTitle>
           </SheetHeader>
-          <div className="overflow-y-auto h-full">
+          <div className="min-h-0 flex-1 overflow-y-auto pb-16">
             <AdminSidebar />
           </div>
         </SheetContent>
       </Sheet>
 
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <AdminTopbar onMenuClick={() => setMobileOpen(true)} />
-        <main className="flex-1 overflow-y-auto scrollbar-thin p-4 md:p-6">
-          <Outlet />
+        <main ref={scrollRef} className="admin-scroll-content flex-1 overflow-y-auto scrollbar-thin px-4 pb-24 md:px-6 md:pb-6">
+          <div className="admin-page-content">
+          {canAccessPage ? <Outlet /> : (
+            <div className="grid min-h-[60vh] place-items-center">
+              <div className="max-w-md text-center">
+                <span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-destructive/10 text-destructive"><ShieldX className="h-6 w-6" /></span>
+                <p className="mt-4 font-heading text-xl font-semibold">Page access is turned off</p>
+                <p className="mt-2 text-sm text-muted-foreground">Your staff profile does not allow access to this workspace page.</p>
+                <Button asChild className="mt-5"><Link to={defaultAdminPath(user)}>Go to an available page</Link></Button>
+              </div>
+            </div>
+          )}
+          </div>
         </main>
       </div>
+      <AdminMobileNav user={user} />
     </div>
+    </DashboardExportContext.Provider>
   );
 }

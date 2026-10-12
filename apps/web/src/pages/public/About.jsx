@@ -1,100 +1,23 @@
-import React from 'react';
-import { Leaf, Target, Eye, Award, Users, Globe2 } from 'lucide-react';
-
-export default function About() {
-  return (
-    <div>
-      <section className="relative overflow-hidden py-20">
-        <img
-          src="https://images.unsplash.com/photo-1553279768-865429fa0078?w=1600&q=80"
-          alt="JBA GreenGold mango orchard"
-          className="absolute inset-0 h-full w-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-black/30" />
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl">
-            <h1 className="font-heading text-4xl font-bold tracking-tight text-white md:text-5xl">About JBA GreenGold</h1>
-            <p className="mt-4 text-lg text-white/90">
-              A leading mango business combining sustainable farming, modern operations, and global export capabilities —
-              all managed from a single centralized platform.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <section className="py-16 lg:py-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid gap-12 lg:grid-cols-2">
-            <div>
-              <span className="text-sm font-semibold text-primary">OUR STORY</span>
-              <h2 className="mt-2 font-heading text-3xl font-bold tracking-tight">From Small Farms to Global Markets</h2>
-              <div className="mt-4 space-y-4 text-muted-foreground">
-                <p>
-                  Founded with a vision to transform mango farming in Ghana, JBA GreenGold started as a single farm
-                  operation and has grown into a comprehensive mango business serving local, corporate, and export markets.
-                </p>
-                <p>
-                  Today, we manage over 12 farms, produce thousands of tons of premium mangoes annually, and export
-                  to 18+ countries worldwide. Our centralized platform digitizes every aspect of the business —
-                  from planting and harvest tracking to sales, logistics, and finance.
-                </p>
-                <p>
-                  We believe in quality, sustainability, and technology as the foundation for building a mango business
-                  that serves customers reliably while growing responsibly.
-                </p>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <img src="https://images.unsplash.com/photo-1553279768-865429fa0078?w=400&q=80" alt="Mango farm" className="h-full w-full rounded-2xl object-cover" />
-              <img src="https://images.unsplash.com/photo-1605027990121-cbae9e0642df?w=400&q=80" alt="Mango harvest" className="mt-8 h-full w-full rounded-2xl object-cover" />
-              <img src="https://images.unsplash.com/photo-1546173159-315724a31696?w=400&q=80" alt="Mango export" className="h-full w-full rounded-2xl object-cover" />
-              <img src="https://images.unsplash.com/photo-1518569656558-1f25169d6434?w=400&q=80" alt="Mango quality" className="mt-8 h-full w-full rounded-2xl object-cover" />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="bg-muted/30 py-16 lg:py-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid gap-8 md:grid-cols-3">
-            {[
-              { icon: Target, title: 'Our Mission', desc: 'To deliver the highest quality mangoes to local and global markets while empowering farmers and communities through sustainable, technology-driven agriculture.' },
-              { icon: Eye, title: 'Our Vision', desc: 'To be Africa\'s leading mango business — recognized for quality, sustainability, innovation, and the seamless integration of farm operations with global supply chains.' },
-              { icon: Award, title: 'Our Values', desc: 'Quality, sustainability, integrity, innovation, and community. We hold ourselves to the highest standards in everything we grow, pack, and deliver.' },
-            ].map((item) => (
-              <div key={item.title} className="rounded-2xl border border-border bg-card p-8 shadow-sm">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-                  <item.icon className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="mt-4 font-heading text-xl font-bold">{item.title}</h3>
-                <p className="mt-2 text-sm text-muted-foreground">{item.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="py-16 lg:py-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <h2 className="text-center font-heading text-3xl font-bold tracking-tight">Our Impact in Numbers</h2>
-          <div className="mt-12 grid grid-cols-2 gap-8 md:grid-cols-4">
-            {[
-              { icon: Leaf, value: '12+', label: 'Farms' },
-              { icon: Users, value: '250+', label: 'Employees' },
-              { icon: Globe2, value: '18', label: 'Export Markets' },
-              { icon: Award, value: '8', label: 'Certifications' },
-            ].map((stat) => (
-              <div key={stat.label} className="text-center">
-                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl gradient-mango">
-                  <stat.icon className="h-7 w-7 text-white" />
-                </div>
-                <p className="mt-3 font-heading text-3xl font-bold">{stat.value}</p>
-                <p className="text-sm text-muted-foreground">{stat.label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-    </div>
-  );
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { ArrowRight, Globe2, Leaf, UsersRound, CalendarDays, CirclePlay, Plus, Sprout } from 'lucide-react';
+import './about-reference.css';
+const questions = [
+ ['Where is JBA GreenGold Orchard located?','JBA GreenGold Orchard is based in Ghana, with our contact team in Duayaw Nkwanta, Ahafo Region. Visit our farm page to explore our orchards, or contact us to arrange a visit.','/farms'],
+ ['What products do you offer?','We offer premium fresh mangoes and natural mango products, including dried mango, juice, jam, pickles, and gift collections. Explore our products to discover the harvest.','/products'],
+ ['Do you work with international buyers?','Yes. We work with local and international buyers. Our supply team can help with product availability, export requirements, and delivery arrangements.','/supply'],
+ ['How can I get in touch?','Email info@jbagreengold.com or use our contact page to speak with our team about products, supply, partnerships, or visiting the orchard.','/contact']
+];
+function SectionTitle({ children }) { return <h2 className="ab-section-title">{children}</h2>; }
+export default function About(){
+ const [readMore,setReadMore]=useState(false);
+ return <div className="ab-page" data-preserve-colors="true">
+ <section className="ab-hero" aria-labelledby="about-title"><img className="ab-backdrop" src="/pages/about/orchard-hero.png" alt="Sunlit ripe mangoes hanging in a green orchard" fetchPriority="high"/><div className="ab-container ab-hero-inner"><div className="ab-hero-copy"><p className="ab-eyebrow">Grown by nature. Shared by choice.</p><h1 id="about-title">Naturally grown.<br/><span>Carefully shared.</span></h1><p className="ab-hero-description">Premium mangoes and natural products from<br className="ab-desktop-break"/> our orchard to your table.</p><div className="ab-buttons"><Link className="ab-button" to="/products">Explore Our Products<ArrowRight size={18}/></Link><a className="ab-button ab-button-outline" href="#our-story"><CirclePlay size={21}/>Our Story</a></div></div><p className="ab-handwriting ab-hero-note">Good things<br/>grow here.</p></div></section>
+ <section className="ab-story" id="our-story"><SectionTitle>The story of JBA GreenGold</SectionTitle><p>JBA GreenGold Orchard was founded on a simple belief: great fruit can create<br className="ab-desktop-break"/> better lives. We grow premium mangoes and natural products in Ghana, working<br className="ab-desktop-break"/> with our land and our communities for a brighter, more sustainable future.</p><button className="ab-read-more" aria-expanded={readMore} aria-controls="about-story-more" onClick={()=>setReadMore(!readMore)}>{readMore?'Read Less':'Read More'}<ArrowRight size={16}/></button>{readMore&&<p id="about-story-more" className="ab-expanded-story">Our work begins in the orchard, where patience, timing, and stewardship shape the quality of every mango. Through careful growing, thoughtful products, and dependable routes to market, we create lasting value from every harvest.</p>}</section>
+ <section className="ab-gallery-section" aria-label="Life at our orchard"><div className="ab-container ab-gallery"><figure className="ab-gallery-tall"><img src="/pages/about/gallery-1.webp" alt="Golden morning light over the mango orchard" loading="lazy"/><figcaption className="ab-handwriting">Healthy orchards.<br/>Brighter tomorrows.</figcaption></figure>{[[2,'Ripe mangoes on the tree'],[3,'A farmer proudly sharing the mango harvest'],[4,'Natural mango products from our orchard'],[5,'Our farming team walking through the orchard'],[6,'A freshly harvested mango held with care'],[7,'Lush mango orchards across green hills']].map(([number,alt],index)=><img key={index} src={`/pages/about/gallery-${number}.webp`} alt={alt} loading="lazy"/>)}</div></section>
+ <section className="ab-impact" aria-label="Our impact"><div className="ab-container ab-impact-grid">{[[Leaf,'100%','Natural Ingredients'],[UsersRound,'500+','Farming Families'],[CalendarDays,'15+','Product Varieties'],[Globe2,'10+','Markets Worldwide']].map(([Icon,value,label])=><div key={label}><Icon size={43} strokeWidth={1.35}/><strong>{value}</strong><span>{label}</span></div>)}</div></section>
+ <section className="ab-market"><img className="ab-backdrop" src="/pages/about/orchard-hero.png" alt="Golden mangoes ready for harvest" loading="lazy"/><div className="ab-container"><div className="ab-market-copy"><p className="ab-eyebrow">Orchard to market</p><h2>Better fruit. Brighter futures.</h2><p>From our orchards in Ghana to families around the world.</p><Link className="ab-button" to="/supply">Learn More<ArrowRight size={17}/></Link></div></div></section>
+ <section className="ab-quality"><SectionTitle>Trusted quality</SectionTitle><div className="ab-quality-marks"><Link to="/sustainability#standards" className="ab-quality-mark"><Sprout size={68} strokeWidth={1.3}/><span><strong>GHANA</strong><br/>GOOD AGRICULTURAL<br/>PRACTICES</span></Link><Link to="/farms" className="ab-quality-mark"><Leaf size={72} strokeWidth={1.4}/><span className="ab-grown"><strong>Grown<br/>in Ghana<img src="/flags/gh.png" alt="Ghana flag"/></strong><small>For People. For Tomorrow.</small></span></Link></div></section>
+ <section className="ab-founders"><SectionTitle>Founders’ story</SectionTitle><p>Two founders. One shared vision for a healthier, more sustainable future.</p><div className="ab-founder-grid">{[['John Boakye Asante','asante','Growing value for generations to come.'],['Benedict Oppong Asante','benedict','Building opportunities through agriculture.']].map(([name,image,description])=><article key={name}><img src={image === 'asante' ? '/pages/about/founder-asante-original.png' : '/pages/about/founder-benedict-original.jpg'} alt={`${name}, Co-Founder`} loading="lazy"/><div><h3>{name}</h3><p className="ab-role">Co-Founder</p><p>{description}</p></div></article>)}</div></section>
+ <section className="ab-faq"><SectionTitle>Interested in more about JBA GreenGold?</SectionTitle><div className="ab-faq-list">{questions.map(([question,answer,url])=><details key={question}><summary>{question}<Plus size={17}/></summary><p>{answer} <Link to={url}>Learn more<ArrowRight size={14}/></Link></p></details>)}</div></section></div>;
 }

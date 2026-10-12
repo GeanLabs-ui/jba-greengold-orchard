@@ -22,6 +22,23 @@ export const permissions = {
   'farms.delete': 'Delete a farm',
   'farms.approve': 'Approve farm logs',
 
+  // Blocks (farm sub-units)
+  'blocks.read': 'Read block details',
+  'blocks.create': 'Create a new block',
+  'blocks.update': 'Update block details',
+  'blocks.deactivate': 'Deactivate or reactivate a block',
+  'blocks.merge': 'Merge blocks within a farm',
+
+  // Harvest periods
+  'harvest_periods.read': 'Read harvest periods',
+  'harvest_periods.create': 'Create a harvest period',
+  'harvest_periods.update': 'Update a harvest period',
+
+  // Farm activity stages
+  'activity_periods.read': 'Read farm activity stages',
+  'activity_periods.create': 'Create a farm activity stage',
+  'activity_periods.update': 'Update a farm activity stage',
+
   // Daily activities
   'activities.read': 'Read activity logs',
   'activities.create': 'Create daily activity',
@@ -51,6 +68,9 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   super_admin: Object.keys(permissions) as Permission[],
   admin: [
     'farms.read', 'farms.create', 'farms.update', 'farms.approve',
+    'blocks.read', 'blocks.create', 'blocks.update', 'blocks.deactivate', 'blocks.merge',
+    'harvest_periods.read', 'harvest_periods.create', 'harvest_periods.update',
+    'activity_periods.read', 'activity_periods.create', 'activity_periods.update',
     'activities.read', 'activities.create', 'activities.update', 'activities.approve',
     'inventory.read', 'inventory.issue', 'inventory.receive', 'inventory.adjust',
     'finance.read', 'finance.create', 'finance.approve',
@@ -58,11 +78,17 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   ],
   farm_manager: [
     'farms.read', 'farms.update', 'farms.approve',
+    'blocks.read', 'blocks.create', 'blocks.update', 'blocks.deactivate',
+    'harvest_periods.read', 'harvest_periods.create', 'harvest_periods.update',
+    'activity_periods.read', 'activity_periods.create', 'activity_periods.update',
     'activities.read', 'activities.create', 'activities.update', 'activities.approve',
     'inventory.read', 'inventory.issue', 'inventory.receive'
   ],
   farm_supervisor: [
     'farms.read',
+    'blocks.read', 'blocks.create', 'blocks.update',
+    'harvest_periods.read', 'harvest_periods.create',
+    'activity_periods.read', 'activity_periods.create', 'activity_periods.update',
     'activities.read', 'activities.create', 'activities.update',
     'inventory.read', 'inventory.issue'
   ],
@@ -70,7 +96,7 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'inventory.read', 'inventory.issue', 'inventory.receive', 'inventory.adjust'
   ],
   quality_officer: [
-    'farms.read',
+    'farms.read', 'blocks.read', 'harvest_periods.read',
     'activities.read', 'activities.approve'
   ],
   finance_officer: [
@@ -88,7 +114,8 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   content_editor: [],
   customer: [],
   auditor: [
-    'farms.read', 'activities.read', 'inventory.read', 'finance.read'
+    'farms.read', 'blocks.read', 'harvest_periods.read', 'activity_periods.read',
+    'activities.read', 'inventory.read', 'finance.read'
   ],
   user: ['farms.read']
 };

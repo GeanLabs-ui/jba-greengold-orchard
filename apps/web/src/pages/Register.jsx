@@ -1,216 +1,63 @@
-import React, { useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
-import { getSafeRedirectTarget } from "@/lib/safe-redirect";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { UserPlus, Mail, Lock, Loader2 } from "lucide-react";
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
-import AuthLayout from "@/components/AuthLayout";
-import { toast } from "@/components/ui/use-toast";
+import React, { useCallback, useRef, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { base44 } from '@/api/base44Client';
+import { customerDestination } from '@/lib/login-audience';
+import { useGoogleClientId } from '@/lib/use-google-client-id';
+import { UserPlus, Loader2 } from 'lucide-react';
+import AuthLayout from '@/components/AuthLayout';
+import GoogleSignInButton from '@/components/GoogleSignInButton';
+import LocalCustomerRegistration from '@/components/LocalCustomerRegistration';
 
 export default function Register() {
   const [searchParams] = useSearchParams();
-  const fromUrl = getSafeRedirectTarget(searchParams.get("from_url"));
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState("");
+  const fromUrl = customerDestination(searchParams.get('from_url'));
+  const { clientId, localLoginEnabled, loading: loadingConfig } = useGoogleClientId();
+  const googleAvailable = Boolean(clientId);
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showOtp, setShowOtp] = useState(false);
-  const [otpCode, setOtpCode] = useState("");
+  const submitting = useRef(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
-      return;
-    }
+  const handleGoogleCredential = useCallback(async (credential) => {
+    if (submitting.current) return;
+    submitting.current = true;
+    setError('');
     setLoading(true);
     try {
-      const result = await base44.auth.register({ email, password });
-      if (result?.access_token) {
-        base44.auth.setToken(result.access_token);
-        window.location.href = fromUrl;
-        return;
-      }
-      setShowOtp(true);
+      await base44.auth.loginViaGoogle(credential, 'customer');
+      window.location.assign(fromUrl);
     } catch (err) {
-      setError(err.message || "Registration failed");
-    } finally {
+      setError(err.message || 'Google sign-up failed. Please try again.');
       setLoading(false);
+      submitting.current = false;
     }
-  };
+  }, [fromUrl]);
 
-  const handleVerify = async () => {
-    setError("");
-    setLoading(true);
-    try {
-      const result = await base44.auth.verifyOtp({ email, otpCode });
-      if (result?.access_token) {
-        base44.auth.setToken(result.access_token);
-      }
-      window.location.href = fromUrl;
-    } catch (err) {
-      setError(err.message || "Invalid verification code");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleResend = async () => {
-    setError("");
-    try {
-      await base44.auth.resendOtp(email);
-      toast({
-        title: "Code sent",
-        description: "Check your email for the new code.",
-      });
-    } catch (err) {
-      setError(err.message || "Failed to resend code");
-    }
-  };
-
-  if (showOtp) {
-    return (
-      <AuthLayout
-        icon={Mail}
-        title="Verify your email"
-        subtitle={`We sent a code to ${email}`}
-      >
-        {error && (
-          <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
-            {error}
-          </div>
-        )}
-        <div className="flex justify-center mb-6">
-          <InputOTP
-            maxLength={6}
-            value={otpCode}
-            onChange={setOtpCode}
-            autoFocus
-            autoComplete="one-time-code"
-          >
-            <InputOTPGroup>
-              <InputOTPSlot index={0} />
-              <InputOTPSlot index={1} />
-              <InputOTPSlot index={2} />
-              <InputOTPSlot index={3} />
-              <InputOTPSlot index={4} />
-              <InputOTPSlot index={5} />
-            </InputOTPGroup>
-          </InputOTP>
-        </div>
-        <Button
-          className="w-full h-12 font-medium"
-          onClick={handleVerify}
-          disabled={loading || otpCode.length < 6}
-        >
-          {loading ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Verifying...
-            </>
-          ) : (
-            "Verify"
-          )}
-        </Button>
-        <p className="text-center text-sm text-muted-foreground mt-4">
-          Didn't receive the code?{" "}
-          <button onClick={handleResend} className="text-primary font-medium hover:underline">
-            Resend
-          </button>
-        </p>
-      </AuthLayout>
-    );
-  }
+  const handleGoogleError = useCallback(() => {
+    setError('Google sign-up could not load. Please refresh the page and try again.');
+  }, []);
 
   return (
     <AuthLayout
       icon={UserPlus}
-      title="Create your account"
-      subtitle="Sign up to get started"
-      footer={
-        <>
-          Already have an account?{" "}
-          <Link
-            to={`/login?from_url=${encodeURIComponent(fromUrl)}`}
-            className="text-primary font-medium hover:underline"
-          >
-            Log in
-          </Link>
-        </>
-      }
+      title="Create your client account"
+      subtitle={localLoginEnabled ? 'Create a client account for local testing.' : 'Sign up with your Google account to access the client portal.'}
+      footer={<>Already have an account?{' '}<Link to={`/login?from_url=${encodeURIComponent(fromUrl)}`} className="text-primary font-medium hover:underline">Log in</Link></>}
     >
-      {error && (
-        <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
-          {error}
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <div className="relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
-            <Input
-              id="email"
-              type="email"
-              autoComplete="email"
-              autoFocus
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="pl-10 h-12"
-              required
-            />
-          </div>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
-          <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
-            <Input
-              id="password"
-              type="password"
-              autoComplete="new-password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="pl-10 h-12"
-              required
-            />
-          </div>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="confirm">Confirm Password</Label>
-          <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
-            <Input
-              id="confirm"
-              type="password"
-              autoComplete="new-password"
-              placeholder="••••••••"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="pl-10 h-12"
-              required
-            />
-          </div>
-        </div>
-        <Button type="submit" className="w-full h-12 font-medium" disabled={loading}>
+      {error && <div role="alert" className="mb-4 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
+      {loadingConfig ? <p role="status">Loading sign-up...</p> : localLoginEnabled ? <LocalCustomerRegistration destination={fromUrl} /> : googleAvailable ? (
+        <div aria-busy={loading}>
           {loading ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Creating account...
-            </>
-          ) : (
-            "Create account"
-          )}
-        </Button>
-      </form>
+            <p role="status" className="flex min-h-12 items-center justify-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" /> Creating your account...
+            </p>
+          ) : <GoogleSignInButton onCredential={handleGoogleCredential} onError={handleGoogleError} />}
+        </div>
+      ) : (
+        <p role="status" className="rounded-lg border border-border bg-muted/40 p-4 text-sm text-muted-foreground">
+          Google sign-up is currently unavailable. Please try again later or <Link to="/contact" className="font-medium text-primary underline">contact us</Link> for help.
+        </p>
+      )}
+      {!localLoginEnabled && <p className="mt-5 text-center text-sm leading-6 text-muted-foreground">Use one Google account to manage your orders, payments, and documents. No separate password is needed.</p>}
     </AuthLayout>
   );
 }

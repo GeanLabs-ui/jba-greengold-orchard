@@ -1,0 +1,57 @@
+import { useState } from 'react';
+import { Plus, ClipboardList, Coins, Users, Settings, Image, Eye, UploadCloud, Save, Check, X, Pencil, Trash2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
+import { farmSelectOptions, blockSelectOptions } from '@/lib/farm-scope';
+import { base44 } from '@/api/base44Client';
+import './harvest-record-dialog.css';
+const n = (v) => Number(v) || 0;
+const fmt = (v) => new Intl.NumberFormat('en-GH', { maximumFractionDigits: 3 }).format(n(v));
+function Section({ icon: Icon, title, children }) { return <section className="hr-section"><h3><Icon />{title}</h3><div className="hr-fields">{children}</div></section>; }
+export default function HarvestRecordDialog({ data, onCreate, preview, record, onClose, onSave, onDelete }) {
+  const [open, setOpen] = useState(Boolean(record));
+  const [editable, setEditable] = useState(!record);
+  const [form, setForm] = useState(record ? { ...record, harvested: n(record.quantity_harvested_kg ?? record.total_quantity) / 1000, rejected: n(record.rejected_kg) / 1000, harvest_cost: record.harvest_cost ?? record.actual_cost ?? record.cost ?? 0, team_name: record.team_name || record.team || record.team_lead || '', supervisor_name: record.supervisor_name || record.supervisor || '', mango_variety: record.mango_variety || record.variety || 'Kent', farm_id: record.farm_id || '__all__', block_id: record.block_id || '', time_recorded: record.time_recorded || String(record.created_date || '').slice(11,16) || '00:00', team_members: Array.isArray(record.team_members) ? record.team_members.join('\n') : record.team_members || '', notes: record.notes || '' } : { notes: '', team_members: '' });
+  const [evidence, setEvidence] = useState(record?.evidence || []);
+  const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [code, setCode] = useState(record?.harvest_code || record?.batch_number || '');
+  const start = (next) => { setOpen(next); if (!next) onClose?.(); if (next) { setCode(`HV-${new Date().getFullYear()}-${Date.now().toString().slice(-6)}`); setForm({ harvest_date: new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Accra' }), time_recorded: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Accra' }), farm_id: '__all__', block_id: String(blockSelectOptions(data.blocks)[0]?.value || ''), status: 'Completed', mango_variety: 'Kent', rejected: '0', harvest_cost: '', quality_check: 'Quality Check', transport_status: 'Pending', team_members: '', notes: '' }); setEvidence([]); setError(''); } };
+  const update = (key, value) => setForm((old) => ({ ...old, [key]: value, ...(key === 'farm_id' ? { block_id: String(blockSelectOptions(data.blocks).find((b) => value === '__all__' || String(b.farmId) === value)?.value || '') } : {}) }));
+  const field = (key, label, type = 'text', options) => <label className={key === 'team_members' ? 'hr-members' : ''}>{label}{options ? <select required={['farm_id','block_id','status'].includes(key)} value={form[key] || ''} onChange={(e) => update(key,e.target.value)}>{options.map((o) => <option key={o.value ?? o} value={o.value ?? o}>{o.label ?? o}</option>)}</select> : <input type={type} required={['harvest_date','time_recorded','harvested','team_name'].includes(key)} min={type === 'number' ? 0 : undefined} step={type === 'number' ? 'any' : undefined} value={form[key] ?? ''} onChange={(e) => update(key,e.target.value)} />}</label>;
+  const addFiles = async (files) => {
+    const selected = Array.from(files);
+    if (selected.some((f) => !['image/jpeg','image/png','application/pdf','video/mp4','video/webm'].includes(f.type) || f.size > 5 * 1024 * 1024)) { setError('Upload JPG, PNG, PDF, MP4 or WebM files up to 5 MB each.'); return; }
+    const items = await Promise.all(selected.map((file) => new Promise((resolve,reject) => { const reader = new FileReader(); reader.onload = () => resolve({ file, name: file.name, url: reader.result }); reader.onerror = reject; reader.readAsDataURL(file); })));
+    setEvidence((old) => [...old,...items]); setError('');
+  };
+  const save = async (draft = false) => {
+    if (saving) return;
+    if (!draft && !document.getElementById('harvest-add-form').reportValidity()) return;
+    if (n(form.rejected) > n(form.harvested) || (!draft && n(form.harvested) <= 0)) { setError('Harvested quantity must be positive and rejected quantity cannot exceed it.'); return; }
+    setSaving(true); setError('');
+    try {
+      const uploaded = [];
+      for (const item of evidence) uploaded.push(!item.file ? item : preview ? { name: item.name, url: item.url, contentType: item.file.type } : await base44.files.upload(item.file, code));
+      await (record ? onSave : onCreate)({ ...form, block_id: form.block_id || (form.farm_id === '__all__' ? '__all__' : `farm:${form.farm_id}`), harvest_code: code, quantity_harvested_kg: n(form.harvested) * 1000, rejected_kg: n(form.rejected) * 1000, accepted_quantity_kg: (n(form.harvested) - n(form.rejected)) * 1000, harvest_cost: n(form.harvest_cost), team_members: form.team_members.split(/\n|,/).map((name) => name.trim()).filter(Boolean), status: draft ? 'Draft' : form.status, evidence: uploaded, time_recorded: form.time_recorded });
+      if (record) { setEditable(false); } else { setOpen(false); }
+    } catch (err) { setError(err.message || 'Could not save harvest record.'); }
+    finally { setSaving(false); }
+  };
+  const farmOptions = [{ value: '__all__', label: 'A&B' }, ...farmSelectOptions(data.farms).map((f) => ({ ...f, label: f.label.replace('Farm ', '') }))];
+  const farm = farmOptions.find((f) => String(f.value) === String(form.farm_id))?.label || 'A&B';
+  const block = blockSelectOptions(data.blocks).find((b) => String(b.value) === String(form.block_id))?.label || '—';
+  const accepted = Math.max(0,n(form.harvested) - n(form.rejected));
+  return <Dialog open={open} onOpenChange={start}>{!record && <DialogTrigger asChild><button className="ho-create hr-trigger"><Plus />New Harvest Record</button></DialogTrigger>}<DialogContent className="hr-dialog"><DialogHeader className="sr-only"><DialogTitle>Add Harvest Record</DialogTitle><DialogDescription>Enter harvest record details.</DialogDescription></DialogHeader>
+    <form id="harvest-add-form" onSubmit={(e) => { e.preventDefault(); void save(); }}>
+      <div className="hr-main"><fieldset disabled={!editable || saving} className="hr-sections">
+        <Section icon={ClipboardList} title="1. Basic Information"><label>Record ID<input value={code} readOnly className="hr-readonly" /></label>{field('harvest_date','Harvest Date','date')}{field('time_recorded','Time Recorded','time')}<div className="hr-four">{field('farm_id','Main Farm','text',farmOptions)}{field('block_id','Block','text',blockSelectOptions(data.blocks).filter((b) => !form.farm_id || form.farm_id === '__all__' || String(b.farmId) === String(form.farm_id)))}{field('mango_variety','Variety','text',['Kent','Keitt','Others'])}{field('status','Status','text',['Completed','In Progress','Awaiting Transport','Quality Check'])}</div></Section>
+        <Section icon={Coins} title="2. Harvest Quantities"><div className="hr-four">{field('harvested','Harvested Qty (tonnes)','number')}{field('rejected','Rejected Qty (tonnes)','number')}<label>Accepted Qty (tonnes)<input readOnly value={fmt(accepted)} className="hr-readonly" /></label>{field('harvest_cost','Total Harvest Cost (GH₵)','number')}</div></Section>
+        <Section icon={Users} title="3. Team & Supervision">{field('team_name','Team Name')}<label>Team Members<textarea rows={2} placeholder="Enter names, one per line" value={form.team_members} onChange={(e) => update('team_members',e.target.value)} /></label>{field('supervisor_name','Supervisor')}</Section>
+        <Section icon={Settings} title="4. Quality / Logistics">{field('quality_check','Quality Check','text',['Quality Check','Pending','Passed','Failed'])}{field('transport_status','Transport Status','text',['Pending','In Progress','Completed','Awaiting Transport'])}<label>Notes (Optional)<textarea maxLength={500} rows={3} value={form.notes} onChange={(e) => update('notes',e.target.value)} /><small>{form.notes.length}/500</small></label></Section>
+      </fieldset><aside className="hr-preview"><h3><Eye />Record Preview</h3><p>Here’s how this record will appear<br />on the main dashboard.</p><dl>{[['Block',block],['Farm',farm],['Variety',form.mango_variety],['Status',form.status],['Harvested Qty',`${fmt(form.harvested)} tonnes`],['Rejected Qty',`${fmt(form.rejected)} tonnes`],['Accepted Qty',`${fmt(accepted)} tonnes`],['Total Cost',`GH₵ ${fmt(form.harvest_cost)}`],['Team',form.team_name],['Supervisor',form.supervisor_name],['Date & Time',`${form.harvest_date || ''}, ${form.time_recorded || ''}`]].map(([label,value]) => <div key={label}><dt>{label}</dt><dd>{value || '—'}</dd></div>)}</dl><div className="hr-info"><Check />This record will be added to the harvest records list and included in today’s statistics.</div></aside></div>
+      <section className="hr-section hr-evidence"><h3><Image />5. Evidence</h3><div className="hr-upload-row">{editable && <label className="hr-upload" onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); void addFiles(e.dataTransfer.files); }}><UploadCloud /><span><b>Upload Photos / Evidence</b><small>Drag and drop files here, or click to browse</small><small>Supports images, videos, PDF (Max 5MB each)</small></span><input type="file" multiple accept="image/jpeg,image/png,application/pdf,video/mp4,video/webm" onChange={(e) => { void addFiles(e.target.files); e.target.value = ''; }} /></label>}{evidence.map((item,index) => <div className="hr-thumb" key={`${item.name}-${index}`}>{(item.file?.type || item.contentType || '').startsWith('image/') || String(item.url).startsWith('data:image/') ? <a href={item.url} target="_blank" rel="noreferrer"><img src={item.url} alt={item.name} /></a> : (item.file?.type || item.contentType || '').startsWith('video/') || String(item.url).startsWith('data:video/') ? <video src={item.url} controls preload="metadata" /> : <a href={item.url} target="_blank" rel="noreferrer">{item.name || 'Open attachment'}</a>}{editable && <button type="button" aria-label={`Remove ${item.name}`} onClick={() => setEvidence((old) => old.filter((_,i) => i !== index))}><X /></button>}</div>)}</div></section>
+      {error && <p className="hr-error" role="alert">{error}</p>}
+      <footer className="hr-footer">{record ? <><button type="button" aria-label="Delete harvest record" disabled={saving} onClick={async () => { setSaving(true); try { await onDelete(); } catch (err) { setError(err.message || 'Could not delete record.'); } finally { setSaving(false); } }}><Trash2 />Delete</button><button type="button" aria-label="Update harvest record" disabled={saving || editable} onClick={() => setEditable(true)}><Pencil />Update</button><button type="submit" disabled={saving || !editable}><Save />{saving ? 'Saving…' : 'Save'}</button></> : <><button type="button" onClick={() => setOpen(false)} disabled={saving}>Cancel</button><button type="button" onClick={() => save(true)} disabled={saving}><Save />Save Draft</button><button type="submit" disabled={saving}><Check />{saving ? 'Saving…' : 'Save Harvest Record'}</button></>}</footer>
+    </form>
+  </DialogContent></Dialog>;
+}

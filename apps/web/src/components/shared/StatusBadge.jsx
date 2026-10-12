@@ -1,5 +1,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
+import { Check, CircleAlert, Clock, Info } from 'lucide-react';
 
 const statusConfig = {
   // Sales statuses
@@ -16,6 +17,7 @@ const statusConfig = {
   cancelled: { label: 'Cancelled', class: 'bg-slate-200 text-slate-600' },
   // Order statuses
   confirmed: { label: 'Confirmed', class: 'bg-blue-100 text-blue-700' },
+  processing: { label: 'Processing', class: 'bg-amber-100 text-amber-700' },
   packed: { label: 'Packed', class: 'bg-violet-100 text-violet-700' },
   dispatched: { label: 'Dispatched', class: 'bg-indigo-100 text-indigo-700' },
   delivered: { label: 'Delivered', class: 'bg-emerald-100 text-emerald-700' },
@@ -34,6 +36,7 @@ const statusConfig = {
   // General
   active: { label: 'Active', class: 'bg-emerald-100 text-emerald-700' },
   inactive: { label: 'Inactive', class: 'bg-slate-100 text-slate-600' },
+  merged: { label: 'Merged', class: 'bg-blue-100 text-blue-700' },
   // Customer types
   local: { label: 'Local', class: 'bg-emerald-100 text-emerald-700' },
   corporate: { label: 'Corporate', class: 'bg-blue-100 text-blue-700' },
@@ -66,10 +69,12 @@ const statusConfig = {
 
 export default function StatusBadge({ status, label }) {
   const config = statusConfig[status] || { label: label || status, class: 'bg-slate-100 text-slate-700' };
+  const Icon = config.class.includes('red-') ? CircleAlert : config.class.includes('amber-') ? Clock : config.class.includes('emerald-') ? Check : Info;
 
   return (
-    <span className={cn('inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium capitalize', config.class)}>
-      {config.label}
+    <span data-status-tone={config.class.includes('red-') ? 'error' : config.class.includes('amber-') ? 'warning' : config.class.includes('emerald-') ? 'success' : 'information'} className={cn('inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium capitalize', config.class)}>
+      <Icon className="h-3 w-3 shrink-0" aria-hidden="true" />
+      {label || config.label}
     </span>
   );
 }

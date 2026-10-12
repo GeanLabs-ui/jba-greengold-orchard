@@ -18,14 +18,14 @@ const galleryImages = [
 export default function Media() {
   return (
     <div>
-      <section className="bg-gradient-to-br from-amber-600 to-orange-600 py-16">
+      <section data-layout-section="hero" className="bg-gradient-to-br from-amber-600 to-orange-600 py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <h1 className="font-heading text-4xl font-bold tracking-tight text-white">Media & Gallery</h1>
+          <h1 className="text-white text-page-title">Media & Gallery</h1>
           <p className="mt-2 text-amber-50">A visual journey through our farms, harvests, and operations.</p>
         </div>
       </section>
 
-      <section className="py-16">
+      <section data-layout-section="content" className="py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
             {galleryImages.map((src, i) => (

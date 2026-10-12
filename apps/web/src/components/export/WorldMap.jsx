@@ -17,7 +17,7 @@ const DESTINATIONS = [
 
 export default function WorldMap() {
   return (
-    <div className="relative h-[420px] w-full overflow-hidden rounded-2xl border border-border bg-[#0f2e1d]">
+    <div className="relative h-[420px] w-full overflow-hidden rounded-2xl border border-border bg-[#123524]">
       <MapContainer
         center={[28, 20]}
         zoom={2}
@@ -25,7 +25,7 @@ export default function WorldMap() {
         maxZoom={4}
         scrollWheelZoom={false}
         dragging={true}
-        style={{ height: '100%', width: '100%', background: '#0f2e1d' }}
+        style={{ height: '100%', width: '100%', background: '#123524' }}
         worldCopyJump={true}
         attributionControl={false}
       >
@@ -36,15 +36,15 @@ export default function WorldMap() {
           <div key={d.name}>
             <Polyline
               positions={[GHANA, d.pos]}
-              pathOptions={{ color: '#F59E0B', weight: 1.5, opacity: 0.5, dashArray: '6 8' }}
+              pathOptions={{ color: '#a5d6a7', weight: 1.5, opacity: 0.5, dashArray: '6 8' }}
             />
             <CircleMarker
               center={d.pos}
               radius={7}
-              pathOptions={{ color: '#F59E0B', fillColor: '#F59E0B', fillOpacity: 0.85, weight: 2 }}
+              pathOptions={{ color: '#a5d6a7', fillColor: '#a5d6a7', fillOpacity: 0.85, weight: 2 }}
             >
               <Popup>
-                <span style={{ fontSize: '14px' }}>{d.flag} {d.name}</span>
+                <span style={{ fontSize: 'var(--text-caption)' }}>{d.flag} {d.name}</span>
               </Popup>
             </CircleMarker>
           </div>
@@ -53,10 +53,10 @@ export default function WorldMap() {
         <CircleMarker
           center={GHANA}
           radius={9}
-          pathOptions={{ color: '#22C55E', fillColor: '#22C55E', fillOpacity: 0.9, weight: 3 }}
+          pathOptions={{ color: '#a5d6a7', fillColor: '#a5d6a7', fillOpacity: 0.9, weight: 3 }}
         >
           <Popup>
-            <span style={{ fontSize: '14px' }}>🇬🇭 Ghana — Origin</span>
+            <span style={{ fontSize: 'var(--text-caption)' }}>🇬🇭 Ghana — Origin</span>
           </Popup>
         </CircleMarker>
       </MapContainer>

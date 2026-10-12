@@ -6,14 +6,61 @@
     "packages/*"
   ],
   "scripts": {
-    "dev:web": "npm run dev -w apps/web",
+    "dev": "npm run dev:local",
+    "dev:all": "concurrently --kill-others-on-fail --names web,api --prefix-colors cyan,green \"npm run dev:web\" \"npm run dev:api\"",
+    "dev:local": "node scripts/run-local-dev.mjs",
+    "dev:setup": "node scripts/prepare-local-dev.mjs",
+    "dev:seed": "node --env-file=.env --env-file-if-exists=apps/api/.dev.vars scripts/seed-local-test-accounts.mjs",
+    "dev:web": "npm run dev -w apps/web -- --host 127.0.0.1",
+    "build": "npm run build:web && npm run typecheck:api",
     "build:web": "npm run build -w apps/web",
+    "lint": "npm run lint:web",
     "lint:web": "npm run lint -w apps/web",
+    "typecheck": "npm run typecheck:web && npm run typecheck:api && npm run typecheck:packages",
     "typecheck:web": "npm run typecheck -w apps/web",
+    "typecheck:api": "npm run typecheck -w apps/api",
+    "typecheck:packages": "npx tsc -p packages/database/tsconfig.json --noEmit && npx tsc -p packages/authorization/tsconfig.json --noEmit",
+    "test": "vitest run",
+    "check": "npm run lint && npm run typecheck && npm run test && npm run build:web",
     "dev:api": "npm run dev -w apps/api",
-    "deploy:api": "npm run deploy -w apps/api"
+    "db:migrate": "node --env-file-if-exists=.env packages/database/scripts/migrate.mjs",
+    "db:backup": "node --env-file-if-exists=.env scripts/backup-local-database.mjs",
+    "db:check-migrations": "node packages/database/scripts/check-migrations.mjs",
+    "db:inspect": "node --env-file-if-exists=.env scripts/inspect-database.mjs",
+    "db:consolidate:local": "node --env-file-if-exists=.env scripts/consolidate-local-databases.mjs",
+    "deploy:verify": "node scripts/verify-deployment-config.mjs",
+    "admin:promote": "node --env-file-if-exists=.env scripts/promote-admin.mjs",
+    "deploy:api:staging": "npm run deploy:staging -w apps/api",
+    "deploy:api:production": "npm run deploy:production -w apps/api",
+    "deploy:pages:staging": "wrangler pages deploy apps/web/dist --project-name=jba-greengold-orchard --branch=staging",
+    "deploy:pages:production": "wrangler pages deploy apps/web/dist --project-name=jba-greengold-orchard --branch=main",
+    "videos:optimize": "node scripts/optimize-videos.mjs",
+    "assets:optimize": "node scripts/optimize-images.mjs"
   },
   "devDependencies": {
-    "drizzle-orm": "^0.45.2"
+    "brace-expansion": "1.1.21",
+    "braces": "file:./vendor/braces-3.0.4-jba.1.tgz",
+    "concurrently": "^9.2.1",
+    "drizzle-orm": "^0.45.2",
+    "esbuild": "0.25.12",
+    "js-yaml": "4.3.2",
+    "playwright": "1.63.0",
+    "sharp": "0.35.5",
+    "vite": "6.4.3",
+    "vitest": "4.1.11",
+    "wrangler": "4.149.0"
+  },
+  "overrides": {
+    "brace-expansion": "$brace-expansion",
+    "dompurify": "3.4.16",
+    "js-yaml": "$js-yaml",
+    "nanoid": "^3.3.18",
+    "postcss": "^8.5.26",
+    "sharp": "$sharp",
+    "vite": {
+      "esbuild": "0.25.12"
+    },
+    "braces": "$braces",
+    "postcss-selector-parser": "7.1.6"
   }
 }

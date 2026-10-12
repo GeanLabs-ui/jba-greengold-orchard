@@ -1,0 +1,33 @@
+/* Share the admin palette without its chart and page overrides. */
+.portal-shell > .portal-topbar {
+  background: #123524;
+  border-color: #355e3b;
+  color: #f4fbf5;
+}
+
+.portal-shell .portal-topbar-actions > :is(a, button) {
+  color: #f4fbf5;
+}
+
+.portal-shell .portal-topbar-actions > :is(a, button):hover {
+  background: #256b2a;
+  color: #fff;
+}
+
+.portal-horizontal-menu {
+  background: var(--platform-deep-green);
+  scrollbar-width: thin;
+  scrollbar-color: var(--platform-pastel-green) var(--platform-deep-green);
+}
+
+.portal-horizontal-menu .portal-nav-link { color: #ffffff; }
+
+.portal-horizontal-menu .portal-nav-link:is(:hover, :focus-visible, [aria-current="page"]) {
+  background-color: var(--platform-yellow-green);
+  color: #123524;
+}
+
+.portal-horizontal-menu .portal-nav-link:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: -3px;
+}

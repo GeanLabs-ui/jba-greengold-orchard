@@ -31,6 +31,20 @@
       "type": "number",
       "title": "Longitude"
     },
+    "farming_started_on": {
+      "type": "string",
+      "title": "Farming Started On",
+      "format": "date"
+    },
+    "planting_year": {
+      "type": "number",
+      "title": "Planting Year"
+    },
+    "farming_stage": {
+      "type": "string",
+      "title": "Current Farming Stage",
+      "enum": ["harvesting", "pruning", "fertilizer_application", "flower_induction", "fruiting", "pest_control", "irrigation", "dormant", "land_preparation"]
+    },
     "size_acres": {
       "type": "number",
       "title": "Size (Acres)"

@@ -74,7 +74,7 @@ export default function HarvestCalendar({ harvests, onSelectHarvest }) {
       {/* Calendar header */}
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <h3 className="font-heading text-lg font-bold">{MONTHS[month]} {year}</h3>
+          <h3 className="text-card-title">{MONTHS[month]} {year}</h3>
           <div className="flex items-center gap-1">
             <Button variant="outline" size="icon" onClick={prevMonth}><ChevronLeft className="h-4 w-4" /></Button>
             <Button variant="outline" size="icon" onClick={nextMonth}><ChevronRight className="h-4 w-4" /></Button>
@@ -121,22 +121,22 @@ export default function HarvestCalendar({ harvests, onSelectHarvest }) {
                         isToday ? 'bg-primary text-white' : 'text-muted-foreground'
                       )}>{day}</span>
                       {dayHarvests.length > 0 && (
-                        <span className="text-[10px] font-bold text-primary">{dayHarvests.length}</span>
+                        <span className="text-caption font-bold text-primary">{dayHarvests.length}</span>
                       )}
                     </div>
                     <div className="mt-1 space-y-0.5">
                       {dayHarvests.slice(0, 2).map((h) => (
-                        <div key={h.id} className={cn('flex items-center gap-1 rounded border px-1 py-0.5 text-[10px] font-medium', statusColors[h.status] || 'bg-muted text-muted-foreground border-border')}>
+                        <div key={h.id} className={cn('flex items-center gap-1 rounded border px-1 py-0.5 text-caption font-medium', statusColors[h.status] || 'bg-muted text-muted-foreground border-border')}>
                           <span className={cn('h-1.5 w-1.5 rounded-full', gradeDots[h.quality_grade] || 'bg-gray-400')} />
                           <span className="truncate">{h.farm_name || 'Farm'}</span>
                         </div>
                       ))}
                       {dayHarvests.length > 2 && (
-                        <div className="px-1 text-[10px] text-muted-foreground">+{dayHarvests.length - 2} more</div>
+                        <div className="px-1 text-caption text-muted-foreground">+{dayHarvests.length - 2} more</div>
                       )}
                     </div>
                     {dayYield > 0 && (
-                      <div className="mt-1 text-[10px] text-muted-foreground">{formatNumber(dayYield)} kg</div>
+                      <div className="mt-1 text-caption text-muted-foreground">{formatNumber(dayYield)} kg</div>
                     )}
                   </button>
                 );
@@ -151,7 +151,7 @@ export default function HarvestCalendar({ harvests, onSelectHarvest }) {
             <>
               <div className="mb-3 flex items-center gap-2">
                 <Sprout className="h-4 w-4 text-primary" />
-                <h4 className="font-heading font-bold">{MONTHS[month]} {selectedDate}, {year}</h4>
+                <h4 className="text-subheading">{MONTHS[month]} {selectedDate}, {year}</h4>
               </div>
               {selectedHarvests.length === 0 ? (
                 <p className="py-8 text-center text-sm text-muted-foreground">No harvests scheduled for this day.</p>
@@ -161,7 +161,7 @@ export default function HarvestCalendar({ harvests, onSelectHarvest }) {
                     <div key={h.id} onClick={() => onSelectHarvest?.(h)} className="cursor-pointer rounded-lg border border-border p-3 transition-colors hover:border-primary/40 hover:bg-accent/5">
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-semibold">{h.harvest_code}</span>
-                        <span className={cn('rounded border px-1.5 py-0.5 text-[10px] font-medium', statusColors[h.status])}>{h.status}</span>
+                        <span className={cn('rounded border px-1.5 py-0.5 text-caption font-medium', statusColors[h.status])}>{h.status}</span>
                       </div>
                       <p className="mt-1 text-xs text-muted-foreground">{h.farm_name || 'Unknown Farm'}</p>
                       <div className="mt-2 flex items-center justify-between text-xs">
@@ -180,7 +180,7 @@ export default function HarvestCalendar({ harvests, onSelectHarvest }) {
             <>
               <div className="mb-3 flex items-center gap-2">
                 <Sprout className="h-4 w-4 text-primary" />
-                <h4 className="font-heading font-bold">{MONTHS[month]} Summary</h4>
+                <h4 className="text-subheading">{MONTHS[month]} Summary</h4>
               </div>
               <div className="space-y-3">
                 {['planned','in_progress','completed','cancelled'].map((st) => {
@@ -190,7 +190,7 @@ export default function HarvestCalendar({ harvests, onSelectHarvest }) {
                   return (
                     <div key={st} className="rounded-lg border border-border p-3">
                       <div className="flex items-center justify-between">
-                        <span className={cn('rounded border px-1.5 py-0.5 text-[10px] font-medium capitalize', statusColors[st])}>{st.replace('_', ' ')}</span>
+                        <span className={cn('rounded border px-1.5 py-0.5 text-caption font-medium capitalize', statusColors[st])}>{st.replace('_', ' ')}</span>
                         <span className="text-xs font-semibold">{items.length}</span>
                       </div>
                       <p className="mt-1 text-xs text-muted-foreground">{formatNumber(yieldSum)} kg total</p>
@@ -209,7 +209,7 @@ export default function HarvestCalendar({ harvests, onSelectHarvest }) {
             <p className="mb-2 text-xs font-semibold text-muted-foreground">Grades</p>
             <div className="flex flex-wrap gap-2">
               {Object.entries(gradeDots).map(([k, v]) => (
-                <span key={k} className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                <span key={k} className="flex items-center gap-1 text-caption text-muted-foreground">
                   <span className={cn('h-2 w-2 rounded-full', v)} />
                   {k.replace('_', ' ')}
                 </span>
