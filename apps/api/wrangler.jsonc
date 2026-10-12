@@ -81,8 +81,8 @@
       "vars": {
         "APP_ENV": "production",
         "LOCAL_TEST_LOGIN_ENABLED": "false",
-        "ALLOWED_ORIGINS": "https://jbagreengoldorchard.farm,https://www.jbagreengoldorchard.farm",
-        "PASSWORD_RESET_URL": "https://jbagreengoldorchard.farm/reset-password",
+        "ALLOWED_ORIGINS": "https://jbagreengold.com,https://www.jbagreengold.com",
+        "PASSWORD_RESET_URL": "https://jbagreengold.com/reset-password",
         "EMAIL_FROM": "JBA GreenGold Orchard <noreply@jbagreengoldorchard.farm>"
       },
       "hyperdrive": [

@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: deploy-production
@@ -28,9 +29,17 @@ jobs:
           node-version: 24
           package-manager-cache: false
       - name: Verify production is an exact staging promotion
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           git fetch origin staging
           git diff --exit-code origin/staging HEAD
+          staging_sha="$(git rev-parse origin/staging)"
+          conclusion="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow deploy-staging.yml --branch staging --commit "$staging_sha" --limit 1 --json conclusion --jq '.[0].conclusion // ""')"
+          if [ "$conclusion" != "success" ]; then
+            echo 'The exact promoted staging commit must have a successful staging deployment.' >&2
+            exit 1
+          fi
       - run: npm ci
       - name: Verify production database and service bindings
         run: npm run deploy:verify -- --env=production
