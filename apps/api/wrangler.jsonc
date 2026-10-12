@@ -3,11 +3,17 @@
   "name": "mango-farm-api",
   "main": "src/index.ts",
   "compatibility_date": "2026-07-22",
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
   "workers_dev": true,
-  "placement": { "mode": "smart" },
+  "placement": {
+    "mode": "smart"
+  },
   "triggers": {
-    "crons": ["0 * * * *"]
+    "crons": [
+      "0 * * * *"
+    ]
   },
   "vars": {
     "APP_ENV": "local",
@@ -33,18 +39,29 @@
       "bucket_name": "jba-greengold-files-dev-backup"
     }
   ],
-  "version_metadata": { "binding": "CF_VERSION_METADATA" },
+  "version_metadata": {
+    "binding": "CF_VERSION_METADATA"
+  },
   "observability": {
     "enabled": true,
-    "logs": { "head_sampling_rate": 1 },
-    "traces": { "enabled": true, "head_sampling_rate": 1 }
+    "logs": {
+      "head_sampling_rate": 1
+    },
+    "traces": {
+      "enabled": true,
+      "head_sampling_rate": 1
+    }
   },
   "env": {
     "staging": {
       "name": "mango-farm-api-staging",
       "workers_dev": false,
-      "triggers": { "crons": [] },
-      "version_metadata": { "binding": "CF_VERSION_METADATA" },
+      "triggers": {
+        "crons": []
+      },
+      "version_metadata": {
+        "binding": "CF_VERSION_METADATA"
+      },
       "vars": {
         "APP_ENV": "staging",
         "LOCAL_TEST_LOGIN_ENABLED": "false",
@@ -70,14 +87,21 @@
       ],
       "observability": {
         "enabled": true,
-        "logs": { "head_sampling_rate": 1 },
-        "traces": { "enabled": true, "head_sampling_rate": 1 }
+        "logs": {
+          "head_sampling_rate": 1
+        },
+        "traces": {
+          "enabled": true,
+          "head_sampling_rate": 1
+        }
       }
     },
     "production": {
       "name": "mango-farm-api-production",
       "workers_dev": false,
-      "version_metadata": { "binding": "CF_VERSION_METADATA" },
+      "version_metadata": {
+        "binding": "CF_VERSION_METADATA"
+      },
       "vars": {
         "APP_ENV": "production",
         "LOCAL_TEST_LOGIN_ENABLED": "false",
@@ -88,7 +112,7 @@
       "hyperdrive": [
         {
           "binding": "HYPERDRIVE",
-          "id": "00000000000000000000000000000000"
+          "id": "34566fb0a761426d88d1b5c3dee98e03"
         }
       ],
       "r2_buckets": [
@@ -103,8 +127,16 @@
       ],
       "observability": {
         "enabled": true,
-        "logs": { "head_sampling_rate": 1 },
-        "traces": { "enabled": true, "head_sampling_rate": 0.1 }
+        "logs": {
+          "head_sampling_rate": 1
+        },
+        "traces": {
+          "enabled": true,
+          "head_sampling_rate": 0.1
+        }
+      },
+      "triggers": {
+        "crons": []
       }
     }
   }
