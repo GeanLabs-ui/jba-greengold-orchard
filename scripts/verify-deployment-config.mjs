@@ -20,7 +20,7 @@ const backupBucket = apiEnvironment?.r2_buckets?.find((binding) => binding.bindi
 const failures = [];
 const expectedAppUrl = environment === 'staging'
   ? 'https://staging.jba-greengold-orchard.pages.dev'
-  : 'https://jbagreengoldorchard.farm';
+  : 'https://jbagreengold.com';
 
 function requiredEnvironmentValue(name) {
   const value = process.env[name]?.trim();

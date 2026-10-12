@@ -46,7 +46,7 @@ jobs:
           fi
 
           comparison="$(gh api "repos/${GITHUB_REPOSITORY}/compare/main...staging" --jq '.status')"
-          if [ "$comparison" != "behind" ]; then
+          if [ "$comparison" != "ahead" ]; then
             echo "main must be strictly behind staging before a production promotion (received: $comparison)." >&2
             exit 1
           fi
