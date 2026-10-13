@@ -13,7 +13,11 @@ const pagesEnvironment = pagesConfig.env?.[environment === 'staging' ? 'preview'
 const hyperdriveId = apiEnvironment?.hyperdrive?.find((binding) => binding.binding === 'HYPERDRIVE')?.id;
 const expectedService = `mango-farm-api-${environment}`;
 const pagesService = pagesEnvironment?.services?.find((binding) => binding.binding === 'API')?.service;
-const expectedPrimaryBucket = `jba-greengold-files-${environment}`;
+// Production cutover promotes verified staging R2 objects in place.
+// Validate the intended bindings rather than redirecting uploads to old production storage.
+const expectedPrimaryBucket = environment === 'production'
+  ? 'jba-greengold-files-staging'
+  : `jba-greengold-files-${environment}`;
 const expectedBackupBucket = `${expectedPrimaryBucket}-backup`;
 const primaryBucket = apiEnvironment?.r2_buckets?.find((binding) => binding.binding === 'PRIVATE_FILES')?.bucket_name;
 const backupBucket = apiEnvironment?.r2_buckets?.find((binding) => binding.binding === 'PRIVATE_FILES_BACKUP')?.bucket_name;
