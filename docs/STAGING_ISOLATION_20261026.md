@@ -162,6 +162,33 @@ regression testing and review.
 
 ## Next staging release and future production procedure
 
+### Continuation checkpoint
+
+The dependency-audit blocker above was resolved in the feature branch without
+merging PR #66: Vite 6.4.5, Vitest 4.1.12, Wrangler 4.153.0, DOMPurify 3.4.17
+and API Zod 4.6.7. Unused frontend Zod/resolver dependencies were removed.
+`npm audit --audit-level=low` reports zero vulnerabilities. The full local check
+passes with 496 tests passed and 2 skipped, lint, all type checks and frontend
+build. Five new regression tests ensure Zod 4 partial updates do not reactivate
+blocks or reset omitted progress, harvest yields or tree counts.
+
+Three synthetic acceptance users were created in isolated staging only: admin,
+customer and finance officer. Their independent random credentials are stored
+encrypted outside the repository and backup locations; no live identities were
+copied. The original zero-user count records the initial sanitized import.
+
+The full reconciliation compares primary keys and content hashes across all 54
+shared tables. Among entity records, only nine shared `FarmProject` records have
+different business JSON; the other 507 differing full rows have metadata-only
+differences. Candidate-only tables are `release_identity_archive` and
+`release_import_manifest`. Per-table/type counts and encrypted record-identifier
+lists are retained in the private backup folder. No source data was merged.
+
+The current continuation is preparing an authorized **staging-only** candidate
+deployment from the feature commit, without merging either protected branch.
+Production cutover remains excluded. Required remote CI and deployment/browser
+acceptance results will be recorded before claiming staging complete.
+
 1. Save the recovery key in the user's password manager and confirm custody.
 2. Resolve the dependency audit in a reviewed change; keep PR #66 unmerged.
 3. Verify all remaining CI and deployment configuration checks, staging-only test

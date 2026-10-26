@@ -153,11 +153,12 @@ const blockCreateSchema = z.object({
   allow_size_override: z.boolean().optional().default(false),
   inventory: z.array(inventoryEntrySchema).optional().default([]),
 });
-const blockUpdateSchema = blockCreateSchema
-  .omit({ inventory: true })
+export const blockUpdateSchema = blockCreateSchema
+  .omit({ inventory: true, status: true })
   .partial()
   .extend({
     farm_id: z.string().trim().min(1).optional(),
+    status: z.enum(["active", "inactive"]).optional(),
     allow_size_override: z.boolean().optional().default(false),
   });
 
@@ -183,7 +184,10 @@ const activityPeriodFields = z.object({
   completion_percent: z.number().int().min(0).max(100).optional().default(0),
   notes: z.string().trim().max(2000).optional(),
 });
-const activityPeriodUpdateSchema = activityPeriodFields.partial();
+export const activityPeriodUpdateSchema = activityPeriodFields.extend({
+  status: activityPeriodFields.shape.status.removeDefault(),
+  completion_percent: activityPeriodFields.shape.completion_percent.removeDefault(),
+}).partial();
 
 const harvestPeriodFields = z.object({
   farm_id: z.string().trim().min(1),
@@ -200,9 +204,18 @@ const harvestPeriodFields = z.object({
   actual_yield_kg: z.number().min(0).optional().default(0),
   notes: z.string().trim().max(2000).optional(),
 });
-const harvestPeriodUpdateSchema = harvestPeriodFields
+export const harvestPeriodUpdateSchema = harvestPeriodFields.extend({
+  status: harvestPeriodFields.shape.status.removeDefault(),
+  expected_yield_kg: harvestPeriodFields.shape.expected_yield_kg.removeDefault(),
+  actual_yield_kg: harvestPeriodFields.shape.actual_yield_kg.removeDefault(),
+})
   .partial()
   .omit({ farm_id: true });
+
+export const inventoryUpdateSchema = inventoryEntryFields.extend({
+  non_productive_trees: inventoryEntryFields.shape.non_productive_trees.removeDefault(),
+  dead_trees: inventoryEntryFields.shape.dead_trees.removeDefault(),
+}).partial();
 
 function activityDatesAreValid(values: Record<string, unknown>) {
   const dateValue = (value: unknown) =>
@@ -1449,7 +1462,7 @@ router.patch(
   requireCsrf(),
   async (c) => {
     const user = c.get("user")!;
-    const parsed = inventoryEntryFields.partial().safeParse(await parseBody(c));
+    const parsed = inventoryUpdateSchema.safeParse(await parseBody(c));
     if (!parsed.success)
       return errorResponse(
         c,
