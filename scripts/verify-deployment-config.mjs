@@ -22,6 +22,13 @@ const expectedBackupBucket = `${expectedPrimaryBucket}-backup`;
 const primaryBucket = apiEnvironment?.r2_buckets?.find((binding) => binding.binding === 'PRIVATE_FILES')?.bucket_name;
 const backupBucket = apiEnvironment?.r2_buckets?.find((binding) => binding.binding === 'PRIVATE_FILES_BACKUP')?.bucket_name;
 const failures = [];
+// Safety gate: never allow deployment when production and staging share the same
+// Hyperdrive resource. Both environments must have independently verified targets.
+const otherEnvironment = environment === 'staging' ? 'production' : 'staging';
+const otherHyperdriveId = apiConfig.env?.[otherEnvironment]?.hyperdrive?.find(
+  (binding) => binding.binding === 'HYPERDRIVE'
+)?.id;
+
 const expectedAppUrl = environment === 'staging'
   ? 'https://staging.jba-greengold-orchard.pages.dev'
   : 'https://jbagreengold.com';
@@ -39,6 +46,9 @@ const turnstileSecretKey = requiredEnvironmentValue('TURNSTILE_SECRET_KEY');
 const accountId = requiredEnvironmentValue('CLOUDFLARE_ACCOUNT_ID');
 requiredEnvironmentValue('CLOUDFLARE_API_TOKEN');
 
+if (hyperdriveId && otherHyperdriveId && hyperdriveId === otherHyperdriveId) {
+  failures.push('Staging and production HYPERDRIVE IDs must differ; deployment is blocked until database isolation is verified');
+}
 if (!/^[a-f0-9]{32}$/i.test(hyperdriveId || '') || /^0+$/.test(hyperdriveId || '')) {
   failures.push(`${environment} HYPERDRIVE must contain a real 32-character Cloudflare configuration id`);
 }
