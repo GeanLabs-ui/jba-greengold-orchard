@@ -4,6 +4,11 @@ on:
   push:
     branches: [staging]
   workflow_dispatch:
+    inputs:
+      diagnose_hyperdrive:
+        description: 'Read-only credential and Hyperdrive diagnostic; skip release'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -13,7 +18,24 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  diagnose:
+    if: ${{ inputs.diagnose_hyperdrive == true || contains(github.event.head_commit.message, '[hyperdrive-diagnostic]') }}
+    environment: staging
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - name: Read credential identity and isolated staging Hyperdrive
+        run: node scripts/diagnose-staging-hyperdrive.mjs
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
   deploy:
+    if: ${{ inputs.diagnose_hyperdrive != true && !contains(github.event.head_commit.message, '[hyperdrive-diagnostic]') }}
     environment: staging
     runs-on: ubuntu-latest
     timeout-minutes: 25
