@@ -17,10 +17,10 @@
     "mango-farm-authorization": "*",
     "mango-farm-database": "*",
     "postgres": "^3.4.9",
-    "zod": "^3.24.2"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "typescript": "^5.8.2",
-    "wrangler": "4.149.0"
+    "wrangler": "4.153.0"
   }
 }

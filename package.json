@@ -46,13 +46,13 @@
     "js-yaml": "4.3.2",
     "playwright": "1.63.0",
     "sharp": "0.35.5",
-    "vite": "6.4.3",
-    "vitest": "4.1.11",
-    "wrangler": "4.149.0"
+    "vite": "6.4.5",
+    "vitest": "4.1.12",
+    "wrangler": "4.153.0"
   },
   "overrides": {
     "brace-expansion": "$brace-expansion",
-    "dompurify": "3.4.16",
+    "dompurify": "3.4.17",
     "js-yaml": "$js-yaml",
     "nanoid": "^3.3.18",
     "postcss": "^8.5.26",

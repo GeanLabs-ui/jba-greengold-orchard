@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { stagingMigrationFailures, stagingHyperdriveFailures } from './staging-database-identity.mjs';
 
 const environment = process.argv.find((arg) => arg.startsWith('--env='))?.slice('--env='.length);
 if (!['staging', 'production'].includes(environment)) {
@@ -17,11 +18,18 @@ const pagesService = pagesEnvironment?.services?.find((binding) => binding.bindi
 // Validate the intended bindings rather than redirecting uploads to old production storage.
 const expectedPrimaryBucket = environment === 'production'
   ? 'jba-greengold-files-staging'
-  : `jba-greengold-files-${environment}`;
+  : 'jba-greengold-files-isolated-staging';
 const expectedBackupBucket = `${expectedPrimaryBucket}-backup`;
 const primaryBucket = apiEnvironment?.r2_buckets?.find((binding) => binding.binding === 'PRIVATE_FILES')?.bucket_name;
 const backupBucket = apiEnvironment?.r2_buckets?.find((binding) => binding.binding === 'PRIVATE_FILES_BACKUP')?.bucket_name;
 const failures = [];
+// Safety gate: never allow deployment when production and staging share the same
+// Hyperdrive resource. Both environments must have independently verified targets.
+const otherEnvironment = environment === 'staging' ? 'production' : 'staging';
+const otherHyperdriveId = apiConfig.env?.[otherEnvironment]?.hyperdrive?.find(
+  (binding) => binding.binding === 'HYPERDRIVE'
+)?.id;
+
 const expectedAppUrl = environment === 'staging'
   ? 'https://staging.jba-greengold-orchard.pages.dev'
   : 'https://jbagreengold.com';
@@ -39,6 +47,9 @@ const turnstileSecretKey = requiredEnvironmentValue('TURNSTILE_SECRET_KEY');
 const accountId = requiredEnvironmentValue('CLOUDFLARE_ACCOUNT_ID');
 requiredEnvironmentValue('CLOUDFLARE_API_TOKEN');
 
+if (hyperdriveId && otherHyperdriveId && hyperdriveId === otherHyperdriveId) {
+  failures.push('Staging and production HYPERDRIVE IDs must differ; deployment is blocked until database isolation is verified');
+}
 if (!/^[a-f0-9]{32}$/i.test(hyperdriveId || '') || /^0+$/.test(hyperdriveId || '')) {
   failures.push(`${environment} HYPERDRIVE must contain a real 32-character Cloudflare configuration id`);
 }
@@ -103,6 +114,28 @@ if (appOrigin && apiEnvironment?.vars?.PASSWORD_RESET_URL !== `${appOrigin}/rese
 }
 if (apiEnvironment?.vars?.APP_ENV !== environment) {
   failures.push(`${environment} APP_ENV must be ${environment}`);
+}
+
+if (environment === 'staging') {
+  failures.push(...stagingMigrationFailures(process.env.DATABASE_URL));
+  const productionBuckets = new Set((apiConfig.env?.production?.r2_buckets || []).map(binding => binding.bucket_name));
+  if ([primaryBucket, backupBucket].some(bucket => productionBuckets.has(bucket))) {
+    failures.push('Staging R2 buckets must be independent of every production bucket');
+  }
+  // A second Hyperdrive ID alone does not establish database isolation.
+  if (failures.length === 0) {
+    try {
+      const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/hyperdrive/configs/${hyperdriveId}`, {
+        headers: { Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}` },
+        signal: AbortSignal.timeout(15000),
+      });
+      const body = await response.json();
+      if (!response.ok || body.success !== true) throw new Error('unverified');
+      failures.push(...stagingHyperdriveFailures(body.result?.origin));
+    } catch {
+      failures.push('Cannot verify the deployed staging Hyperdrive origin; deployment blocked');
+    }
+  }
 }
 
 if (failures.length) {
