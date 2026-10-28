@@ -12,8 +12,8 @@
     "deploy": "npm run deploy:staging"
   },
   "dependencies": {
-    "hono": "^4.13.5",
-    "jose": "^6.2.8",
+    "hono": "^4.13.14",
+    "jose": "^6.2.13",
     "mango-farm-authorization": "*",
     "mango-farm-database": "*",
     "postgres": "^3.4.9",
