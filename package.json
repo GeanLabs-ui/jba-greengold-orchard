@@ -38,16 +38,16 @@
     "assets:optimize": "node scripts/optimize-images.mjs"
   },
   "devDependencies": {
-    "brace-expansion": "1.1.21",
+    "brace-expansion": "5.0.12",
     "braces": "file:./vendor/braces-3.0.4-jba.1.tgz",
-    "concurrently": "^9.2.1",
+    "concurrently": "^10.0.6",
     "drizzle-orm": "^0.45.2",
-    "esbuild": "0.25.12",
-    "js-yaml": "4.3.2",
-    "playwright": "1.63.0",
+    "esbuild": "0.28.2",
+    "js-yaml": "5.5.0",
+    "playwright": "1.64.1",
     "sharp": "0.35.5",
-    "vite": "6.4.5",
-    "vitest": "4.1.12",
+    "vite": "8.3.5",
+    "vitest": "5.0.5",
     "wrangler": "4.153.0"
   },
   "overrides": {
