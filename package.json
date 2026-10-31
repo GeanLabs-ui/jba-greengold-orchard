@@ -48,7 +48,7 @@
     "sharp": "0.35.5",
     "vite": "6.4.3",
     "vitest": "4.1.11",
-    "wrangler": "4.149.0"
+    "wrangler": "4.156.0"
   },
   "overrides": {
     "brace-expansion": "$brace-expansion",
