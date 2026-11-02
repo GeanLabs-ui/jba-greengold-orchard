@@ -10,7 +10,7 @@ describe('farm performance trends', () => {
   it('starts at 2026, aggregates actual readings and preserves all twelve months', () => {
     const { yearly, monthly } = buildFarmPerformanceTrends(activities, 2026, 2026);
     expect(yearly.map(row => row.label)).toEqual(['2026', '2027', '2028', '2029', '2030']);
-    expect(yearly[0]).toMatchObject({ cost: 70, revenue: 250, profit: 180, yieldTonnes: 2 });
+    expect(yearly[0]).toMatchObject({ cost: 70, revenue: 250, profit: 180, yieldKg: 2000 });
     expect(monthly).toHaveLength(12);
     expect(monthly[0]).toMatchObject({ label: 'Jan', cost: 20, profit: 80 });
     expect(monthly[1]).toMatchObject({ label: 'Feb', records: 0, cost: 0 });
@@ -41,7 +41,7 @@ describe('farm performance trends', () => {
   it('includes future data years and does not invent zero readings for unrecorded future years', () => {
     const result = buildFarmPerformanceTrends([{ activity_date: '2033-01-01', actual_cost: 100, actual_revenue: 60 }], 2033, 2026);
     expect(result.yearly.at(-1)).toMatchObject({ label: '2033', profit: -40, records: 1 });
-    expect(result.yearly[1]).toMatchObject({ label: '2027', cost: null, revenue: null, yieldTonnes: null, profit: null, records: 0 });
+    expect(result.yearly[1]).toMatchObject({ label: '2027', cost: null, revenue: null, yieldKg: null, profit: null, records: 0 });
   });
 });
 
@@ -53,9 +53,9 @@ describe('yearly performance summary', () => {
   });
   it('describes mixed performance and loss years from recorded results', () => {
     expect(summarizeYearlyTrend([
-      { label: '2026', records: 1, revenue: 100, yieldTonnes: 2, profit: -10 },
-      { label: '2027', records: 1, revenue: 200, yieldTonnes: 1, profit: 20 },
-      { label: '2028', records: 0, revenue: null, yieldTonnes: null, profit: null },
+      { label: '2026', records: 1, revenue: 100, yieldKg: 2, profit: -10 },
+      { label: '2027', records: 1, revenue: 200, yieldKg: 1, profit: 20 },
+      { label: '2028', records: 0, revenue: null, yieldKg: null, profit: null },
     ])).toBe('From 2026 to 2027, revenue has increased and yield has decreased. Loss recorded in 2026.');
     expect(summarizeYearlyTrend([])).toContain('No recorded performance yet');
   });

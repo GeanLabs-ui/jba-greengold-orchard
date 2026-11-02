@@ -74,12 +74,14 @@ app.use('*', async (c, next) => {
 app.use('/api/v1/*', loadSession());
 app.use('/api/v1/entities/Notification', async (c, next) => {
   if (c.req.method === 'GET' && c.get('user')) {
-    await runCalendarReminders(c.env).catch((error) => {
-      console.error(JSON.stringify({ event: 'calendar_reminder_poll_failed', requestId: c.get('requestId'), error: error instanceof Error ? error.message : 'Unknown error' }));
-    });
-    if (c.get('user')?.role !== 'customer') await runOperationNotifications(c.env).catch((error) => {
-      console.error(JSON.stringify({ event: 'operation_notification_poll_failed', error: String(error) }));
-    });
+    c.executionCtx.waitUntil(Promise.all([
+      runCalendarReminders(c.env).catch((error) => {
+        console.error(JSON.stringify({ event: 'calendar_reminder_poll_failed', requestId: c.get('requestId'), error: error instanceof Error ? error.message : 'Unknown error' }));
+      }),
+      c.get('user')?.role !== 'customer' ? runOperationNotifications(c.env).catch((error) => {
+        console.error(JSON.stringify({ event: 'operation_notification_poll_failed', error: String(error) }));
+      }) : Promise.resolve(),
+    ]));
   }
   await next();
 });

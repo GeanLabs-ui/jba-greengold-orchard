@@ -27,6 +27,7 @@ import {
 } from '@/lib/farm-operations-analytics';
 
 import './farm-operations-analytics.css';
+import { projectionDisplayValue, projectionStorageValues } from '@/components/farm/measurement-units';
 
 const COST = '#D64545';
 const REVENUE = '#16A34A';
@@ -34,7 +35,7 @@ const YIELD = '#2563EB';
 const PROJECTIONS = {
   cost: { label: 'Projected Cost', unit: '₵', defaultValue: 60000 },
   revenue: { label: 'Projected Revenue', unit: '₵', defaultValue: 400000 },
-  yield: { label: 'Projected Yield', unit: 'tonnes', defaultValue: 10000 },
+  yield: { label: 'Projected Yield', unit: 'Kg', defaultValue: 10000000 },
 };
 
 const number = (value) => Number(value || 0);
@@ -133,7 +134,7 @@ export default function FarmOperationsAnalytics({ data }) {
     return () => { active = false; };
   }, []);
 
-  const projectionValue = (key) => projections?.[key] ?? PROJECTIONS[key].defaultValue;
+  const projectionValue = (key) => projectionDisplayValue(projections, key, PROJECTIONS);
   const openProjection = (key) => {
     setEditingProjection(key);
     setProjectionDraft(String(projectionValue(key)));
@@ -151,8 +152,8 @@ export default function FarmOperationsAnalytics({ data }) {
     try {
       const latest = (await base44.entities.FarmAnalyticsProjection.list('-created_date', 1))[0];
       const saved = latest
-        ? await base44.entities.FarmAnalyticsProjection.update(latest.id, { [editingProjection]: value })
-        : await base44.entities.FarmAnalyticsProjection.create({ ...Object.fromEntries(Object.entries(PROJECTIONS).map(([key, config]) => [key, config.defaultValue])), [editingProjection]: value });
+        ? await base44.entities.FarmAnalyticsProjection.update(latest.id, projectionStorageValues(editingProjection, value, PROJECTIONS, latest))
+        : await base44.entities.FarmAnalyticsProjection.create(projectionStorageValues(editingProjection, value, PROJECTIONS, null));
       setProjections(saved);
       setProjectionFeedback('Saved successfully.');
     } catch (error) {
@@ -221,7 +222,7 @@ export default function FarmOperationsAnalytics({ data }) {
     const yieldKg = blockActivities.reduce((sum, row) => sum + activityYieldKg(row), 0);
     const revenue = blockActivities.reduce((sum, row) => sum + activityRevenue(row), 0);
     const delayed = blockActivities.some((row) => ['delayed', 'overdue', 'requires review'].includes(lower(row.status)));
-    return { ...block, farmName, cost, revenue, margin: revenue - cost, yieldTonnes: yieldKg / 1000, status: delayed ? 'Needs Attention' : 'On Track' };
+    return { ...block, farmName, cost, revenue, margin: revenue - cost, yieldKg, status: delayed ? 'Needs Attention' : 'On Track' };
   });
 
   const matchesConfiguredBlock = (row) => visibleBlocks.some((block) => activityMatchesBlock(row, block));
@@ -245,7 +246,7 @@ export default function FarmOperationsAnalytics({ data }) {
       cost,
       revenue,
       margin: revenue - cost,
-      yieldTonnes: yieldKg / 1000,
+      yieldKg,
       status: delayed ? 'Needs Attention' : 'Needs Configuration',
       activityOnly: true,
     });
@@ -256,21 +257,21 @@ export default function FarmOperationsAnalytics({ data }) {
   )).map((block) => ({ ...block, blockLabel: blockLabel(block) || 'Block' }));
   const blockMoneyMax = Math.max(0, ...blockPerformanceRows.flatMap(row => blockMetric === 'yield' ? [] : blockMetric === 'cost' ? [row.cost] : blockMetric === 'revenue' ? [row.revenue] : [row.cost, row.revenue]));
   const blockMoneyCeiling = Math.max(1000, Math.ceil(blockMoneyMax / 1000) * 1000);
-  const blockYieldCeiling = Math.max(4, Math.ceil(Math.max(0, ...blockPerformanceRows.map(row => row.yieldTonnes))));
+  const blockYieldCeiling = Math.max(4, Math.ceil(Math.max(0, ...blockPerformanceRows.map(row => row.yieldKg))));
   const blockMoneyTicks = Array.from({ length: 5 }, (_, index) => blockMoneyCeiling * index / 4);
   const blockYieldTicks = Array.from({ length: 5 }, (_, index) => Math.round(blockYieldCeiling * index / 4));
   const blockCurrencyTick = value => `₵${wholeNumber(value)}`;
 
   const mostProfitableBlock = blockPerformanceRows.slice().sort((a, b) => b.margin - a.margin)[0];
-  const blockTotals = blockPerformanceRows.reduce((totals, row) => ({ cost: totals.cost + row.cost, revenue: totals.revenue + row.revenue, yieldTonnes: totals.yieldTonnes + row.yieldTonnes }), { cost: 0, revenue: 0, yieldTonnes: 0 });
-  const metricLeaderKey = { cost: 'cost', revenue: 'revenue', yield: 'yieldTonnes' }[blockMetric];
+  const blockTotals = blockPerformanceRows.reduce((totals, row) => ({ cost: totals.cost + row.cost, revenue: totals.revenue + row.revenue, yieldKg: totals.yieldKg + row.yieldKg }), { cost: 0, revenue: 0, yieldKg: 0 });
+  const metricLeaderKey = { cost: 'cost', revenue: 'revenue', yield: 'yieldKg' }[blockMetric];
   const metricLeader = metricLeaderKey ? blockPerformanceRows.slice().sort((a, b) => b[metricLeaderKey] - a[metricLeaderKey])[0] : null;
   const blockSummaryText = !blockPerformanceRows.length ? 'No blocks match the current selection.' : blockMetric === 'all'
-    ? `Charted totals: cost ${formatCedis(blockTotals.cost)}, revenue ${formatCedis(blockTotals.revenue)}, and yield ${wholeNumber(blockTotals.yieldTonnes)} tonnes. Revenue is ${formatCedis(Math.abs(blockTotals.revenue - blockTotals.cost))} ${blockTotals.revenue >= blockTotals.cost ? 'above' : 'below'} cost.`
+    ? `Charted totals: cost ${formatCedis(blockTotals.cost)}, revenue ${formatCedis(blockTotals.revenue)}, and yield ${wholeNumber(blockTotals.yieldKg)} Kg. Revenue is ${formatCedis(Math.abs(blockTotals.revenue - blockTotals.cost))} ${blockTotals.revenue >= blockTotals.cost ? 'above' : 'below'} cost.`
     : blockMetric === 'yield'
-      ? `Total recorded yield: ${wholeNumber(blockTotals.yieldTonnes)} tonnes. Highest yield: ${metricLeader?.blockLabel || '—'} (${wholeNumber(metricLeader?.yieldTonnes || 0)} tonnes).`
+      ? `Total recorded yield: ${wholeNumber(blockTotals.yieldKg)} Kg. Highest yield: ${metricLeader?.blockLabel || '—'} (${wholeNumber(metricLeader?.yieldKg || 0)} Kg).`
       : `Total ${blockMetric}: ${formatCedis(blockTotals[blockMetric])}. Highest ${blockMetric}: ${metricLeader?.blockLabel || '—'} (${formatCedis(metricLeader?.[metricLeaderKey] || 0)}).`;
-  const highestYieldBlock = blockPerformanceRows.slice().sort((a, b) => b.yieldTonnes - a.yieldTonnes)[0];
+  const highestYieldBlock = blockPerformanceRows.slice().sort((a, b) => b.yieldKg - a.yieldKg)[0];
   const lowestCostBlock = blockPerformanceRows.slice().sort((a, b) => a.cost - b.cost)[0];
   const revenueMargin = totalRevenue > 0 ? Math.max(0, ((totalRevenue - totalCost) / totalRevenue) * 100) : 0;
   const yearLabel = `Jan–${monthLabel(now)} ${now.getFullYear()}`;
@@ -280,7 +281,7 @@ export default function FarmOperationsAnalytics({ data }) {
   const performanceHighlightsPanel = <AnalyticsPanel title="Performance Highlights" className="analytics-highlights">
             <div className="space-y-3 p-3">
               <PerformanceHighlight icon={Trophy} tone="green" label="Most Profitable Block" value={mostProfitableBlock?.blockLabel || '—'} detail={`Profit: ${formatCedis(mostProfitableBlock?.margin || 0)}`} gauge={totalRevenue ? Math.min(100, Math.max(0, ((mostProfitableBlock?.margin || 0) / totalRevenue) * 100)) : 0} />
-              <PerformanceHighlight icon={Sprout} tone="blue" label="Highest Yield" value={highestYieldBlock?.blockLabel || '—'} detail={`${wholeNumber(highestYieldBlock?.yieldTonnes || 0)} tonnes`} />
+              <PerformanceHighlight icon={Sprout} tone="blue" label="Highest Yield" value={highestYieldBlock?.blockLabel || '—'} detail={`${wholeNumber(highestYieldBlock?.yieldKg || 0)} Kg`} />
               <PerformanceHighlight icon={Coins} tone="red" label="Lowest Cost" value={lowestCostBlock?.blockLabel || '—'} detail={formatCedis(lowestCostBlock?.cost || 0)} />
               <PerformanceHighlight icon={ChartNoAxesCombined} tone="green" label="Revenue Performance" value={totalRevenue >= totalCost ? 'Strong' : 'Needs attention'} detail={`${wholeNumber(revenueMargin)}% margin this period`} gauge={revenueMargin} />
             </div>
@@ -330,7 +331,7 @@ export default function FarmOperationsAnalytics({ data }) {
         <SummaryKpi icon={MapPin} label="Farm Lands" value={`${visibleFarms.length} Farms · ${visibleBlocks.length} Blocks`} note={`${wholeNumber(totalTrees)} Total Trees`} tone="gold" />
         <MergedKpi first={{ icon: TrendingUp, label: 'Projected Cost', value: projections ? formatCedis(projectionValue('cost')) : '—', tone: 'red', remaining: projections ? formatCedis(projectionValue('cost') - totalCost) : '—', onClick: () => openProjection('cost') }} second={{ icon: ReceiptText, label: 'Actual Cost', value: formatCedis(totalCost), tone: 'red' }} />
         <MergedKpi first={{ icon: TrendingUp, label: 'Projected Revenue', value: projections ? formatCedis(projectionValue('revenue')) : '—', tone: 'revenue', remaining: projections ? formatCedis(projectionValue('revenue') - totalRevenue) : '—', onClick: () => openProjection('revenue') }} second={{ icon: Banknote, label: 'Actual Revenue', value: formatCedis(totalRevenue), tone: 'revenue' }} />
-        <MergedKpi first={{ icon: Sprout, label: 'Projected Yield', value: projections ? `${wholeNumber(projectionValue('yield'))} tonnes` : '—', tone: 'blue', remaining: projections ? `${wholeNumber(projectionValue('yield') - totalYieldKg / 1000)} tonnes` : '—', onClick: () => openProjection('yield') }} second={{ icon: Sprout, label: 'Actual Yield', value: `${wholeNumber(totalYieldKg / 1000)} tonnes`, tone: 'blue' }} />
+        <MergedKpi first={{ icon: Sprout, label: 'Projected Yield', value: projections ? `${wholeNumber(projectionValue('yield'))} Kg` : '—', tone: 'blue', remaining: projections ? `${wholeNumber(projectionValue('yield') - totalYieldKg)} Kg` : '—', onClick: () => openProjection('yield') }} second={{ icon: Sprout, label: 'Actual Yield', value: `${wholeNumber(totalYieldKg)} Kg`, tone: 'blue' }} />
       </section>
       {projectionError ? <p role="alert" className="text-sm text-destructive">{projectionError}</p> : null}
 
@@ -340,7 +341,7 @@ export default function FarmOperationsAnalytics({ data }) {
           <AnalyticsPanel title="Cost, Revenue & Yield by Block" className="analytics-block-chart" action={<>
             <div className="analytics-legend" aria-label="Chart legend">
               {(blockMetric === 'all' || blockMetric === 'cost') && <span><i style={{ background: COST }} />Cost (₵)</span>}
-              {(blockMetric === 'all' || blockMetric === 'yield') && <span><i className="rounded-full" style={{ background: YIELD }} />Yield (tonnes)</span>}
+              {(blockMetric === 'all' || blockMetric === 'yield') && <span><i className="rounded-full" style={{ background: YIELD }} />Yield (Kg)</span>}
               {(blockMetric === 'all' || blockMetric === 'revenue') && <span><i style={{ background: REVENUE }} />Revenue (₵)</span>}
             </div>
             <label className="relative shrink-0">
@@ -356,12 +357,12 @@ export default function FarmOperationsAnalytics({ data }) {
                 <ComposedChart data={blockPerformanceRows} margin={{ top: 8, right: 8, bottom: 0, left: 0 }} barGap={2}>
                   <CartesianGrid vertical={false} stroke="#edf4ee" />
                   <XAxis dataKey="blockLabel" axisLine={false} tickLine={false} interval={0} tick={{ fontSize: 12 }} />
-                  <YAxis yAxisId="currency" domain={[0, blockMoneyCeiling]} ticks={blockMoneyTicks} interval={0} allowDecimals={false} tickFormatter={blockCurrencyTick} axisLine={false} tickLine={false} width={60} tick={{ fontSize: 12 }} />
-                  <YAxis yAxisId="yield" orientation="right" allowDecimals={false} tickFormatter={(value) => `${wholeNumber(value)}t`} domain={[0, blockYieldCeiling]} ticks={blockYieldTicks} interval={0} axisLine={false} tickLine={false} width={48} tick={{ fontSize: 12 }} />
-                  <Tooltip labelFormatter={(_, payload) => { const block = payload?.[0]?.payload; return block ? `${block.farmName} · ${block.blockLabel}` : ''; }} formatter={(value, name) => [name === 'Yield (tonnes)' ? `${wholeNumber(value)} tonnes` : `₵${wholeNumber(value)}`, name]} cursor={{ stroke: '#d1d5db', fill: 'transparent' }} contentStyle={{ fontSize: 12, border: '1px solid #e5e7eb' }} />
+                  <YAxis allowDataOverflow yAxisId="currency" domain={[0, blockMoneyCeiling]} ticks={blockMoneyTicks} interval={0} allowDecimals={false} tickFormatter={blockCurrencyTick} axisLine={false} tickLine={false} width={60} tick={{ fontSize: 12 }} />
+                  <YAxis allowDataOverflow yAxisId="yield" orientation="right" allowDecimals={false} tickFormatter={(value) => `${wholeNumber(value)}t`} domain={[0, blockYieldCeiling]} ticks={blockYieldTicks} interval={0} axisLine={false} tickLine={false} width={48} tick={{ fontSize: 12 }} />
+                  <Tooltip labelFormatter={(_, payload) => { const block = payload?.[0]?.payload; return block ? `${block.farmName} · ${block.blockLabel}` : ''; }} formatter={(value, name) => [name === 'Yield (Kg)' ? `${wholeNumber(value)} Kg` : `₵${wholeNumber(value)}`, name]} cursor={{ stroke: '#d1d5db', fill: 'transparent' }} contentStyle={{ fontSize: 12, border: '1px solid #e5e7eb' }} />
                   {(blockMetric === 'all' || blockMetric === 'cost') && <Bar yAxisId="currency" dataKey="cost" name="Cost (₵)" fill={COST} maxBarSize={30} radius={[2, 2, 0, 0]} />}
                   {(blockMetric === 'all' || blockMetric === 'revenue') && <Bar yAxisId="currency" dataKey="revenue" name="Revenue (₵)" fill={REVENUE} maxBarSize={30} radius={[2, 2, 0, 0]} />}
-                  {(blockMetric === 'all' || blockMetric === 'yield') && <Line yAxisId="yield" dataKey="yieldTonnes" name="Yield (tonnes)" stroke={YIELD} strokeWidth={2} dot={{ r: 3, fill: YIELD }} activeDot={{ r: 5 }} />}
+                  {(blockMetric === 'all' || blockMetric === 'yield') && <Line yAxisId="yield" dataKey="yieldKg" name="Yield (Kg)" stroke={YIELD} strokeWidth={2} dot={{ r: 3, fill: YIELD }} activeDot={{ r: 5 }} />}
                 </ComposedChart>
               </ResponsiveContainer>
             </div></div> : <EmptyState>No blocks match this selection.</EmptyState>}

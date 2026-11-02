@@ -1,4 +1,5 @@
-import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import RouteContent from '@/components/shared/RouteContent';
 import DeploymentRecoveryBoundary from '@/components/shared/DeploymentRecoveryBoundary';
 import { getFarmDailyActivitiesNavigationState } from '@/lib/farm-daily-activities-route';
 import { ChevronDown } from 'lucide-react';
@@ -56,7 +57,7 @@ export default function FarmDailyActivitiesLayout() {
       </div>
 
       <DeploymentRecoveryBoundary resetKey={`${location.pathname}${location.search}`}>
-        <Outlet />
+        <RouteContent />
       </DeploymentRecoveryBoundary>
     </div>
   );

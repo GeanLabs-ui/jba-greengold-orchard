@@ -167,12 +167,12 @@
 }
 #root .public-shell .nr-hero-art::before {
   left: 6.2%; width: .6%;
-  background-image: url('/pages/news/newsroom-reference.png');
+  background-image: url('/pages/news/newsroom-reference.webp');
   background-position: -5.5cqw 2.689779%;
 }
 #root .public-shell .contact-hero-art::before {
   left: 6.65%; width: .45%;
-  background-image: url('/pages/contact/contact-reference.png');
+  background-image: url('/pages/contact/contact-reference.webp');
   background-position: -6cqw 4.6047%;
 }
 @media (max-width: 760px) {

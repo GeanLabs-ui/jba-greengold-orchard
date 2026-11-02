@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import DataTable from '@/components/shared/DataTable';
+import { prepareProductImage } from '@/lib/product-image-upload';
 
 const emptyProduct = { name: '', description: '', category: 'fresh', price: '', image: '', status: 'published' };
 
@@ -47,9 +48,7 @@ export default function ProductManager() {
     }
     setUploading(true); setFormError('');
     try {
-      const bitmap = await createImageBitmap(file);
-      bitmap.close();
-      const uploaded = await base44.files.uploadProductImage(file);
+      const uploaded = await base44.files.uploadProductImage(await prepareProductImage(file));
       update('image', uploaded.url);
     } catch (failure) {
       setFormError(failure.message || 'Image could not be uploaded. Please try another image.');
@@ -68,7 +67,7 @@ export default function ProductManager() {
       };
       if (editing.recordId) await base44.entities.Product.update(editing.recordId, payload);
       else await base44.entities.Product.create(payload);
-      await load();
+      void load();
       setNotice(`${payload.name} saved${payload.status === 'published' ? ' and published to Products.' : ' as a draft.'}`);
       setEditing(null);
     } catch (failure) { setFormError(failure.message || 'Product could not be saved. Please try again.'); }

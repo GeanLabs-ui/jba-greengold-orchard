@@ -1,7 +1,7 @@
 import { buildFarmCalendarEvents } from './production-calendar';
 import { amount, invoiceBalance, outstandingInvoice } from './admin-dashboard';
 import { activityCost, activityRevenue, activityYieldKg, activityMatchesBlock, buildFarmOperationsAnalytics, normalizeStatus } from './farm-operations-analytics';
-import { matchesFarmScope } from './farm-scope';
+import { activityScopeValue, farmCode, matchesFarmScope } from './farm-scope';
 import { PROGRAMME_CODE } from '../data/dailyRoutineProgramme';
 import { buildCostTypeBreakdown } from './activity-cost-types';
 
@@ -24,8 +24,8 @@ export function buildOrchardDashboard(data, year = new Date().getFullYear(), now
   const orders = (data.orders || []).filter((row) => active(row) && normalizeStatus(row.status) !== 'draft' && inYear(row.order_date || row.created_date));
   const revenue = sum(orders, (row) => amount(row.total_amount));
   const cost = sum(activities, activityCost);
-  const harvested = sum(activities, activityYieldKg) / 1000;
-  const forecast = sum(blocks, (row) => Math.max(0, amount(row.forecast_yield_kg))) / 1000;
+  const harvested = sum(activities, activityYieldKg);
+  const forecast = sum(blocks, (row) => Math.max(0, amount(row.forecast_yield_kg)));
   // The expense card mirrors the overview's default All dates breakdown,
   // including its positive-cost rows and canonical category normalization.
   const expenseAnalytics = buildFarmOperationsAnalytics({ ...data, dailyActivities: (data.dailyActivities || []).filter(active) });
@@ -67,20 +67,46 @@ export function buildOrchardDashboard(data, year = new Date().getFullYear(), now
     block.actual_yield_kg = sum(rows, activityYieldKg);
     block.actual_cost = sum(rows, activityCost);
     block.actual_revenue = sum(rows, activityRevenue);
+    block.total_trees = block.tree_count ?? block.total_trees ?? null;
   });
+  const sharedActivities = activities.filter((row) => !recordBlock(row) && activityScopeValue(row) === '__all__');
+  const sharedBlock = {
+    actual_yield_kg: sum(sharedActivities, activityYieldKg),
+    activity_count: sharedActivities.length,
+    total_trees: blocks.length && blocks.every((block) => block.total_trees != null)
+      ? sum(blocks, (block) => amount(block.total_trees)) : null,
+    area_acres: blocks.length && blocks.every((block) => block.area_acres != null)
+      ? sum(blocks, (block) => amount(block.area_acres)) : null,
+    mango_variety: [...new Set(blocks.flatMap(varietiesOf))].sort().join(', '),
+  };
   const production = farms.map((farm) => {
     const farmBlocks = blocks.filter((block) => String(block.farm_id) === String(farm.id));
     const rows = activities.filter((row) => String(recordFarm(row) || '') === String(farm.id));
-    return { ...farm, blocks: farmBlocks, tonnes: sum(rows, activityYieldKg) / 1000 };
+    return { ...farm, blocks: farmBlocks, yieldKg: sum(rows, activityYieldKg) };
   });
-  const unallocated = Math.max(0, Math.round((harvested - sum(production, (row) => row.tonnes)) * 1000) / 1000);
+  // Scope rows show only output logged at that scope. Block output stays on
+  // its own row so farm-wide and combined logs are never counted twice here.
+  const summarizeStructure = (rows) => ({
+    total_trees: rows.length && rows.every((row) => row.total_trees != null) ? sum(rows, (row) => amount(row.total_trees)) : null,
+    area_acres: rows.length && rows.every((row) => row.area_acres != null) ? sum(rows, (row) => amount(row.area_acres)) : null,
+    mango_variety: [...new Set(rows.flatMap(varietiesOf))].sort().join(', '),
+  });
+  const blockManagement = [
+    { ...sharedBlock, id: 'shared', label: 'A&B', kind: 'shared', status: sharedBlock.activity_count ? 'active' : 'not_recorded' },
+    ...production.map((farm) => {
+      const rows = activities.filter((row) => !recordBlock(row) && !['__all__', '__shared__'].includes(activityScopeValue(row)) && String(recordFarm(row) || '') === String(farm.id));
+      return { ...summarizeStructure(farm.blocks), id: `farm:${farm.id}`, farm_id: farm.id, label: farmCode(farm) || farm.name, kind: 'farm', actual_yield_kg: sum(rows, activityYieldKg), status: farm.status || 'active' };
+    }),
+    ...production.flatMap((farm) => farm.blocks.map((block) => ({ ...block, id: `block:${block.id}`, block_id: block.id, label: block.block_code || block.name, kind: 'block', status: block.farming_stage || block.status }))),
+  ];
+  const unallocated = Math.max(0, Math.round((harvested - sum(production, (row) => row.yieldKg)) * 1000) / 1000);
   const varietyMap = new Map();
   activities.forEach((row) => {
     const block = recordBlock(row);
     const names = varietiesOf(row).length ? varietiesOf(row) : varietiesOf(block || {});
     // A mixed-variety block has no recorded per-variety output split.
     const variety = names.length === 1 ? names[0] : 'Unclassified';
-    varietyMap.set(variety, (varietyMap.get(variety) || 0) + activityYieldKg(row) / 1000);
+    varietyMap.set(variety, (varietyMap.get(variety) || 0) + activityYieldKg(row));
   });
   const varieties = [...varietyMap].map(([name, value]) => ({ name, value })).filter((row) => row.value > 0).sort((a, b) => b.value - a.value);
   const varietyNames = [...new Set([...blocks, ...farms].flatMap(varietiesOf))].sort();
@@ -127,7 +153,13 @@ export function buildOrchardDashboard(data, year = new Date().getFullYear(), now
       item('Returns', openCount('returns'), 'Open returns · all time', '/admin/marketing/sales'),
     ] },
   ];
-  return { farms, blocks, revenue, cost, profit: revenue - cost, harvested, forecast, remaining: Math.max(0, forecast - harvested), production, unallocated, varieties, varietyNames, expenses, expenseTotal, expenseFarms, sales, months, tasks, markets, departments };
+  return { farms, blocks, sharedBlock, blockManagement, revenue, cost, profit: revenue - cost, harvested, forecast, remaining: Math.max(0, forecast - harvested), production, unallocated, varieties, varietyNames, expenses, expenseTotal, expenseFarms, sales, months, tasks, markets, departments };
+}
+
+export function filterBlockManagement(rows, selection = 'all') {
+  if (selection === 'all') return rows;
+  if (selection.startsWith('farm:')) return rows.filter((row) => row.id === selection || (row.kind === 'block' && String(row.farm_id) === selection.slice(5)));
+  return rows.filter((row) => row.id === selection);
 }
 
 export function groupPerformance(months, period, year) {
