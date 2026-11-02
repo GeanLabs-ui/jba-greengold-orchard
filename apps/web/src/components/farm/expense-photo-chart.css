@@ -75,3 +75,7 @@
 .expense-ring-callout-name { fill:#203e4d; font-size:18px; font-weight:700; }
 .expense-ring-callout-percent { font-size:14px; font-weight:700; }
 .expense-ring-callout:focus-visible .expense-ring-callout-name { text-decoration:underline; }
+
+.expense-icon-layout .expense-photo-total-label,.expense-icon-layout .expense-photo-total { fill:#163346; stroke:none; filter:none; }
+.expense-icon-layout .expense-photo-period { fill:#657580; stroke:none; filter:none; }
+.expense-icon-layout .expense-photo-visual svg.lucide { width:46px; height:46px; }

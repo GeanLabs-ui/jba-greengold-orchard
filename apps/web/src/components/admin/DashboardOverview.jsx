@@ -24,7 +24,7 @@ export default function DashboardOverview({ data }) {
     </div>
     <div className="dashboard-chart-grid">
       <ChartPanel title="Production output" description="Recorded yield in kg · rolling six months" path={`${production}/overview`}>
-        {summary.months.some((row) => row.yield > 0) ? <ResponsiveContainer width="100%" height={230}><BarChart data={summary.months} margin={{ left: 0, right: 10, top: 12 }}><CartesianGrid vertical={false} strokeDasharray="3 3" /><XAxis dataKey="month" /><YAxis allowDecimals={false} width={85} tickFormatter={(value) => formatNumber(value)} /><Tooltip formatter={(value) => [`${formatNumber(value)} kg`, 'Yield']} /><Bar dataKey="yield" isAnimationActive={false} fill="#2e7d32" radius={[4, 4, 0, 0]} maxBarSize={38} /></BarChart></ResponsiveContainer> : <Empty>No production output recorded in the last six months.</Empty>}
+        {summary.months.some((row) => row.yield > 0) ? <ResponsiveContainer width="100%" height={230}><BarChart data={summary.months} margin={{ left: 0, right: 10, top: 12 }}><CartesianGrid vertical={false} strokeDasharray="3 3" /><XAxis dataKey="month" /><YAxis allowDataOverflow domain={[0, 'auto']} allowDecimals={false} width={85} tickFormatter={(value) => formatNumber(value)} /><Tooltip formatter={(value) => [`${formatNumber(value)} kg`, 'Yield']} /><Bar dataKey="yield" isAnimationActive={false} fill="#2e7d32" radius={[4, 4, 0, 0]} maxBarSize={38} /></BarChart></ResponsiveContainer> : <Empty>No production output recorded in the last six months.</Empty>}
       </ChartPanel>
       <ChartPanel title="Order progress" description="Current order status · all time" path="/admin/orders">
         <Bars rows={summary.orderStages} format={formatNumber} empty="No orders recorded yet." />

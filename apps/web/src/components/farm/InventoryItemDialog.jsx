@@ -3,8 +3,9 @@ import { Info, ShoppingCart, Users, Wrench, Paperclip, Eye, UploadCloud, Save, C
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { base44 } from '@/api/base44Client';
 import './inventory-item-dialog.css';
+import { inventoryMassDisplay, inventoryMassStorage } from './measurement-units';
 
-const units = ['pcs', 'units', 'bags', 'litres', 'kg', 'tonnes', 'boxes'];
+const units = ['pcs', 'units', 'bags', 'litres', { value: 'kg', label: 'Kg' }, 'boxes'];
 function Section({ title, icon: Icon, children, className = '' }) {
   return <section className={`ii-section ${className}`}><h3><Icon />{title}</h3>{children}</section>;
 }
@@ -12,10 +13,11 @@ function Pill({ value }) { return <span className={`ii-pill ${['Damaged', 'Poor'
 
 export default function InventoryItemDialog({ record, farms, blocks, items, preview, saving, onSave, onClose }) {
   const [form, setForm] = useState(() => {
-    const remaining = record.remaining_quantity == null ? '' : String(record.remaining_quantity);
+    const display = inventoryMassDisplay(record);
+    const remaining = display.remaining_quantity == null ? '' : String(display.remaining_quantity);
     const farm = farms.find(f => String(f.id) === String(record.farm_id) || [f.name, f.farm_name].some(name => name && name.replace(' Land', '') === record.farm_assigned));
     const block = blocks.find(b => String(b.id) === String(record.block_id) || (String(b.farm_id) === String(farm?.id) && [b.block_name, b.name, b.block_code].includes(record.current_location)));
-    return { category: 'Equipment', status: 'Available', condition: 'Good', repair_status: 'Not Needed', repair_cost: '0.00', ...record, farm_id: record.farm_id || farm?.id || '', block_id: record.block_id || block?.id || '', remaining_quantity: remaining ? parseFloat(remaining) || 0 : '', unit: record.unit || remaining.match(/[a-z]+$/i)?.[0]?.replace(/^unit$/, 'units') || 'pcs' };
+    return { category: 'Equipment', status: 'Available', condition: 'Good', repair_status: 'Not Needed', repair_cost: '0.00', ...display, farm_id: record.farm_id || farm?.id || '', block_id: record.block_id || block?.id || '', remaining_quantity: remaining ? parseFloat(remaining) || 0 : '', unit: display.unit || remaining.match(/[a-z]+$/i)?.[0]?.replace(/^unit$/, 'units') || 'pcs' };
   });
   const [attachments, setAttachments] = useState(record.attachments || []);
   const [error, setError] = useState('');
@@ -47,7 +49,7 @@ export default function InventoryItemDialog({ record, farms, blocks, items, prev
         const { file, ...stored } = attachment;
         uploaded.push(file && !preview ? await base44.files.upload(file, code) : stored);
       }
-      await onSave({ ...form, equipment_code: code, farm_assigned: farmName === '—' ? '' : farmName, current_location: blockName === '—' ? '' : blockName, purchase_cost: Number(form.purchase_cost || 0), repair_cost: Number(form.repair_cost || 0), quantity_purchased: Number(form.quantity_purchased || 0), remaining_quantity: Number(form.remaining_quantity || 0), minimum_stock_threshold: Number(form.minimum_stock_threshold || 0), attachments: uploaded, record_status: draft ? 'Draft' : 'Active', updated_date: new Date().toISOString(), created_date: record.created_date || new Date().toISOString() });
+      await onSave(inventoryMassStorage({ ...form, equipment_code: code, farm_assigned: farmName === '—' ? '' : farmName, current_location: blockName === '—' ? '' : blockName, purchase_cost: Number(form.purchase_cost || 0), repair_cost: Number(form.repair_cost || 0), quantity_purchased: Number(form.quantity_purchased || 0), remaining_quantity: Number(form.remaining_quantity || 0), minimum_stock_threshold: Number(form.minimum_stock_threshold || 0), attachments: uploaded, record_status: draft ? 'Draft' : 'Active', updated_date: new Date().toISOString(), created_date: record.created_date || new Date().toISOString() }, record));
     } catch { setError('Unable to save this item. Please retry.'); } finally { setUploading(false); }
   };
   const busy = saving || uploading;

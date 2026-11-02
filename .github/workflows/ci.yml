@@ -52,6 +52,6 @@ jobs:
       - name: Verify Main Activities migration preserves existing records
         run: node scripts/test-main-activities-migration.mjs
       - name: Audit all dependencies
-        run: npm audit --audit-level=low
+        run: npm run audit:dependencies
       - name: Validate staging Worker bundle
         run: npx wrangler deploy --config apps/api/wrangler.jsonc --env staging --dry-run

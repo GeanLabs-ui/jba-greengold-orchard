@@ -39,7 +39,7 @@ const standards = [
 // unchanged; every window keeps its source proportions and never upscales.
 function ReferencePhoto({ area: [x, y, width, height], alt, className = '' }) {
   return <div className={`sustain-photo ${className}`} role="img" aria-label={alt} style={{ aspectRatio: `${width} / ${height}`, maxWidth: width }}>
-    <img src="/pages/sustainability-reference.png" alt="" aria-hidden="true" loading="eager" width="948" height="1659"
+    <img src="/pages/sustainability-reference.webp" alt="" aria-hidden="true" loading="eager" width="948" height="1659"
       style={{ width: `${948 / width * 100}%`, left: `${-x / width * 100}%`, top: `${-y / height * 100}%` }} />
   </div>;
 }
@@ -48,7 +48,7 @@ export default function Sustainability() {
   return (
     <div className="sustainability-page">
       <section data-layout-section="hero" className="jba-public-hero sustain-hero" aria-labelledby="sustain-title">
-        <img className="sustain-hero-image" src="/pages/sustainability-hero.png" width="1916" height="821" fetchPriority="high" alt="JBA GreenGold farm worker carefully inspecting mangoes on the tree" />
+        <img className="sustain-hero-image" src="/pages/sustainability-hero.webp" width="1916" height="821" fetchPriority="high" alt="JBA GreenGold farm worker carefully inspecting mangoes on the tree" />
         <div className="sustain-container sustain-hero-grid">
           <div>
             <p className="sustain-eyebrow">A healthy planet. Brighter tomorrows.</p>
@@ -85,7 +85,7 @@ export default function Sustainability() {
       </section>
 
       <section data-layout-section="content" id="community" className="sustain-community" aria-labelledby="community-title">
-        <img className="sustain-community-image" src="/pages/sustainability-community.png" width="1916" height="821" loading="lazy" alt="An orchard team member holding a crate of freshly harvested mangoes, with the farm team harvesting behind her" />
+        <img className="sustain-community-image" src="/pages/sustainability-community.webp" width="1916" height="821" loading="lazy" alt="An orchard team member holding a crate of freshly harvested mangoes, with the farm team harvesting behind her" />
         <div className="sustain-container sustain-community-grid">
           <div><p className="sustain-eyebrow">People. Communities. Lasting impact.</p><h2 className="text-section-title" id="community-title">Stronger Communities,<br />Sweeter Tomorrows</h2><p>Our sustainability journey is rooted in people — from our dedicated farm workers to the surrounding communities. We invest in local jobs, skills training, education, and essential infrastructure, because thriving communities create a stronger, more resilient tomorrow.</p><Link className="sustain-button sustain-light" to="/about">Our community impact <ArrowRight /></Link></div>
           <blockquote><p>“When the farm grows, our community grows too.”</p><footer>— Ama Serwaa<span>Farm Worker, JBA GreenGold Orchard</span></footer></blockquote>

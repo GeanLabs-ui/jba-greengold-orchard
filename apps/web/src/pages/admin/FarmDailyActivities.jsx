@@ -2,7 +2,7 @@ import { FARM_SCOPE_OPTIONS, farmSelectOptions, blockSelectOptions, blockLabel, 
 import { ACTIVITY_COST_TYPES, normalizeCostType } from '@/lib/activity-cost-types';
 import { activityYieldKg } from '@/lib/farm-operations-analytics';
 import AdminActionButton from '@/components/admin/AdminActionButton';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { farmDailyActivitiesNavigation } from '@/lib/farm-navigation';
 import {
@@ -56,13 +56,13 @@ import MetricCard from '@/components/shared/MetricCard';
 import StatusBadge from '@/components/shared/StatusBadge';
 import DataTable from '@/components/shared/DataTable';
 import AdminCreateDialog from '@/components/admin/AdminCreateDialog';
-import FarmOperationsAnalytics from '@/pages/admin/FarmOperationsAnalytics';
+const FarmOperationsAnalytics = lazy(() => import('@/pages/admin/FarmOperationsAnalytics'));
 import PageSkeleton from '@/components/shared/PageSkeleton';
-import FarmDailyMasterSchedule from '@/pages/admin/FarmDailyMasterSchedule';
-import FarmDailyBudgetHarvest from '@/pages/admin/FarmDailyBudgetHarvest';
-import HarvestSeasonPlanner from '@/pages/admin/HarvestSeasonPlanner';
-import DailyRoutineCheck from '@/pages/admin/DailyRoutineCheck';
-import FarmsAdmin from '@/pages/admin/FarmsAdmin';
+const FarmDailyMasterSchedule = lazy(() => import('@/pages/admin/FarmDailyMasterSchedule'));
+const FarmDailyBudgetHarvest = lazy(() => import('@/pages/admin/FarmDailyBudgetHarvest'));
+const HarvestSeasonPlanner = lazy(() => import('@/pages/admin/HarvestSeasonPlanner'));
+const DailyRoutineCheck = lazy(() => import('@/pages/admin/DailyRoutineCheck'));
+const FarmsAdmin = lazy(() => import('@/pages/admin/FarmsAdmin'));
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
@@ -475,7 +475,7 @@ const activityLogColumns = [
   { key: 'block_name', label: 'Farm Block', className: 'w-[102px]', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => blockLabel(item) },
   { key: 'actual_cost', label: 'Actual Cost', className: 'w-[96px] text-center', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => <span className="font-semibold text-[#2e7d32]">{formatCurrency(item.actual_cost ?? item.cost)}</span> },
   { key: 'revenue', label: 'Actual Revenue', className: 'w-[84px] text-center', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => <span className="font-semibold text-[#2e7d32]">{formatCurrency(item.actual_revenue ?? item.revenue)}</span> },
-  { key: 'output_quantity_kg', label: 'Actual Yield (tonnes)', className: 'w-[104px] text-center', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => <span className="font-semibold text-[#2e7d32]">{formatNumber(activityYieldKg(item) / 1000)} tonnes</span> },
+  { key: 'output_quantity_kg', label: 'Actual Yield (Kg)', className: 'w-[104px] text-center', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => <span className="font-semibold text-[#2e7d32]">{formatNumber(activityYieldKg(item))} Kg</span> },
   { key: 'cost_type', label: 'Type of Cost', className: 'w-[86px] text-center', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => item.cost_type ? normalizeCostType(item.cost_type) : '—' },
   { key: 'notes', label: 'Notes', className: 'w-[170px]', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => item.notes },
 ];
@@ -603,7 +603,7 @@ const DailyActivityLog = ({
       { label: 'Farm Block', width: 56, value: (item) => blockLabel(item) },
       { label: 'Actual Cost', width: 63, value: (item) => item.actual_cost ?? item.cost },
       { label: 'Actual Revenue', width: 65, value: (item) => item.actual_revenue ?? item.revenue },
-      { label: 'Actual Yield (tonnes)', width: 66, value: (item) => `${formatNumber(activityYieldKg(item) / 1000)} tonnes` },
+      { label: 'Actual Yield (Kg)', width: 66, value: (item) => `${formatNumber(activityYieldKg(item))} Kg` },
       { label: 'Type of Cost', width: 55, value: (item) => item.cost_type ? normalizeCostType(item.cost_type) : '—' },
       { label: 'Notes', width: 105, value: (item) => item.notes },
     ];
@@ -639,7 +639,7 @@ const DailyActivityLog = ({
         { label: 'TOTAL ACTIVITIES', value: formatNumber(visibleItems.length), fill: [247, 252, 247], text: [22, 115, 41] },
         { label: 'ACTUAL COST', value: money(totalActualCost), fill: [255, 248, 248], text: [225, 75, 90] },
         { label: 'ACTUAL REVENUE', value: money(totalActualRevenue), fill: [245, 249, 255], text: [37, 99, 235] },
-        { label: 'HARVEST OUTPUT', value: `${formatNumber(totalOutput / 1000)} tonnes`, fill: [255, 251, 235], text: [180, 83, 9] },
+        { label: 'HARVEST OUTPUT', value: `${formatNumber(totalOutput)} Kg`, fill: [255, 251, 235], text: [180, 83, 9] },
         { label: 'COMPLETION RATE', value: `${completedPercent}%`, fill: [250, 245, 255], text: [124, 58, 237] },
       ];
       const cardGap = 8;
@@ -784,7 +784,7 @@ const DailyActivityLog = ({
         <div className="px-0 pt-4 md:pr-6 xl:border-r xl:border-slate-200 xl:pl-6 xl:pt-0">
           <p className="mb-1 font-semibold text-[#256b2a]">Production</p>
           {[
-            ['Actual Yield', `${formatNumber(activityYieldKg(item) / 1000)} tonnes`],
+            ['Actual Yield', `${formatNumber(activityYieldKg(item))} Kg`],
             ['Farm Block', blockLabel(item)],
             ['Main Farm', item.farm_name],
           ].map(([label, value]) => <p key={label} className="grid grid-cols-[132px_1fr] gap-3"><span className={label === 'Harvest / Output' ? 'text-emerald-700' : 'text-slate-600'}>{label}</span><span className={label === 'Harvest / Output' ? 'font-semibold text-emerald-700' : ''}>{displayValue(value)}</span></p>)}
@@ -1065,33 +1065,58 @@ export default function FarmDailyActivities() {
   const load = useCallback((showLoading = true) => {
     const request = ++loadGeneration.current;
     if (showLoading) setLoading(true);
+    // Embedded workspaces load their own records. Analytics needs only its inputs.
+    const ownsData = ['Master Schedule', 'Risk Register', 'Farms', 'Budget & Harvest', 'Harvest Seasons'].includes(activeScreen);
+    if (ownsData) {
+      setLoading(false);
+      return Promise.resolve();
+    }
+    if (activeScreen === 'Operations Analytics Overview') {
+      return Promise.all([
+        base44.entities.Farm.listAll('-created_date'),
+        base44.entities.FarmBlock.listAll('-created_date'),
+        base44.entities.DailyActivity.listAll('-activity_date'),
+      ]).then(([farms, blocks, dailyActivities]) => {
+        if (request !== loadGeneration.current) return;
+        setData({ farms, blocks, dailyActivities });
+        setLoadError('');
+      }).catch(error => {
+        if (request === loadGeneration.current) setLoadError(error.message || 'Analytics could not be refreshed.');
+      }).finally(() => { if (request === loadGeneration.current) setLoading(false); });
+    }
+    const required = activeScreen === 'Daily Task Log'
+      ? new Set(['Farm', 'FarmBlock', 'Worker', 'DailyActivity', 'WorkOrder', 'Equipment', 'EquipmentUsage', 'FarmInput'])
+      : null;
+    const read = (entity, sortBy) => required && !required.has(entity)
+      ? Promise.resolve([])
+      : base44.entities[entity].listAll(sortBy);
     return Promise.all([
-      base44.entities.Farm.listAll('-created_date'),
-      base44.entities.FarmBlock.listAll('-created_date'),
-      base44.entities.Worker.listAll('-created_date').catch(() => []),
-      base44.entities.DailyActivity.listAll('-activity_date'),
-      base44.entities.WorkOrder.listAll('-scheduled_date').catch(() => []),
-      base44.entities.HarvestBatch.listAll('-harvest_date').catch(() => []),
-      base44.entities.HarvestGrade.listAll('-created_date').catch(() => []),
-      base44.entities.FarmAttendance.listAll('-attendance_date').catch(() => []),
-      base44.entities.Equipment.listAll('-created_date').catch(() => []),
-      base44.entities.EquipmentUsage.listAll('-usage_date').catch(() => []),
-      base44.entities.FarmInput.listAll('-created_date').catch(() => []),
-      base44.entities.InputUsage.listAll('-application_date').catch(() => []),
-      base44.entities.InventoryUsage.listAll('-usage_date').catch(() => []),
-      base44.entities.QualityCheck.listAll('-inspection_date').catch(() => []),
-      base44.entities.WasteLoss.listAll('-loss_date').catch(() => []),
-      base44.entities.WeatherLog.listAll('-weather_date').catch(() => []),
-      base44.entities.FarmExpense.listAll('-expense_date').catch(() => []),
-      base44.entities.DailyReport.listAll('-report_date').catch(() => []),
-      base44.entities.Approval.listAll('-created_date').catch(() => []),
-      base44.entities.Notification.listAll('-created_date').catch(() => []),
-      base44.entities.Certification.listAll('-created_date').catch(() => []),
-      base44.entities.StockMovement.listAll('-created_date').catch(() => []),
-      base44.entities.FarmFinanceRecord.listAll('-record_date').catch(() => []),
-      base44.entities.FarmComplianceRecord.listAll('-created_date').catch(() => []),
-      base44.entities.AuditLog.listAll('-created_date').catch(() => []),
-      base44.entities.FarmNote.listAll('-created_date').catch(() => []),
+      read('Farm', '-created_date'),
+      read('FarmBlock', '-created_date'),
+      read('Worker', '-created_date').catch(() => []),
+      read('DailyActivity', '-activity_date'),
+      read('WorkOrder', '-scheduled_date').catch(() => []),
+      read('HarvestBatch', '-harvest_date').catch(() => []),
+      read('HarvestGrade', '-created_date').catch(() => []),
+      read('FarmAttendance', '-attendance_date').catch(() => []),
+      read('Equipment', '-created_date').catch(() => []),
+      read('EquipmentUsage', '-usage_date').catch(() => []),
+      read('FarmInput', '-created_date').catch(() => []),
+      read('InputUsage', '-application_date').catch(() => []),
+      read('InventoryUsage', '-usage_date').catch(() => []),
+      read('QualityCheck', '-inspection_date').catch(() => []),
+      read('WasteLoss', '-loss_date').catch(() => []),
+      read('WeatherLog', '-weather_date').catch(() => []),
+      read('FarmExpense', '-expense_date').catch(() => []),
+      read('DailyReport', '-report_date').catch(() => []),
+      read('Approval', '-created_date').catch(() => []),
+      read('Notification', '-created_date').catch(() => []),
+      read('Certification', '-created_date').catch(() => []),
+      read('StockMovement', '-created_date').catch(() => []),
+      read('FarmFinanceRecord', '-record_date').catch(() => []),
+      read('FarmComplianceRecord', '-created_date').catch(() => []),
+      read('AuditLog', '-created_date').catch(() => []),
+      read('FarmNote', '-created_date').catch(() => []),
     ]).then(([
       farms,
       blocks,
@@ -1153,7 +1178,7 @@ export default function FarmDailyActivities() {
     }).catch(error => {
       if (request === loadGeneration.current) setLoadError(error.message || 'Task log and analytics could not be refreshed.');
     }).finally(() => { if (request === loadGeneration.current) setLoading(false); });
-  }, []);
+  }, [activeScreen]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -1553,9 +1578,8 @@ export default function FarmDailyActivities() {
       updated_by: payload.updated_by || 'Supervisor',
     });
 
-    await syncActivityExpense(activity, payload, farmBlock, cost);
-
     await Promise.all([
+      syncActivityExpense(activity, payload, farmBlock, cost),
       payload.assigned_workers ? base44.entities.ActivityWorker.create({
         activity_code: activityCode,
         worker_name: payload.assigned_workers,
@@ -1760,8 +1784,10 @@ export default function FarmDailyActivities() {
       cost,
       updated_by: nextPayload.updated_by || 'Supervisor',
     });
-    await syncActivityExpense({ ...record, ...updated }, nextPayload, farmBlock, cost);
-    await createAuditLog('Edited', 'Daily Activity', record.activity_code, 'Activity fields updated');
+    await Promise.all([
+      syncActivityExpense({ ...record, ...updated }, nextPayload, farmBlock, cost),
+      createAuditLog('Edited', 'Daily Activity', record.activity_code, 'Activity fields updated'),
+    ]);
     load();
     return updated;
   };
@@ -2068,7 +2094,7 @@ export default function FarmDailyActivities() {
     { name: 'shared_scope', label: 'Shared farms / blocks', type: 'farm-scope-multi', options: blockOptions },
     { name: 'actual_cost', label: 'Actual Cost (₵)', type: 'number', defaultValue: 0 },
     { name: 'actual_revenue', label: 'Actual Revenue (₵)', type: 'number', defaultValue: 0 },
-    { name: 'output_quantity_kg', label: 'Actual Yield (tonnes)', type: 'number', defaultValue: 0, inputScale: 1000, step: 1 },
+    { name: 'output_quantity_kg', label: 'Actual Yield (Kg)', type: 'number', defaultValue: 0, step: 1 },
     { name: 'cost_type', label: 'Type of Cost', type: 'select', options: selectOptions(activityCostTypes), defaultValue: 'Labor', required: true },
     { name: 'category', label: 'Farm Task Type', type: 'select', options: selectOptions(activityCategories), defaultValue: 'Land Clearing', required: true },
     { name: 'notes', label: 'Notes', type: 'textarea', wide: true },
@@ -2672,7 +2698,7 @@ export default function FarmDailyActivities() {
           <BarChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
             <XAxis dataKey="name" fontSize="var(--text-caption)" />
-            <YAxis allowDecimals={false} tickFormatter={formatNumber} fontSize="var(--text-caption)" />
+            <YAxis allowDataOverflow domain={[0, 'auto']} allowDecimals={false} tickFormatter={formatNumber} fontSize="var(--text-caption)" />
             <Tooltip formatter={(value) => formatNumber(value)} />
             <Bar dataKey="value" fill="#6b8e23" radius={[4, 4, 0, 0]} />
           </BarChart>
@@ -3148,7 +3174,7 @@ export default function FarmDailyActivities() {
 
       <main className="min-w-0">
         {loadError && <div role="alert" className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">{loadError} <button type="button" className="underline" onClick={() => load(false)}>Retry refresh</button></div>}
-        {renderScreen()}
+        <Suspense fallback={<PageSkeleton variant="page" />}>{renderScreen()}</Suspense>
       </main>
     </div>
   );

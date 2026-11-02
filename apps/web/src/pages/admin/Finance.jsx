@@ -272,7 +272,7 @@ export default function Finance() {
           <BarChart data={monthlyData}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
             <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize="var(--text-caption)" />
-            <YAxis allowDecimals={false} stroke="hsl(var(--muted-foreground))" fontSize="var(--text-caption)" tickFormatter={compactCedis} />
+            <YAxis allowDataOverflow domain={[0, 'auto']} allowDecimals={false} stroke="hsl(var(--muted-foreground))" fontSize="var(--text-caption)" tickFormatter={compactCedis} />
             <Tooltip contentStyle={{ borderRadius: '0.75rem', border: '1px solid hsl(var(--border))' }} formatter={(value) => formatCurrency(value)} />
             <Bar dataKey="expenses" name="Activity expenses" fill="#355e3b" radius={[4, 4, 0, 0]} />
             <Bar dataKey="sales" name="Website revenue" fill="#2e7d32" radius={[4, 4, 0, 0]} />

@@ -1,5 +1,6 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { Database } from 'lucide-react';
 import { ACTIVITY_COST_TYPES, formatCostPercentage } from '@/lib/activity-cost-types';
 import { expenseChartPreviewRows } from '@/lib/expense-chart-preview';
 import './expense-photo-chart.css';
@@ -22,7 +23,7 @@ function wedge(start, end) {
   return `M${a} A145 145 0 ${large} 1 ${b} L${c} A88 88 0 ${large} 0 ${d} Z`;
 }
 
-export default function ExpensePhotoChart({ rows: recordedRows = [], seedData = false, selectionName, onSelectionChange, rangeLabel = 'All recorded dates' }) {
+export default function ExpensePhotoChart({ rows: recordedRows = [], seedData = false, showPhotos = true, selectionName, onSelectionChange, rangeLabel = 'All recorded dates' }) {
   const sourceRows = seedData ? expenseChartPreviewRows : recordedRows;
   const rows = ACTIVITY_COST_TYPES.map(type => ({ ...type, value: sourceRows.find(row => row.name === type.name)?.value || 0 }));
   const total = rows.reduce((sum, row) => sum + row.value, 0);
@@ -36,7 +37,7 @@ export default function ExpensePhotoChart({ rows: recordedRows = [], seedData = 
   const id = useId().replace(/:/g, '');
   const scene = scenes[selected];
   const selectedRecordedValue = Number(recordedRows.find(row => row.name === selected)?.value || 0);
-  const photo = scene ? scene[0] ? `/pages/expenses/${scene[0]}.webp` : '/pages/sustainability-community.png' : '/pages/export/mango-basket.webp';
+  const photo = scene ? scene[0] ? `/pages/expenses/${scene[0]}.webp` : '/pages/sustainability-community.webp' : '/pages/export/mango-basket.webp';
   let cursor = -Math.PI / 2;
   const segments = rows.map((row, index) => {
     const start = cursor;
@@ -80,9 +81,9 @@ export default function ExpensePhotoChart({ rows: recordedRows = [], seedData = 
         <strong>{selected}</strong>
         <dl><div><dt>Amount</dt><dd>{money(selectedRecordedValue)}</dd></div><div><dt>Percentage</dt><dd>{formatCostPercentage(selectedRecordedValue, recordedTotal)}</dd></div></dl>
       </div>;
-  return <div className="expense-photo-layout">
+  return <div className={`expense-photo-layout${showPhotos ? '' : ' expense-icon-layout'}`}>
     <div ref={visual} className="expense-photo-visual">
-      <svg viewBox="-15 -15 390 350" aria-label="Expense chart with category photographs">
+      <svg viewBox="-15 -15 390 350" aria-label={showPhotos ? 'Expense chart with category photographs' : 'Expense breakdown chart'}>
         <defs>
           <clipPath id={`${id}-photo`}><circle cx="180" cy="176" r="88" /></clipPath>
           <radialGradient id={`${id}-gloss`} cx="40%" cy="25%" r="80%"><stop stopColor="#fff" stopOpacity=".24" /><stop offset=".65" stopColor="#fff" stopOpacity="0" /><stop offset=".9" stopColor="#fff" stopOpacity=".2" /><stop offset="1" stopColor="#650000" stopOpacity=".3" /></radialGradient>
@@ -92,7 +93,7 @@ export default function ExpensePhotoChart({ rows: recordedRows = [], seedData = 
           <g transform="translate(0 32)" className="expense-slice-depth">{segments.filter(row => row.value > 0).map(row => <path key={row.name} d={wedge(row.start, row.end)} fill={colors[row.index]} transform={selected === row.name ? `translate(${Math.cos(row.middle) * 46} ${Math.sin(row.middle) * 46 - 5})` : undefined} />)}</g>
           {Array.from({ length: 31 }, (_, layer) => <g key={layer} transform={`translate(0 ${31 - layer})`} className="expense-slice-depth">{segments.filter(row => row.value > 0).map(row => <path key={row.name} d={wedge(row.start, row.end)} fill={colors[row.index]} transform={selected === row.name ? `translate(${Math.cos(row.middle) * 46} ${Math.sin(row.middle) * 46 - 5})` : undefined} />)}</g>)}
           {segments.filter(row => row.value > 0 && Math.sin(row.start) > 0).map(row => { const [x, y] = point(row.start, 145); return <path key={`cut-${row.name}`} d={`M${x} ${y} V${y + 32}`} stroke="white" strokeWidth="3" pointerEvents="none" />; })}
-          <image href={photo} x="92" y="88" width="176" height="176" preserveAspectRatio="xMidYMid slice" clipPath={`url(#${id}-photo)`}><title>{scene?.[1] || 'Fresh orchard mangoes'}</title></image>
+          {showPhotos ? <image href={photo} x="92" y="88" width="176" height="176" preserveAspectRatio="xMidYMid slice" clipPath={`url(#${id}-photo)`}><title>{scene?.[1] || 'Fresh orchard mangoes'}</title></image> : <><circle cx="180" cy="176" r="88" fill="#fff" /><Database x="157" y="126" width="46" height="46" color="#4c9144" aria-hidden="true" /></>}
           {total <= 0 && <circle cx="180" cy="176" r="116.5" fill="none" stroke="#e5ebef" strokeWidth="57" />}
           {segments.filter(row => row.value > 0).map(row => <path key={row.name} d={wedge(row.start, row.end)} transform={selected === row.name ? `translate(${Math.cos(row.middle) * 46} ${Math.sin(row.middle) * 46 - 5})` : undefined} fill={colors[row.index]} stroke="none" role="button" tabIndex="0" aria-label={`Select ${row.name}: ${formatCostPercentage(Number(recordedRows.find(item => item.name === row.name)?.value || 0), recordedTotal)}, ${money(recordedRows.find(item => item.name === row.name)?.value)}`} aria-pressed={selected === row.name} onClick={() => choose(row.name)} onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); choose(row.name); } }}></path>)}
           {segments.filter(row => row.value > 0).map(row => <path key={`gloss-${row.name}`} d={wedge(row.start, row.end)} fill={`url(#${id}-gloss)`} transform={selected === row.name ? `translate(${Math.cos(row.middle) * 46} ${Math.sin(row.middle) * 46 - 5})` : undefined} pointerEvents="none" />)}
@@ -108,7 +109,7 @@ export default function ExpensePhotoChart({ rows: recordedRows = [], seedData = 
         </g>
       </svg>
       {popup && (typeof document === 'undefined' ? popup : createPortal(popup, document.body))}
-      <span className="sr-only" aria-live="polite">{scene?.[1] || 'Select an expense slice to view its photo and details'}</span>
+      <span className="sr-only" aria-live="polite">{showPhotos ? scene?.[1] || 'Select an expense slice to view its photo and details' : 'Select an expense slice to view its details'}</span>
       {selected && <button className="expense-photo-clear" type="button" onClick={() => setSelected(null)}>Clear selection</button>}
     </div>
   </div>;

@@ -5,7 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import './newsroom.css';
 
-const reference = '/pages/news/newsroom-reference.png';
+const reference = '/pages/news/newsroom-reference.webp';
 const mediaEmail = 'media@jbagreengold.com';
 const coverage = [
   { name: 'Reuters', crop: [61, 486, 131, 54], quote: 'Ghana’s mango exports gain global momentum with JBA GreenGold Orchard.' },

@@ -1,10 +1,10 @@
 import { activityCost, activityRevenue, activityYieldKg, parseRecordDate } from './farm-operations-analytics';
 
-const emptyPeriod = (label) => ({ label, cost: 0, revenue: 0, yieldTonnes: 0, profit: 0, records: 0 });
+const emptyPeriod = (label) => ({ label, cost: 0, revenue: 0, yieldKg: 0, profit: 0, records: 0 });
 const addActivity = (period, activity) => {
   period.cost += Math.max(0, activityCost(activity));
   period.revenue += activityRevenue(activity);
-  period.yieldTonnes += activityYieldKg(activity) / 1000;
+  period.yieldKg += activityYieldKg(activity);
   period.profit = period.revenue - period.cost;
   period.records += 1;
 };
@@ -27,7 +27,7 @@ export function buildFarmPerformanceTrends(activities, selectedYear, currentYear
   // Future periods are not zero-valued actual results or forecasts.
   yearly.forEach((period) => {
     if (Number(period.label) > currentYear && !period.records) {
-      Object.assign(period, { cost: null, revenue: null, yieldTonnes: null, profit: null });
+      Object.assign(period, { cost: null, revenue: null, yieldKg: null, profit: null });
     }
   });
   return { yearly, monthly, undatedCount: activities.length - dated.length };
@@ -42,7 +42,7 @@ export function summarizeYearlyTrend(rows) {
   if (recorded.length === 1) return `Recorded performance for ${last.label}. Year-to-year comparisons will appear as subsequent years are recorded.${lossNote}`;
   const first = recorded[0];
   const direction = key => last[key] > first[key] ? 'increased' : last[key] < first[key] ? 'decreased' : 'remained unchanged';
-  return `From ${first.label} to ${last.label}, revenue has ${direction('revenue')} and yield has ${direction('yieldTonnes')}.${lossNote}`;
+  return `From ${first.label} to ${last.label}, revenue has ${direction('revenue')} and yield has ${direction('yieldKg')}.${lossNote}`;
 }
 
 export function summarizeMonthlyTrend(rows) {
@@ -54,5 +54,5 @@ export function summarizeMonthlyTrend(rows) {
   const lossNote = losses.length ? ` Loss recorded in ${losses.join(', ')}.` : '';
   if (recorded.length === 1) return `Recorded performance for ${first.label}. Month-to-month comparisons will appear as additional months are recorded.${lossNote}`;
   const direction = key => last[key] > first[key] ? 'increased' : last[key] < first[key] ? 'decreased' : 'remained unchanged';
-  return `From ${first.label} to ${last.label}, revenue has ${direction('revenue')} and yield has ${direction('yieldTonnes')}.${lossNote}`;
+  return `From ${first.label} to ${last.label}, revenue has ${direction('revenue')} and yield has ${direction('yieldKg')}.${lossNote}`;
 }
