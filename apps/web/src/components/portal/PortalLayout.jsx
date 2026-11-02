@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import usePinnedPageNavigation from '@/components/shared/usePinnedPageNavigation';
-import { Outlet, Link, NavLink, useLocation } from 'react-router-dom';
+import { Link, NavLink, useLocation } from 'react-router-dom';
+import RouteContent from '@/components/shared/RouteContent';
 import { LayoutDashboard, ShoppingCart, ShoppingBag, Truck, CreditCard, FileText, LogOut, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import BrandLogo from '@/components/shared/BrandLogo';
@@ -50,7 +51,7 @@ export default function PortalLayout() {
         </div>
 
       </header>
-      <main ref={navigationRoot} className="portal-scroll-content min-w-0 flex-1 p-4 pb-24 md:p-6"><Outlet /></main>
+      <main ref={navigationRoot} className="portal-scroll-content min-w-0 flex-1 p-4 pb-24 md:p-6"><RouteContent /></main>
       <CartDrawer />
     </div>
   );

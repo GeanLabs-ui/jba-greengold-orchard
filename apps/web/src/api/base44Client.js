@@ -1,4 +1,5 @@
 import { publishDataChange } from "../lib/data-sync";
+import { cachedApiRead, clearApiReadCache, invalidateApiEntity } from '../lib/api-read-cache';
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "/api/v1").replace(
   /\/$/,
@@ -8,6 +9,7 @@ let csrfToken = null;
 let csrfUserId = null;
 
 const rememberSession = (data) => {
+  if (csrfUserId !== (data.user?.id || null)) clearApiReadCache();
   csrfToken = data.csrf_token;
   csrfUserId = data.user?.id || null;
 };
@@ -95,7 +97,7 @@ const refreshCsrf = async (expectedUserId = csrfUserId) => {
   return csrfToken;
 };
 
-const request = async (path, options = {}) => {
+const executeRequest = async (path, options = {}) => {
   const { includeMeta = false, publicRequest = false, accountUserId, ...fetchOptions } = options;
   const method = (fetchOptions.method || "GET").toUpperCase();
   const protectedMutation = !["GET", "HEAD", "OPTIONS"].includes(method) && !publicRequest;
@@ -130,8 +132,13 @@ const request = async (path, options = {}) => {
     }
     try {
       const payload = await parsePayload(response);
+      if (method !== 'GET' && method !== 'HEAD') {
+        const entity = /^\/entities\/([^/?]+)/.exec(path)?.[1];
+        invalidateApiEntity(entity ? decodeURIComponent(entity) : null);
+      }
       return includeMeta ? payload : payload.data;
     } catch (error) {
+      if (error.status === 401) clearApiReadCache();
       // CSRF rejection happens before the handler writes anything. Only that
       // explicit rejection is safe to replay, including multipart document uploads.
       if (protectedMutation && error.status === 403 && error.code === 'CSRF_INVALID') {
@@ -145,6 +152,18 @@ const request = async (path, options = {}) => {
       throw error;
     }
   }
+};
+
+const request = async (path, options = {}) => {
+  // Share reads across mounted dialogs, dashboards and subsequent navigation.
+  // Auth/account checks always reach the server; writes are never cached/replayed.
+  const cacheable = (!options.method || options.method === 'GET')
+    && !options.signal
+    && /^\/(entities\/|objectives(?:\?|$)|farms(?:\/|\?|$)|blocks\/|harvest-periods(?:\?|$))/.test(path);
+  if (!cacheable) return executeRequest(path, options);
+  const payload = await cachedApiRead(path, signal => executeRequest(path, { ...options, signal, includeMeta: true }));
+  // Consumers can sort or edit their arrays without mutating another page's cache.
+  return structuredClone(options.includeMeta ? payload : payload.data);
 };
 
 const createEntityApi = (entityName) => ({
@@ -321,6 +340,7 @@ const auth = {
   },
   async logout(redirectTo) {
     await request("/auth/logout", { method: "POST" });
+    clearApiReadCache();
     csrfToken = null;
     csrfUserId = null;
     if (redirectTo) window.location.assign("/");

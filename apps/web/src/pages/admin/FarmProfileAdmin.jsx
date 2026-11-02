@@ -226,7 +226,7 @@ export default function FarmProfileAdmin() {
       await action();
       toast.success(successMessage);
       close?.();
-      await loadFarm();
+      void loadFarm();
       return true;
     } catch (mutationError) {
       toast.error(mutationError.message || "The change could not be saved");
@@ -352,7 +352,7 @@ export default function FarmProfileAdmin() {
                   </div>
                   <div className="flex gap-1.5">
                     <span className="text-lime-300"><TrendingUp className="h-4 w-4" /></span>
-                    <div><dt className="text-emerald-100/80">Yield in period</dt><dd className="font-semibold">{analytics.yieldRecordCount ? `${formatNumber(analytics.totalYieldKg / 1000)} tonnes` : "No data yet"}</dd></div>
+                    <div><dt className="text-emerald-100/80">Yield in period</dt><dd className="font-semibold">{analytics.yieldRecordCount ? `${formatNumber(analytics.totalYieldKg)} Kg` : "No data yet"}</dd></div>
                   </div>
                 </dl>
               </div>
@@ -475,7 +475,7 @@ export default function FarmProfileAdmin() {
             <dl className="mt-5 grid grid-cols-2 gap-x-4 gap-y-5 text-caption">
               <div><dt className="text-slate-500">Allocated</dt><dd className="mt-1 font-semibold text-slate-700">{formatNumber(analytics.totalAllocatedSizeAcres || 0)} ac</dd></div>
               <div><dt className="text-slate-500">Unallocated</dt><dd className="mt-1 font-semibold text-slate-700">{unallocated == null ? "No data yet" : `${formatNumber(unallocated)} ac`}</dd></div>
-              <div><dt className="text-slate-500">Yield / acre</dt><dd className="mt-1 font-semibold text-slate-700">{analytics.yieldPerAcre == null ? "No data yet" : `${formatNumber(analytics.yieldPerAcre / 1000)} tonnes`}</dd></div>
+              <div><dt className="text-slate-500">Yield / acre</dt><dd className="mt-1 font-semibold text-slate-700">{analytics.yieldPerAcre == null ? "No data yet" : `${formatNumber(analytics.yieldPerAcre)} Kg`}</dd></div>
               <div><dt className="text-slate-500">Current stage</dt><dd className="mt-1 font-semibold text-slate-700">{currentStage}</dd></div>
             </dl>
           </article>

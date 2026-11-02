@@ -235,3 +235,5 @@
 @media(max-width:767px) {
   .analytics-overview-grid > .cost-breakdown .expense-breakdown-heading { padding:16px 12px; font-size:18px!important; }
 }
+/* The recorded category legend and expanded farm rows must remain visible. */
+.farm-analytics .analytics-overview-grid>.cost-breakdown:has(>.expense-breakdown-content){height:auto;min-height:var(--analytics-reference-height,534px)}

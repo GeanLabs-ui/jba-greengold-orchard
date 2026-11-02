@@ -159,7 +159,7 @@ function AttendanceTrendChart({ data, expanded = false }) {
         <defs><linearGradient id={fillId} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#2e7d32" stopOpacity={0.18} /><stop offset="100%" stopColor="#2e7d32" stopOpacity={0.01} /></linearGradient></defs>
         <CartesianGrid stroke="#e8f5e9" vertical={false} />
         <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 'var(--text-caption)', fill: '#5f7565' }} minTickGap={expanded ? 0 : 20} interval={expanded ? 0 : 'preserveStartEnd'} angle={expanded && data.length > 12 ? -35 : 0} textAnchor={expanded && data.length > 12 ? 'end' : 'middle'} />
-        <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{ fontSize: 'var(--text-caption)', fill: '#5f7565' }} />
+        <YAxis allowDataOverflow domain={[0, 'auto']} allowDecimals={false} axisLine={false} tickLine={false} tick={{ fontSize: 'var(--text-caption)', fill: '#5f7565' }} />
         <Tooltip contentStyle={{ borderColor: '#e8f5e9', borderRadius: 8, fontSize: 'var(--text-caption)' }} labelStyle={{ fontWeight: 600 }} />
         <Area type="monotone" dataKey="present" name="Present or late" stroke="#2e7d32" fill={`url(#${fillId})`} strokeWidth={2} dot={expanded || data.length === 1 ? { r: 2.5, fill: '#2e7d32' } : false} activeDot={{ r: 4 }} />
       </AreaChart>

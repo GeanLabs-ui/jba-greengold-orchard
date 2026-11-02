@@ -389,7 +389,7 @@ export default function FarmsAdmin() {
                   <dl className="mt-3 grid grid-cols-3 gap-2 text-caption" aria-label="Daily Task Log actual totals">
                     <div><dt>Actual Cost</dt><dd className="mt-1 font-semibold">{formatCurrency(farm.task_log.totalCost)}</dd></div>
                     <div><dt>Actual Revenue</dt><dd className="mt-1 font-semibold">{formatCurrency(farm.task_log.totalRevenue)}</dd></div>
-                    <div><dt>Actual Yield</dt><dd className="mt-1 font-semibold">{formatNumber(farm.task_log.totalYieldKg / 1000)} tonnes</dd></div>
+                    <div><dt>Actual Yield</dt><dd className="mt-1 font-semibold">{formatNumber(farm.task_log.totalYieldKg)} Kg</dd></div>
                   </dl>
                   <div className={`mt-3 rounded-lg p-3 ${palette.panel}`}>
                     <div className="flex items-start gap-2.5">

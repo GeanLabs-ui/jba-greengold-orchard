@@ -25,7 +25,7 @@ export function measurementScales(rows, targets, moneyKeys = ['cost', 'revenue',
   const minimum = Math.floor(low / moneyStep) * moneyStep;
   const maximum = Math.ceil(high / moneyStep) * moneyStep;
   const intervals = Math.max(1, Math.round((maximum - minimum) / moneyStep));
-  const yieldMaximum = Math.max(1, Number(targets?.yield) || 0, ...rows.map((row) => Number(row.yieldTonnes) || 0));
+  const yieldMaximum = Math.max(1, Number(targets?.yield) || 0, ...rows.map((row) => Number(row.yieldKg) || 0));
   const yieldStep = niceStep(yieldMaximum / intervals);
   return {
     money: { step: moneyStep, domain: [minimum, maximum], ticks: Array.from({ length: intervals + 1 }, (_, index) => minimum + index * moneyStep) },

@@ -49,7 +49,7 @@ jobs:
           package-manager-cache: false
       - run: npm ci
       - name: Audit all dependencies
-        run: npm audit --audit-level=low
+        run: npm run audit:dependencies
       - name: Verify staging database and service bindings
         run: npm run deploy:verify -- --env=staging
         env:

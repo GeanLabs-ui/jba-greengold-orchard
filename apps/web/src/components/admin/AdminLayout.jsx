@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Link, Outlet, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
+import RouteContent from '@/components/shared/RouteContent';
 import { ShieldX } from 'lucide-react';
 import usePinnedPageNavigation from '@/components/shared/usePinnedPageNavigation';
 import AdminSidebar from './AdminSidebar';
@@ -43,7 +44,7 @@ export default function AdminLayout() {
         <AdminTopbar onMenuClick={() => setMobileOpen(true)} />
         <main ref={scrollRef} className="admin-scroll-content flex-1 overflow-y-auto scrollbar-thin px-4 pb-24 md:px-6 md:pb-6">
           <div className="admin-page-content">
-          {canAccessPage ? <Outlet /> : (
+          {canAccessPage ? <RouteContent /> : (
             <div className="grid min-h-[60vh] place-items-center">
               <div className="max-w-md text-center">
                 <span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-destructive/10 text-destructive"><ShieldX className="h-6 w-6" /></span>

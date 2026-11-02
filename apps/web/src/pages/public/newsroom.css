@@ -3,7 +3,7 @@
 #root .newsroom-page .nr-container { width: 87.6%; max-width: 1200px; margin-inline: auto; }
 #root .public-shell main .newsroom-page section { padding: 0; }
 #root .newsroom-page .nr-hero { position: relative; aspect-ratio: 793 / 310; width: 100%; overflow: hidden; background: #123b23; }
-#root .newsroom-page .nr-hero-art { position: absolute; inset: 0; background: url('/pages/news/newsroom-reference.png') center 2.689779% / 100% auto no-repeat; }
+#root .newsroom-page .nr-hero-art { position: absolute; inset: 0; background: url('/pages/news/newsroom-reference.webp') center 2.689779% / 100% auto no-repeat; }
 #root .newsroom-page .nr-hero-copy, #root .newsroom-page .nr-explore-copy { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 #root .newsroom-page .nr-media-contact { position: absolute; top: 20.645%; right: 6.43%; width: 29.51%; min-height: 69.03%; padding: calc(16 * var(--nr-u)) calc(18 * var(--nr-u)); background: #fff; border: 1px solid #e1e5e0; border-radius: 6px; color: #143b2b; }
 #root .newsroom-page .nr-media-contact h2 { font: 700 calc(20 * var(--nr-u))/1.15 Arial,sans-serif !important; letter-spacing: -.02em !important; margin: 0 0 calc(15 * var(--nr-u)); }
@@ -67,7 +67,7 @@
 #root .newsroom-page .nr-kit-grid p { max-width: calc(175 * var(--nr-u)); margin: 0 auto calc(17 * var(--nr-u)); min-height: calc(32 * var(--nr-u)); font-size: calc(12 * var(--nr-u)); line-height: 1.4; color: #555; }
 #root .newsroom-page .nr-kit-grid .nr-button { min-width: calc(138 * var(--nr-u)); font-size: calc(12 * var(--nr-u)); }
 #root .newsroom-page .nr-explore { position: relative; width: 100%; aspect-ratio: 793 / 192; background: #0b3520; overflow: hidden; }
-#root .newsroom-page .nr-explore-art { position: absolute; inset: 0; background: url('/pages/news/newsroom-reference.png') center 86.43216% / 100% auto no-repeat; }
+#root .newsroom-page .nr-explore-art { position: absolute; inset: 0; background: url('/pages/news/newsroom-reference.webp') center 86.43216% / 100% auto no-repeat; }
 #root .newsroom-page .nr-explore-link { position: absolute; left: 65.32%; top: 42.19%; width: 16.4%; height: 19%; color: transparent; border-radius: 4px; }
 #root .newsroom-page .nr-explore-link svg { display: none; }
 #root .newsroom-page .nr-explore-link:hover { background: #ffffff25; }
@@ -84,7 +84,7 @@
 @media (max-width: 700px) {
   #root .newsroom-page .nr-container { width: calc(100% - 40px); }
   #root .newsroom-page .nr-hero { aspect-ratio: auto; padding: 38px 24px 30px !important; }
-  #root .newsroom-page .nr-hero-art { background: linear-gradient(90deg,#092e20e8,#092e20a8), url('/pages/about/orchard-hero.png') 65% center / cover no-repeat; }
+  #root .newsroom-page .nr-hero-art { background: linear-gradient(90deg,#092e20e8,#092e20a8), url('/pages/about/orchard-hero.webp') 65% center / cover no-repeat; }
   #root .newsroom-page .nr-hero-copy, #root .newsroom-page .nr-explore-copy { position: relative; width: auto; height: auto; margin: 0; clip-path: none; white-space: normal; color: white; }
   #root .newsroom-page .nr-hero-copy .nr-eyebrow, #root .newsroom-page .nr-explore-copy .nr-eyebrow { color: #ffd03c; }
   #root .newsroom-page .nr-hero-copy h1 { margin: 10px 0 16px; font: 700 34px/1.08 Georgia,serif !important; letter-spacing: -.03em !important; }
@@ -141,7 +141,7 @@
 }
 #root .newsroom-page .nr-explore-art {
   z-index: -1;
-  background: linear-gradient(90deg, #123a21b3, #123a2140), url('/pages/news/explore-orchard-clean.png') center / cover no-repeat;
+  background: linear-gradient(90deg, #123a21b3, #123a2140), url('/pages/news/explore-orchard-clean.webp') center / cover no-repeat;
 }
 #root .newsroom-page .nr-explore-copy {
   position: relative;
@@ -221,7 +221,7 @@
   padding: 48px 6.5% !important;
 }
 #root .newsroom-page .nr-hero-art {
-  background: linear-gradient(90deg, #092e20ed, #092e2080 52%, #092e2020), url('/pages/about/orchard-hero.png') center / cover no-repeat;
+  background: linear-gradient(90deg, #092e20ed, #092e2080 52%, #092e2020), url('/pages/about/orchard-hero.webp') center / cover no-repeat;
 }
 #root .public-shell .nr-hero-art::before,
 #root .public-shell .nr-hero-art::after { display: none; }

@@ -16,7 +16,7 @@ describe('projectionDomain', () => {
 
 describe('measurementScales', () => {
   it('gives every grid row a fixed whole-number increment on both axes', () => {
-    const scales = measurementScales([{ cost: 6485269, revenue: 1890091, profit: -4595178, yieldTonnes: 5.69 }], { cost: 60000, revenue: 400000, yield: 10000 });
+    const scales = measurementScales([{ cost: 6485269, revenue: 1890091, profit: -4595178, yieldKg: 5690 }], { cost: 60000, revenue: 400000, yield: 10000 });
     expect(scales.money.step).toBe(1000000);
     expect(scales.money.ticks).toEqual([-5000000, -4000000, -3000000, -2000000, -1000000, 0, 1000000, 2000000, 3000000, 4000000, 5000000, 6000000, 7000000]);
     expect(scales.yield.ticks).toHaveLength(scales.money.ticks.length);
@@ -26,5 +26,10 @@ describe('measurementScales', () => {
     const scales = measurementScales([{ cost: 900 }], { cost: 1000, yield: 1000 });
     expect(scales.money.ticks).toEqual([0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]);
     expect(scales.yield.ticks).toEqual(scales.money.ticks);
+  });
+  it('keeps kilogram readings above the target inside the yield axis', () => {
+    const scales = measurementScales([{ cost: 1000, yieldKg: 1500000 }], { yield: 1000000 });
+    expect(scales.yield.domain[1]).toBeGreaterThanOrEqual(1500000);
+    expect(scales.yield.step).toBeGreaterThanOrEqual(100000);
   });
 });

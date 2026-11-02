@@ -82,7 +82,7 @@ export default function Reports() {
             <BarChart data={salesData}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize="var(--text-caption)" />
-              <YAxis allowDecimals={false} tickFormatter={(value) => Math.round(Number(value)).toLocaleString()} stroke="hsl(var(--muted-foreground))" fontSize="var(--text-caption)" />
+              <YAxis allowDataOverflow domain={[0, 'auto']} allowDecimals={false} tickFormatter={(value) => Math.round(Number(value)).toLocaleString()} stroke="hsl(var(--muted-foreground))" fontSize="var(--text-caption)" />
               <Tooltip formatter={(value) => Math.round(Number(value)).toLocaleString()} contentStyle={{ borderRadius: '0.75rem', border: '1px solid hsl(var(--border))' }} />
               <Bar dataKey="sales" fill="#6b8e23" radius={[4, 4, 0, 0]} />
             </BarChart>
@@ -95,7 +95,7 @@ export default function Reports() {
             <LineChart data={salesData}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize="var(--text-caption)" />
-              <YAxis allowDecimals={false} tickFormatter={(value) => Math.round(Number(value)).toLocaleString()} stroke="hsl(var(--muted-foreground))" fontSize="var(--text-caption)" />
+              <YAxis allowDataOverflow domain={[0, 'auto']} allowDecimals={false} tickFormatter={(value) => Math.round(Number(value)).toLocaleString()} stroke="hsl(var(--muted-foreground))" fontSize="var(--text-caption)" />
               <Tooltip formatter={(value) => Math.round(Number(value)).toLocaleString()} contentStyle={{ borderRadius: '0.75rem', border: '1px solid hsl(var(--border))' }} />
               <Line type="monotone" dataKey="orders" stroke="#2e7d32" strokeWidth={2} />
             </LineChart>

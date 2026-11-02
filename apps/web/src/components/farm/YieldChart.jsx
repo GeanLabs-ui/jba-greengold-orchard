@@ -19,14 +19,14 @@ const labelForDate = (value, granularity) => {
 
 export default function YieldChart({ records = [], title = 'Yield trend' }) {
   const [granularity, setGranularity] = useState('monthly');
-  const data = useMemo(() => groupYieldRecords(records, granularity).map((row) => ({ ...row, actual: row.actual / 1000, forecast: row.forecast / 1000 })), [records, granularity]);
+  const data = useMemo(() => groupYieldRecords(records, granularity), [records, granularity]);
 
   return (
     <section className="rounded-xl border bg-card p-4 sm:p-5" aria-labelledby="yield-chart-title">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 id="yield-chart-title" className="text-section-title">{title}</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Actual yield from the Daily Task Log in tonnes.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Actual yield from the Daily Task Log in Kg.</p>
         </div>
         <Select value={granularity} onValueChange={setGranularity}>
           <SelectTrigger className="w-full sm:w-36" aria-label="Yield chart interval"><SelectValue /></SelectTrigger>
@@ -49,7 +49,7 @@ export default function YieldChart({ records = [], title = 'Yield trend' }) {
             </defs>
             <CartesianGrid vertical={false} strokeDasharray="3 3" />
             <XAxis dataKey="date" tickFormatter={(value) => labelForDate(value, granularity)} tickLine={false} axisLine={false} minTickGap={24} />
-            <YAxis allowDecimals={false} tickFormatter={(value) => Math.round(Number(value)).toLocaleString()} tickLine={false} axisLine={false} width={42} />
+            <YAxis allowDataOverflow domain={[0, 'auto']} allowDecimals={false} tickFormatter={(value) => Math.round(Number(value)).toLocaleString()} tickLine={false} axisLine={false} width={42} />
             <ChartTooltip content={<ChartTooltipContent labelFormatter={(value) => labelForDate(value, granularity)} />} />
             <Area type="monotone" dataKey="actual" stroke="var(--color-actual)" fill="url(#actualYieldFill)" strokeWidth={2.5} />
             <Line type="monotone" dataKey="forecast" stroke="var(--color-forecast)" strokeWidth={2} strokeDasharray="5 4" dot={false} />

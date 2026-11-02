@@ -25,12 +25,12 @@ import AcceptStaffInvitation from '@/pages/AcceptStaffInvitation';
 // Public layout
 import PublicLayout from '@/components/public/PublicLayout';
 // Admin layout
-import AdminLayout from '@/components/admin/AdminLayout';
-import FarmDailyActivitiesLayout from '@/components/admin/FarmDailyActivitiesLayout';
+const AdminLayout = lazy(() => import('@/components/admin/AdminLayout'));
+const FarmDailyActivitiesLayout = lazy(() => import('@/components/admin/FarmDailyActivitiesLayout'));
 import DeploymentRecoveryBoundary from '@/components/shared/DeploymentRecoveryBoundary';
 import WhatsAppSupport from '@/components/shared/WhatsAppSupport';
 // Portal layout
-import PortalLayout from '@/components/portal/PortalLayout';
+const PortalLayout = lazy(() => import('@/components/portal/PortalLayout'));
 // Public pages
 const Home = lazy(() => import('@/pages/public/Home'));
 const About = lazy(() => import('@/pages/public/About'));

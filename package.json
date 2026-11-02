@@ -6,6 +6,7 @@
     "packages/*"
   ],
   "scripts": {
+    "audit:dependencies": "node scripts/audit-dependencies.mjs",
     "dev": "npm run dev:local",
     "dev:all": "concurrently --kill-others-on-fail --names web,api --prefix-colors cyan,green \"npm run dev:web\" \"npm run dev:api\"",
     "dev:local": "node scripts/run-local-dev.mjs",
