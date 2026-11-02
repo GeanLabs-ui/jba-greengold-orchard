@@ -47,7 +47,7 @@ try {
         const portrait = page.getByRole('img', { name: 'Benedict Oppong Asante, Co-Founder', exact: true });
         await portrait.scrollIntoViewIfNeeded();
         await portrait.evaluate(image => image.decode());
-        assert.equal(await portrait.getAttribute('src'), '/pages/about/founder-benedict-original.jpg');
+        assert.equal(await portrait.getAttribute('src'), '/pages/about/founder-benedict-original.webp');
         await page.locator('.ab-founders').screenshot({ path: `${output}/${device}-founders.png` });
         await page.getByText('Unlocking Prosperity Through Land Cultivation', { exact: true }).scrollIntoViewIfNeeded();
         await page.screenshot({ path: `${output}/${device}-footer.png` });
