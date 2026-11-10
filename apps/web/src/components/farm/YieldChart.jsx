@@ -1,3 +1,4 @@
+import { formatChartValue, numericChartAxis } from '@/lib/analytics-chart-scale';
 import { useMemo, useState } from 'react';
 import { Area, CartesianGrid, ComposedChart, Line, XAxis, YAxis } from 'recharts';
 import { BarChart3 } from 'lucide-react';
@@ -12,6 +13,7 @@ const chartConfig = {
 
 const labelForDate = (value, granularity) => {
   const date = new Date(`${value}T00:00:00Z`);
+  if (granularity === 'quarterly') return 'Q' + (Math.floor(date.getUTCMonth() / 3) + 1) + ' ' + date.getUTCFullYear();
   if (granularity === 'yearly') return String(date.getUTCFullYear());
   if (granularity === 'monthly') return date.toLocaleDateString('en-GH', { month: 'short', year: '2-digit', timeZone: 'UTC' });
   return date.toLocaleDateString('en-GH', { day: 'numeric', month: 'short', timeZone: 'UTC' });
@@ -34,6 +36,7 @@ export default function YieldChart({ records = [], title = 'Yield trend' }) {
             <SelectItem value="daily">Daily</SelectItem>
             <SelectItem value="weekly">Weekly</SelectItem>
             <SelectItem value="monthly">Monthly</SelectItem>
+            <SelectItem value="quarterly">Quarterly</SelectItem>
             <SelectItem value="yearly">Yearly</SelectItem>
           </SelectContent>
         </Select>
@@ -49,7 +52,7 @@ export default function YieldChart({ records = [], title = 'Yield trend' }) {
             </defs>
             <CartesianGrid vertical={false} strokeDasharray="3 3" />
             <XAxis dataKey="date" tickFormatter={(value) => labelForDate(value, granularity)} tickLine={false} axisLine={false} minTickGap={24} />
-            <YAxis allowDataOverflow domain={[0, 'auto']} allowDecimals={false} tickFormatter={(value) => Math.round(Number(value)).toLocaleString()} tickLine={false} axisLine={false} width={42} />
+            <YAxis {...numericChartAxis(data, ['actual', 'forecast'])} allowDataOverflow allowDecimals={false} tickFormatter={(value) => formatChartValue(value, '', { compact: true })} tickLine={false} axisLine={false} width={42} />
             <ChartTooltip content={<ChartTooltipContent labelFormatter={(value) => labelForDate(value, granularity)} />} />
             <Area type="monotone" dataKey="actual" stroke="var(--color-actual)" fill="url(#actualYieldFill)" strokeWidth={2.5} />
             <Line type="monotone" dataKey="forecast" stroke="var(--color-forecast)" strokeWidth={2} strokeDasharray="5 4" dot={false} />

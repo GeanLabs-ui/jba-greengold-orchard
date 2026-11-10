@@ -1,6 +1,6 @@
 import { taskLogProfile } from '@/lib/task-log-profile';
 import { subscribeToDataChanges } from '@/lib/data-sync';
-import { formatCurrency } from '@/components/shared/format';
+import TaskLogMetrics from '@/components/farm/TaskLogMetrics';
 import { scopeLabel } from '@/lib/farm-scope';
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
@@ -13,7 +13,6 @@ import {
   MapPin,
   MoreVertical,
   Plus,
-  Search,
   Sprout,
   Trees,
 } from "lucide-react";
@@ -24,7 +23,6 @@ import {
   StatusActionDialog,
 } from "@/components/farm/FarmManagementDialogs";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -129,13 +127,22 @@ const statusClassName = (status) => {
   return "bg-slate-100 text-slate-600";
 };
 
+async function listAllFarmCards() {
+  const limit = 250;
+  const farms = [];
+  for (let offset = 0; ; offset += limit) {
+    const page = await base44.farms.list({ limit, offset });
+    farms.push(...page);
+    if (page.length < limit) return farms;
+  }
+}
+
 export default function FarmsAdmin() {
   const { user } = useAuth();
   const [farms, setFarms] = useState([]);
   const [catalogVarieties, setCatalogVarieties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
   const [location, setLocation] = useState("all");
   const [variety, setVariety] = useState("all");
@@ -148,12 +155,17 @@ export default function FarmsAdmin() {
     setError("");
     try {
       const [response, varietyResponse, records, blocks] = await Promise.all([
-        base44.farms.list({ limit: 250 }),
+        listAllFarmCards(),
         base44.farms.cropVarieties().catch(() => []),
         base44.entities.DailyActivity.listAll("-activity_date"),
         base44.entities.FarmBlock.listAll(),
       ]);
-      setFarms((response || []).map((farm) => ({ ...farm, task_log: taskLogProfile({ ...farm, blocks: blocks.filter((block) => String(block.farm_id) === String(farm.id)) }, records, { start: `${new Date().getFullYear()}-01-01`, end: new Date().toISOString().slice(0, 10) }) })));
+      const end = new Date().toISOString().slice(0, 10);
+      const start = end.slice(0, 4) + "-01-01";
+      setFarms(response.map((farm) => ({
+        ...farm,
+        task_log: taskLogProfile(farm, records, { start, end, blocks }),
+      })));
       setCatalogVarieties(varietyResponse || []);
     } catch (loadError) {
       setError(loadError.message || "Unable to load farms.");
@@ -175,19 +187,15 @@ export default function FarmsAdmin() {
     [catalogVarieties, farms],
   );
   const visibleFarms = useMemo(() => {
-    const query = search.trim().toLowerCase();
     return farms.filter((farm) => {
       if (status !== "all" && farm.status !== status) return false;
       const farmLocations = farmLocationOptions([farm]);
       if (location !== "all" && !farmLocations.some((item) => item.toLowerCase() === location.toLowerCase())) return false;
       const farmVarieties = farmVarietyOptions([farm]);
       if (variety !== "all" && !farmVarieties.some((item) => item.toLowerCase() === variety.toLowerCase())) return false;
-      if (!query) return true;
-      return [farm.name, farm.farm_code, ...farmLocations]
-        .filter(Boolean)
-        .some((item) => String(item).toLowerCase().includes(query));
+      return true;
     });
-  }, [farms, location, search, status, variety]);
+  }, [farms, location, status, variety]);
   const createFarm = async (payload) => {
     setSaving(true);
     try {
@@ -231,17 +239,7 @@ export default function FarmsAdmin() {
           className="min-w-0 flex-1 rounded-xl border bg-card p-3 shadow-sm"
           aria-label="Farm filters"
         >
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(12rem,1fr)_8rem_9rem_9rem]">
-            <div className="relative min-w-0 sm:col-span-2 lg:col-span-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search farms, codes, or locations"
-                className="h-10 pl-9"
-                aria-label="Search farms"
-              />
-            </div>
+          <div className="grid gap-3 sm:grid-cols-3">
             <Select value={status} onValueChange={setStatus}>
               <SelectTrigger className="h-10 w-full" aria-label="Filter by status">
                 <SelectValue />
@@ -286,7 +284,7 @@ export default function FarmsAdmin() {
       </div>
 
       {loading ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {[1, 2, 3, 4, 5, 6].map((item) => (
             <FarmSkeleton key={item} />
           ))}
@@ -325,7 +323,7 @@ export default function FarmsAdmin() {
       ) : null}
 
       {!loading && !error && visibleFarms.length ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {visibleFarms.map((farm) => {
             const nextHarvest = farm.next_harvest;
             const palette = paletteForFarm(farm);
@@ -338,10 +336,10 @@ export default function FarmsAdmin() {
             return (
               <article
                 key={farm.id}
-                className="group overflow-hidden rounded-xl border bg-card shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md"
+                className="group flex min-w-0 flex-col overflow-hidden rounded-xl border bg-card shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md"
               >
                 <div className={`h-1 ${palette.accent}`} />
-                <div className="px-4 pb-3 pt-4">
+                <div className="flex flex-1 flex-col px-4 pb-3 pt-4">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex min-w-0 items-center gap-3">
                       <div className={`grid h-11 w-11 shrink-0 place-items-center rounded-full ${palette.icon}`}>
@@ -380,18 +378,16 @@ export default function FarmsAdmin() {
                       ) : null}
                     </div>
                   </div>
-                  <div className="mt-3 grid grid-cols-[0.85fr_0.95fr_0.85fr_1.35fr] divide-x border-y py-2">
+                  <div className="mt-3 grid grid-cols-[repeat(3,minmax(0,1fr))_minmax(0,1.4fr)] divide-x border-y py-2">
                     <FarmMetric icon={LandPlot} label="Area" value={cardNumber(farm.size_acres)} detail="acres" palette={palette} />
                     <FarmMetric icon={Grid2X2} label="Blocks" value={cardNumber(farm.active_block_count, 0)} detail="active" palette={palette} />
                     <FarmMetric icon={Trees} label="Trees" value={cardNumber(farm.total_trees, 0)} detail="trees" palette={palette} />
                     <FarmMetric icon={CalendarDays} label="Harvest" value={harvestName} detail={harvestPeriod} palette={palette} />
                   </div>
-                  <dl className="mt-3 grid grid-cols-3 gap-2 text-caption" aria-label="Daily Task Log actual totals">
-                    <div><dt>Actual Cost</dt><dd className="mt-1 font-semibold">{formatCurrency(farm.task_log.totalCost)}</dd></div>
-                    <div><dt>Actual Revenue</dt><dd className="mt-1 font-semibold">{formatCurrency(farm.task_log.totalRevenue)}</dd></div>
-                    <div><dt>Actual Yield</dt><dd className="mt-1 font-semibold">{formatNumber(farm.task_log.totalYieldKg)} Kg</dd></div>
-                  </dl>
-                  <div className={`mt-3 rounded-lg p-3 ${palette.panel}`}>
+                  <div className="mt-3">
+                    <TaskLogMetrics model={farm.task_log} compact />
+                  </div>
+                  <div className={`my-3 rounded-lg p-3 ${palette.panel}`}>
                     <div className="flex items-start gap-2.5">
                       <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full bg-background/70 ${palette.metric}`}>
                         <CalendarDays className="h-4 w-4" />
@@ -400,13 +396,13 @@ export default function FarmsAdmin() {
                         <p className="truncate text-caption font-semibold">
                           {nextHarvest ? `${harvestName} scheduled` : "No harvest scheduled"}
                         </p>
-                        <p className="mt-1 truncate text-caption text-muted-foreground">
-                          {nextHarvest ? harvestPeriod : "Add a harvest season from the production calendar"}
-                        </p>
+                        {nextHarvest ? (
+                          <p className="mt-1 truncate text-caption text-muted-foreground">{harvestPeriod}</p>
+                        ) : null}
                       </div>
                     </div>
                   </div>
-                  <div className="mt-3 flex items-center justify-between border-t pt-3">
+                  <div className="mt-auto flex flex-wrap items-center justify-between gap-2 border-t pt-3">
                     {canManageBlocks(user?.role) && farm.status === "active" ? (
                       <Button variant="ghost" size="sm" className="px-1 text-caption" asChild>
                         <Link to={`/admin/farm-daily-activities/activities/farms/${farm.id}?action=add-block`}>

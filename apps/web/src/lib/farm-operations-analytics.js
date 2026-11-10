@@ -124,7 +124,7 @@ export function buildFarmOperationsAnalytics(
       value: activityCost(activity),
       costCategory: normalizeCostType(activity.cost_type),
     }))
-    .filter((activity) => activity.value > 0);
+    .filter((activity) => activity.value !== 0);
 
   return {
     activities,

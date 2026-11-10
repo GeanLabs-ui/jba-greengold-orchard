@@ -1,3 +1,5 @@
+import { aggregateChartPeriods } from './analytics-periods';
+
 const FARM_WRITE_ROLES = new Set(['super_admin', 'admin', 'farm_manager']);
 const BLOCK_WRITE_ROLES = new Set(['super_admin', 'admin', 'farm_manager', 'farm_supervisor']);
 const BLOCK_STATUS_ROLES = new Set(['super_admin', 'admin', 'farm_manager']);
@@ -24,32 +26,14 @@ export const humanize = (value) => String(value || '')
   .replace(/_/g, ' ')
   .replace(/\b\w/g, (character) => character.toUpperCase());
 
-const startOfUtcWeek = (date) => {
-  const day = date.getUTCDay() || 7;
-  const result = new Date(date);
-  result.setUTCDate(result.getUTCDate() - day + 1);
-  return result;
-};
-
-const periodKey = (dateValue, granularity) => {
-  const date = new Date(`${dateValue}T00:00:00Z`);
-  if (granularity === 'yearly') return `${date.getUTCFullYear()}-01-01`;
-  if (granularity === 'monthly') return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}-01`;
-  if (granularity === 'weekly') return startOfUtcWeek(date).toISOString().slice(0, 10);
-  return date.toISOString().slice(0, 10);
-};
-
 export function groupYieldRecords(records = [], granularity = 'monthly') {
-  const groups = new Map();
-  for (const record of records) {
-    if (!record?.record_date) continue;
-    const key = periodKey(record.record_date, granularity);
-    const current = groups.get(key) || { date: key, actual: 0, forecast: 0 };
-    current.actual += Number(record.actual_yield_kg || 0);
-    current.forecast += Number(record.forecast_yield_kg || 0);
-    groups.set(key, current);
-  }
-  return [...groups.values()].sort((left, right) => left.date.localeCompare(right.date));
+  return aggregateChartPeriods(records.map(record => ({
+    date: record.record_date,
+    actual: record.actual_yield_kg,
+    forecast: record.forecast_yield_kg,
+  })), granularity, ['actual', 'forecast']).map(({ key, actual, forecast }) => ({
+    date: key, actual, forecast,
+  }));
 }
 
 export function farmLocationOptions(farms = []) {

@@ -2,7 +2,7 @@ import { activityCost, activityRevenue, activityYieldKg, parseRecordDate } from 
 
 const emptyPeriod = (label) => ({ label, cost: 0, revenue: 0, yieldKg: 0, profit: 0, records: 0 });
 const addActivity = (period, activity) => {
-  period.cost += Math.max(0, activityCost(activity));
+  period.cost += activityCost(activity);
   period.revenue += activityRevenue(activity);
   period.yieldKg += activityYieldKg(activity);
   period.profit = period.revenue - period.cost;
@@ -14,19 +14,18 @@ export function buildFarmPerformanceTrends(activities, selectedYear, currentYear
     activity,
     date: parseRecordDate(activity.activity_date) || parseRecordDate(activity.created_date),
   })).filter(({ date }) => date);
-  // Keep the orchard's starting year permanently and extend into the future.
-  const firstYear = 2026;
-  const lastYear = dated.reduce((latest, { date }) => Math.max(latest, date.getFullYear()), Math.max(2030, currentYear));
-  const yearly = Array.from({ length: lastYear - firstYear + 1 }, (_, index) => emptyPeriod(String(firstYear + index)));
+  const years = [...new Set([currentYear, Number(selectedYear), ...dated.map(({ date }) => date.getFullYear())])]
+    .filter(Number.isFinite).sort((a, b) => a - b);
+  const yearly = years.map(year => emptyPeriod(String(year)));
+  const byYear = new Map(yearly.map(period => [Number(period.label), period]));
   const monthly = Array.from({ length: 12 }, (_, month) => emptyPeriod(new Date(2000, month, 1).toLocaleString('en-US', { month: 'short' })));
   dated.forEach(({ activity, date }) => {
-    const yearIndex = date.getFullYear() - firstYear;
-    if (yearIndex >= 0 && yearIndex < yearly.length) addActivity(yearly[yearIndex], activity);
+    addActivity(byYear.get(date.getFullYear()), activity);
     if (date.getFullYear() === Number(selectedYear)) addActivity(monthly[date.getMonth()], activity);
   });
-  // Future periods are not zero-valued actual results or forecasts.
-  yearly.forEach((period) => {
-    if (Number(period.label) > currentYear && !period.records) {
+  // A period with no rows is a gap. A logged zero remains a measurement.
+  [...yearly, ...monthly].forEach((period) => {
+    if (!period.records) {
       Object.assign(period, { cost: null, revenue: null, yieldKg: null, profit: null });
     }
   });

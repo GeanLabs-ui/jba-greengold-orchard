@@ -1,0 +1,22 @@
+.admin-scroll-content:has(.farm-profile-page),
+.admin-scroll-content:has(.farm-profile-page) .farm-activities-sticky-nav nav,
+.farm-profile-page :is(.analytics-plot-scroll, .task-log-records > div) {
+  scrollbar-width: none;
+}
+
+.farm-profile-page .task-log-records {
+  margin-bottom: 0;
+}
+
+@media (max-width: 767px) {
+  .admin-shell .admin-scroll-content:has(.farm-profile-page) {
+    padding-bottom: calc(4.5rem + env(safe-area-inset-bottom));
+    scroll-padding-bottom: calc(4.5rem + env(safe-area-inset-bottom));
+  }
+}
+
+@media (min-width: 768px) {
+  .admin-scroll-content:has(.farm-profile-page) {
+    padding-bottom: 0;
+  }
+}

@@ -115,7 +115,7 @@ describe('orchard reference dashboard', () => {
     ] };
     const dashboard = buildOrchardDashboard(data, 2026);
     const analytics = buildFarmOperationsAnalytics(data);
-    expect(dashboard.expenseTotal).toBe(130);
+    expect(dashboard.expenseTotal).toBe(120);
     expect(dashboard.expenseTotal).toBe(analytics.totalCost);
     expect(dashboard.expenses).toEqual(buildCostTypeBreakdown(analytics.costRows));
     expect(dashboard.expenses.map(({ name }) => name)).toEqual(['Administration', 'Materials', 'Labor', 'Tools', 'Transportation', 'Food/Ent', 'Others']);
@@ -141,6 +141,17 @@ describe('orchard reference dashboard', () => {
     expect(groupPerformance(result.months, 'Quarterly', 2026)[0]).toEqual({ name: 'Q1', revenue: 100, cost: 20, profit: 80 });
     expect(groupPerformance(result.months, 'Yearly', 2026)).toEqual([{ name: '2026', revenue: 100, cost: 20, profit: 80 }]);
   });
+  it('extends yearly business performance as records arrive in new years', () => {
+    const result = buildOrchardDashboard({
+      orders: [{ order_date: '2027-02-01', total_amount: 800_000 }],
+      dailyActivities: [{ activity_date: '2026-11-01', actual_cost: 100 }],
+    }, 2027);
+    expect(result.yearlyPerformance).toEqual([
+      { name: '2026', revenue: null, cost: 100, profit: -100 },
+      { name: '2027', revenue: 800_000, cost: null, profit: 800_000 },
+    ]);
+    expect(groupPerformance(result.months.slice(0, 4), 'Quarterly', 2027).map(row => row.name)).toEqual(['Q1', 'Q2']);
+  });
   it('keeps shared output unallocated and never counts a block record twice', () => {
     const result = buildOrchardDashboard({ farms: [{ id: 'a', name: 'Farm A' }, { id: 'b', name: 'Farm B' }], blocks: [{ id: 'a1', farm_id: 'a', mango_variety: 'Keitt' }], dailyActivities: [
       { activity_date: '2026-01-01', block_id: 'a1', farm_id: 'b', output_quantity_kg: 1200 },
@@ -149,11 +160,11 @@ describe('orchard reference dashboard', () => {
     expect(result.production.map((row) => row.yieldKg)).toEqual([1200, 0]);
     expect(result.blocks[0].actual_yield_kg).toBe(1200);
     expect(result.unallocated).toBe(400);
-    expect(result.varieties).toEqual([{ name: 'Keitt', value: 1200 }, { name: 'Unclassified', value: 400 }]);
+    expect(result.varieties).toEqual([{ name: 'Kent', value: 0 }, { name: 'Keitt', value: 1200 }, { name: 'Others', value: 400 }]);
     expect(result.forecast).toBe(0);
   });
   it('keeps empty workspaces empty and only includes future open tasks', () => {
-    expect(buildOrchardDashboard({}, 2026)).toMatchObject({ revenue: 0, harvested: 0, tasks: [], varieties: [], production: [] });
+    expect(buildOrchardDashboard({}, 2026)).toMatchObject({ revenue: 0, harvested: 0, tasks: [], varieties: [{ value: 0 }, { value: 0 }, { value: 0 }], production: [] });
     const result = buildOrchardDashboard({ dailyActivities: [
       { id: 'old', activity_date: '2026-01-01', status: 'pending' },
       { id: 'done', activity_date: '2026-10-01', status: 'completed' },
@@ -170,11 +181,31 @@ describe('orchard reference dashboard', () => {
       { activity_date: '2026-01-01', block_name: 'A1 & B1', shared_scope: 'A1 & B1', output_quantity_kg: 500 },
       { activity_date: '2026-01-01', block_name: 'B1', output_quantity_kg: 2000 },
     ] }, 2026);
-    expect(result.varietyNames).toEqual(['Keitt', 'Kent']);
+    expect(result.varietyNames).toEqual(['Kent', 'Others']);
     expect(result.blocks[0].area_acres).toBe(12);
     expect(result.production.map((row) => row.yieldKg)).toEqual([1000, 2000]);
     expect(result.unallocated).toBe(500);
-    expect(result.varieties).toEqual([{ name: 'Kent', value: 2000 }, { name: 'Unclassified', value: 1500 }]);
+    expect(result.varieties).toEqual([{ name: 'Kent', value: 2000 }, { name: 'Keitt', value: 0 }, { name: 'Others', value: 1500 }]);
+  });
+  it('counts each log once and keeps shared yield out of the individual block rows', () => {
+    const date = { activity_date: '2026-10-01' };
+    const keitt = { ...date, id: 'k', block_id: 'a1', mango_variety: 'Ketit', output_quantity_kg: 20 };
+    const result = buildOrchardDashboard({
+      farms: [{ id: 'a', name: 'Farm A' }, { id: 'b', name: 'Farm B' }],
+      blocks: [{ id: 'a1', farm_id: 'a', block_code: 'A1', variety: 'Kent' }, { id: 'b1', farm_id: 'b', block_code: 'B1' }],
+      dailyActivities: [
+        keitt, { ...keitt },
+        { ...date, id: 'b', block_id: 'b1', mango_variety: 'kent', output_quantity_kg: 5 },
+        { ...date, id: 'shared', shared_scope: 'A1, B1', mango_variety: 'Palmer', output_quantity_kg: 7 },
+      ],
+    }, 2026);
+    expect(result.harvested).toBe(32);
+    expect(result.varieties).toEqual([{ name: 'Kent', value: 5 }, { name: 'Keitt', value: 20 }, { name: 'Others', value: 7 }]);
+    expect(result.varietyBreakdown.map(group => group.scopes.map(scope => scope.values))).toEqual([
+      [{ Kent: 0, Keitt: 20, Others: 0 }],
+      [{ Kent: 5, Keitt: 0, Others: 0 }],
+      [{ Kent: 0, Keitt: 0, Others: 7 }],
+    ]);
   });
   it('does not duplicate calendar-linked tasks or invent a farm for unassigned tasks', () => {
     const result = buildOrchardDashboard({

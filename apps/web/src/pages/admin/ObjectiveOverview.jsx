@@ -1,3 +1,4 @@
+import { numericChartAxis } from '@/lib/analytics-chart-scale';
 import React from 'react';
 import { BarChart3, CalendarDays, CheckCircle2, CircleAlert, FileText, Lightbulb, MessageSquareText, Sprout, Target, Trophy, UserRound } from 'lucide-react';
 import { previewActivity, previewContributions, previewFeedback } from './objective-preview';
@@ -38,5 +39,5 @@ function PreviewTrend() {
     {name:'Quality Grade A',color:'#9736ff',values:[8,15,17,20,28,34,38,45,49,76,64,73]}
   ];
   const data = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].map((month,i)=>Object.fromEntries([['month',month],...series.map(s=>[s.name,s.values[i]])]));
-  return <div style={{height:185,width:'100%',marginTop:12}}><ResponsiveContainer width="100%" height="100%"><LineChart data={data} margin={{top:8,right:8,left:-22,bottom:0}}><CartesianGrid stroke="#edf0f3"/><XAxis dataKey="month" tick={{fontSize:8}} tickLine={false}/><YAxis allowDataOverflow domain={[0,100]} ticks={[0,20,40,60,80,100]} tick={{fontSize:8}} tickFormatter={v=>`${v}%`} tickLine={false}/><Tooltip formatter={v=>`${v}%`}/><Legend iconType="circle" iconSize={7} wrapperStyle={{fontSize:8}}/>{series.map(s=><Line key={s.name} type="linear" dataKey={s.name} stroke={s.color} strokeWidth={1.5} dot={{r:2}} />)}</LineChart></ResponsiveContainer></div>;
+  return <div style={{height:185,width:'100%',marginTop:12}}><ResponsiveContainer width="100%" height="100%"><LineChart data={data} margin={{top:8,right:8,left:-22,bottom:0}}><CartesianGrid stroke="#edf0f3"/><XAxis dataKey="month" tick={{fontSize:8}} tickLine={false}/><YAxis allowDataOverflow {...numericChartAxis(data, series.map(item => item.name))} tick={{fontSize:8}} tickFormatter={v=>`${v}%`} tickLine={false}/><Tooltip formatter={v=>`${v}%`}/><Legend iconType="circle" iconSize={7} wrapperStyle={{fontSize:8}}/>{series.map(s=><Line key={s.name} type="linear" dataKey={s.name} stroke={s.color} strokeWidth={1.5} dot={{r:2}} />)}</LineChart></ResponsiveContainer></div>;
 }
