@@ -394,11 +394,20 @@ const files = {
     formData.append('file', file);
     return request('/product-images', { method: 'POST', body: formData });
   },
-  upload(file, recordId) {
+  async upload(file, recordId, { issueAttachment = false } = {}) {
     const formData = new FormData();
-    formData.append("file", file);
+    let upload = file;
+    if (issueAttachment && file.size > 5 * 1024 * 1024 && typeof CompressionStream === 'function') {
+      const compressed = await new Response(file.stream().pipeThrough(new CompressionStream('gzip'))).blob();
+      if (compressed.size <= file.size / 2) {
+        upload = new File([compressed], file.name, { type: file.type });
+        formData.set('compression', 'gzip');
+        formData.set('originalSize', String(file.size));
+      }
+    }
+    formData.append("file", upload);
     formData.append("recordId", recordId);
-    return request("/files", { method: "POST", body: formData });
+    return request(issueAttachment ? "/files/issue-attachments" : "/files", { method: "POST", body: formData });
   },
 };
 

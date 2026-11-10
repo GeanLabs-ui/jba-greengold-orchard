@@ -1,3 +1,4 @@
+import { formatChartValue, numericChartAxis } from '@/lib/analytics-chart-scale';
 import { FARM_SCOPE_OPTIONS } from '@/lib/farm-scope';
 import AdminActionButton from '@/components/admin/AdminActionButton';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -33,7 +34,7 @@ const initialMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padS
 const initialYear = String(today.getFullYear());
 
 const dateValue = (record, fields) => fields.map((field) => record?.[field]).find(Boolean);
-const compactCedis = (value) => value >= 1_000_000 ? `₵${Math.round(value / 1_000_000)}M` : value >= 1_000 ? `₵${Math.round(value / 1_000)}K` : `₵${Math.round(value)}`;
+const compactCedis = (value) => formatChartValue(value, 'GHS', { compact: true });
 
 const chartWindow = (selection, sales, expenses) => {
   if (selection.mode === 'month' && selection.month) {
@@ -53,7 +54,7 @@ const chartWindow = (selection, sales, expenses) => {
   const start = customStart || (recordDates.length ? new Date(Math.min(...recordDates)) : today);
   const end = customEnd || (recordDates.length ? new Date(Math.max(...recordDates)) : today);
   const span = ((end.getFullYear() - start.getFullYear()) * 12) + end.getMonth() - start.getMonth() + 1;
-  return { anchor: end, months: Math.min(24, Math.max(1, span)) };
+  return { anchor: end, months: Math.max(1, span) };
 };
 
 export default function Finance() {
@@ -263,21 +264,21 @@ export default function Finance() {
         <MetricCard title="Total Revenue" value={formatCurrency(totalSales)} icon={TrendingUp} color="blue" subtitle="From website sales" />
         <MetricCard title="Total Expenses" value={formatCurrency(totalExpenses)} icon={TrendingDown} color="red" subtitle="From Daily Activity costs" />
         <MetricCard title="Outstanding" value={formatCurrency(outstanding)} icon={Wallet} color="amber" subtitle="Unpaid website invoices" />
-        <MetricCard title="Net Profit" value={formatCurrency(netProfit)} icon={Banknote} color={netProfit >= 0 ? 'green' : 'red'} subtitle="Revenue − Expenses" />
+        <MetricCard title={netProfit < 0 ? "Net Loss" : "Net Profit"} value={formatCurrency(Math.abs(netProfit))} icon={Banknote} color={netProfit >= 0 ? 'green' : 'red'} subtitle="Revenue − Expenses" />
       </div>
 
       <div className="mt-6 rounded-xl border border-border bg-card p-5 shadow-sm">
         <h3 className="text-card-title">Website Sales vs Daily Activity Expenses (₵)</h3>
-        <ResponsiveContainer width="100%" height={280} className="mt-4">
+        {monthlyData.some(row => row.sales != null || row.expenses != null) ? <ResponsiveContainer width="100%" height={280} className="mt-4">
           <BarChart data={monthlyData}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-            <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize="var(--text-caption)" />
-            <YAxis allowDataOverflow domain={[0, 'auto']} allowDecimals={false} stroke="hsl(var(--muted-foreground))" fontSize="var(--text-caption)" tickFormatter={compactCedis} />
-            <Tooltip contentStyle={{ borderRadius: '0.75rem', border: '1px solid hsl(var(--border))' }} formatter={(value) => formatCurrency(value)} />
+            <XAxis dataKey="month" interval="preserveStartEnd" minTickGap={16} stroke="hsl(var(--muted-foreground))" fontSize="var(--text-caption)" />
+            <YAxis allowDataOverflow {...numericChartAxis(monthlyData, ['sales', 'expenses'])} allowDecimals={false} stroke="hsl(var(--muted-foreground))" fontSize="var(--text-caption)" tickFormatter={compactCedis} />
+            <Tooltip contentStyle={{ borderRadius: '0.75rem', border: '1px solid hsl(var(--border))' }} formatter={(value) => formatChartValue(value, 'GHS')} />
             <Bar dataKey="expenses" name="Activity expenses" fill="#355e3b" radius={[4, 4, 0, 0]} />
             <Bar dataKey="sales" name="Website revenue" fill="#2e7d32" radius={[4, 4, 0, 0]} />
           </BarChart>
-        </ResponsiveContainer>
+        </ResponsiveContainer> : <p role="status" className="py-8 text-sm text-muted-foreground">No sales or expenses recorded for this selection.</p>}
       </div>
 
       <section className="mt-6">

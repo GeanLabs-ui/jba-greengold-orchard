@@ -227,6 +227,7 @@ export default function AdminCreateDialog({
                   {dailyField('block_id')}
                   {dailyField('category')}
                   {dailyField('cost_type')}
+                  {dailyField('mango_variety')}
                   {values.block_id === '__shared__' && dailyField('shared_scope')}
                 </div>
               </DailySection>

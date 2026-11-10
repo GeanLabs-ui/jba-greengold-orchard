@@ -1,15 +1,27 @@
-import { activityYieldKg, buildFarmOperationsAnalytics } from './farm-operations-analytics';
+import { activityCost, activityRevenue, activityYieldKg } from './farm-operations-analytics';
+import { matchesFarmScope } from './farm-scope';
+
+export function taskLogTotals(activities) {
+  return activities.reduce((totals, row) => {
+    totals.totalCost += activityCost(row);
+    totals.totalRevenue += activityRevenue(row);
+    totals.totalYieldKg += activityYieldKg(row);
+    return totals;
+  }, { totalCost: 0, totalRevenue: 0, totalYieldKg: 0 });
+}
 
 // Relational APIs supply physical farm metadata. Operational results come only
 // from the same DailyActivity records used by the Daily Task Log.
-export function taskLogProfile(farm, dailyActivities, { start, end, blockId = 'all' } = {}) {
-  const model = buildFarmOperationsAnalytics({ farms: [farm], blocks: farm.blocks || [], dailyActivities }, {
-    farmId: farm.id, blockId, start: start ? new Date(`${start}T00:00:00Z`) : null,
-    end: end ? new Date(`${end}T23:59:59.999Z`) : null,
-  });
-  const activities = model.activities.slice().sort((a, b) => String(b.activity_date || b.created_date || '').localeCompare(String(a.activity_date || a.created_date || '')));
-  const yieldRecords = activities.map((row) => ({ id: row.id, record_date: row.activity_date || String(row.created_date || '').slice(0, 10), actual_yield_kg: activityYieldKg(row), forecast_yield_kg: 0 }));
-  return { ...model, activities, yieldRecords };
+export function taskLogProfile(farm, dailyActivities, { start, end, blockId = 'all', blocks = farm.blocks || [] } = {}) {
+  const structure = { farms: [farm], blocks };
+  const scope = blockId === 'all' ? `farm:${farm.id}` : `block:${blockId}`;
+  const dateKey = (row) => String(row.activity_date || row.created_date || '').slice(0, 10);
+  const activities = dailyActivities.filter((row) => (
+    (!start || dateKey(row) >= start) && (!end || (dateKey(row) && dateKey(row) <= end))
+    && matchesFarmScope(row, scope, structure)
+  )).sort((a, b) => dateKey(b).localeCompare(dateKey(a)));
+  const yieldRecords = activities.map((row) => ({ id: row.id, record_date: row.activity_date || String(row.created_date || '').slice(0, 10), actual_yield_kg: activityYieldKg(row), forecast_yield_kg: row.projected_output_kg ?? row.forecast_yield_kg ?? null }));
+  return { ...taskLogTotals(activities), activities, yieldRecords };
 }
 
 export function farmWithTaskLog(farm, dailyActivities, period) {

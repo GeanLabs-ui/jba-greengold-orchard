@@ -1,6 +1,11 @@
-import { FARM_SCOPE_OPTIONS, farmSelectOptions, blockSelectOptions, blockLabel, scopeLabel, matchesFarmScope, resolveOperationalScope, activityScopeValue } from '@/lib/farm-scope';
+import AnalyticsPie from '@/components/farm/AnalyticsPie';
+import { MANGO_VARIETIES, mangoVarietyBucket } from '@/lib/mango-varieties';
+import { formatChartValue, numericChartAxis } from '@/lib/analytics-chart-scale';
+import { BLOCK_CODES, FARM_SCOPE_OPTIONS, farmCode, farmSelectOptions, blockSelectOptions, blockLabel, scopeLabel, matchesFarmScope, resolveOperationalScope, activityScopeValue } from '@/lib/farm-scope';
 import { ACTIVITY_COST_TYPES, normalizeCostType } from '@/lib/activity-cost-types';
-import { activityYieldKg } from '@/lib/farm-operations-analytics';
+import { activityLogColumns, taskLogCell } from '@/components/farm/TaskLogRecords';
+import { taskLogTotals } from '@/lib/task-log-profile';
+import { activityCost, activityRevenue, activityYieldKg } from '@/lib/farm-operations-analytics';
 import AdminActionButton from '@/components/admin/AdminActionButton';
 import React, { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -44,9 +49,6 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
-  Cell,
-  Pie,
-  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -211,11 +213,12 @@ const hoursBetween = (startTime, endTime) => {
 
 const groupSum = (items, key, valueKey) => (
   Object.values(items.reduce((acc, item) => {
+    if (item[valueKey] == null || item[valueKey] === '' || !Number.isFinite(Number(item[valueKey]))) return acc;
     const group = item[key] || 'Unassigned';
     acc[group] = acc[group] || { name: group, value: 0 };
     acc[group].value += asNumber(item[valueKey]);
     return acc;
-  }, {}))
+  }, Object.create(null))).sort((left, right) => String(left.name).localeCompare(String(right.name), undefined, { numeric: true }))
 );
 
 const FieldGrid = ({ fields }) => (
@@ -463,32 +466,15 @@ const removedSectionPaths = [
   '/admin/farm-daily-activities/expenses',
 ];
 
-const activityLogColumns = [
-  { key: 'activity_date', label: 'Date', className: 'w-[92px]', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => formatDate(item.activity_date) },
-  { key: 'title', label: 'Task Description', className: 'w-[168px]', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => item.title || item.activity_title || item.description },
-  { key: 'status', label: 'Status', className: 'w-[96px]', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]' },
-  { key: 'category', label: 'Activity Type', className: 'w-[110px]', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => item.category },
-  { key: 'item_tag', label: 'Item Tag', className: 'w-[92px]', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => item.item_tag || item.input_name || item.equipment_used },
-  { key: 'quantity', label: 'Quantity', className: 'w-[72px] text-center', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => formatNumber(item.quantity_used ?? item.harvest_quantity ?? item.crates_used) },
-  { key: 'responsible', label: 'Responsible', className: 'w-[116px]', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => item.responsible || item.assigned_workers || item.supervisor_name },
-  { key: 'contact', label: 'Contact', className: 'w-[92px]', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => item.contact },
-  { key: 'block_name', label: 'Farm Block', className: 'w-[102px]', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => blockLabel(item) },
-  { key: 'actual_cost', label: 'Actual Cost', className: 'w-[96px] text-center', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => <span className="font-semibold text-[#2e7d32]">{formatCurrency(item.actual_cost ?? item.cost)}</span> },
-  { key: 'revenue', label: 'Actual Revenue', className: 'w-[84px] text-center', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => <span className="font-semibold text-[#2e7d32]">{formatCurrency(item.actual_revenue ?? item.revenue)}</span> },
-  { key: 'output_quantity_kg', label: 'Actual Yield (Kg)', className: 'w-[104px] text-center', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => <span className="font-semibold text-[#2e7d32]">{formatNumber(activityYieldKg(item))} Kg</span> },
-  { key: 'cost_type', label: 'Type of Cost', className: 'w-[86px] text-center', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => item.cost_type ? normalizeCostType(item.cost_type) : '—' },
-  { key: 'notes', label: 'Notes', className: 'w-[170px]', headerClassName: 'bg-[#f4fbf5] text-[#2e7d32]', render: (item) => item.notes },
-];
-
 const activityStatusFilterOptions = ['All', 'Completed', 'Pending', 'In Progress', 'Not recorded'];
 const activityTypeFilterOptions = ['All', ...activityCategories];
-const farmBlockFilterOptions = FARM_SCOPE_OPTIONS;
 
 const DailyActivityLog = ({
   items,
   statusFilter,
   onStatusFilterChange,
   farmBlockFilter,
+  farmBlockFilterOptions,
   onFarmBlockFilterChange,
   activityTypeFilter,
   onActivityTypeFilterChange,
@@ -546,9 +532,7 @@ const DailyActivityLog = ({
   const pageStart = (safePage - 1) * rowsPerPage;
   const pageItems = visibleItems.slice(pageStart, pageStart + rowsPerPage);
   const selectedItem = visibleItems.find((item, index) => rowId(item, index) === selectedId) || null;
-  const totalActualCost = visibleItems.reduce((sum, item) => sum + asNumber(item.actual_cost ?? item.cost), 0);
-  const totalActualRevenue = visibleItems.reduce((sum, item) => sum + asNumber(item.actual_revenue ?? item.revenue), 0);
-  const totalOutput = visibleItems.reduce((sum, item) => sum + activityYieldKg(item), 0);
+  const { totalCost: totalActualCost, totalRevenue: totalActualRevenue, totalYieldKg: totalOutput } = taskLogTotals(visibleItems);
   const completedCount = visibleItems.filter((item) => String(item.status || '').toLowerCase() === 'completed').length;
   const completedPercent = visibleItems.length ? Math.round((completedCount / visibleItems.length) * 100) : 0;
   const displayValue = (value) => (value === null || value === undefined || value === '' ? '—' : value);
@@ -601,8 +585,8 @@ const DailyActivityLog = ({
       { label: 'Responsible', width: 70, value: (item) => item.responsible || item.assigned_workers || item.supervisor_name },
       { label: 'Contact', width: 65, value: (item) => item.contact },
       { label: 'Farm Block', width: 56, value: (item) => blockLabel(item) },
-      { label: 'Actual Cost', width: 63, value: (item) => item.actual_cost ?? item.cost },
-      { label: 'Actual Revenue', width: 65, value: (item) => item.actual_revenue ?? item.revenue },
+      { label: 'Actual Cost', width: 63, value: (item) => activityCost(item) },
+      { label: 'Actual Revenue', width: 65, value: (item) => activityRevenue(item) },
       { label: 'Actual Yield (Kg)', width: 66, value: (item) => `${formatNumber(activityYieldKg(item))} Kg` },
       { label: 'Type of Cost', width: 55, value: (item) => item.cost_type ? normalizeCostType(item.cost_type) : '—' },
       { label: 'Notes', width: 105, value: (item) => item.notes },
@@ -777,14 +761,15 @@ const DailyActivityLog = ({
         <div className="px-0 pt-4 md:pl-6 md:pt-0 xl:border-r xl:border-slate-200 xl:pr-6">
           <p className="mb-1 font-semibold text-[#256b2a]">Financials</p>
           {[
-            ['Actual Cost', formatCurrency(item.actual_cost ?? item.cost)],
-            ['Actual Revenue', formatCurrency(item.actual_revenue ?? item.revenue)],
+            ['Actual Cost', formatCurrency(activityCost(item))],
+            ['Actual Revenue', formatCurrency(activityRevenue(item))],
           ].map(([label, value]) => <p key={label} className="grid grid-cols-[132px_1fr] gap-3"><span className={label.includes('Revenue') ? 'text-blue-600' : 'text-rose-600'}>{label}</span><span className={label.includes('Revenue') ? 'font-semibold text-blue-600' : 'font-semibold text-rose-600'}>{value}</span></p>)}
         </div>
         <div className="px-0 pt-4 md:pr-6 xl:border-r xl:border-slate-200 xl:pl-6 xl:pt-0">
           <p className="mb-1 font-semibold text-[#256b2a]">Production</p>
           {[
             ['Actual Yield', `${formatNumber(activityYieldKg(item))} Kg`],
+            ['Mango Variety', item.mango_variety || item.variety],
             ['Farm Block', blockLabel(item)],
             ['Main Farm', item.farm_name],
           ].map(([label, value]) => <p key={label} className="grid grid-cols-[132px_1fr] gap-3"><span className={label === 'Harvest / Output' ? 'text-emerald-700' : 'text-slate-600'}>{label}</span><span className={label === 'Harvest / Output' ? 'font-semibold text-emerald-700' : ''}>{displayValue(value)}</span></p>)}
@@ -906,7 +891,7 @@ const DailyActivityLog = ({
           return <article key={itemId} className="mobile-record">
             <div className="flex flex-wrap items-center justify-between gap-2 text-xs"><span>{formatDate(item.activity_date)}</span><span className="rounded bg-muted px-2 py-1">{item.status || 'Pending'}</span></div>
             <h3 className="mt-2 text-base font-semibold">{item.description || item.title || item.category || 'Activity'}</h3>
-            <dl className="mobile-record-fields mt-3"><div><dt>Farm / block</dt><dd>{scopeLabel(item.farm_name) || '—'} · {blockLabel(item) || '—'}</dd></div><div><dt>Actual cost</dt><dd className="text-rose-600">{formatCurrency(item.actual_cost ?? item.cost)}</dd></div><div><dt>Actual revenue</dt><dd className="text-blue-600">{formatCurrency(item.actual_revenue ?? item.revenue)}</dd></div></dl>
+            <dl className="mobile-record-fields mt-3"><div><dt>Farm / block</dt><dd>{scopeLabel(item.farm_name) || '—'} · {blockLabel(item) || '—'}</dd></div><div><dt>Actual cost</dt><dd className="text-rose-600">{formatCurrency(activityCost(item))}</dd></div><div><dt>Actual revenue</dt><dd className="text-blue-600">{formatCurrency(activityRevenue(item))}</dd></div></dl>
             <button type="button" className="mt-2 min-h-11 font-semibold text-primary" aria-expanded={selectedId === itemId} onClick={() => selectedId === itemId ? closeDetails() : pinDetails(itemId)}>{selectedId === itemId ? 'Hide details' : 'View activity details'}</button>
             {selectedId === itemId && renderActivityDetails(item, itemId)}
           </article>;
@@ -959,15 +944,10 @@ const DailyActivityLog = ({
                 className={`h-16 cursor-pointer transition-colors hover:bg-[#f9fcfa] ${isSelected ? 'bg-[#f4fbf5]' : 'bg-white'}`}
               >
                 {activityLogColumns.map((column) => {
-                  const value = column.key === 'status' ? (
-                    <span className="inline-flex rounded-sm bg-[#e8f5e9] px-2 py-0.5 text-caption font-medium text-[#256b2a]">
-                      {item.status || 'Pending'}
-                    </span>
-                  ) : column.render ? column.render(item) : item[column.key];
                   return (
                     <td key={column.key} className={`h-16 border border-slate-200 px-3 py-2 align-middle ${column.className || ''}`}>
                       <span className="block max-h-10 overflow-hidden break-words leading-5 [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]">
-                        {value || '—'}
+                        {taskLogCell(item, column)}
                       </span>
                     </td>
                   );
@@ -2095,6 +2075,7 @@ export default function FarmDailyActivities() {
     { name: 'actual_cost', label: 'Actual Cost (₵)', type: 'number', defaultValue: 0 },
     { name: 'actual_revenue', label: 'Actual Revenue (₵)', type: 'number', defaultValue: 0 },
     { name: 'output_quantity_kg', label: 'Actual Yield (Kg)', type: 'number', defaultValue: 0, step: 1 },
+    { name: 'mango_variety', label: 'Mango Variety', type: 'select', options: selectOptions(MANGO_VARIETIES) },
     { name: 'cost_type', label: 'Type of Cost', type: 'select', options: selectOptions(activityCostTypes), defaultValue: 'Labor', required: true },
     { name: 'category', label: 'Farm Task Type', type: 'select', options: selectOptions(activityCategories), defaultValue: 'Land Clearing', required: true },
     { name: 'notes', label: 'Notes', type: 'textarea', wide: true },
@@ -2506,7 +2487,7 @@ export default function FarmDailyActivities() {
       buttonIcon={Pencil}
       actionIcon="edit"
       fields={fields}
-      initialValues={record && fields.some((field) => field.name === 'shared_scope') ? { ...record, output_quantity_kg: activityYieldKg(record), cost_type: normalizeCostType(record.cost_type), block_id: activityScopeValue(record), shared_scope: record.shared_scope || record.block_name || '' } : record || {}}
+      initialValues={record && fields.some((field) => field.name === 'shared_scope') ? { ...record, mango_variety: record.mango_variety || record.variety ? mangoVarietyBucket(record.mango_variety || record.variety) : '', output_quantity_kg: activityYieldKg(record), cost_type: normalizeCostType(record.cost_type), block_id: activityScopeValue(record), shared_scope: record.shared_scope || record.block_name || '' } : record || {}}
       formVariant={fields.some((field) => field.name === 'shared_scope') ? 'daily-activity-log' : undefined}
       onSubmit={(payload) => onSubmit(record, payload)}
       onCreated={load}
@@ -2684,28 +2665,36 @@ export default function FarmDailyActivities() {
     </Panel>
   );
 
-  const renderChartPanel = (title, chartData, type = 'bar') => (
+  const renderChartPanel = (title, chartData, type = 'bar', unit = 'kg') => (
     <Panel title={title}>
-      <ResponsiveContainer width="100%" height={280}>
-        {type === 'pie' ? (
-          <PieChart>
-            <Pie data={chartData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} label>
-              {chartData.map((entry) => <Cell key={entry.name} fill={entry.color || '#6b8e23'} />)}
-            </Pie>
-            <Tooltip formatter={(value) => formatNumber(value)} />
-          </PieChart>
-        ) : (
+      {type === 'pie' ? <AnalyticsPie rows={chartData} title={title} unit={unit} /> : chartData.length ? (
+        <ResponsiveContainer width="100%" height={280}>
           <BarChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-            <XAxis dataKey="name" fontSize="var(--text-caption)" />
-            <YAxis allowDataOverflow domain={[0, 'auto']} allowDecimals={false} tickFormatter={formatNumber} fontSize="var(--text-caption)" />
-            <Tooltip formatter={(value) => formatNumber(value)} />
-            <Bar dataKey="value" fill="#6b8e23" radius={[4, 4, 0, 0]} />
+            <CartesianGrid vertical={false} strokeDasharray="3 4" stroke="hsl(var(--border))" />
+            <XAxis dataKey="name" interval="preserveStartEnd" minTickGap={16} fontSize="var(--text-caption)" />
+            <YAxis {...numericChartAxis(chartData, ['value'])} width={72} tickFormatter={(value) => formatChartValue(value, unit, { compact: true })} fontSize="var(--text-caption)" />
+            <Tooltip formatter={(value) => [formatChartValue(value, unit), title]} />
+            <Bar dataKey="value" fill="#16834e" radius={2} isAnimationActive={false} />
           </BarChart>
-        )}
-      </ResponsiveContainer>
+        </ResponsiveContainer>
+      ) : <p role="status" className="py-8 text-center text-sm text-muted-foreground">No recorded values for this selection.</p>}
     </Panel>
   );
+
+  const renderQuantityCharts = (title, rows, category, value) => {
+    const byUnit = new Map();
+    for (const row of rows) {
+      const unit = String(row.unit || '').trim().toLowerCase();
+      if (!unit) continue;
+      if (!byUnit.has(unit)) byUnit.set(unit, []);
+      byUnit.get(unit).push(row);
+    }
+    return byUnit.size
+      ? [...byUnit].map(([unit, records]) => <React.Fragment key={unit}>
+        {renderChartPanel(title + ' (' + unit + ')', groupSum(records, category, value), 'bar', unit)}
+      </React.Fragment>)
+      : <Panel title={title}><p className="py-8 text-center text-sm text-muted-foreground">No quantities with a recorded unit.</p></Panel>;
+  };
 
   const renderScreen = () => {
     if (loading) return <PageSkeleton variant={activeScreen === 'Operations Analytics Overview' ? 'analytics' : 'page'} />;
@@ -2782,6 +2771,15 @@ export default function FarmDailyActivities() {
             statusFilter={activityStatusFilter}
             onStatusFilterChange={setActivityStatusFilter}
             farmBlockFilter={activityFarmBlockFilter}
+            farmBlockFilterOptions={[
+              ...FARM_SCOPE_OPTIONS,
+              ...(data.farms || []).filter((farm) => !farmCode(farm)).map((farm) => ({
+                value: `farm:${farm.id}`, label: scopeLabel(farm.name),
+              })),
+              ...(data.blocks || []).filter((block) => !BLOCK_CODES.includes(blockLabel(block))).map((block) => ({
+                value: `block:${block.id}`, label: blockLabel(block),
+              })),
+            ]}
             onFarmBlockFilterChange={setActivityFarmBlockFilter}
             activityTypeFilter={activityTypeFilter}
             onActivityTypeFilterChange={setActivityTypeFilter}
@@ -3005,19 +3003,24 @@ export default function FarmDailyActivities() {
             {renderChartPanel('Harvest by Block', harvestByBlock)}
             {renderChartPanel('Harvest by Worker', harvestByWorker)}
             {renderChartPanel('Grade A vs Grade B vs Rejected', gradePie, 'pie')}
-            {renderChartPanel('Daily Labour Cost', groupSum(data.attendance || [], 'attendance_date', 'total_pay'))}
-            {renderChartPanel('Equipment Utilization', groupSum(data.equipmentUsage || [], 'equipment_name', 'hours_used'))}
-            {renderChartPanel('Fuel Consumption', groupSum(data.equipmentUsage || [], 'equipment_name', 'fuel_consumed'))}
-            {renderChartPanel('Chemical Usage', groupSum(inputUsage.filter((item) => item.input_type === 'Chemical'), 'input_name', 'quantity_used'))}
-            {renderChartPanel('Fertilizer Usage', groupSum(inputUsage.filter((item) => item.input_type === 'Fertilizer'), 'input_name', 'quantity_used'))}
-            {renderChartPanel('Waste Trend', groupSum(data.wasteLosses || [], 'loss_date', 'quantity'))}
-            {renderChartPanel('Farm Profitability', costByCategory)}
+            {renderChartPanel('Daily Labour Cost', groupSum(data.attendance || [], 'attendance_date', 'total_pay'), 'bar', 'GHS')}
+            {renderChartPanel('Equipment Utilization', groupSum(data.equipmentUsage || [], 'equipment_name', 'hours_used'), 'bar', 'hours')}
+            {renderChartPanel('Fuel Consumption', groupSum(data.equipmentUsage || [], 'equipment_name', 'fuel_consumed'), 'bar', 'L')}
+            {renderQuantityCharts('Chemical Usage', inputUsage.filter((item) => item.input_type === 'Chemical'), 'input_name', 'quantity_used')}
+            {renderQuantityCharts('Fertilizer Usage', inputUsage.filter((item) => item.input_type === 'Fertilizer'), 'input_name', 'quantity_used')}
+            {renderQuantityCharts('Waste Trend', data.wasteLosses || [], 'loss_date', 'quantity')}
+            {renderChartPanel('Expenses by Category', costByCategory, 'bar', 'GHS')}
             {renderChartPanel('Productivity per Worker', labourByWorker)}
-            {renderChartPanel('Cost per kg harvested', harvestByFarm.map((item) => ({
+            {renderChartPanel('Cost per kg harvested', harvestByFarm.filter((item) => item.value > 0).map((item) => ({
               ...item,
-              value: item.value ? Math.round((dailyFarmCost / item.value) * 100) / 100 : 0,
-            })))}
-            {renderChartPanel('Export-ready stock', [{ name: 'Export-ready stock', value: gradePie[0].value }])}
+              value: (data.dailyActivities || [])
+                .filter(row => {
+                  const farm = (data.farms || []).find(farm => scopeLabel(farm.name) === scopeLabel(item.name));
+                  return farm ? matchesFarmScope(row, 'farm:' + farm.id, { farms: data.farms, blocks: data.blocks }) : row.farm_name === item.name;
+                })
+                .reduce((sum, row) => sum + activityCost(row), 0) / item.value,
+            })), 'bar', 'GHS/kg')}
+            {renderChartPanel('Grade A Harvest', (data.harvestBatches || []).some(row => row.grade_a_kg != null && row.grade_a_kg !== '') ? [gradePie[0]] : [])}
           </div>
         );
       case 'Approval Dashboard':

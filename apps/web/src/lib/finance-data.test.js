@@ -28,8 +28,9 @@ describe('finance data sources', () => {
       { id: 'deleted', actual_cost: 500, status: 'deleted' },
     ]);
 
-    expect(rows).toHaveLength(1);
+    expect(rows).toHaveLength(2);
     expect(rows[0]).toMatchObject({ expense_number: 'DA-1', amount: 200, vendor_name: 'Team A', source_label: 'Daily Activity' });
+    expect(rows[1].amount).toBe(-20);
   });
 
   it('counts only valid website orders and website invoice balances', () => {
@@ -56,6 +57,7 @@ describe('finance data sources', () => {
     );
 
     expect(chart.at(-1)).toMatchObject({ month: 'Aug', sales: 700, expenses: 250 });
+    expect(chart[0]).toMatchObject({ sales: null, expenses: null });
   });
 
   it('filters Farm A as a parent of A1–A5 and supports individual blocks', () => {

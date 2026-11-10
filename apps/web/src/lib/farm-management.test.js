@@ -27,8 +27,8 @@ describe('farm management helpers', () => {
       { record_date: '2026-01-04', actual_yield_kg: 2 },
       { record_date: '2026-01-05', actual_yield_kg: 3 },
     ], 'weekly')).toEqual([
-      { date: '2025-12-29', actual: 2, forecast: 0 },
-      { date: '2026-01-05', actual: 3, forecast: 0 },
+      { date: '2025-12-29', actual: 2, forecast: null },
+      { date: '2026-01-05', actual: 3, forecast: null },
     ]);
   });
 
