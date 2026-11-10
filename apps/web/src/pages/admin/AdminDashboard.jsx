@@ -1,3 +1,5 @@
+import { formatChartValue, nonNegativeChartRows, numericChartAxis, positivePieSlices } from '@/lib/analytics-chart-scale';
+import { reportingMonths } from '@/lib/analytics-periods';
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BarChart3, Bug, ClipboardList, Clock3, Coins, Droplets, Globe2, House, Leaf, MapPin, PackageOpen, Plane, ReceiptText, Sprout, TrendingUp, Truck, Warehouse } from 'lucide-react';
@@ -10,15 +12,16 @@ import { dashboardSources, loadDashboardRecords } from '@/lib/dashboard-sources'
 import ExpenseBreakdownContent from '@/components/farm/ExpenseBreakdownContent';
 import CircleCediSign from '@/components/icons/CircleCediSign';
 import { DashboardExportContext } from '@/components/admin/DashboardExportContext';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import './orchard-dashboard.css';
 
 const sources = dashboardSources;
 const colors = ['#f59e0b', '#10b981', '#6960f5', '#38bdf8', '#aab0b7'];
 
-const number = (value) => new Intl.NumberFormat('en-GH', { maximumFractionDigits: 3 }).format(value);
-const money = (value) => `₵${new Intl.NumberFormat('en-GH', { maximumFractionDigits: 0 }).format(value)}`;
-const compact = (value) => `₵${new Intl.NumberFormat('en-GH', { maximumFractionDigits: 0 }).format(value)}`;
-const axisMoney = (value) => `₵${new Intl.NumberFormat('en-GH', { notation: 'compact', maximumFractionDigits: 1 }).format(value)}`;
+const number = (value) => new Intl.NumberFormat('en-GH', { maximumFractionDigits: 3 }).format(Math.max(0, value));
+const money = (value) => `₵${new Intl.NumberFormat('en-GH', { maximumFractionDigits: 0 }).format(Math.max(0, value))}`;
+const compact = (value) => `₵${new Intl.NumberFormat('en-GH', { maximumFractionDigits: 0 }).format(Math.max(0, value))}`;
+const axisMoney = (value) => `₵${new Intl.NumberFormat('en-GH', { notation: 'compact', maximumFractionDigits: 1 }).format(Math.max(0, value))}`;
 const pct = (value, total) => percentage(value, total) === null ? '—' : `${percentage(value, total)}%`;
 const farmPath = '/admin/farm-daily-activities/activities/farms';
 
@@ -29,8 +32,8 @@ function Metric({ title, value, icon: Icon, tone = 'green', children }) {
   return <section className="orchard-metric"><span className={`orchard-metric-icon ${tone}`}><Icon aria-hidden="true" /></span><div><h2>{title}</h2><strong>{value}</strong></div>{children}</section>;
 }
 function Donut({ rows, value, label, palette = colors, kicker }) {
-  const slices = rows.filter((row) => row.value > 0);
-  return <div className="orchard-donut" role="img" aria-label={`${label}: ${value}. ${slices.map((row) => `${row.name}: ${number(row.value)}`).join(', ')}`}><ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={slices.length ? slices : [{ name: 'No records', value: 1 }]} dataKey="value" nameKey="name" innerRadius="61%" outerRadius="96%" startAngle={90} endAngle={-270} stroke="#fff" strokeWidth={1} isAnimationActive={false}>{(slices.length ? slices : [{}]).map((row, index) => <Cell key={row.name || index} fill={slices.length ? palette[rows.indexOf(row) % palette.length] : '#e4ebef'} />)}</Pie>{slices.length > 0 && <Tooltip formatter={(amount, name) => [number(amount), name]} />}</PieChart></ResponsiveContainer><div className="orchard-donut-label">{kicker && <span className="orchard-donut-kicker">{kicker}</span>}<strong>{value}</strong><small>{label}</small></div></div>;
+  const slices = positivePieSlices(rows);
+  return <div className="orchard-donut" role="img" aria-label={`${label}: ${value}. ${slices.map((row) => `${row.name}: ${number(row.value)}`).join(', ')}`}>{slices.length ? <ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={slices} dataKey="value" nameKey="name" innerRadius="61%" outerRadius="96%" startAngle={90} endAngle={-270} stroke="#fff" strokeWidth={1} isAnimationActive={false}>{slices.map((row, index) => <Cell key={row.name || index} fill={palette[rows.indexOf(row) % palette.length]} />)}</Pie>{slices.length > 0 && <Tooltip formatter={(amount, name) => [number(amount), name]} />}</PieChart></ResponsiveContainer> : null}<div className="orchard-donut-label">{kicker && <span className="orchard-donut-kicker">{kicker}</span>}<strong>{value}</strong><small>{label}</small></div></div>;
 }
 function Legend({ rows, total, currency = false, palette = colors, percentageFormatter = pct }) {
   return <ul className="orchard-legend">{rows.map((row, index) => <li key={row.name}><i style={{ backgroundColor: palette[index % palette.length] }} /><div><span>{row.name}</span><strong>{percentageFormatter(row.value, total)}</strong><small>{currency ? money(row.value) : `${number(row.value)} Kg`}</small></div></li>)}{!rows.length && <li className="orchard-empty">No records yet</li>}</ul>;
@@ -51,6 +54,7 @@ export default function AdminDashboard() {
   const generation = useRef(0);
   const dashboardRef = useRef(null);
   const year = new Date().getFullYear();
+  const month = new Date().getMonth() + 1;
   const load = useCallback(async () => {
     const request = ++generation.current;
     setLoading(true);
@@ -71,7 +75,10 @@ export default function AdminDashboard() {
     return () => { generation.current += 1; clearTimeout(timer); clearInterval(interval); window.removeEventListener('focus', refreshVisible); unsubscribe(); };
   }, [load]);
   const model = useMemo(() => buildOrchardDashboard(data || {}, year), [data, year]);
-  const chart = useMemo(() => groupPerformance(model.months, period, year), [model, period, year]);
+  const performance = useMemo(() => period === 'Yearly' ? model.yearlyPerformance : groupPerformance(
+    reportingMonths(model.months, year, year, month, row => row.profit != null), period, year,
+  ), [model, period, year, month]);
+  const chart = useMemo(() => nonNegativeChartRows(performance, ['revenue', 'cost', 'profit']), [performance]);
   const exportPdf = useCallback(async () => {
     setExporting(true);
     try {
@@ -102,7 +109,7 @@ export default function AdminDashboard() {
         <div className="orchard-finance-summary">
         <Metric title="Total Revenue" value={money(model.revenue)} icon={Coins} />
         <Metric title="Total Cost" value={money(model.cost)} icon={ReceiptText} tone="red" />
-        <Metric title="Sales Balance" value={money(model.profit)} icon={BarChart3} />
+        <Metric title={model.profit < 0 ? "Sales Loss" : "Sales Balance"} value={money(Math.abs(model.profit))} icon={BarChart3} />
         </div>
         <Metric title="Sales Mix" value={<><em>{pct(model.sales[0].value, model.revenue)} Export</em></>} icon={Truck}><div className="orchard-sales-mix" aria-label="Sales mix">{model.revenue > 0 && model.sales.map((row, index) => <span key={row.name} title={`${row.name}: ${pct(row.value, model.revenue)}`} style={{ width: `${row.value / model.revenue * 100}%`, backgroundColor: colors[index] }} />)}</div></Metric>
       </div>
@@ -113,7 +120,7 @@ export default function AdminDashboard() {
       </div>
       <div className="orchard-analysis">
         <Panel title="Business Performance" icon={TrendingUp} className="orchard-business" action={<div className="orchard-tabs" aria-label="Performance period">{['Monthly', 'Quarterly', 'Yearly'].map((item) => <button key={item} type="button" aria-pressed={period === item} onClick={() => setPeriod(item)}>{item}</button>)}</div>}>
-          <div className="orchard-business-chart"><ResponsiveContainer width="100%" height="100%"><ComposedChart data={chart} margin={{ top: 8, right: 7, left: -14, bottom: 0 }}><CartesianGrid stroke="#e8edf0" vertical={false} /><XAxis dataKey="name" tick={{ fontSize: 10, fill: '#546174' }} axisLine={{ stroke: '#cbd5df' }} tickLine={false} interval={0} /><YAxis allowDataOverflow domain={[0, 'auto']} allowDecimals={false} tickFormatter={axisMoney} tick={{ fontSize: 10, fill: '#546174' }} axisLine={false} tickLine={false} width={62} /><Tooltip formatter={(value, label) => [money(value), readable(label)]} /><Bar name="Revenue" dataKey="revenue" fill="#27c397" maxBarSize={15} isAnimationActive={false} /><Bar name="Cost" dataKey="cost" fill="#fb7185" maxBarSize={15} isAnimationActive={false} /><Line name="Profit" dataKey="profit" stroke="#3266cc" strokeWidth={2} dot={{ r: 3, fill: '#3266cc', stroke: '#fff', strokeWidth: 1 }} isAnimationActive={false} /></ComposedChart></ResponsiveContainer></div><div className="orchard-chart-key"><span><i style={{ background: '#27c397' }} />Revenue (₵)</span><span><i style={{ background: '#fb7185' }} />Cost (₵)</span><span><i style={{ background: '#3266cc' }} />Profit (₵)</span></div>
+          <div className="orchard-business-chart">{chart.some(row => row.profit != null) ? <ResponsiveContainer width="100%" height="100%"><ComposedChart data={chart} margin={{ top: 8, right: 7, left: -14, bottom: 0 }}><CartesianGrid stroke="#e8edf0" vertical={false} /><XAxis dataKey="name" tick={{ fontSize: 10, fill: '#546174' }} axisLine={{ stroke: '#cbd5df' }} tickLine={false} interval="preserveStartEnd" minTickGap={12} /><YAxis allowDataOverflow {...numericChartAxis(chart, ['revenue', 'cost', 'profit'])} allowDecimals={false} tickFormatter={axisMoney} tick={{ fontSize: 10, fill: '#546174' }} axisLine={false} tickLine={false} width={62} /><Tooltip formatter={(value, label) => [formatChartValue(value, 'GHS'), readable(label)]} /><Bar name="Revenue" dataKey="revenue" fill="#27c397" maxBarSize={15} isAnimationActive={false} /><Bar name="Cost" dataKey="cost" fill="#fb7185" maxBarSize={15} isAnimationActive={false} /><Line name="Profit" dataKey="profit" stroke="#3266cc" strokeWidth={2} dot={{ r: 3, fill: '#3266cc', stroke: '#fff', strokeWidth: 1 }} isAnimationActive={false} /></ComposedChart></ResponsiveContainer> : <p className="orchard-empty">No recorded performance for this period.</p>}</div><div className="orchard-chart-key"><span><i style={{ background: '#27c397' }} />Revenue (₵)</span><span><i style={{ background: '#fb7185' }} />Cost (₵)</span><span><i style={{ background: '#3266cc' }} />Profit (₵)</span></div>
         </Panel>
         <Panel title="Sales Breakdown" icon={CircleCediSign} className="orchard-sales"><div className="orchard-split"><Donut rows={sales} value={compact(model.revenue)} label="Total Revenue" palette={salesPalette} /><Legend rows={sales} total={model.revenue} currency palette={salesPalette} /></div><div className="orchard-markets"><Globe2 /><div><strong>Export Markets</strong><span>{model.markets.join(' | ') || 'No export destinations recorded'}</span></div><Plane /></div></Panel>
         <Panel title="Expense Breakdown" icon={ReceiptText} className="orchard-expenses"><ExpenseBreakdownContent rows={model.expenses} farms={model.expenseFarms} /></Panel>
@@ -121,7 +128,44 @@ export default function AdminDashboard() {
       </div>
       <div className="orchard-production-row">
         <Panel title="Production Overview" icon={BarChart3} className="orchard-production"><div className="orchard-table-scroll"><table><thead><tr><th>Main Farm</th><th>Blocks</th><th>Total Production<br />(Kg)</th><th>Share</th><th>Status</th></tr></thead><tbody>{model.production.map((farm) => <tr key={farm.id}><td><Link to={`${farmPath}/${encodeURIComponent(farm.id)}`}>{farm.name}</Link><small>{farm.location || farm.region}</small></td><td>{farm.blocks.length}</td><td>{number(farm.yieldKg)}</td><td>{pct(farm.yieldKg, model.harvested)}</td><td><Status value={farm.status} /></td></tr>)}{model.unallocated > 0 && <tr><td>Unallocated output</td><td>—</td><td>{number(model.unallocated)}</td><td>{pct(model.unallocated, model.harvested)}</td><td>—</td></tr>}</tbody><tfoot><tr><td>Total</td><td>{model.blocks.length}</td><td>{number(model.harvested)}</td><td>{model.harvested > 0 ? '100%' : '—'}</td><td /></tr></tfoot></table></div></Panel>
-        <Panel title="Variety Distribution (All Blocks)" icon={Leaf} className="orchard-varieties" action={<span className="orchard-cultivars">🥭 {model.varietyNames.length} Cultivars</span>}><div className="orchard-variety-body"><Donut rows={model.varieties} value={`${number(model.harvested)} Kg`} label="Total Production" /><Legend rows={model.varieties} total={model.harvested} /></div><details className="orchard-variety-details"><summary>Variety Split by Farm Block</summary>{model.production.map(farm => <div key={farm.id}>{farm.name}: {farm.blocks.map(block => block.mango_variety || 'Unrecorded').join(', ')}</div>)}</details></Panel>
+        <Panel title="Variety Distribution (All Blocks)" icon={Leaf} className="orchard-varieties">
+          <div className="orchard-variety-body">
+            <Donut rows={model.varieties} value={number(model.harvested) + ' Kg'} label="Logged yield" />
+            <Legend rows={model.varieties} total={model.varieties.reduce((total, row) => total + Math.max(0, row.value), 0)} />
+          </div>
+          <Dialog>
+            <DialogTrigger asChild>
+              <button type="button" className="orchard-variety-trigger">Variety Split by Farm Block</button>
+            </DialogTrigger>
+            <DialogContent className="z-[80] max-h-[80dvh] w-[calc(100%-2rem)] max-w-2xl grid-rows-[auto_minmax(0,1fr)] rounded-xl p-4 sm:p-6">
+              <DialogHeader className="pr-8">
+                <DialogTitle>Variety Split by Farm Block</DialogTitle>
+                <DialogDescription>Yield from the Daily Task Log for {year}, grouped by farm and block.</DialogDescription>
+              </DialogHeader>
+              <div className="min-h-0 overflow-y-auto overscroll-contain" tabIndex={0} role="region" aria-label="Farm and block yield breakdown">
+                <div className="grid items-start gap-3 sm:grid-cols-2">
+                  {model.varietyBreakdown.map(farm => (
+                    <section key={farm.id} className="min-w-0 rounded-lg border border-emerald-100 bg-emerald-50/50 p-3 text-sm">
+                      <h3 className="font-semibold">{farm.name}</h3>
+                      {farm.scopes.length ? <ul className="mt-1 divide-y divide-emerald-100">
+                        {farm.scopes.map(scope => (
+                          <li key={scope.id} className="grid gap-0.5 py-1.5">
+                            <span className="font-medium">{scope.name}</span>
+                            {scope.values ? <span className="break-words tabular-nums">
+                              {model.varieties.filter(({ name }) => scope.values[name] !== 0)
+                                .map(({ name }) => name + ' ' + number(scope.values[name]) + ' Kg').join(' · ') || '0 Kg net yield'}
+                            </span> : <span className="text-muted-foreground">No logged yield</span>}
+                          </li>
+                        ))}
+                      </ul> : <p className="text-muted-foreground">No blocks or logged yield.</p>}
+                    </section>
+                  ))}
+                  {!model.varietyBreakdown.length && <p className="text-sm text-muted-foreground">No farm or block data.</p>}
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </Panel>
         <Panel title="Harvest & Sales" icon={Sprout} className="orchard-harvest"><div className="orchard-harvest-tiles"><div><PackageOpen /><span>Harvested<strong>{number(model.harvested)} <em>Kg</em></strong><small>{model.forecast > 0 ? `${pct(model.harvested, model.forecast)} of forecast` : 'Recorded output'}</small></span></div><div><Clock3 /><span>Remaining<strong>{model.forecast > 0 ? number(model.remaining) : '—'} <em>Kg</em></strong><small>{model.forecast > 0 ? `${pct(model.remaining, model.forecast)} of forecast` : 'No forecast recorded'}</small></span></div></div><Progress value={percentage(model.harvested, model.forecast)} label="Harvest progress" /><p>{number(model.harvested)} Kg harvested <span>|</span> {model.forecast > 0 ? `${number(model.remaining)} Kg remaining` : 'Forecast unavailable'}</p></Panel>
         <Panel title="Upcoming Farm Tasks" icon={ClipboardList} className="orchard-tasks" action={<Link to="/admin/calendar">View All</Link>}><div className="orchard-task-list">{model.tasks.slice(0, 3).map(task => <article key={task.id}><div><time>{new Date(task.date).toLocaleDateString('en', { month: 'short', day: '2-digit' })}</time><Status value={task.status || 'scheduled'} /></div><Link className="orchard-task-link" to={task.path}>{task.title}</Link><small>{task.scope}</small></article>)}{!model.tasks.length && <div className="orchard-empty">No upcoming farm tasks scheduled</div>}</div></Panel>
       </div>

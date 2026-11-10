@@ -1,3 +1,5 @@
+import AnalyticsPie from '@/components/farm/AnalyticsPie';
+import { numericChartAxis } from '@/lib/analytics-chart-scale';
 import AdminActionButton from '@/components/admin/AdminActionButton';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -5,7 +7,7 @@ import {
   Mail, Maximize2, MoreHorizontal, Network, Plus, ShieldCheck, UserPlus, UserRoundCog, Users,
 } from 'lucide-react';
 import {
-  Area, AreaChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
+  Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
 import PageHeader from '@/components/shared/PageHeader';
 import PageSkeleton from '@/components/shared/PageSkeleton';
@@ -158,8 +160,8 @@ function AttendanceTrendChart({ data, expanded = false }) {
       <AreaChart data={data} margin={{ top: 8, right: expanded ? 22 : 10, left: expanded ? 0 : -20, bottom: expanded && data.length > 12 ? 36 : 0 }}>
         <defs><linearGradient id={fillId} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#2e7d32" stopOpacity={0.18} /><stop offset="100%" stopColor="#2e7d32" stopOpacity={0.01} /></linearGradient></defs>
         <CartesianGrid stroke="#e8f5e9" vertical={false} />
-        <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 'var(--text-caption)', fill: '#5f7565' }} minTickGap={expanded ? 0 : 20} interval={expanded ? 0 : 'preserveStartEnd'} angle={expanded && data.length > 12 ? -35 : 0} textAnchor={expanded && data.length > 12 ? 'end' : 'middle'} />
-        <YAxis allowDataOverflow domain={[0, 'auto']} allowDecimals={false} axisLine={false} tickLine={false} tick={{ fontSize: 'var(--text-caption)', fill: '#5f7565' }} />
+        <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 'var(--text-caption)', fill: '#5f7565' }} minTickGap={16} interval="preserveStartEnd" angle={expanded && data.length > 12 ? -35 : 0} textAnchor={expanded && data.length > 12 ? 'end' : 'middle'} />
+        <YAxis allowDataOverflow {...numericChartAxis(data, ['present', 'late', 'absent', 'total'])} allowDecimals={false} axisLine={false} tickLine={false} tick={{ fontSize: 'var(--text-caption)', fill: '#5f7565' }} />
         <Tooltip contentStyle={{ borderColor: '#e8f5e9', borderRadius: 8, fontSize: 'var(--text-caption)' }} labelStyle={{ fontWeight: 600 }} />
         <Area type="monotone" dataKey="present" name="Present or late" stroke="#2e7d32" fill={`url(#${fillId})`} strokeWidth={2} dot={expanded || data.length === 1 ? { r: 2.5, fill: '#2e7d32' } : false} activeDot={{ r: 4 }} />
       </AreaChart>
@@ -415,9 +417,8 @@ function AttendanceDashboard({ attendance, employees, departments }) {
         </AttendancePanel>
 
         <AttendancePanel title="Attendance by Status">
-          <div className="grid min-h-64 items-center gap-2 p-4 sm:grid-cols-[minmax(140px,1fr)_minmax(130px,0.9fr)] xl:grid-cols-1 2xl:grid-cols-[minmax(140px,1fr)_minmax(130px,0.9fr)]">
-            <div className="h-44"><ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={statusData} dataKey="value" nameKey="name" innerRadius={48} outerRadius={70} paddingAngle={filtered.length ? 1 : 0} stroke="none">{statusData.map((entry) => <Cell key={entry.key} fill={entry.value ? entry.color : '#e8f5e9'} />)}</Pie><Tooltip contentStyle={{ borderColor: '#e8f5e9', borderRadius: 8, fontSize: 'var(--text-caption)' }} /></PieChart></ResponsiveContainer></div>
-            <div className="space-y-3">{statusData.map((item) => <div key={item.key} className="flex items-center gap-2 text-xs"><span className="h-2 w-2 shrink-0 rounded-sm" style={{ backgroundColor: item.color }} /><span className="min-w-0 flex-1 truncate">{item.name}</span><strong className="tabular-nums">{item.value}</strong><span className="text-muted-foreground">({percent(item.value, filtered.length)}%)</span></div>)}</div>
+          <div className="p-4">
+            <AnalyticsPie rows={statusData} unit="records" title="Attendance distribution" />
           </div>
         </AttendancePanel>
       </div>
@@ -676,7 +677,7 @@ export default function HR() {
     setLoading(true);
     try {
       const [employeeRows, attendanceRows, departmentRows, staffUsers, staffInvites] = await Promise.all([
-        base44.entities.Employee.list('-created_date', 250), base44.entities.Attendance.list('-attendance_date', 250),
+        base44.entities.Employee.list('-created_date', 250), base44.entities.Attendance.listAll('-attendance_date'),
         base44.entities.Department.list('name', 250), canManage ? base44.staff.listUsers() : Promise.resolve({ users: [] }),
         canManage ? base44.staff.listInvitations() : Promise.resolve({ invitations: [] }),
       ]);

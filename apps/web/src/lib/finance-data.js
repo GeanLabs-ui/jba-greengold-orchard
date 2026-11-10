@@ -6,6 +6,7 @@ const asAmount = (value) => {
 const normalized = (value) => String(value || '').trim().toLowerCase();
 
 export { matchesFarmScope as matchesFarmSelection } from './farm-scope';
+import { aggregateChartPeriods } from './analytics-periods';
 
 export function matchesDateSelection(value, selection = {}) {
   const mode = selection.mode || 'all';
@@ -53,7 +54,7 @@ export function activityExpenseRows(activities = []) {
       amount: dailyActivityCost(activity),
       source_label: 'Daily Activity',
     }))
-    .filter((activity) => activity.amount > 0);
+    .filter((activity) => activity.amount !== 0);
 }
 
 export function websiteSales(orders = []) {
@@ -71,26 +72,17 @@ export function outstandingWebsiteInvoices(invoices = []) {
 }
 
 export function buildMonthlyFinanceData(sales = [], expenses = [], now = new Date(), monthCount = 6) {
+  const totals = new Map(aggregateChartPeriods([
+    ...sales.map(row => ({ date: row.order_date || row.created_date, sales: row.total_amount })),
+    ...expenses.map(row => ({ date: row.expense_date || row.created_date, expenses: row.amount })),
+  ], 'monthly', ['sales', 'expenses']).map(row => [row.key, row]));
   return Array.from({ length: monthCount }, (_, index) => {
-    const date = new Date(now);
-    date.setDate(1);
-    date.setHours(0, 0, 0, 0);
-    date.setMonth(date.getMonth() - (monthCount - 1 - index));
-    const inMonth = (value) => {
-      const current = new Date(value);
-      return !Number.isNaN(current.getTime())
-        && current.getFullYear() === date.getFullYear()
-        && current.getMonth() === date.getMonth();
-    };
-
+    const date = new Date(Date.UTC(now.getFullYear(), now.getMonth() - monthCount + 1 + index, 1));
+    const total = totals.get(date.toISOString().slice(0, 10));
     return {
-      month: date.toLocaleDateString('en-GH', { month: 'short' }),
-      sales: sales
-        .filter((sale) => inMonth(sale.order_date || sale.created_date))
-        .reduce((sum, sale) => sum + asAmount(sale.total_amount), 0),
-      expenses: expenses
-        .filter((expense) => inMonth(expense.expense_date || expense.created_date))
-        .reduce((sum, expense) => sum + asAmount(expense.amount), 0),
+      month: date.toLocaleDateString('en-GH', { month: 'short', timeZone: 'UTC' }),
+      sales: total?.sales ?? null,
+      expenses: total?.expenses ?? null,
     };
   });
 }

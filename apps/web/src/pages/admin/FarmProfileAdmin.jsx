@@ -1,7 +1,9 @@
+import AnalyticsPie from '@/components/farm/AnalyticsPie';
+import TaskLogRecords from '@/components/farm/TaskLogRecords';
 import TaskLogMetrics from '@/components/farm/TaskLogMetrics';
-import { farmWithTaskLog } from '@/lib/task-log-profile';
+import { farmWithTaskLog, taskLogProfile, taskLogTotals } from '@/lib/task-log-profile';
 import { subscribeToDataChanges } from '@/lib/data-sync';
-import { scopeLabel } from '@/lib/farm-scope';
+import { blockLabel, scopeLabel } from '@/lib/farm-scope';
 import AdminActionButton from '@/components/admin/AdminActionButton';
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
@@ -28,7 +30,9 @@ import {
   MergeBlocksDialog,
   StatusActionDialog,
 } from "@/components/farm/FarmManagementDialogs";
-import YieldChart from "@/components/farm/YieldChart";
+import FarmPerformanceTrends from "@/components/farm/FarmPerformanceTrends";
+import BlockPerformanceChart from "@/components/farm/BlockPerformanceChart";
+import "./farm-profile.css";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -141,8 +145,8 @@ function BlockStage({ icon: Icon, label, scheduled }) {
   );
 }
 
-function BlockOverviewCard({ block, activityPeriods }) {
-  const activities = activityPeriods.filter((period) => period.block_id === block.id);
+function BlockOverviewCard({ block, start, end }) {
+  const activities = block.activity_periods;
   const fertilizer = activities.some((period) => /fertili/i.test(period.category || period.activity_type));
   const flowering = activities.some((period) => /flower|induction/i.test(period.category || period.activity_type));
   const harvest = Boolean(blockHarvest(block));
@@ -150,7 +154,7 @@ function BlockOverviewCard({ block, activityPeriods }) {
   const completed = activities.filter((period) => String(period.status).toLowerCase() === "completed").length;
   return (
     <Link
-      to={`/admin/farm-daily-activities/activities/farms/${block.farm_id}/blocks/${block.id}`}
+      to={`/admin/farm-daily-activities/activities/farms/${block.farm_id}/blocks/${block.id}?${new URLSearchParams({ start, end })}`}
       className="group min-w-0 rounded-lg border border-slate-100 bg-white p-3 shadow-[0_2px_12px_rgba(15,23,42,0.03)] transition hover:-translate-y-0.5 hover:border-teal-300 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600"
     >
       <div className="mb-2 flex items-center justify-between">
@@ -172,7 +176,7 @@ function BlockOverviewCard({ block, activityPeriods }) {
         </div>
       </div>
       <div className="mt-2 border-t border-slate-100 pt-2 text-center text-caption font-medium text-slate-500">
-        {scheduled} / 3 planned&nbsp;&nbsp; • &nbsp;&nbsp;{completed} / 3 completed
+        {scheduled} / 3 planned&nbsp;&nbsp; • &nbsp;&nbsp;{completed} completed log entries
       </div>
     </Link>
   );
@@ -185,6 +189,7 @@ export default function FarmProfileAdmin() {
   const [farm, setFarm] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [trendYear, setTrendYear] = useState(null);
   const [start, setStart] = useState(currentYearStart());
   const [end, setEnd] = useState(today());
   const [farmDialog, setFarmDialog] = useState(false);
@@ -197,8 +202,15 @@ export default function FarmProfileAdmin() {
     setLoading(true);
     setError("");
     try {
-      const [profile, records] = await Promise.all([base44.farms.get(farmId, { start, end }), base44.entities.DailyActivity.listAll("-activity_date")]);
-      setFarm(farmWithTaskLog(profile, records, { start, end }));
+      const [profile, records, blocks] = await Promise.all([
+        base44.farms.get(farmId, { start, end }),
+        base44.entities.DailyActivity.listAll("-activity_date"),
+        base44.entities.FarmBlock.listAll(),
+      ]);
+      setFarm({
+        ...farmWithTaskLog(profile, records, { start, end, blocks }),
+        performanceActivities: taskLogProfile(profile, records, { blocks }).activities,
+      });
     } catch (loadError) {
       setError(loadError.message || "Unable to load this farm.");
     } finally {
@@ -315,7 +327,7 @@ export default function FarmProfileAdmin() {
       : "No data yet";
 
   return (
-    <div className="space-y-2.5 pb-10">
+    <div className="farm-profile-page space-y-2.5">
       <TaskLogMetrics model={farm.task_log} />
       <Button variant="ghost" asChild className="-ml-3 h-8 px-3 text-sm text-slate-600 hover:text-emerald-800">
         <Link to="/admin/farm-daily-activities/activities/farms">
@@ -329,99 +341,89 @@ export default function FarmProfileAdmin() {
         </div>
       ) : null}
 
-      <section className="overflow-hidden rounded-xl border border-emerald-900/10 bg-slate-50 shadow-sm lg:sticky lg:top-16 lg:z-30 lg:shadow-lg">
+      <section className="overflow-hidden rounded-xl border border-emerald-900/10 bg-slate-50 shadow-sm">
         <SectionBand title="Farm Summary" tone="green" />
         <div className="bg-gradient-to-r from-emerald-950 to-emerald-800 px-4 pb-4 text-white">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
-            <img
-              src={farmImageUrl}
-              alt={`${scopeLabel(farm.name)} farm`}
-              className="h-28 w-full rounded-lg border border-white/20 object-cover object-[70%_center] shadow-sm sm:w-60 lg:h-28 lg:w-60"
-            />
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
-                <h1 className="shrink-0 text-page-title">{scopeLabel(farm.name)}</h1>
-                <dl className="grid flex-1 grid-cols-2 gap-x-3 gap-y-2 text-caption sm:grid-cols-3">
-                  <div className="flex gap-1.5">
-                    <span className="text-lime-300"><Ruler className="h-4 w-4" /></span>
-                    <div><dt className="text-emerald-100/80">Declared area</dt><dd className="font-semibold">{farm.size_acres == null ? "No data yet" : `${formatNumber(farm.size_acres)} ac`}</dd></div>
-                  </div>
-                  <div className="flex gap-1.5">
-                    <span className="text-lime-300"><Trees className="h-4 w-4" /></span>
-                    <div><dt className="text-emerald-100/80">Current trees</dt><dd className="font-semibold">{analytics.inventoryRecordCount ? formatNumber(analytics.totalTrees, 0) : "No data yet"}</dd></div>
-                  </div>
-                  <div className="flex gap-1.5">
-                    <span className="text-lime-300"><TrendingUp className="h-4 w-4" /></span>
-                    <div><dt className="text-emerald-100/80">Yield in period</dt><dd className="font-semibold">{analytics.yieldRecordCount ? `${formatNumber(analytics.totalYieldKg)} Kg` : "No data yet"}</dd></div>
-                  </div>
-                </dl>
-              </div>
-              <div className="mt-2 flex flex-wrap items-center gap-2 text-caption text-emerald-100">
-                <button
-                  type="button"
-                  disabled={!canManageFarms(user?.role)}
-                  onClick={() => setStatusDialog(farm.status === "active" ? "deactivate" : "reactivate")}
-                  className="rounded-full bg-emerald-400/20 px-2.5 py-1 font-semibold text-emerald-200 disabled:cursor-default"
-                >
-                  <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-lime-400" />
-                  {humanize(farm.status)}
-                </button>
-                <span className="text-white/35">|</span>
-                <span>Updated {formatDate(farm.updated_at)}</span>
-              </div>
-              <dl className="mt-4 grid gap-x-6 gap-y-3 text-caption sm:grid-cols-4">
-                <div className="flex gap-2">
-                  <span className="text-amber-300"><Leaf className="h-5 w-5" /></span>
-                  <div><dt className="text-emerald-100/80">Mango variety</dt><dd className="mt-0.5 font-semibold">{blockVarieties.join(", ") || "Not recorded"}</dd></div>
-                </div>
-                <div className="flex gap-2">
-                  <span className="text-lime-300"><ShoppingBasket className="h-5 w-5" /></span>
-                  <div><dt className="text-emerald-100/80">Harvest type</dt><dd className="mt-0.5 font-semibold">{harvestTypes.map(humanize).join(", ") || "Not scheduled"}</dd></div>
-                </div>
-                <div className="flex gap-2">
-                  <span className="text-amber-300"><CalendarDays className="h-5 w-5" /></span>
-                  <div><dt className="text-emerald-100/80">Next harvest period</dt><dd className="mt-0.5 font-semibold">{periodLabel(nextHarvest)}</dd></div>
-                </div>
-                <div className="flex gap-2">
-                  <span className="text-emerald-200"><Grid2X2 className="h-5 w-5" /></span>
-                  <div><dt className="text-emerald-100/80">Active blocks</dt><dd className="mt-0.5 font-semibold">{activeBlocks.length}</dd></div>
-                </div>
-              </dl>
+          <div className="grid gap-4 md:grid-cols-[minmax(8rem,20%)_minmax(0,1fr)] lg:gap-5">
+            <div className="relative min-h-36 overflow-hidden rounded-lg border border-white/20 shadow-sm">
+              <img
+                src={farmImageUrl}
+                alt={scopeLabel(farm.name)}
+                className="absolute inset-0 h-full w-full object-cover object-[70%_center]"
+              />
             </div>
-            <div className="flex shrink-0 items-center gap-2 self-start">
-              {canManageBlocks(user?.role) && farm.status === "active" ? (
-                <Button size="sm" onClick={() => setBlockDialog(true)} className="border border-lime-400/40 bg-emerald-900 text-white hover:bg-emerald-800">
-                  <Plus className="mr-1.5 h-3.5 w-3.5" />Add block
-                </Button>
-              ) : null}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button size="icon" variant="secondary" className="h-9 w-9 bg-white text-slate-800 hover:bg-slate-100" aria-label="More farm actions">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {canManageFarms(user?.role) ? (
-                    <AdminActionButton action="edit" as={DropdownMenuItem} onClick={() => setFarmDialog(true)} label="Edit farm" />
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
+                <div className="min-w-0">
+                  <h1 className="break-words text-page-title">{scopeLabel(farm.name)}</h1>
+                  <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-caption text-emerald-50">
+                    <button
+                      type="button"
+                      disabled={!canManageFarms(user?.role)}
+                      onClick={() => setStatusDialog(farm.status === "active" ? "deactivate" : "reactivate")}
+                      className="rounded-full bg-emerald-400/20 px-2.5 py-1 font-semibold text-emerald-50 disabled:cursor-default"
+                    >
+                      <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-lime-400" />
+                      {humanize(farm.status)}
+                    </button>
+                    <span>Updated {formatDate(farm.updated_at)}</span>
+                  </div>
+                </div>
+                <div className="flex shrink-0 items-stretch gap-2">
+                  {canManageBlocks(user?.role) && farm.status === "active" ? (
+                    <Button size="sm" onClick={() => setBlockDialog(true)} className="border border-lime-400/40 bg-emerald-900 text-white hover:bg-emerald-800">
+                      <Plus className="mr-1.5 h-3.5 w-3.5" />Add block
+                    </Button>
                   ) : null}
-                  <DropdownMenuItem asChild>
-                    <Link to="/admin/farm-daily-activities/activities/farms"><ArrowLeft className="mr-2 h-4 w-4" />All farms</Link>
-                  </DropdownMenuItem>
-                  {canMergeBlocks(user?.role) && activeBlocks.length > 1 ? (
-                    <DropdownMenuItem onClick={() => setMergeDialog(true)}><Merge className="mr-2 h-4 w-4" />Merge blocks</DropdownMenuItem>
-                  ) : null}
-                  {canManageFarms(user?.role) ? (
-                    <><DropdownMenuSeparator /><DropdownMenuItem className={farm.status === "active" ? "text-destructive" : ""} onClick={() => setStatusDialog(farm.status === "active" ? "deactivate" : "reactivate")}>{farm.status === "active" ? "Deactivate farm" : "Reactivate farm"}</DropdownMenuItem></>
-                  ) : null}
-                </DropdownMenuContent>
-              </DropdownMenu>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button size="icon" variant="secondary" className="!h-auto !w-12 min-h-12 bg-white text-slate-800 hover:bg-slate-100" aria-label="More farm actions">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      {canManageFarms(user?.role) ? (
+                        <AdminActionButton action="edit" as={DropdownMenuItem} onClick={() => setFarmDialog(true)} label="Edit farm" />
+                      ) : null}
+                      <DropdownMenuItem asChild>
+                        <Link to="/admin/farm-daily-activities/activities/farms"><ArrowLeft className="mr-2 h-4 w-4" />All farms</Link>
+                      </DropdownMenuItem>
+                      {canMergeBlocks(user?.role) && activeBlocks.length > 1 ? (
+                        <DropdownMenuItem onClick={() => setMergeDialog(true)}><Merge className="mr-2 h-4 w-4" />Merge blocks</DropdownMenuItem>
+                      ) : null}
+                      {canManageFarms(user?.role) ? (
+                        <><DropdownMenuSeparator /><DropdownMenuItem className={farm.status === "active" ? "text-destructive" : ""} onClick={() => setStatusDialog(farm.status === "active" ? "deactivate" : "reactivate")}>{farm.status === "active" ? "Deactivate farm" : "Reactivate farm"}</DropdownMenuItem></>
+                      ) : null}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </div>
+              <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-white/20 pt-3 lg:grid-cols-4">
+                {[
+                  { icon: Ruler, label: "Declared area", value: farm.size_acres == null ? "No data yet" : formatNumber(farm.size_acres) + " ac" },
+                  { icon: Trees, label: "Current trees", value: analytics.inventoryRecordCount ? formatNumber(analytics.totalTrees, 0) : "No data yet" },
+                  { icon: TrendingUp, label: "Yield in period", value: analytics.yieldRecordCount ? formatNumber(analytics.totalYieldKg) + " Kg" : "No data yet" },
+                  { icon: Grid2X2, label: "Active blocks", value: activeBlocks.length },
+                  { icon: Leaf, label: "Mango variety", value: blockVarieties.join(", ") || "Not recorded" },
+                  { icon: ShoppingBasket, label: "Harvest type", value: harvestTypes.map(humanize).join(", ") || "Not scheduled" },
+                  { icon: CalendarDays, label: "Next harvest period", value: periodLabel(nextHarvest) },
+                ].map(({ icon: Icon, label, value }) => (
+                  <div key={label} className="flex min-w-0 items-start gap-2">
+                    <Icon aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-lime-200" />
+                    <div className="min-w-0">
+                      <dt className="text-caption leading-5 text-emerald-50">{label}</dt>
+                      <dd className="break-words text-sm font-semibold leading-5 tabular-nums text-white">{value}</dd>
+                    </div>
+                  </div>
+                ))}
+              </dl>
             </div>
           </div>
         </div>
       </section>
 
       <section className="overflow-hidden rounded-xl border border-amber-100 bg-amber-50/40 shadow-sm">
-        <SectionBand number="1" title="Season Readiness" subtitle="Farm and block windows at a glance for faster planning" tone="gold">
+        <SectionBand number="1" title="Season Readiness" tone="gold">
           <div className="flex items-center gap-2">
             <select value={start.slice(0, 4)} onChange={(event) => setStart(`${event.target.value}-01-01`)} className="h-7 rounded-md border-0 bg-white px-3 text-caption font-semibold text-slate-700 outline-none">
               {[new Date().getFullYear() - 1, new Date().getFullYear(), new Date().getFullYear() + 1].map((year) => <option key={year}>{year}</option>)}
@@ -443,7 +445,7 @@ export default function FarmProfileAdmin() {
           <span className="text-caption font-medium text-white/85">{activeBlocks.length} blocks total</span>
         </SectionBand>
         <div className="grid gap-3 p-3 sm:grid-cols-2 lg:grid-cols-5">
-          {activeBlocks.map((block) => <BlockOverviewCard key={block.id} block={block} activityPeriods={activityPeriods} />)}
+          {activeBlocks.map((block) => <BlockOverviewCard key={block.id} block={block} start={start} end={end} />)}
           {!activeBlocks.length ? (
             <div className="col-span-full rounded-lg border border-dashed border-teal-200 bg-white p-8 text-center text-sm text-slate-500">No active blocks have been added to this farm yet.</div>
           ) : null}
@@ -451,27 +453,40 @@ export default function FarmProfileAdmin() {
       </section>
 
       <section className="overflow-hidden rounded-xl border border-blue-100 bg-blue-50/30 shadow-sm">
-        <SectionBand number="3" title="Production Overview" subtitle="Yield and allocation for the selected reporting period." tone="blue">
+        <SectionBand number="3" title="Production Overview" subtitle="Farm performance and land allocation." tone="blue">
           <div className="flex flex-wrap items-center gap-2 text-caption text-white/85">
             <span className="font-medium">Reporting period</span>
-            <label className="rounded-md bg-white/10 px-2 py-1 text-label"><span className="sr-only">Start date</span><input type="date" value={start} onChange={(event) => setStart(event.target.value)} className="bg-transparent text-white outline-none [color-scheme:dark]" /></label>
+            <label className="relative rounded-md bg-white/10 px-2 py-1 text-label"><span className="sr-only">Start date</span><input type="date" value={start} onChange={(event) => setStart(event.target.value)} className="bg-transparent text-white outline-none [color-scheme:dark]" /></label>
             <span>–</span>
-            <label className="rounded-md bg-white/10 px-2 py-1 text-label"><span className="sr-only">End date</span><input type="date" value={end} onChange={(event) => setEnd(event.target.value)} className="bg-transparent text-white outline-none [color-scheme:dark]" /></label>
+            <label className="relative rounded-md bg-white/10 px-2 py-1 text-label"><span className="sr-only">End date</span><input type="date" value={end} onChange={(event) => setEnd(event.target.value)} className="bg-transparent text-white outline-none [color-scheme:dark]" /></label>
           </div>
         </SectionBand>
-        <div className="grid gap-3 p-3 lg:grid-cols-[1.7fr_1fr]">
-          <article className="min-h-60 rounded-lg border border-slate-100 bg-white p-3 shadow-[0_2px_12px_rgba(15,23,42,0.03)]">
-            <div className="flex items-start justify-between gap-3"><div><h3 className="text-slate-800 text-card-title">Farm yield trend</h3><p className="mt-0.5 text-caption text-slate-500">Actual and forecast harvest weight in kilograms.</p></div><span className="rounded-md border px-2 py-1 text-caption font-medium text-slate-600">Monthly</span></div>
-            {farm.yield_records?.length ? (
-              <div className="mt-3"><YieldChart records={farm.yield_records} title="" /></div>
-            ) : (
-              <div className="grid min-h-36 place-items-center text-center"><div><span className="mx-auto grid h-10 w-10 place-items-center rounded-lg bg-blue-50 text-blue-400"><TrendingUp className="h-5 w-5" /></span><p className="mt-2 text-caption font-semibold text-slate-700">No yield data for this period</p><p className="mt-1 text-caption text-slate-500">Yield entered in the Daily Task Log appears here for the selected period.</p></div></div>
-            )}
-          </article>
+        <div className="grid min-w-0 items-start gap-3 p-3 lg:grid-cols-[minmax(0,2fr)_minmax(15rem,1fr)]">
+          <FarmPerformanceTrends
+            key={farm.id}
+            activities={farm.performanceActivities}
+            profileScope={scopeLabel(farm.name)}
+            year={trendYear}
+            onYearChange={setTrendYear}
+            blockChart={<BlockPerformanceChart rows={activeBlocks.filter(block => block.activity_periods.length > 0).map((block) => {
+              const { totalCost, totalRevenue, totalYieldKg } = taskLogTotals(block.activity_periods);
+              return {
+                id: block.id,
+                blockLabel: blockLabel(block),
+                farmName: scopeLabel(farm.name),
+                cost: totalCost,
+                revenue: totalRevenue,
+                yieldKg: totalYieldKg,
+              };
+            })} />}
+          />
           <article className="min-h-60 rounded-lg border border-slate-100 bg-white p-4 shadow-[0_2px_12px_rgba(15,23,42,0.03)]">
             <h3 className="text-slate-800 text-card-title">Land allocation</h3>
             <div className="mt-1 flex items-end justify-between"><p className="font-heading text-3xl font-bold text-blue-700">{formatNumber(analytics.allocationPercent || 0, 0)}%</p><Sprout className="h-7 w-7 text-teal-600" /></div>
-            <Progress value={Math.min(100, analytics.allocationPercent || 0)} className="mt-3 h-1.5 bg-slate-100" />
+            <AnalyticsPie title="Land allocation" unit="acres" rows={unallocated == null ? [] : [
+              { name: "Allocated", value: analytics.totalAllocatedSizeAcres, color: "#16834e" },
+              { name: "Unallocated", value: unallocated, color: "#94a3b8" },
+            ]} emptyMessage="No land area recorded for this farm." />
             <dl className="mt-5 grid grid-cols-2 gap-x-4 gap-y-5 text-caption">
               <div><dt className="text-slate-500">Allocated</dt><dd className="mt-1 font-semibold text-slate-700">{formatNumber(analytics.totalAllocatedSizeAcres || 0)} ac</dd></div>
               <div><dt className="text-slate-500">Unallocated</dt><dd className="mt-1 font-semibold text-slate-700">{unallocated == null ? "No data yet" : `${formatNumber(unallocated)} ac`}</dd></div>
@@ -481,6 +496,8 @@ export default function FarmProfileAdmin() {
           </article>
         </div>
       </section>
+
+      <TaskLogRecords activities={activityPeriods} />
 
       <FarmFormDialog
         open={farmDialog}

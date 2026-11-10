@@ -62,8 +62,8 @@
 .orchard-legend{list-style:none;padding:0;margin:0;display:flex;justify-content:center;flex-wrap:wrap;gap:5px}.orchard-legend li{display:flex;align-items:center;gap:4px;font-size:10px}.orchard-legend i{width:7px;height:7px;border-radius:50%}.orchard-legend span{font-size:10px}.orchard-legend strong{font-size:10px;margin-left:3px}.orchard-legend small{display:none}.orchard-empty{color:#8b9db7;font-size:12px;text-align:center;padding:8px}
 .orchard-markets{border-top:1px solid #f1f5f9;margin-top:auto;padding-top:15px;display:flex;align-items:center;gap:6px;font-size:10px;color:#71839e;min-width:0}.orchard-markets svg{width:15px;flex-shrink:0}.orchard-markets svg:last-child{display:none}.orchard-markets>div{min-width:0;display:flex;gap:3px}.orchard-markets strong{font-weight:400}.orchard-markets span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .orchard-expenses .orchard-panel-heading svg{background:#fff0f4;color:#ef4776}.orchard-expenses .orchard-donut{height:165px}.orchard-expenses .orchard-donut-label strong{font-size:12px;line-height:16px}.orchard-expenses .orchard-donut-label small{font-size:8px;text-transform:none}.orchard-percentage-key{display:flex;justify-content:center;gap:5px;margin:9px 0}.orchard-percentage-key span{font-size:10px;background:#f4f7fc;border-radius:4px;padding:3px 6px;font-weight:600}
-.orchard-expense-farms,.orchard-variety-details{margin-top:auto;background:#f5fef9;border:1px solid #d1fae5;border-radius:8px;color:#087a60;font-size:12px}
-.orchard-expense-farms summary,.orchard-variety-details summary{list-style:none;text-align:center;cursor:pointer;padding:6px}.orchard-expense-farms summary:before,.orchard-variety-details summary:before{content:'›';margin-right:8px;font-size:18px;line-height:12px}.orchard-expense-farms[open],.orchard-variety-details[open]{overflow:auto;max-height:100px}.orchard-expense-farms>div,.orchard-variety-details>div{padding:5px;font-size:10px;display:flex;justify-content:space-between;gap:5px}.orchard-expense-farms svg{display:none}
+.orchard-expense-farms{margin-top:auto;background:#f5fef9;border:1px solid #d1fae5;border-radius:8px;color:#087a60;font-size:12px}
+.orchard-expense-farms summary{list-style:none;text-align:center;cursor:pointer;padding:6px}.orchard-expense-farms summary:before{content:'›';margin-right:8px;font-size:18px;line-height:12px}.orchard-expense-farms[open]{overflow:auto;max-height:100px}.orchard-expense-farms>div{padding:5px;font-size:10px;display:flex;justify-content:space-between;gap:5px}.orchard-expense-farms svg{display:none}
 .orchard-health .orchard-panel-heading h2{white-space:nowrap;font-size:13px}.orchard-health-rows{flex:1;display:flex;flex-direction:column;gap:12px}.orchard-health-row{display:grid;grid-template-columns:14px 1fr 10px;gap:5px;font-size:12px;color:#61718a;align-items:center}.orchard-health-row>svg{width:13px;height:13px}.orchard-health-row strong{font-weight:400;color:#8b9db7}.orchard-progress{background:#f0f4f8;border-radius:10px;overflow:hidden;height:7px}.orchard-progress>span{display:block;height:100%}.orchard-health-row .orchard-progress{grid-column:1/-1;height:7px}.orchard-health-note{border-top:1px solid #f1f5f9;padding-top:10px;font-size:11px;color:#91a2bb;text-align:center;margin-top:18px!important}
 .orchard-production-row{display:grid;grid-template-columns:1.36fr 1fr .64fr 1fr;gap:22px;margin-top:22px}.orchard-production-row>.orchard-panel{height:311px;display:flex;flex-direction:column}
 .orchard-table-scroll{overflow:auto;min-width:0}.orchard-dashboard table{width:100%;border-collapse:collapse;font-size:12px;line-height:16px;color:#475569}.orchard-dashboard th{font-size:11px;font-weight:500;color:#71839e;padding:10px 0;text-align:left;border-bottom:1px solid #e4ebf2}.orchard-dashboard td{padding:10px 0;border-bottom:1px solid #f0f4f8}.orchard-dashboard td small{display:none}.orchard-dashboard tfoot{font-weight:600;background:#fafcff;border-top:1px solid #e4ebf2}.orchard-dashboard tfoot td{border:0}.orchard-dashboard table td:nth-child(n+2){text-align:center}.orchard-status{display:inline-block;white-space:nowrap;font-size:10px;line-height:16px;padding:1px 8px;border-radius:20px;background:#d1fae5;color:#058666}.orchard-status.blue{color:#3f6ffe;background:#eff6ff}.orchard-status.amber{color:#d97706;background:#fffbeb}.orchard-status.neutral{color:#64748b;background:#f1f5f9}
@@ -84,7 +84,7 @@
 :root .admin-shell .orchard-dashboard .orchard-block-title h2{font-size:14px;line-height:18px}
 .orchard-record-grid small{line-height:21px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .orchard-business .orchard-panel-heading h2{max-width:115px}.orchard-tabs button{padding:3px 7px}.orchard-business-chart{overflow:visible}.orchard-health .orchard-panel-heading h2{white-space:normal}
-.orchard-expense-farms:not([open])>div,.orchard-variety-details:not([open])>div{display:none}
+.orchard-expense-farms:not([open])>div{display:none}
 .orchard-analysis .orchard-expense-farms{margin-top:auto}
 .orchard-dashboard .orchard-production table th{white-space:normal;font-size:11px;line-height:15px;letter-spacing:0;font-family:Roboto,Arial,sans-serif;text-transform:none}
 .orchard-dashboard .orchard-production td:first-child{max-width:60px}
@@ -127,3 +127,21 @@
   .orchard-analysis>.orchard-expenses{height:auto;min-height:400px}
   .orchard-expenses .expense-cost-donut{height:145px;max-width:180px}
 }
+
+.orchard-production-row > .orchard-varieties { height: auto; min-height: 311px; }
+.orchard-varieties .orchard-donut { flex-shrink: 0; }
+.orchard-varieties .orchard-legend i { display: block; flex-shrink: 0; }
+
+.orchard-variety-trigger {
+  width: 100%;
+  min-height: 36px;
+  margin-top: auto;
+  padding: 6px 10px;
+  border: 1px solid #d1fae5;
+  border-radius: 8px;
+  background: #f5fef9;
+  color: #087a60;
+  font-size: 12px;
+}
+.orchard-variety-trigger:hover { background: #e8faf1; }
+.orchard-variety-trigger:focus-visible { outline: 2px solid #087a60; outline-offset: 2px; }

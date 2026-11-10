@@ -112,11 +112,49 @@ export function matchesFarmScope(record, selection = 'all', structure = {}) {
   let selected = text(selection).toUpperCase();
   // Aggregate views keep unassigned records visible instead of silently losing costs.
   if (!selected || ['ALL', 'A&B', 'A & B', 'FARM A&B', 'FARM A & B'].includes(selected)) return true;
-  if (selected.startsWith('FARM:')) selected = farmCode((structure.farms || []).find((farm) => String(farm.id) === text(selection).slice(5)));
-  if (selected.startsWith('BLOCK:')) selected = blockLabel((structure.blocks || []).find((block) => String(block.id) === text(selection).slice(6)));
+  const { farms = [], blocks = [] } = structure;
+  const selectedId = text(selection).slice(5);
+  const selectedFarm = farms.find((farm) => selected.startsWith('FARM:')
+    ? String(farm.id) === selectedId : farmCode(farm) === selected);
+  const selectedBlock = blocks.find((block) => selected.startsWith('BLOCK:')
+    ? String(block.id) === text(selection).slice(6) : BLOCK_CODES.includes(selected) && blockLabel(block) === selected);
+  if (selectedFarm) selected = farmCode(selectedFarm) || selected;
+  if (selectedBlock) selected = blockLabel(selectedBlock);
   selected = farmCode(selected) || blockLabel(selected);
   const records = [record, ...(Array.isArray(record.items) ? record.items : [])];
   return records.some((item) => {
+    let linkedBlock = item.block_id && blocks.find((block) => String(block.id) === String(item.block_id));
+    const legacyBlock = blockLabel(item.block_code || item.block_name).toLowerCase();
+    if (!item.block_id && legacyBlock && !item.shared_scope && !farmCode(legacyBlock) && scopeLabel(legacyBlock) !== 'Farm A&B') {
+      const candidates = blocks.filter((block) => (
+        (!item.farm_id || String(block.farm_id) === String(item.farm_id))
+        && [block.name, block.block_name, block.block_code].some((label) => blockLabel(label).toLowerCase() === legacyBlock)
+      ));
+      if (candidates.length === 1) [linkedBlock] = candidates;
+    }
+    if (selectedBlock && item.block_id) return String(item.block_id) === String(selectedBlock.id);
+    if (linkedBlock) {
+      if (selectedBlock) return String(linkedBlock.id) === String(selectedBlock.id);
+      if (selectedFarm) return String(linkedBlock.farm_id) === String(selectedFarm.id);
+      const linkedFarm = farms.find((farm) => String(farm.id) === String(linkedBlock.farm_id));
+      return /^[AB]$/.test(selected)
+        ? (farmCode(linkedFarm) || blockLabel(linkedBlock).charAt(0)) === selected
+        : blockLabel(linkedBlock) === selected;
+    }
+    if (selectedBlock) {
+      if (item.farm_id && String(item.farm_id) !== String(selectedBlock.farm_id)) return false;
+      if (!BLOCK_CODES.includes(selected)) {
+        return [item.block_name, item.block_code].filter(Boolean).some((label) =>
+          [selectedBlock.name, selectedBlock.block_code].filter(Boolean).some((value) =>
+            blockLabel(label).toLowerCase() === blockLabel(value).toLowerCase()));
+      }
+    }
+    if (selectedFarm && item.farm_id) return String(item.farm_id) === String(selectedFarm.id);
+    if (selectedFarm && !farmCode(selectedFarm)) {
+      return [item.farm_name, item.farm_code].filter(Boolean).some((label) =>
+        [selectedFarm.name, selectedFarm.farm_code].filter(Boolean).some((value) =>
+          scopeLabel(label).toLowerCase() === scopeLabel(value).toLowerCase()));
+    }
     const { codes, farmCodes } = recordCodes(item, structure);
     return /^[AB]$/.test(selected) ? farmCodes.has(selected) : BLOCK_CODES.includes(selected) && codes.has(selected);
   });
