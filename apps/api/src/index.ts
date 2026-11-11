@@ -12,6 +12,7 @@ import productImagesRouter from './modules/product-images.js';
 import commerceRouter from './modules/commerce.js';
 import paymentsRouter from './modules/payments.js';
 import calendarRouter from './modules/calendar.js';
+import companyCalendarRouter, { MicrosoftConnectionError } from './modules/company-calendar.js';
 import farmsRouter from './modules/farms.js';
 import activityLogRouter from './modules/activity-log.js';
 import supportRouter from './modules/support.js';
@@ -98,6 +99,7 @@ api.route('/product-images', productImagesRouter);
 api.route('/commerce', commerceRouter);
 api.route('/payments', paymentsRouter);
 api.route('/calendar', calendarRouter);
+api.route('/company-calendar', companyCalendarRouter);
 api.route('/activity-log', activityLogRouter);
 api.route('/support', supportRouter);
 api.route('/account', accountRouter);
@@ -120,6 +122,10 @@ api.route('/', farmsRouter);
 
 app.notFound((c) => c.json({ error: { code: 'NOT_FOUND', message: 'Resource not found' }, requestId: c.get('requestId') }, 404));
 app.onError((error, c) => {
+  if (error instanceof MicrosoftConnectionError) {
+    c.header('Cache-Control', 'private, no-store');
+    return c.json({ error: { code: 'COMPANY_MAILBOX_UNAVAILABLE', message: error.message }, requestId: c.get('requestId') }, 502);
+  }
   console.error(JSON.stringify({ event: 'unhandled_error', requestId: c.get('requestId'), path: c.req.path, error: error instanceof Error ? error.message : 'Unknown error' }));
   return c.json({ error: { code: 'INTERNAL_ERROR', message: 'An unexpected error occurred' }, requestId: c.get('requestId') }, 500);
 });

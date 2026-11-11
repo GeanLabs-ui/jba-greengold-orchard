@@ -1,4 +1,8 @@
 interface Env {
+  COMPANY_ORGANIZATION_ID?: string;
+  M365_TENANT_ID?: string;
+  M365_CLIENT_ID?: string;
+  M365_CLIENT_SECRET?: string;
   LOCAL_TEST_LOGIN_ENABLED?: string;
   IDENTITY_ENABLED?: string;
   IDENTITY_RETURN_ORIGIN?: string;

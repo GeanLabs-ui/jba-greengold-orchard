@@ -6,6 +6,8 @@ import {
   Bell, CalendarCheck2, Check, ChevronLeft, ChevronRight, CircleAlert, Clock3,
   Cloud, Download, ExternalLink, Link2, ListChecks, Plus, RefreshCw, Settings2, X,
 } from 'lucide-react';
+import CompanyCalendar from './CompanyCalendar';
+import { useAuth } from '@/lib/AuthContext';
 import PageHeader from '@/components/shared/PageHeader';
 import { Button } from '@/components/ui/button';
 import { base44 } from '@/api/base44Client';
@@ -66,6 +68,26 @@ const feedUrl = (connection) => {
 };
 
 export default function ProductionCalendar() {
+  const { user } = useAuth();
+  const [params, setParams] = useSearchParams();
+  const companyAccess = user?.role === 'super_admin' && Boolean(base44.companyCalendar);
+  const requestedView = params.get('view');
+  const view = params.has('event') || requestedView === 'farm' ? 'farm' : requestedView === 'inbox' ? 'inbox' : 'company';
+  if (!companyAccess) return <FarmCalendar />;
+  return (
+    <>
+      <nav aria-label="Calendar views" className="mb-4 flex flex-wrap gap-2">
+        {[['company', 'Company Calendar'], ['inbox', 'Company Inbox'], ['farm', 'Farm Activities']].map(([key, label]) => (
+          <Button key={key} variant={view === key ? 'default' : 'outline'} size="sm" aria-current={view === key ? 'page' : undefined}
+            onClick={() => setParams({ view: key })}>{label}</Button>
+        ))}
+      </nav>
+      {view === 'farm' ? <FarmCalendar /> : <CompanyCalendar view={view} />}
+    </>
+  );
+}
+
+function FarmCalendar() {
   const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
   const reminderBusy = useRef(false);
@@ -309,7 +331,7 @@ export default function ProductionCalendar() {
         : await base44.entities.CalendarConnection.create(payload);
       setConnections([record]);
       setShowConnections(false);
-      toast({ title: 'Company calendar link configured', description: 'Use the subscription address in Google Calendar, Outlook, or another business calendar.' });
+      toast({ title: 'Farm calendar feed configured', description: 'Use the subscription address in Google Calendar, Outlook, or another business calendar.' });
     } catch (error) {
       toast({ title: 'Calendar link could not be saved', description: error.message, variant: 'destructive' });
     } finally {
@@ -321,7 +343,7 @@ export default function ProductionCalendar() {
     <div>
       <PageHeader title="Production Calendar">
         <Button variant="outline" size="sm" onClick={() => downloadICalendar(events, connected?.calendar_name)}><Download className="mr-2 h-4 w-4" />Export .ics</Button>
-        <Button variant="outline" size="sm" onClick={() => setShowConnections(true)}><Link2 className="mr-2 h-4 w-4" />Calendar link</Button>
+        <Button variant="outline" size="sm" onClick={() => setShowConnections(true)}><Link2 className="mr-2 h-4 w-4" />Farm calendar feed</Button>
         <Button size="sm" onClick={() => startCreate()}><Plus className="mr-2 h-4 w-4" />Schedule activity</Button>
       </PageHeader>
 
@@ -395,7 +417,7 @@ export default function ProductionCalendar() {
             )) : <div className="py-12 text-center"><ListChecks className="mx-auto h-8 w-8 text-muted-foreground/50" /><p className="mt-3 text-sm text-muted-foreground">No activity scheduled.</p><Button className="mt-4" size="sm" onClick={() => startCreate(selectedDate)}>Add activity</Button></div>}
           </div>
           <div className="border-t border-border p-4">
-            <div className="flex items-center justify-between text-xs"><span className="flex items-center gap-2 text-muted-foreground"><Cloud className="h-3.5 w-3.5" />Company calendar</span><span className={cn('font-semibold', connected ? 'text-emerald-700' : 'text-amber-700')}>{connected ? 'Linked' : 'Not linked'}</span></div>
+            <div className="flex items-center justify-between text-xs"><span className="flex items-center gap-2 text-muted-foreground"><Cloud className="h-3.5 w-3.5" />Farm calendar feed</span><span className={cn('font-semibold', connected ? 'text-emerald-700' : 'text-amber-700')}>{connected ? 'Available' : 'Unavailable'}</span></div>
           </div>
         </aside>
       </div>

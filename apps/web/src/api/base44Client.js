@@ -69,7 +69,7 @@ const apiUnavailableError = (cause) => {
 };
 
 const recordClientError = ({ path, error }) => {
-  if (path.startsWith('/activity-log/')) return;
+  if (path.startsWith('/activity-log/') || path.startsWith('/company-calendar/')) return;
   void fetch(`${API_BASE_URL}/activity-log/errors`, {
     method: 'POST', credentials: 'include',
     headers: { Accept: 'application/json', 'Content-Type': 'application/json', ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}) },
@@ -630,7 +630,14 @@ const account = {
 };
 const objectives = { list: () => request('/objectives'), save: async (body) => { const data = await request('/objectives', { method: 'POST', body }); publishDataChange('ObjectiveCycle'); return data; } };
 
-const apiBase44 = { objectives, auth, entities, applications, commerce, files, farms, staff, activityLog, account };
+const companyCalendar = {
+  events: (month, signal) => request('/company-calendar/events?' + new URLSearchParams({ month }), { signal }),
+  inbox: (cursor, signal) => request('/company-calendar/inbox' + (cursor ? '?' + new URLSearchParams({ cursor }) : ''), { signal }),
+  message: (id, signal) => request('/company-calendar/inbox/' + encodeURIComponent(id), { signal }),
+  reply: (id, text) => request('/company-calendar/inbox/' + encodeURIComponent(id) + '/reply', { method: 'POST', body: { text } }),
+};
+
+const apiBase44 = { companyCalendar, objectives, auth, entities, applications, commerce, files, farms, staff, activityLog, account };
 
 // The demo/preview client (and its seeded demo credentials) is only pulled into the
 // bundle when demo mode is actually enabled at build/runtime, via a dynamic import.
