@@ -2,6 +2,13 @@ import { businessPages } from './business-navigation';
 
 export const ADMIN_ACCESS_ROLES = ['super_admin', 'admin', 'farm_manager', 'farm_supervisor', 'inventory_officer', 'quality_officer', 'finance_officer', 'hr_officer', 'sales_officer', 'logistics_officer', 'content_editor', 'auditor'];
 
+export const STAFF_ROLES = [
+  ['admin', 'Administrator'], ['farm_manager', 'Farm Manager'], ['farm_supervisor', 'Farm Supervisor'],
+  ['inventory_officer', 'Inventory Officer'], ['quality_officer', 'Quality Officer'], ['finance_officer', 'Finance Officer'],
+  ['hr_officer', 'HR Officer'], ['sales_officer', 'Sales Officer'], ['logistics_officer', 'Logistics Officer'],
+  ['content_editor', 'Content Editor'], ['auditor', 'Auditor'],
+];
+
 export const ADMIN_PAGE_ACCESS = [
   { key: 'objectives', label: 'Objectives', path: '/admin/objectives', group: 'System' },
   { key: 'dashboard', label: 'Dashboard', path: '/admin', group: 'Overview' },

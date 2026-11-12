@@ -11,7 +11,8 @@ const farmColors = ['#059669', '#3b82f6', '#d97706', '#8b5cf6', '#64748b'];
 export default function ExpenseBreakdownContent({ rows = [], farms = [], rangeLabel = 'All recorded dates' }) {
   // Use the same categories and colours as the Type of Cost field. Slice sizes
   // come exclusively from recorded amounts, including legacy type aliases.
-  const categories = buildCostTypeBreakdown(rows.map(row => ({ cost_type: row.name, value: row.value })));
+  const categories = buildCostTypeBreakdown(rows.map(row => ({ cost_type: row.name, value: row.value })))
+    .sort((a, b) => b.value - a.value);
   const total = categories.reduce((sum, row) => sum + row.value, 0);
   const slices = positivePieSlices(categories);
   const positiveTotal = slices.reduce((sum, row) => sum + row.value, 0);

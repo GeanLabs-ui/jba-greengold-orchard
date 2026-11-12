@@ -59,7 +59,8 @@ function matchesAudience(role: string, audience: 'customer' | 'staff') {
 function wrongAudience(c: AppContext) {
   return c.json({ error: { code: 'WRONG_ACCOUNT_TYPE', message: 'This account cannot sign in here. Use the correct customer or staff login.' } }, 403);
 }
-const staffPageKeys = ['dashboard', 'crm', 'inquiries', 'sales', 'orders', 'inventory', 'logistics', 'farms', 'calendar', 'farm_daily_activities', 'procurement', 'finance', 'export_ops', 'hr', 'applications', 'content', 'documents', 'reports', 'settings'] as const;
+const defaultAdminPageKeys = ['dashboard', 'crm', 'inquiries', 'sales', 'orders', 'inventory', 'logistics', 'farms', 'calendar', 'farm_daily_activities', 'procurement', 'finance', 'export_ops', 'hr', 'applications', 'content', 'documents', 'reports', 'settings'] as const;
+const staffPageKeys = [...defaultAdminPageKeys, 'objectives', 'system_log'] as const;
 const pageAccessSchema = z.array(z.enum(staffPageKeys)).max(staffPageKeys.length);
 const staffInvitationSchema = z.object({
   email: z.string().trim().toLowerCase().email().max(254),
@@ -83,7 +84,7 @@ const acceptStaffInvitationSchema = z.object({
 type GoogleClaims = z.infer<typeof googleClaimsSchema>;
 
 const rolePageDefaults: Record<(typeof staffRoles)[number], (typeof staffPageKeys)[number][]> = {
-  admin: [...staffPageKeys],
+  admin: [...defaultAdminPageKeys],
   farm_manager: ['dashboard', 'farms', 'calendar', 'farm_daily_activities', 'inventory', 'procurement'],
   farm_supervisor: ['dashboard', 'farms', 'calendar', 'farm_daily_activities'],
   inventory_officer: ['dashboard', 'inventory', 'procurement'],

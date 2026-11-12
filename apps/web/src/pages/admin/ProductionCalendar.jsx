@@ -1,21 +1,24 @@
 import { scopeLabel, farmScopeOptions, resolveOperationalScope } from '@/lib/farm-scope';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useSearchParams } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import {
   Bell, CalendarCheck2, Check, ChevronLeft, ChevronRight, CircleAlert, Clock3,
   Cloud, Download, ExternalLink, Link2, ListChecks, Plus, RefreshCw, Settings2, X,
 } from 'lucide-react';
 import PageHeader from '@/components/shared/PageHeader';
+import CompanyOutlook from '@/components/admin/CompanyOutlook';
+import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
-import { base44 } from '@/api/base44Client';
+import { base44, companyOutlook } from '@/api/base44Client';
 import { subscribeToDataChanges } from '@/lib/data-sync';
 import { useToast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
 import {
   CALENDAR_CATEGORIES, CALENDAR_STATUSES, dateKey, downloadICalendar,
   eventToDailyActivityPayload, eventToTaskPayload, googleCalendarUrl,
-  isReminderDue, outlookCalendarUrl, buildFarmCalendarEvents, calendarStatusToTask,
+  outlookCalendarUrl, buildFarmCalendarEvents, calendarStatusToTask,
 } from '@/lib/production-calendar';
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -66,9 +69,58 @@ const feedUrl = (connection) => {
 };
 
 export default function ProductionCalendar() {
+  const { user } = useAuth();
+  const [params, setParams] = useSearchParams();
+  const admin = user?.role === 'super_admin';
+  const mailboxes = useQuery({
+    queryKey: ['company-outlook', user?.id, 'mailboxes'],
+    queryFn: ({ signal }) => companyOutlook.mailboxes(signal),
+    enabled: Boolean(user) && import.meta.env.VITE_DEMO_MODE !== 'true', retry: false, gcTime: 0,
+  });
+  const departments = mailboxes.data || [];
+  if (import.meta.env.VITE_DEMO_MODE === 'true') return <FarmCalendar />;
+
+  const department = departments.find(item => item.id === params.get('department'));
+  const requested = params.get('view');
+  const view = params.has('event') || requested === 'farm' ? 'farm'
+    : requested === 'department' ? 'department' : admin ? (requested === 'inbox' ? 'inbox' : 'calendar') : 'farm';
+  if (!admin && view === 'farm' && !departments.length) return <FarmCalendar />;
+
+  function selectView(nextView, departmentId) {
+    setParams((current) => {
+      const next = new URLSearchParams(current);
+      next.delete('event');
+      next.delete('department');
+      if (nextView === 'calendar') next.delete('view');
+      else next.set('view', nextView);
+      if (departmentId) next.set('department', departmentId);
+      return next;
+    });
+  }
+
+  return (
+    <>
+      <nav aria-label="Calendar views" className="mb-5 flex flex-wrap gap-2 border-b pb-3">
+        {[...(admin ? [['calendar', 'Company calendar'], ['inbox', 'Company inbox']] : []), ['farm', 'Farm schedule']].map(([id, label]) => (
+          <Button key={id} size="sm" variant={id === view ? 'default' : 'ghost'} aria-current={id === view ? 'page' : undefined} onClick={() => selectView(id)}>{label}</Button>
+        ))}
+        {departments.length > 0 && <select aria-label="Department inbox" className="h-9 max-w-full rounded-md border bg-background px-2 text-sm" value={view === 'department' ? department?.id || '' : ''} onChange={event => event.target.value && selectView('department', event.target.value)}>
+          <option value="">Department inboxes</option>
+          {departments.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
+        </select>}
+      </nav>
+      {view === 'department' && !department ? <p role="status" className="text-sm text-muted-foreground">{mailboxes.isPending ? 'Loading department inboxes…' : mailboxes.error?.message || 'This department inbox is unavailable to your account.'}</p>
+        : view === 'farm' ? <FarmCalendar /> : <CompanyOutlook key={`${user.id}:${view}:${department?.id || ''}`} userId={user.id} view={view} department={view === 'department' ? department : undefined} />}
+    </>
+  );
+}
+
+function FarmCalendar() {
   const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
-  const reminderBusy = useRef(false);
+  const { key: locationKey } = useLocation();
+  const requestedEvent = searchParams.get('event');
+  const eventLinkTarget = useRef(null);
   const now = new Date();
   const [viewDate, setViewDate] = useState(() => new Date(now.getFullYear(), now.getMonth(), 1));
   const [selectedDate, setSelectedDate] = useState(todayKey());
@@ -83,30 +135,6 @@ export default function ProductionCalendar() {
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(() => blankForm());
 
-  const processReminders = useCallback(async (items) => {
-    if (reminderBusy.current) return;
-    const due = items.filter((event) => isReminderDue(event));
-    if (!due.length) return;
-    reminderBusy.current = true;
-    try {
-      await Promise.all(due.map(async (event) => {
-        await base44.entities.Notification.create({
-          title: 'Production activity reminder',
-          message: `${event.title} is ${Number(event.reminder_minutes || 0) ? `due in ${event.reminder_minutes} minutes` : 'due now'}.`,
-          type: 'calendar_activity', notification_type: 'calendar_activity', channel: 'Admin', status: 'new',
-          calendar_event_id: event.id, record_id: event.id, entity_name: 'CalendarEvent',
-          destination: `/admin/calendar?event=${event.id}`,
-          reminder_key: `${event.id}:${event.start_at}`,
-        });
-        await base44.entities.CalendarEvent.update(event.id, {
-          reminder_sent_at: new Date().toISOString(), reminder_sent_for_start: event.start_at,
-        });
-      }));
-    } finally {
-      reminderBusy.current = false;
-    }
-  }, []);
-
   const load = useCallback(async ({ quiet = false } = {}) => {
     if (!quiet) setLoading(true);
     try {
@@ -115,31 +143,21 @@ export default function ProductionCalendar() {
         base44.entities.Farm.list('name', 250).catch(() => []),
         base44.entities.CalendarConnection.list('-created_date', 20).catch(() => []),
         base44.entities.FarmBlock.listAll(),
-        base44.entities.FarmProject.listAll(),
-        base44.entities.FarmTask.listAll(),
-        base44.entities.DailyActivity.listAll(),
+        base44.entities.FarmProject.listAll().catch(() => []),
+        base44.entities.FarmTask.listAll().catch(() => []),
+        base44.entities.DailyActivity.listAll().catch(() => []),
       ]);
       const combinedEvents = buildFarmCalendarEvents({ calendarEvents, farmProjects, farmTasks, dailyActivities });
       setEvents(combinedEvents);
       setFarms(farmRecords || []);
       setBlocks(blockRecords || []);
       setConnections(connectionRecords || []);
-      processReminders(calendarEvents || []).catch(() => {});
-      const requested = searchParams.get('event');
-      if (requested) {
-        const match = combinedEvents.find((item) => String(item.id) === requested);
-        if (match) {
-          setSelectedDate(dateKey(match.start_at));
-          const parsed = new Date(match.start_at);
-          setViewDate(new Date(parsed.getUTCFullYear(), parsed.getUTCMonth(), 1));
-        }
-      }
     } catch (error) {
       toast({ title: 'Calendar could not be loaded', description: error.message, variant: 'destructive' });
     } finally {
       if (!quiet) setLoading(false);
     }
-  }, [processReminders, searchParams, toast]);
+  }, [toast]);
 
   useEffect(() => { load(); }, [load]);
   useEffect(() => {
@@ -148,11 +166,24 @@ export default function ProductionCalendar() {
       clearTimeout(timer);
       timer = window.setTimeout(() => load({ quiet: true }), 150);
     }, ['CalendarEvent', 'CalendarConnection', 'FarmProject', 'FarmTask', 'DailyActivity']);
-    const reminderTimer = window.setInterval(() => { processReminders(events).catch(() => {}); if (document.visibilityState === 'visible') load({ quiet: true }); }, 60_000);
+    const refreshTimer = window.setInterval(() => { if (document.visibilityState === 'visible') load({ quiet: true }); }, 60_000);
     const refresh = () => load({ quiet: true });
     window.addEventListener('focus', refresh);
-    return () => { clearTimeout(timer); clearInterval(reminderTimer); unsubscribe(); window.removeEventListener('focus', refresh); };
-  }, [events, load, processReminders]);
+    return () => { clearTimeout(timer); clearInterval(refreshTimer); unsubscribe(); window.removeEventListener('focus', refresh); };
+  }, [load]);
+
+  const eventDateFromLink = events.find((event) => String(event.id) === requestedEvent)?.start_at;
+  useEffect(() => {
+    if (!eventDateFromLink) return;
+    setSelectedDate(dateKey(eventDateFromLink));
+    const date = new Date(eventDateFromLink);
+    setViewDate(new Date(date.getUTCFullYear(), date.getUTCMonth(), 1));
+  }, [eventDateFromLink, locationKey, requestedEvent]);
+  useEffect(() => {
+    if (!loading && !showEditor && eventDateFromLink && selectedDate === dateKey(eventDateFromLink)) {
+      eventLinkTarget.current?.scrollIntoView({ block: 'nearest' });
+    }
+  }, [eventDateFromLink, loading, locationKey, requestedEvent, selectedDate, showEditor]);
 
   const byDate = useMemo(() => events.reduce((map, event) => {
     const key = dateKey(event.start_at);
@@ -235,13 +266,6 @@ export default function ProductionCalendar() {
       } else {
         saved = await base44.entities.CalendarEvent.create({ ...payload, task_code: createCode() });
         await syncRelatedRecords(saved);
-        await base44.entities.Notification.create({
-          title: 'Production activity scheduled',
-          message: `${saved.title} has been added for ${formatLongDate(saved.start_at)}.`,
-          type: 'calendar_activity', notification_type: 'calendar_activity', channel: 'Admin', status: 'new',
-          calendar_event_id: saved.id, record_id: saved.id, entity_name: 'CalendarEvent',
-          destination: `/admin/calendar?event=${saved.id}`,
-        });
       }
       if (saved.harvest_period_id) {
         await base44.farms.updateHarvestPeriod(saved.harvest_period_id, { status: harvestStatusFromCalendar(saved.status) });
@@ -282,13 +306,6 @@ export default function ProductionCalendar() {
         });
       }
       setEvents((current) => current.map((item) => item.id === updated.id ? updated : item));
-      if (['completed', 'blocked'].includes(status)) {
-        await base44.entities.Notification.create({
-          title: status === 'completed' ? 'Scheduled activity completed' : 'Scheduled activity blocked',
-          message: updated.title, type: 'calendar_activity', notification_type: 'calendar_activity', channel: 'Admin', status: 'new',
-          calendar_event_id: updated.id, destination: `/admin/calendar?event=${updated.id}`,
-        });
-      }
       toast({ title: `${updated.title}: ${STATUS_LABELS[status]}` });
     } catch (error) {
       toast({ title: 'Status update failed', description: error.message, variant: 'destructive' });
@@ -309,7 +326,7 @@ export default function ProductionCalendar() {
         : await base44.entities.CalendarConnection.create(payload);
       setConnections([record]);
       setShowConnections(false);
-      toast({ title: 'Company calendar link configured', description: 'Use the subscription address in Google Calendar, Outlook, or another business calendar.' });
+      toast({ title: 'Farm schedule subscription configured', description: 'Use the subscription address in Google Calendar, Outlook, or another business calendar.' });
     } catch (error) {
       toast({ title: 'Calendar link could not be saved', description: error.message, variant: 'destructive' });
     } finally {
@@ -321,7 +338,7 @@ export default function ProductionCalendar() {
     <div>
       <PageHeader title="Production Calendar">
         <Button variant="outline" size="sm" onClick={() => downloadICalendar(events, connected?.calendar_name)}><Download className="mr-2 h-4 w-4" />Export .ics</Button>
-        <Button variant="outline" size="sm" onClick={() => setShowConnections(true)}><Link2 className="mr-2 h-4 w-4" />Calendar link</Button>
+        <Button variant="outline" size="sm" onClick={() => setShowConnections(true)}><Link2 className="mr-2 h-4 w-4" />Subscription link</Button>
         <Button size="sm" onClick={() => startCreate()}><Plus className="mr-2 h-4 w-4" />Schedule activity</Button>
       </PageHeader>
 
@@ -376,8 +393,9 @@ export default function ProductionCalendar() {
             <Button size="icon" variant="ghost" onClick={() => startCreate(selectedDate)}><Plus className="h-4 w-4" /></Button>
           </div>
           <div className="max-h-[620px] overflow-y-auto p-3">
+            {!loading && requestedEvent && !eventDateFromLink && <p role="status" className="mb-3 rounded-md border p-3 text-sm">This calendar activity is no longer available.</p>}
             {selectedEvents.length ? selectedEvents.map((event) => (
-              <div key={event.id} role="button" tabIndex={0} onClick={() => startEdit(event)} onKeyDown={(keyEvent) => ['Enter', ' '].includes(keyEvent.key) && startEdit(event)} className={cn('mb-2 block w-full cursor-pointer rounded-lg border border-border p-3 text-left transition hover:border-primary/40 hover:bg-muted/40', searchParams.get('event') === String(event.id) && 'border-primary ring-2 ring-primary/30')} aria-current={searchParams.get('event') === String(event.id) ? 'true' : undefined}>
+              <div key={event.id} ref={requestedEvent === String(event.id) ? eventLinkTarget : null} role="button" tabIndex={0} onClick={() => startEdit(event)} onKeyDown={(keyEvent) => ['Enter', ' '].includes(keyEvent.key) && startEdit(event)} className={cn('mb-2 block w-full cursor-pointer rounded-lg border border-border p-3 text-left transition hover:border-primary/40 hover:bg-muted/40', requestedEvent === String(event.id) && 'border-primary ring-2 ring-primary/30')} aria-current={requestedEvent === String(event.id) ? 'true' : undefined}>
                 <div className="flex items-start justify-between gap-3"><span className="text-sm font-semibold leading-5">{event.title}</span><span className={cn('shrink-0 rounded-full border px-2 py-0.5 text-caption font-bold', STATUS_STYLES[event.status])}>{STATUS_LABELS[event.status]}</span></div>
                 <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground"><Clock3 className="h-3.5 w-3.5" />{formatTime(event)}{event.assigned_to_name ? ` · ${event.assigned_to_name}` : ''}</p>
                 {searchParams.get('event') === String(event.id) && <div className="mt-3 space-y-2 text-sm">
@@ -395,13 +413,13 @@ export default function ProductionCalendar() {
             )) : <div className="py-12 text-center"><ListChecks className="mx-auto h-8 w-8 text-muted-foreground/50" /><p className="mt-3 text-sm text-muted-foreground">No activity scheduled.</p><Button className="mt-4" size="sm" onClick={() => startCreate(selectedDate)}>Add activity</Button></div>}
           </div>
           <div className="border-t border-border p-4">
-            <div className="flex items-center justify-between text-xs"><span className="flex items-center gap-2 text-muted-foreground"><Cloud className="h-3.5 w-3.5" />Company calendar</span><span className={cn('font-semibold', connected ? 'text-emerald-700' : 'text-amber-700')}>{connected ? 'Linked' : 'Not linked'}</span></div>
+            <div className="flex items-center justify-between text-xs"><span className="flex items-center gap-2 text-muted-foreground"><Cloud className="h-3.5 w-3.5" />Farm schedule feed</span><span className={cn('font-semibold', connected ? 'text-emerald-700' : 'text-amber-700')}>{connected ? 'Configured' : 'Not configured'}</span></div>
           </div>
         </aside>
       </div>
 
       <AnimatePresence>
-        {showEditor && <EventEditor event={editing} form={form} setForm={setForm} farms={farms} blocks={blocks} saving={saving} onClose={() => { setShowEditor(false); setSearchParams({}); }} onSubmit={submitEvent} />}
+        {showEditor && <EventEditor event={editing} form={form} setForm={setForm} farms={farms} blocks={blocks} saving={saving} onClose={() => { setShowEditor(false); setSearchParams({ view: 'farm' }); }} onSubmit={submitEvent} />}
         {showConnections && <ConnectionEditor connection={connected} events={events} saving={saving} onClose={() => setShowConnections(false)} onSave={saveConnection} />}
       </AnimatePresence>
     </div>
@@ -435,11 +453,11 @@ function EventEditor({ event, form, setForm, farms, blocks, saving, onClose, onS
 function ConnectionEditor({ connection, events, saving, onClose, onSave }) {
   const [form, setForm] = useState({ provider: connection?.provider || 'google', account_email: connection?.account_email || '', calendar_name: connection?.calendar_name || 'JBA GreenGold Production' });
   const url = feedUrl(connection);
-  return <Modal title="Link company calendar" copy="Publish one live production schedule to Google Calendar, Outlook, or another business calendar." onClose={onClose}>
+  return <Modal title="Farm schedule subscription" copy="Publish one live production schedule to Google Calendar, Outlook, or another business calendar." onClose={onClose}>
     <div className="space-y-4">
       <div className="grid grid-cols-3 gap-2">{[['google', 'Google'], ['outlook', 'Outlook'], ['business', 'Business']].map(([value, label]) => <button key={value} type="button" onClick={() => setForm((current) => ({ ...current, provider: value }))} className={cn('rounded-lg border px-3 py-3 text-sm font-semibold', form.provider === value ? 'border-primary bg-primary/5 text-primary' : 'border-border')}>{label}</button>)}</div>
-      <Field label="Company calendar name"><input className={inputClass} value={form.calendar_name} onChange={(e) => setForm((current) => ({ ...current, calendar_name: e.target.value }))} /></Field>
-      <Field label="Company calendar email"><input className={inputClass} type="email" value={form.account_email} onChange={(e) => setForm((current) => ({ ...current, account_email: e.target.value }))} placeholder="operations@company.com" /></Field>
+      <Field label="Subscription name"><input className={inputClass} value={form.calendar_name} onChange={(e) => setForm((current) => ({ ...current, calendar_name: e.target.value }))} /></Field>
+      <Field label="Calendar account email"><input className={inputClass} type="email" value={form.account_email} onChange={(e) => setForm((current) => ({ ...current, account_email: e.target.value }))} placeholder="operations@company.com" /></Field>
       {url && <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3"><p className="text-xs font-bold text-emerald-800">Live subscription address</p><p className="mt-2 break-all text-xs text-emerald-900">{url}</p><p className="mt-2 text-xs text-emerald-800">Add this URL using “From URL” in Google Calendar or “Subscribe from web” in Outlook.</p></div>}
       {import.meta.env.VITE_DEMO_MODE === 'true' && <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">Preview mode saves the connection and supports .ics export. The live subscription URL becomes available when the API is deployed.</div>}
       <div className="flex flex-wrap gap-2"><Button variant="outline" type="button" onClick={() => downloadICalendar(events, form.calendar_name)}><Download className="mr-2 h-4 w-4" />Download current calendar</Button>{events[0] && <><Button variant="outline" asChild><a href={googleCalendarUrl(events[0])} target="_blank" rel="noreferrer">Test Google <ExternalLink className="ml-2 h-4 w-4" /></a></Button><Button variant="outline" asChild><a href={outlookCalendarUrl(events[0])} target="_blank" rel="noreferrer">Test Outlook <ExternalLink className="ml-2 h-4 w-4" /></a></Button></>}</div>

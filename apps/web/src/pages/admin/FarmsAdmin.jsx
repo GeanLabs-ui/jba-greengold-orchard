@@ -1,6 +1,7 @@
-import { taskLogProfile } from '@/lib/task-log-profile';
+import { groupTaskLog, taskLogTotals } from '@/lib/task-log-profile';
 import { subscribeToDataChanges } from '@/lib/data-sync';
 import TaskLogMetrics from '@/components/farm/TaskLogMetrics';
+import TaskLogRecords from '@/components/farm/TaskLogRecords';
 import { scopeLabel } from '@/lib/farm-scope';
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
@@ -140,6 +141,7 @@ async function listAllFarmCards() {
 export default function FarmsAdmin() {
   const { user } = useAuth();
   const [farms, setFarms] = useState([]);
+  const [otherRecords, setOtherRecords] = useState([]);
   const [catalogVarieties, setCatalogVarieties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -160,12 +162,15 @@ export default function FarmsAdmin() {
         base44.entities.DailyActivity.listAll("-activity_date"),
         base44.entities.FarmBlock.listAll(),
       ]);
-      const end = new Date().toISOString().slice(0, 10);
-      const start = end.slice(0, 4) + "-01-01";
+      const ledger = groupTaskLog(records, { farms: response, blocks });
       setFarms(response.map((farm) => ({
         ...farm,
-        task_log: taskLogProfile(farm, records, { start, end, blocks }),
+        task_log: taskLogTotals(ledger.byFarm.get(String(farm.id)) || []),
       })));
+      setOtherRecords([
+        { title: 'Shared farm records', activities: ledger.shared },
+        { title: 'Unassigned records', activities: ledger.unassigned },
+      ]);
       setCatalogVarieties(varietyResponse || []);
     } catch (loadError) {
       setError(loadError.message || "Unable to load farms.");
@@ -424,6 +429,17 @@ export default function FarmsAdmin() {
           })}
         </div>
       ) : null}
+
+      {!loading && !error && otherRecords.filter(({ activities }) => activities.length).map(({ title, activities }) => (
+        <section key={title} className="mt-4 rounded-xl border bg-card p-4 shadow-sm">
+          <h2 className="text-section-title">{title}</h2>
+          <div className="mt-3"><TaskLogMetrics model={taskLogTotals(activities)} compact /></div>
+          <details className="mt-3">
+            <summary className="cursor-pointer text-caption font-semibold">View {activities.length} {activities.length === 1 ? 'record' : 'records'}</summary>
+            <TaskLogRecords activities={activities} />
+          </details>
+        </section>
+      ))}
 
       <FarmFormDialog
         open={dialogOpen}

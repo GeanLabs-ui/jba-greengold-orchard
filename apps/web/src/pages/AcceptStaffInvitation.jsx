@@ -1,7 +1,7 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { AlertTriangle, CheckCircle, Loader2, UserPlus } from 'lucide-react';
-import AuthLayout from '@/components/AuthLayout';
+import { ArrowLeft, Loader2 } from 'lucide-react';
+import StaffAuthLayout from '@/components/StaffAuthLayout';
 import GoogleSignInButton from '@/components/GoogleSignInButton';
 import { base44 } from '@/api/base44Client';
 
@@ -11,9 +11,11 @@ export default function AcceptStaffInvitation() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [complete, setComplete] = useState(false);
+  const submitting = useRef(false);
 
   const handleCredential = useCallback(async (credential) => {
-    if (!token) return;
+    if (!token || submitting.current) return;
+    submitting.current = true;
     setError('');
     setLoading(true);
     try {
@@ -23,34 +25,46 @@ export default function AcceptStaffInvitation() {
     } catch (err) {
       setError(err.message || 'This invitation could not be completed.');
       setLoading(false);
+      submitting.current = false;
     }
   }, [token]);
 
-  if (!token) {
-    return (
-      <AuthLayout icon={AlertTriangle} title="Invitation link unavailable" subtitle="Ask an administrator to send a new staff invitation" footer={<Link to="/login" className="text-primary font-medium hover:underline">Back to log in</Link>}>
-        <p className="text-center text-sm text-muted-foreground">The link is missing its security token.</p>
-      </AuthLayout>
-    );
-  }
+  const handleGoogleError = useCallback((err) => {
+    setError(err.message || 'Google sign-in is unavailable');
+  }, []);
 
   if (complete) {
     return (
-      <AuthLayout icon={CheckCircle} title="Staff account ready" subtitle="Redirecting you to the workspace">
-        <p className="text-center text-sm text-muted-foreground">Your Google account is now linked to your staff profile.</p>
-      </AuthLayout>
+      <StaffAuthLayout title="Your account is ready" subtitle="Redirecting you to the workspace">
+        <p role="status" className="text-center text-sm text-muted-foreground">Your Google account is linked to your workspace profile.</p>
+      </StaffAuthLayout>
     );
   }
 
   return (
-    <AuthLayout icon={UserPlus} title="Set up your staff account" subtitle="Continue with the Google address that received this invitation" footer={<Link to="/login" className="text-primary font-medium hover:underline">Back to log in</Link>}>
+    <StaffAuthLayout
+      title="Staff and admin signup"
+      subtitle={token ? 'Continue with the Google account that received your invitation.' : 'Open the invitation sent to your work email to create your account.'}
+      footer={
+        <Link to="/staff-login" className="inline-flex items-center gap-2 hover:underline">
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Back to staff login
+        </Link>
+      }
+    >
       {error && <div role="alert" className="mb-4 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
-      {loading ? (
-        <div className="flex justify-center py-5"><Loader2 className="h-7 w-7 animate-spin text-primary" /></div>
+      {!token ? (
+        <p className="text-center text-sm text-muted-foreground">Need an invitation? Ask your workspace administrator to send one.</p>
+      ) : loading ? (
+        <p role="status" className="flex items-center justify-center gap-2 py-5 text-sm text-muted-foreground">
+          <Loader2 className="h-5 w-5 animate-spin text-primary motion-reduce:animate-none" aria-hidden="true" />
+          Setting up your account…
+        </p>
       ) : (
-        <GoogleSignInButton onCredential={handleCredential} onError={(err) => setError(err.message || 'Google sign-in is unavailable')} />
+        <>
+          <div className="text-center"><GoogleSignInButton onCredential={handleCredential} onError={handleGoogleError} /></div>
+          <p className="mt-4 text-center text-sm text-muted-foreground">Your invitation expires after 24 hours.</p>
+        </>
       )}
-      <p className="mt-4 text-center text-xs leading-5 text-muted-foreground">For your security, the invitation works only with the exact Google email address it was sent to and expires after 24 hours.</p>
-    </AuthLayout>
+    </StaffAuthLayout>
   );
 }

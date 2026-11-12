@@ -1,5 +1,5 @@
 import AdminActionButton from '@/components/admin/AdminActionButton';
-import React, { useContext, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Bell, Download, LogOut, Menu, RefreshCw, Search, UserRoundCog } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import BrandLogo from '@/components/shared/BrandLogo';
@@ -9,7 +9,7 @@ import { useAuth } from '@/lib/AuthContext';
 import { base44 } from '@/api/base44Client';
 import { subscribeToDataChanges } from '@/lib/data-sync';
 import { timeAgo } from '@/components/shared/format';
-import { notificationDestination } from '@/lib/notification-destination';
+import { isBellNotification, notificationDestination } from '@/lib/notification-destination';
 import { canAccessAdminPath } from '@/lib/access-control';
 import AdminHorizontalNav from './AdminHorizontalNav';
 import { DashboardExportContext } from './DashboardExportContext';
@@ -43,19 +43,49 @@ export default function AdminTopbar({ onMenuClick }) {
   const { toast } = useToast();
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
+  const [deletingNotifications, setDeletingNotifications] = useState([]);
+  const notificationMenu = useRef(null);
+  const notificationTrigger = useRef(null);
+  const notificationRequest = useRef(0);
   const [search, setSearch] = useState('');
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [profileName, setProfileName] = useState('');
   const [savingProfile, setSavingProfile] = useState(false);
 
-  const loadNotifications = () => base44.entities.Notification.listAll('-created_date').then((items) => setNotifications((items || []).filter((item) => item.status !== 'archived'))).catch(() => {});
+  const loadNotifications = useCallback(async () => {
+    const request = ++notificationRequest.current;
+    try {
+      const items = await base44.entities.Notification.listAll('-created_date');
+      if (request === notificationRequest.current) setNotifications((items || []).filter(isBellNotification));
+    } catch {
+      // Some staff roles cannot read the feed. Keep the last successful list.
+    }
+  }, []);
   useEffect(() => {
     loadNotifications();
-    const unsubscribe = subscribeToDataChanges(loadNotifications, ['Notification', 'Order', 'Invoice', 'Payment', 'Inquiry', 'CalendarEvent', 'FarmProject', 'FarmTask', 'DailyActivity', 'WorkOrder', 'Product', 'NewsPost']);
+    const unsubscribe = subscribeToDataChanges(loadNotifications, ['Notification', 'Order', 'CalendarEvent', 'FarmProject', 'FarmTask', 'DailyActivity', 'WorkOrder']);
     const interval = window.setInterval(loadNotifications, 30000);
-    return () => { clearInterval(interval); unsubscribe(); };
-  }, []);
+    return () => { ++notificationRequest.current; clearInterval(interval); unsubscribe(); };
+  }, [loadNotifications]);
+
+  useEffect(() => {
+    if (!notifOpen) return;
+    const closeOutside = (event) => {
+      if (!notificationMenu.current?.contains(event.target)) setNotifOpen(false);
+    };
+    const closeOnEscape = (event) => {
+      if (event.key !== 'Escape') return;
+      setNotifOpen(false);
+      notificationTrigger.current?.focus();
+    };
+    document.addEventListener('pointerdown', closeOutside, true);
+    document.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.removeEventListener('pointerdown', closeOutside, true);
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [notifOpen]);
 
   const searchResults = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -65,7 +95,9 @@ export default function AdminTopbar({ onMenuClick }) {
       .filter(([label, _path, keywords]) => `${label} ${keywords}`.toLowerCase().includes(term))
       .slice(0, 6);
   }, [search, user]);
-  const unread = notifications.filter((item) => !['read', 'archived'].includes(item.status)).length;
+  const visibleNotifications = notifications.filter((item) =>
+    !deletingNotifications.includes(item.id) && canAccessAdminPath(user, notificationDestination(item)));
+  const unread = visibleNotifications.filter((item) => item.status !== 'read').length;
 
   const runSearch = (event) => {
     event.preventDefault();
@@ -81,24 +113,26 @@ export default function AdminTopbar({ onMenuClick }) {
   };
   const refreshCurrentPage = () => window.location.reload();
   const openNotification = async (notification) => {
+    const destination = notificationDestination(notification);
+    if (!destination || !canAccessAdminPath(user, destination)) return;
     setNotifOpen(false);
+    navigate(destination);
     if (notification.status !== 'read') {
       try {
         await base44.entities.Notification.update(notification.id, { status: 'read', read_date: new Date().toISOString() });
         setNotifications((current) => current.map((item) => item.id === notification.id ? { ...item, status: 'read' } : item));
       } catch (error) { toast({ title: 'Could not mark notification read', description: error.message, variant: 'destructive' }); }
     }
-    const destination = notificationDestination(notification);
-    if (!destination) { toast({ title: 'No source linked', description: 'This older notification has no source record.' }); return; }
-    if (!canAccessAdminPath(user, destination)) { toast({ title: 'Access restricted', description: 'Your role cannot open this notification source.' }); return; }
-    navigate(destination);
   };
   const deleteNotification = async (notification) => {
-    setNotifications((current) => current.filter((item) => item.id !== notification.id));
-    try { await base44.entities.Notification.delete(notification.id); }
-    catch (error) {
-      await loadNotifications();
+    setDeletingNotifications((current) => [...current, notification.id]);
+    try {
+      await base44.entities.Notification.delete(notification.id);
+      setNotifications((current) => current.filter((item) => item.id !== notification.id));
+    } catch (error) {
       toast({ title: 'Could not delete notification', description: error.message, variant: 'destructive' });
+    } finally {
+      setDeletingNotifications((current) => current.filter((id) => id !== notification.id));
     }
   };
   const displayName = user?.full_name || user?.email || 'Admin User';
@@ -144,13 +178,27 @@ export default function AdminTopbar({ onMenuClick }) {
         {exportAction && <Button variant="ghost" size="icon" onClick={exportAction.onExport} disabled={!exportAction.ready || exportAction.exporting} aria-label={exportAction.exporting ? 'Downloading dashboard PDF' : 'Download dashboard PDF'} title="Download dashboard PDF" data-html2canvas-ignore="true">
           <Download className="h-5 w-5" />
         </Button>}
-        <div className="relative">
-          <Button variant="ghost" size="icon" onClick={() => setNotifOpen((open) => !open)} aria-label={`Notifications${unread ? `, ${unread} unread` : ''}`}>
+        <div className="relative" ref={notificationMenu}>
+          <Button ref={notificationTrigger} variant="ghost" size="icon" onClick={() => setNotifOpen((open) => !open)} aria-expanded={notifOpen} aria-controls={notifOpen ? 'admin-notifications' : undefined} aria-label={`Notifications${unread ? `, ${unread} unread` : ''}`}>
             <Bell className="h-5 w-5" />{unread > 0 && <span className="absolute right-1 top-1 min-w-4 rounded-full bg-destructive px-1 text-caption font-bold leading-4 text-white">{unread}</span>}
           </Button>
-          {notifOpen && <div className="admin-notification-panel fixed inset-x-4 top-16 mt-2 md:absolute md:inset-x-auto md:right-0 md:top-auto md:w-[22rem] overflow-hidden rounded-lg border border-border bg-card shadow-xl">
+          {notifOpen && <div id="admin-notifications" role="region" aria-label="Notifications" className="admin-notification-panel fixed inset-x-4 top-16 mt-2 md:absolute md:inset-x-auto md:right-0 md:top-auto md:w-[22rem] overflow-hidden rounded-lg border border-border bg-card shadow-xl">
             <div className="flex items-center justify-between border-b px-4 py-3"><p className="text-sm font-semibold">Notifications</p><span className="text-xs text-muted-foreground">{unread} unread</span></div>
-            <div className="max-h-80 overflow-y-auto p-2">{notifications.length ? notifications.map((notification) => <div key={notification.id} className="group flex rounded-md hover:bg-muted"><button type="button" onClick={() => openNotification(notification)} className="min-w-0 flex-1 px-3 py-2.5 text-left"><span className="flex items-start justify-between gap-3"><span className="text-sm font-medium">{notification.title}</span>{notification.status !== 'read' && <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-primary" />}</span><span className="mt-1 block text-xs leading-5 text-muted-foreground">{notification.message}</span><span className="mt-1 block text-caption text-muted-foreground">{timeAgo(notification.created_date)}</span></button>{<AdminActionButton action="delete" type="button" onClick={() => deleteNotification(notification)} aria-label={`Delete notification: ${notification.title}`} title="Delete notification" />}</div>) : <p className="px-3 py-8 text-center text-sm text-muted-foreground">No notifications yet.</p>}</div>
+            <div className="max-h-80 overflow-y-auto p-2">
+              {visibleNotifications.length ? visibleNotifications.map((notification) => (
+                <div key={notification.id} className="flex items-start gap-1 rounded-md pr-2 hover:bg-muted">
+                  <button type="button" onClick={() => openNotification(notification)} className="min-w-0 flex-1 px-3 py-2.5 text-left">
+                    <span className="flex items-start justify-between gap-3">
+                      <span className="text-sm font-medium">{notification.title}</span>
+                      {notification.status !== 'read' && <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-primary" />}
+                    </span>
+                    <span className="mt-1 block text-xs leading-5 text-muted-foreground">{notification.message}</span>
+                    <span className="mt-1 block text-caption text-muted-foreground">{timeAgo(notification.created_date)}</span>
+                  </button>
+                  <AdminActionButton action="delete" className="mt-2" onClick={() => deleteNotification(notification)} aria-label={`Delete notification: ${notification.title}`} title="Delete notification" />
+                </div>
+              )) : <p className="px-3 py-8 text-center text-sm text-muted-foreground">No notifications yet.</p>}
+            </div>
           </div>}
         </div>
         <DropdownMenu>
