@@ -379,20 +379,12 @@ export default function HarvestSeasonPlanner() {
         const targets = form.scope === 'block'
           ? [selectedBlock].filter(Boolean)
           : [null, ...(form.apply_to_blocks ? (farm.blocks || []).filter((block) => block.status === 'active') : [])];
-        const created = [];
         for (let index = 0; index < targets.length; index += 1) {
           const block = targets[index];
           const period = await base44.farms.createHarvestPeriod({ ...payload, block_id: block?.id || null });
-          const calendarEvent = await createCalendarEvent(period, farm, block, index);
-          created.push({ period, calendarEvent });
+          await createCalendarEvent(period, farm, block, index);
         }
-        await base44.entities.Notification.create({
-          title: 'Harvest season scheduled',
-          message: `${typeInfo(form.harvest_type).label} was scheduled for ${scopeLabel(farm.name)}${form.apply_to_blocks ? ' and its active blocks' : selectedBlock ? ` — ${selectedBlock.block_code}` : ''}.`,
-          type: 'harvest_schedule', notification_type: 'harvest_schedule', channel: 'Admin', status: 'new',
-          record_id: created[0]?.period.id, entity_name: 'HarvestPeriod', calendar_event_id: created[0]?.calendarEvent?.id || '', destination: PAGE_PATH,
-        });
-        toast({ title: 'Harvest season scheduled', description: `${created.length} synchronized ${created.length === 1 ? 'schedule' : 'schedules'} created.` });
+        toast({ title: 'Harvest season scheduled', description: `${targets.length} synchronized ${targets.length === 1 ? 'schedule' : 'schedules'} created.` });
       }
       setEditorOpen(false);
       await load({ silent: true });

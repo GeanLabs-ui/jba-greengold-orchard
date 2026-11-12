@@ -1,14 +1,14 @@
 import { cn } from '@/lib/utils';
 
-export function formatCurrency(amount) {
+export function formatCurrency(amount, maximumFractionDigits = 0) {
   if (amount === null || amount === undefined) return '₵ 0';
-  const formatted = Number(amount).toLocaleString('en-GH', { maximumFractionDigits: 0 });
+  const formatted = Number(amount).toLocaleString('en-GH', { maximumFractionDigits });
   return `₵ ${formatted}`;
 }
 
-export function formatNumber(num) {
+export function formatNumber(num, maximumFractionDigits = 0) {
   if (num === null || num === undefined) return '0';
-  return Number(num).toLocaleString('en-US', { maximumFractionDigits: 0 });
+  return Number(num).toLocaleString('en-US', { maximumFractionDigits });
 }
 
 export function formatDate(date) {

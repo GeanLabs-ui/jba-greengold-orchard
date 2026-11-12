@@ -53,8 +53,6 @@ import {
   humanize,
 } from "@/lib/farm-management";
 
-const currentYearStart = () => `${new Date().getFullYear()}-01-01`;
-const today = () => new Date().toISOString().slice(0, 10);
 const fallbackFarmImage = "/pages/local-supply-header.webp";
 const farmImagePreviewUrl = /^\/api\/v1\/files\/[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}\?preview=1$/i;
 
@@ -190,8 +188,8 @@ export default function FarmProfileAdmin() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [trendYear, setTrendYear] = useState(null);
-  const [start, setStart] = useState(currentYearStart());
-  const [end, setEnd] = useState(today());
+  const [start, setStart] = useState('');
+  const [end, setEnd] = useState('');
   const [farmDialog, setFarmDialog] = useState(false);
   const [blockDialog, setBlockDialog] = useState(false);
   const [statusDialog, setStatusDialog] = useState(null);
@@ -202,14 +200,15 @@ export default function FarmProfileAdmin() {
     setLoading(true);
     setError("");
     try {
-      const [profile, records, blocks] = await Promise.all([
+      const [profile, records, blocks, farms] = await Promise.all([
         base44.farms.get(farmId, { start, end }),
         base44.entities.DailyActivity.listAll("-activity_date"),
         base44.entities.FarmBlock.listAll(),
+        base44.entities.Farm.listAll(),
       ]);
       setFarm({
-        ...farmWithTaskLog(profile, records, { start, end, blocks }),
-        performanceActivities: taskLogProfile(profile, records, { blocks }).activities,
+        ...farmWithTaskLog(profile, records, { start, end, blocks, farms }),
+        performanceActivities: taskLogProfile(profile, records, { blocks, farms }).activities,
       });
     } catch (loadError) {
       setError(loadError.message || "Unable to load this farm.");
@@ -450,12 +449,18 @@ export default function FarmProfileAdmin() {
             <div className="col-span-full rounded-lg border border-dashed border-teal-200 bg-white p-8 text-center text-sm text-slate-500">No active blocks have been added to this farm yet.</div>
           ) : null}
         </div>
+        {farm.farmLevelRows.length > 0 ? (
+          <div className="mx-3 mb-3 rounded-lg border bg-card p-3">
+            <h3 className="mb-2 text-card-title">Farm-level and shared block records</h3>
+            <TaskLogMetrics model={taskLogTotals(farm.farmLevelRows)} compact />
+          </div>
+        ) : null}
       </section>
 
       <section className="overflow-hidden rounded-xl border border-blue-100 bg-blue-50/30 shadow-sm">
         <SectionBand number="3" title="Production Overview" subtitle="Farm performance and land allocation." tone="blue">
           <div className="flex flex-wrap items-center gap-2 text-caption text-white/85">
-            <span className="font-medium">Reporting period</span>
+            <span className="font-medium">{start || end ? "Reporting period" : "Reporting period · All dates"}</span>
             <label className="relative rounded-md bg-white/10 px-2 py-1 text-label"><span className="sr-only">Start date</span><input type="date" value={start} onChange={(event) => setStart(event.target.value)} className="bg-transparent text-white outline-none [color-scheme:dark]" /></label>
             <span>–</span>
             <label className="relative rounded-md bg-white/10 px-2 py-1 text-label"><span className="sr-only">End date</span><input type="date" value={end} onChange={(event) => setEnd(event.target.value)} className="bg-transparent text-white outline-none [color-scheme:dark]" /></label>
@@ -468,7 +473,7 @@ export default function FarmProfileAdmin() {
             profileScope={scopeLabel(farm.name)}
             year={trendYear}
             onYearChange={setTrendYear}
-            blockChart={<BlockPerformanceChart rows={activeBlocks.filter(block => block.activity_periods.length > 0).map((block) => {
+            blockChart={<BlockPerformanceChart rows={farm.blocks.filter(block => block.activity_periods.length > 0).map((block) => {
               const { totalCost, totalRevenue, totalYieldKg } = taskLogTotals(block.activity_periods);
               return {
                 id: block.id,

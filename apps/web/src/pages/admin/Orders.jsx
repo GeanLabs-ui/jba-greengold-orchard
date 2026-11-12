@@ -1,5 +1,5 @@
-import React, { Fragment, useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import React, { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import { ChevronDown, ChevronUp, Globe2, Loader2, PackageCheck, Search, Truck } from 'lucide-react';
 import PageSkeleton from '@/components/shared/PageSkeleton';
 import StatusBadge from '@/components/shared/StatusBadge';
@@ -47,6 +47,9 @@ const displayDateTime = (value) => value ? new Intl.DateTimeFormat('en-GH', { da
 
 export default function Orders() {
   const [searchParams] = useSearchParams();
+  const { key: locationKey } = useLocation();
+  const requestedId = searchParams.get('order');
+  const orderLinkTarget = useRef(null);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -54,29 +57,42 @@ export default function Orders() {
   const [updatingId, setUpdatingId] = useState('');
   const [error, setError] = useState('');
 
-  const load = () => {
-    setLoading(true);
-    setError('');
-    base44.entities.Order.list('-order_date', 250)
-      .then((data) => {
-        const nextOrders = data || [];
-        setOrders(nextOrders);
-        const requestedId = searchParams.get('order');
-        if (requestedId && nextOrders.some((order) => order.id === requestedId)) setExpandedId(requestedId);
-      })
-      .catch((loadError) => setError(loadError.message || 'Orders could not be loaded.'))
-      .finally(() => setLoading(false));
-  };
-
   useEffect(() => {
-    load();
+    let generation = 0;
     let timer;
+    const load = async () => {
+      const request = ++generation;
+      setLoading(true);
+      setError('');
+      try {
+        const recent = await base44.entities.Order.list('-order_date', 250) || [];
+        const linkedOrder = requestedId && (recent.find((order) => order.id === requestedId)
+          || (await base44.entities.Order.filter({ id: requestedId }, '-order_date', 1))[0]);
+        if (request !== generation) return;
+        setOrders(linkedOrder && !recent.some((order) => order.id === requestedId) ? [linkedOrder, ...recent] : recent);
+        if (requestedId && !linkedOrder) setError('This order is no longer available.');
+      } catch (loadError) {
+        if (request === generation) setError(loadError.message || 'Orders could not be loaded.');
+      } finally {
+        if (request === generation) setLoading(false);
+      }
+    };
+    load();
     const unsubscribe = subscribeToDataChanges(() => {
       clearTimeout(timer);
       timer = setTimeout(load, 120);
     }, ['Order', 'Invoice', 'Delivery']);
-    return () => { clearTimeout(timer); unsubscribe(); };
-  }, []);
+    return () => { ++generation; clearTimeout(timer); unsubscribe(); };
+  }, [requestedId]);
+
+  useEffect(() => {
+    if (requestedId) setSearch('');
+    setExpandedId(requestedId || '');
+  }, [locationKey, requestedId]);
+
+  useEffect(() => {
+    if (!loading && requestedId && expandedId === requestedId) orderLinkTarget.current?.scrollIntoView({ block: 'nearest' });
+  }, [expandedId, loading, locationKey, requestedId]);
 
   const createOrder = async (payload) => {
     const orderNumber = `ORD-${Date.now().toString().slice(-6)}`;
@@ -163,7 +179,7 @@ export default function Orders() {
           <Input aria-label="Search orders" placeholder="Search order, customer, email or phone..." value={search} onChange={(event) => setSearch(event.target.value)} className="pl-9" />
         </div>
         <div className="justify-self-end">
-        <AdminCreateDialog title="New Order" description="Create a customer order and add it to the fulfillment pipeline." buttonLabel="New Order" fields={orderFields} onCreate={createOrder} onCreated={load} submitLabel="Create Order" />
+        <AdminCreateDialog title="New Order" description="Create a customer order and add it to the fulfillment pipeline." buttonLabel="New Order" fields={orderFields} onCreate={createOrder} submitLabel="Create Order" />
         </div>
       </div>
 
@@ -201,7 +217,7 @@ export default function Orders() {
             <tbody className="divide-y divide-border">
               {filtered.length ? filtered.map((order) => (
                 <Fragment key={order.id}>
-                  <tr className="transition-colors hover:bg-muted/30">
+                  <tr ref={order.id === requestedId ? orderLinkTarget : null} className="scroll-mt-20 transition-colors hover:bg-muted/30">
                     <td className="px-3 py-3"><button type="button" onClick={() => setExpandedId((current) => current === order.id ? '' : order.id)} className="grid h-8 w-8 place-items-center rounded-md hover:bg-muted" aria-label={`${expandedId === order.id ? 'Hide' : 'Show'} ${order.order_number} details`}>{expandedId === order.id ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}</button></td>
                     <td className="px-4 py-3"><p className="font-semibold">{order.order_number}</p>{order.item_count ? <p className="mt-0.5 text-xs text-muted-foreground">{order.item_count} items</p> : null}</td>
                     <td className="px-4 py-3"><p>{order.customer_name}</p>{order.contact_phone ? <p className="mt-0.5 text-xs text-muted-foreground">{order.contact_phone}</p> : null}</td>

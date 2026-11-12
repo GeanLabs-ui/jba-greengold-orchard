@@ -79,6 +79,20 @@ describe.skipIf(!process.env.AUTH_DATABASE_TEST)('PostgreSQL account isolation',
         const adminLogin = await login('admin', 'staff');
         expect(adminLogin.status).toBe(200);
         const adminCookie = adminLogin.headers.get('Set-Cookie')!.split(';')[0];
+        const managerId = crypto.randomUUID();
+        await tx`INSERT INTO users (id, email, role, status) VALUES (${managerId}, ${`${managerId}@example.test`}, 'super_admin', 'active')`;
+        const managerCookie = await session(managerId);
+        const staffPageAccess = ['dashboard', 'objectives', 'system_log'];
+        const updateStaffAccess = (actorCookie: string, target: string, pageAccess: string[]) => app.request(`/auth/staff-users/${target}`, {
+          method: 'PATCH', headers: { Cookie: actorCookie, 'Content-Type': 'application/json', 'X-CSRF-Token': 'integration-csrf' },
+          body: JSON.stringify({ pageAccess }),
+        }, env);
+        expect((await updateStaffAccess(adminCookie, users.admin, staffPageAccess)).status).toBe(403);
+        expect((await updateStaffAccess(managerCookie, managerId, staffPageAccess)).status).toBe(403);
+        const accessSaved = await updateStaffAccess(managerCookie, users.admin, staffPageAccess);
+        expect(accessSaved.status).toBe(200);
+        expect((await bodyOf(accessSaved)).data.user.page_access).toEqual(staffPageAccess);
+        expect((await bodyOf(await request('/auth/me', adminCookie))).data.user.pageAccess).toEqual(staffPageAccess);
         const customerLogin = await login('a', 'customer');
         expect(customerLogin.status).toBe(200);
         const cookie = customerLogin.headers.get('Set-Cookie')!.split(';')[0];

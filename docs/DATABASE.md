@@ -1,5 +1,7 @@
 # Database architecture
 
+For clearly named feature rows and columns, use the `public.platform_*` SQL views described in [PLATFORM_DATABASE_VIEWS.md](PLATFORM_DATABASE_VIEWS.md). Migration `0023_platform_named_views.sql` adds these views without moving or rewriting existing records. Apply just this migration with `node --env-file=.env scripts/apply-platform-views.mjs`; verify with the same command plus `--verify-only`. The apply script compares existing table row fingerprints inside the migration transaction and checks every entity view against canonical storage before committing. Set `DATABASE_URL` to the intended environment; the repository `.env` currently targets local development.
+
 The application uses one PostgreSQL database per environment: local PostgreSQL for development and Neon PostgreSQL for staging/production. Cloudflare Hyperdrive is a connection accelerator for that same database, not another datastore.
 
 ## Farm source of truth

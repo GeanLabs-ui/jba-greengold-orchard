@@ -12,6 +12,8 @@ import productImagesRouter from './modules/product-images.js';
 import commerceRouter from './modules/commerce.js';
 import paymentsRouter from './modules/payments.js';
 import calendarRouter from './modules/calendar.js';
+import companyOutlookRouter from './modules/company-outlook.js';
+import companySettingsRouter from './modules/company-settings.js';
 import farmsRouter from './modules/farms.js';
 import activityLogRouter from './modules/activity-log.js';
 import supportRouter from './modules/support.js';
@@ -31,7 +33,8 @@ app.use('*', async (c, next) => {
   try {
     await next();
   } finally {
-    console.log(JSON.stringify({ event: 'request', requestId, method: c.req.method, path: c.req.path, status: c.res.status, durationMs: Date.now() - startedAt, environment: c.env.APP_ENV }));
+    const path = c.req.path.replace(/^(\/api\/v1\/company-outlook\/inbox\/)[^/]+/, '$1:messageId');
+    console.log(JSON.stringify({ event: 'request', requestId, method: c.req.method, path, status: c.res.status, durationMs: Date.now() - startedAt, environment: c.env.APP_ENV }));
   }
 });
 
@@ -98,6 +101,8 @@ api.route('/product-images', productImagesRouter);
 api.route('/commerce', commerceRouter);
 api.route('/payments', paymentsRouter);
 api.route('/calendar', calendarRouter);
+api.route('/company-outlook', companyOutlookRouter);
+api.route('/company-settings', companySettingsRouter);
 api.route('/activity-log', activityLogRouter);
 api.route('/support', supportRouter);
 api.route('/account', accountRouter);

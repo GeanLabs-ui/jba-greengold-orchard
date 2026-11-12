@@ -2,6 +2,7 @@ import AnalyticsPie from '@/components/farm/AnalyticsPie';
 import { numericChartAxis } from '@/lib/analytics-chart-scale';
 import AdminActionButton from '@/components/admin/AdminActionButton';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Building2, CalendarDays, ChevronRight, Download, IdCard, Loader2,
   Mail, Maximize2, MoreHorizontal, Network, Plus, ShieldCheck, UserPlus, UserRoundCog, Users,
@@ -27,15 +28,8 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/components/ui/use-toast';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { ADMIN_PAGE_ACCESS, ROLE_PAGE_DEFAULTS, canManageHumanResources } from '@/lib/access-control';
+import { ADMIN_PAGE_ACCESS, ROLE_PAGE_DEFAULTS, STAFF_ROLES, canManageHumanResources, pageAccessForUser } from '@/lib/access-control';
 import { subscribeToDataChanges } from '@/lib/data-sync';
-
-const STAFF_ROLES = [
-  ['admin', 'Administrator'], ['farm_manager', 'Farm Manager'], ['farm_supervisor', 'Farm Supervisor'],
-  ['inventory_officer', 'Inventory Officer'], ['quality_officer', 'Quality Officer'], ['finance_officer', 'Finance Officer'],
-  ['hr_officer', 'HR Officer'], ['sales_officer', 'Sales Officer'], ['logistics_officer', 'Logistics Officer'],
-  ['content_editor', 'Content Editor'], ['auditor', 'Auditor'],
-];
 
 const employmentTypes = [
   ['full_time', 'Full-time'], ['part_time', 'Part-time'], ['contract', 'Contract'], ['seasonal', 'Seasonal'],
@@ -666,6 +660,17 @@ export default function HR() {
   const { user, checkUserAuth } = useAuth();
   const { toast } = useToast();
   const canManage = canManageHumanResources(user);
+  const [params, setParams] = useSearchParams();
+  const requestedTab = params.get('tab');
+  const activeTab = ['departments', 'attendance', ...(canManage ? ['access'] : [])].includes(requestedTab) ? requestedTab : 'staff';
+  const requestedRole = params.get('role');
+  const roleFilter = STAFF_ROLES.some(([role]) => role === requestedRole) ? requestedRole : 'all';
+  const setFilter = (key, value) => setParams(current => {
+    const next = new URLSearchParams(current);
+    if (value) next.set(key, value);
+    else next.delete(key);
+    return next;
+  });
   const [employees, setEmployees] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [attendance, setAttendance] = useState([]);
@@ -700,6 +705,13 @@ export default function HR() {
     account: accounts.find((item) => item.email?.toLowerCase() === employee.email?.toLowerCase()),
     invitation: activeInvitations.find((item) => item.email?.toLowerCase() === employee.email?.toLowerCase()),
   }));
+  const linkedAccountIds = new Set(profiles.map(profile => profile.account?.id));
+  const accessProfiles = [
+    ...profiles,
+    ...accounts.filter(account => !linkedAccountIds.has(account.id)).map(account => ({
+      account, employee: { full_name: account.full_name || account.email, email: account.email },
+    })),
+  ].filter(profile => roleFilter === 'all' || (profile.account?.role || profile.invitation?.role || profile.employee.workspace_role) === roleFilter);
   const managerById = new Map(employees.map((employee) => [employee.id, employee]));
 
   return (
@@ -716,7 +728,7 @@ export default function HR() {
         <Metric icon={ShieldCheck} value={employees.filter((employee) => employee.status === 'active').length} label="Active staff" tone="text-violet-600" />
       </div>
 
-      <Tabs defaultValue="staff">
+      <Tabs value={activeTab} onValueChange={value => setFilter('tab', value === 'staff' ? null : value)}>
         <TabsList className="h-auto flex-wrap"><TabsTrigger value="staff">Staff</TabsTrigger><TabsTrigger value="departments">Departments</TabsTrigger>{canManage && <TabsTrigger value="access">Access</TabsTrigger>}<TabsTrigger value="attendance">Attendance</TabsTrigger></TabsList>
 
         <TabsContent value="staff" className="mt-5">
@@ -741,12 +753,22 @@ export default function HR() {
           })}</div> : <div className="rounded-xl border border-dashed py-16 text-center text-sm text-muted-foreground">Create the first main department to begin the organization structure.</div>}
         </TabsContent>
 
-        {canManage && <TabsContent value="access" className="mt-5"><div className="divide-y rounded-xl border border-border bg-card">{profiles.map((profile) => {
+        {canManage && <TabsContent value="access" className="mt-5">
+          <div className="mb-4 flex items-center gap-3">
+            <Label htmlFor="staff-access-role">Filter by role</Label>
+            <select id="staff-access-role" className="h-9 rounded-md border border-input bg-background px-3 text-sm" value={roleFilter} onChange={event => setFilter('role', event.target.value === 'all' ? null : event.target.value)}>
+              <option value="all">All roles</option>
+              {STAFF_ROLES.map(([role, label]) => <option key={role} value={role}>{label}</option>)}
+            </select>
+          </div>
+          {loading ? <PageSkeleton contentOnly /> : accessProfiles.length ? <div className="divide-y rounded-xl border border-border bg-card">{accessProfiles.map((profile) => {
           const state = profile.account ? profile.account.status : profile.invitation ? 'invited' : 'not_invited';
           const role = profile.account?.role || profile.invitation?.role || profile.employee.workspace_role;
-          const enabled = accessOf(profile.account || profile.invitation || profile.employee, role).length;
-          return <div key={profile.employee.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center"><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><p className="font-semibold">{nameOf(profile.employee)}</p><StatusBadge status={state} /></div><p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground"><Mail className="h-3.5 w-3.5" />{profile.employee.email}</p><p className="mt-1 text-xs text-muted-foreground">{roleLabel(role)} · {enabled} pages enabled</p></div><AccessDialog profile={profile} currentUser={user} onSaved={async () => { await load(); if (profile.account?.id === user.id) await checkUserAuth(); }} trigger={<Button size="sm" variant="outline"><UserRoundCog className="mr-2 h-4 w-4" />Manage access</Button>} /></div>;
-        })}</div></TabsContent>}
+          const enabled = pageAccessForUser({ ...(profile.account || profile.invitation || profile.employee), role }).length;
+          const editable = role !== 'super_admin' && (role !== 'admin' || user.role === 'super_admin') && Boolean(profile.account || profile.invitation || profile.employee.email);
+          const key = profile.employee.id ? `employee:${profile.employee.id}` : `account:${profile.account.id}`;
+          return <div key={key} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center"><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><p className="font-semibold">{nameOf(profile.employee)}</p><StatusBadge status={state} /></div><p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground"><Mail className="h-3.5 w-3.5" />{profile.employee.email}</p><p className="mt-1 text-xs text-muted-foreground">{roleLabel(role)} · {enabled} pages enabled</p></div>{editable && <AccessDialog profile={profile} currentUser={user} onSaved={async () => { await load(); if (profile.account?.id === user.id) await checkUserAuth(); }} trigger={<Button size="sm" variant="outline"><UserRoundCog className="mr-2 h-4 w-4" />Manage access</Button>} />}</div>;
+        })}</div> : <p className="rounded-xl border border-dashed p-6 text-sm text-muted-foreground">{roleFilter === 'all' ? 'No staff access records found.' : `No staff assigned to ${roleLabel(roleFilter)}.`}</p>}</TabsContent>}
 
         <TabsContent value="attendance" className="mt-5">{loading ? <PageSkeleton contentOnly /> : <AttendanceDashboard attendance={attendance} employees={employees} departments={departments} />}</TabsContent>
       </Tabs>
