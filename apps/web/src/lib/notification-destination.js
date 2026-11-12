@@ -9,7 +9,7 @@ export function isBellNotification(item) {
   if (item.status === 'archived') return false;
   const type = item.notification_type || item.type;
   if (type === 'order') return Boolean(item.order_id || (item.entity_name === 'Order' && item.record_id));
-  if (type === 'delay') return Boolean(item.record_id && ['FarmProject', 'FarmTask', 'DailyActivity', 'WorkOrder'].includes(item.entity_name));
+  if (type === 'delay') return Boolean(!item.resolved_at && item.record_id && ['FarmProject', 'FarmTask', 'DailyActivity', 'WorkOrder'].includes(item.entity_name));
   if (calendarTypes.has(type) || (type === 'calendar_activity' && legacyCalendarTitles.has(item.title))) {
     return Boolean(item.calendar_event_id || (item.entity_name === 'CalendarEvent' && item.record_id));
   }

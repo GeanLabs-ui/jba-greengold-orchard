@@ -39,8 +39,8 @@ export async function runOperationNotifications(env: Env, now = new Date()) {
         SELECT id, entity_name, organization_id, data FROM entity_records
         WHERE entity_name IN ('FarmProject', 'FarmTask', 'DailyActivity', 'WorkOrder')
       `;
-      const existing = await tx<{ id: string; key: string; destination: string }[]>`
-        SELECT id, data->>'reminder_key' AS key, data->>'destination' AS destination
+      const existing = await tx<{ id: string; key: string; destination: string; resolved_at: string | null }[]>`
+        SELECT id, data->>'reminder_key' AS key, data->>'destination' AS destination, data->>'resolved_at' AS resolved_at
         FROM entity_records WHERE entity_name = 'Notification' AND data->>'type' = 'delay' AND data ? 'reminder_key'
       `;
       const dismissed = await tx<{ key: string }[]>`
@@ -59,8 +59,8 @@ export async function runOperationNotifications(env: Env, now = new Date()) {
         const current = currentAlerts.get(alert.reminder_key);
         if (current) {
           activeIds.add(current.id);
-          if (current.destination !== alert.destination || current.key !== alert.reminder_key) {
-            await tx`UPDATE entity_records SET data = data || ${tx.json({ destination: alert.destination, reminder_key: alert.reminder_key })}
+          if (current.destination !== alert.destination || current.resolved_at) {
+            await tx`UPDATE entity_records SET data = (data - 'resolved_at') || ${tx.json({ destination: alert.destination })}
               WHERE id = ${current.id} AND entity_name = 'Notification'`;
           }
           continue;
@@ -70,8 +70,13 @@ export async function runOperationNotifications(env: Env, now = new Date()) {
           VALUES (${crypto.randomUUID()}, 'Notification', ${row.organization_id}, ${tx.json(alert)}, ${now}, ${now})
         `;
       }
-      const staleIds = existing.filter(({ id }) => !activeIds.has(id)).map(({ id }) => id);
-      if (staleIds.length) await tx`DELETE FROM entity_records WHERE entity_name = 'Notification' AND id IN ${tx(staleIds)}`;
+      const resolvedIds = existing.filter(({ id, resolved_at }) => !resolved_at && !activeIds.has(id)).map(({ id }) => id);
+      if (resolvedIds.length) {
+        await tx`
+          UPDATE entity_records SET data = data || ${tx.json({ resolved_at: now.toISOString() })}
+          WHERE entity_name = 'Notification' AND id IN ${tx(resolvedIds)}
+        `;
+      }
     });
   } finally { await closeDatabase(sql); }
 }
