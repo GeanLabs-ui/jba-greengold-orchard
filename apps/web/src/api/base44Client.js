@@ -69,7 +69,7 @@ const apiUnavailableError = (cause) => {
 };
 
 const recordClientError = ({ path, error }) => {
-  if (path.startsWith('/activity-log/')) return;
+  if (path.startsWith('/activity-log/') || path.startsWith('/company-outlook/')) return;
   void fetch(`${API_BASE_URL}/activity-log/errors`, {
     method: 'POST', credentials: 'include',
     headers: { Accept: 'application/json', 'Content-Type': 'application/json', ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}) },
@@ -627,6 +627,25 @@ const account = {
   requestChange: (reason, accountUserId) => request('/account/change-requests', { method: 'POST', body: { reason }, accountUserId }),
   reviews: () => request('/account/admin/reviews'),
   review: (id, payload) => request(`/account/admin/reviews/${encodeURIComponent(id)}`, { method: 'POST', body: payload }),
+};
+export const companyOutlook = {
+  events: (start, end, signal) => request(`/company-outlook/events?${new URLSearchParams({ start, end })}`, { signal, cache: 'no-store' }),
+  connection: (signal) => request('/company-outlook/connection', { signal, cache: 'no-store' }),
+  mailboxes: (signal) => request('/company-outlook/mailboxes', { signal, cache: 'no-store' }),
+  inbox: (cursor, signal, department) => request(`/company-outlook/inbox${outlookQuery({ cursor, department })}`, { signal, cache: 'no-store' }),
+  message: (id, signal, department) => request(`/company-outlook/inbox/${encodeURIComponent(id)}${outlookQuery({ department })}`, { signal, cache: 'no-store' }),
+  reply: (id, text, accountUserId, department) => request(`/company-outlook/inbox/${encodeURIComponent(id)}/reply${outlookQuery({ department })}`, { method: 'POST', body: { text }, accountUserId }),
+};
+function outlookQuery(values) {
+  const params = new URLSearchParams(Object.entries(values).filter(([, value]) => value));
+  return params.size ? `?${params}` : '';
+}
+export const companySettings = {
+  get: (signal) => request('/company-settings', { signal, cache: 'no-store' }),
+  currency: (signal) => request('/company-settings/currency', { signal, cache: 'no-store' }),
+  save: (body, accountUserId) => request('/company-settings', { method: 'POST', body, accountUserId }),
+  departments: (signal) => request('/company-settings/departments', { signal, cache: 'no-store' }),
+  saveDepartment: (id, body, accountUserId) => request(`/company-settings/departments/${encodeURIComponent(id)}`, { method: 'POST', body, accountUserId }),
 };
 const objectives = { list: () => request('/objectives'), save: async (body) => { const data = await request('/objectives', { method: 'POST', body }); publishDataChange('ObjectiveCycle'); return data; } };
 

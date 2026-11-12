@@ -2,9 +2,9 @@ import { formatCurrency, formatNumber } from '@/components/shared/format';
 
 export default function TaskLogMetrics({ model, compact = false }) {
   const metrics = [
-    ['Actual Cost', formatCurrency(model.totalCost)],
-    ['Actual Revenue', formatCurrency(model.totalRevenue)],
-    ['Actual Yield', `${formatNumber(model.totalYieldKg)} Kg`],
+    ['Actual Cost', formatCurrency(model.totalCost, 2)],
+    ['Actual Revenue', formatCurrency(model.totalRevenue, 2)],
+    ['Actual Yield', `${formatNumber(model.totalYieldKg, 3)} Kg`],
   ];
   return (
     <section aria-label="Daily Task Log actual totals">

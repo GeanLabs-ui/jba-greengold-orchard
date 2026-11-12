@@ -5,7 +5,7 @@ import { blockLabel, scopeLabel } from '@/lib/farm-scope';
 import AdminActionButton from '@/components/admin/AdminActionButton';
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { Activity, ArrowLeft, ArrowRight, CalendarCheck2, CalendarDays, CheckCircle2, MapPin, MoreHorizontal, Plus, Ruler, Sprout, Trees, TrendingUp } from "lucide-react";
+import { Activity, ArrowLeft, ArrowRight, CalendarCheck2, CalendarDays, CheckCircle2, MapPin, MoreHorizontal, Ruler, Sprout, Trees, TrendingUp } from "lucide-react";
 import toast from "react-hot-toast";
 import { base44 } from "@/api/base44Client";
 import { BlockFormDialog, InventoryFormDialog, StatusActionDialog } from "@/components/farm/FarmManagementDialogs";
@@ -13,9 +13,10 @@ import BlockActivityAnalytics from "@/components/farm/BlockActivityAnalytics";
 import { SEASON_STAGES } from "@/components/farm/FarmSeasonChecklist";
 import YieldChart from "@/components/farm/YieldChart";
 import EditableStatusBadge from "@/components/shared/EditableStatusBadge";
+import { formatNumber as formatLogNumber } from "@/components/shared/format";
 import StatusBadge from "@/components/shared/StatusBadge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/AuthContext";
@@ -23,8 +24,6 @@ import { subscribeToDataChanges } from "@/lib/data-sync";
 import { canChangeBlockStatus, canManageBlocks, formatDate, formatNumber, humanize } from "@/lib/farm-management";
 import { cn } from "@/lib/utils";
 
-const yearStart = () => `${new Date().getFullYear()}-01-01`;
-const today = () => new Date().toISOString().slice(0, 10);
 const hasValue = (value) => value !== undefined && value !== null && value !== "";
 const textValue = (value, fallback = "No data yet") => hasValue(value) ? value : fallback;
 
@@ -41,49 +40,251 @@ function ProfileDatum({ label, value }) {
   return <div className="min-w-0"><dt className="text-caption font-bold uppercase tracking-wide text-slate-500">{label}</dt><dd className="mt-0.5 truncate text-caption font-semibold text-slate-700" title={String(value)}>{textValue(value)}</dd></div>;
 }
 
-function CompactSeasonChecklist({ farm, block, canEdit }) {
+const CURRENT_YEAR = new Date().getFullYear();
+const SEASON_YEARS = Array.from({ length: 16 }, (_, index) => CURRENT_YEAR - 5 + index);
+
+const BLOCK_SEASON_STAGES = [
+  { ...SEASON_STAGES[0], label: "Paklo application" },
+  { id: "pruning", label: "Pruning" },
+  { id: "fertilizer", label: "Fertilizer application" },
+  ...SEASON_STAGES.slice(1),
+];
+
+const SEASON_STATUS = {
+  planned: { label: "Upcoming", style: "bg-slate-100 text-slate-600" },
+  in_progress: { label: "In progress", style: "bg-sky-100 text-sky-800" },
+  completed: { label: "Completed", style: "bg-emerald-100 text-emerald-800" },
+};
+
+function checklistProgress(record) {
+  const total = Math.max(Number(record?.total_tasks || record?.task_count) || 1, 1);
+  const count = Math.max(0, Math.min(Number(record?.completed_tasks) || 0, total));
+  const storedStatus = String(record?.status || "").toLowerCase();
+  const status = record?.completed || storedStatus === "completed" || count === total ? "completed"
+    : storedStatus === "in_progress" || count > 0 ? "in_progress" : "planned";
+  return { total, count: status === "completed" ? total : count, status };
+}
+
+function CompactSeasonChecklist({ farm, block, canEdit, initialOpen }) {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [year, setYear] = useState(Math.max(new Date().getFullYear(), 2026));
-  const [editorOpen, setEditorOpen] = useState(false);
-  const [editorMode, setEditorMode] = useState("add");
+  const [loadError, setLoadError] = useState("");
+  const [year, setYear] = useState(CURRENT_YEAR);
+  const [open, setOpen] = useState(initialOpen);
+  const [form, setForm] = useState(null);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ stage: SEASON_STAGES[0].id, total_tasks: "1", completed_tasks: "0", status: "planned", start_date: "", end_date: "" });
-  const years = Array.from({ length: 16 }, (_, index) => 2026 + index);
-  const load = useCallback(async () => {
-    if (!farm?.id || !block?.id) return;
-    try { setRecords((await base44.entities.FarmSeasonChecklist.filter({ farm_id: farm.id, season_year: year }, "-updated_date", 250)) || []); }
-    catch (error) { toast.error(error.message || "Unable to load the seasonal checklist"); }
-    finally { setLoading(false); }
-  }, [block?.id, farm?.id, year]);
-  useEffect(() => { setLoading(true); load(); return subscribeToDataChanges(load, ["FarmSeasonChecklist"]); }, [load]);
-  const recordForStage = (stage) => records.find((item) => item.block_id === block.id && item.stage === stage);
-  const formFor = (record, stage = SEASON_STAGES[0].id) => ({ stage: record?.stage || stage, total_tasks: String(record?.total_tasks || record?.task_count || 1), completed_tasks: String(record?.completed_tasks || (record?.completed ? record?.total_tasks || record?.task_count || 1 : 0)), status: record?.completed || String(record?.status).toLowerCase() === "completed" ? "completed" : String(record?.status).toLowerCase() === "in_progress" ? "in_progress" : "planned", start_date: record?.start_date || "", end_date: record?.end_date || "" });
-  const openEditor = (mode) => { setEditorMode(mode); const record = mode === "edit" ? records.find((item) => item.block_id === block.id) : null; setForm(formFor(record)); setEditorOpen(true); };
-  const changeStage = (stage) => { const record = recordForStage(stage); setForm(formFor(record, stage)); };
-  const saveActivity = async (event) => {
-    event.preventDefault(); const stage = SEASON_STAGES.find((item) => item.id === form.stage); if (!stage) return;
-    const total = Math.max(Number(form.total_tasks) || 1, 1); const completed = Math.min(Math.max(Number(form.completed_tasks) || 0, 0), total); const status = form.status === "completed" ? "completed" : form.status === "in_progress" ? "in_progress" : "planned"; const existing = recordForStage(stage.id);
-    const values = { farm_id: farm.id, farm_name: farm.name, block_id: block.id, block_name: block.name, block_code: block.block_code, season_year: year, stage: stage.id, stage_label: stage.label, total_tasks: total, completed_tasks: status === "completed" ? total : completed, completed: status === "completed", completed_at: status === "completed" ? new Date().toISOString() : "", status, start_date: form.start_date, end_date: form.end_date, source: "farm_season_checklist" };
-    setSaving(true); try { if (existing) await base44.entities.FarmSeasonChecklist.update(existing.id, values); else await base44.entities.FarmSeasonChecklist.create(values); toast.success(existing ? "Seasonal activity updated" : "Seasonal activity added"); setEditorOpen(false); await load(); } catch (error) { toast.error(error.message || "The seasonal activity could not be saved"); } finally { setSaving(false); }
+
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      try {
+        const rows = await base44.entities.FarmSeasonChecklist.filter(
+          { farm_id: farm.id, block_id: block.id, season_year: year }, "-updated_date", 250,
+        );
+        if (active) {
+          setRecords(rows);
+          setLoadError("");
+        }
+      } catch (error) {
+        if (active) setLoadError(error.message || "Unable to load the seasonal checklist");
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+    setLoading(true);
+    setLoadError("");
+    void load();
+    const unsubscribe = subscribeToDataChanges(load, ["FarmSeasonChecklist"]);
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, [block.id, farm.id, year]);
+
+  const recordForStage = (id) => records.find((record) => record.stage === id);
+  const openEditor = (id) => {
+    const record = recordForStage(id);
+    const { total, count, status } = checklistProgress(record);
+    setForm({
+      stage: id,
+      status,
+      total_tasks: total,
+      completed_tasks: count,
+      start_date: record?.start_date || "",
+      end_date: record?.end_date || "",
+    });
   };
-  const stages = SEASON_STAGES.map((stage) => {
-    const record = recordForStage(stage.id);
-    const total = Math.max(Number(record?.total_tasks || record?.task_count || 1), 1);
-    const complete = record?.completed || String(record?.status).toLowerCase() === "completed" ? total : Math.min(Number(record?.completed_tasks || 0), total);
-    const percent = Math.round((complete / total) * 100);
-    const inProgress = String(record?.status || "").toLowerCase() === "in_progress" || (Boolean(record) && !record.completed && record.start_date && record.start_date <= today());
-    return { ...stage, complete, total, percent, status: record?.completed || String(record?.status).toLowerCase() === "completed" ? "Completed" : inProgress ? "In progress" : "Upcoming" };
-  });
-  const statusClass = { Completed: "bg-emerald-100 text-emerald-700", "In progress": "bg-blue-100 text-blue-700", Upcoming: "bg-slate-100 text-slate-500" };
-  return <><section className="overflow-hidden rounded-md border border-blue-200 bg-white shadow-[0_1px_4px_rgba(15,23,42,0.04)]"><header className="flex items-center justify-between gap-2 px-3 pt-3"><div className="flex min-w-0 items-center gap-2"><CalendarCheck2 className="h-3.5 w-3.5 shrink-0 text-blue-600" /><h2 className="truncate text-blue-700 text-section-title">Season Checklist Progress</h2></div><div className="flex items-center gap-1"><select aria-label="Season checklist year" className="h-6 rounded border border-slate-200 bg-white px-1.5 text-caption font-semibold text-slate-600 outline-none" value={year} onChange={(event) => setYear(Number(event.target.value))}>{years.map((item) => <option key={item} value={item}>{item}</option>)}</select>{canEdit ? <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-6 w-6 text-slate-500 hover:bg-slate-100" aria-label="Season checklist actions"><MoreHorizontal className="h-3.5 w-3.5" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onClick={() => openEditor("add")}><Plus className="mr-2 h-3.5 w-3.5" />Add activity</DropdownMenuItem><AdminActionButton action="edit" as={DropdownMenuItem} onClick={() => openEditor("edit")} disabled={!records.some((item) => item.block_id === block.id)} label="Edit activity" /></DropdownMenuContent></DropdownMenu> : null}</div></header><div className="px-3 pb-2 pt-2"><div className="grid grid-cols-[minmax(0,1.25fr)_minmax(110px,1.35fr)_68px] gap-2 border-b border-slate-100 pb-1.5 text-caption font-bold uppercase tracking-wide text-slate-400"><span>Activity</span><span>Progress</span><span>Status</span></div>{stages.map((stage) => <div key={stage.id} className="grid grid-cols-[minmax(0,1.25fr)_minmax(110px,1.35fr)_68px] items-center gap-2 py-1.5"><p className="truncate text-caption font-medium text-slate-600">{stage.label}</p><div className="grid grid-cols-[30px_minmax(0,1fr)_23px] items-center gap-1"><span className="text-caption font-medium text-slate-500">{loading ? "—" : `${stage.complete}/${stage.total}`}</span><span className="h-1.5 overflow-hidden rounded-full bg-slate-200"><span className="block h-full rounded-full bg-blue-500 transition-[width] duration-300" style={{ width: `${loading ? 0 : stage.percent}%` }} /></span><span className="text-right text-caption font-semibold text-slate-500">{loading ? "—" : `${stage.percent}%`}</span></div><span className={cn("justify-self-start whitespace-nowrap rounded-full px-2 py-0.5 text-caption font-semibold", statusClass[stage.status])}>{stage.status}</span></div>)}</div><div className="border-t border-slate-100 px-3 py-2 text-center"><span className="inline-flex items-center gap-1 text-caption font-semibold text-blue-600">View full seasonal checklist <ArrowRight className="h-3 w-3" /></span></div></section><Dialog open={editorOpen} onOpenChange={setEditorOpen}><DialogContent className="sm:max-w-md"><DialogHeader><DialogTitle>{editorMode === "edit" ? "Edit seasonal activity" : "Add seasonal activity"}</DialogTitle><DialogDescription>Set the activity progress for this block and season. The checklist updates as soon as you save.</DialogDescription></DialogHeader><form onSubmit={saveActivity} className="space-y-4"><label className="grid gap-1.5 text-slate-700 text-label">Activity<select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={form.stage} onChange={(event) => changeStage(event.target.value)}>{SEASON_STAGES.map((stage) => <option key={stage.id} value={stage.id}>{stage.label}</option>)}</select></label><div className="grid gap-4 sm:grid-cols-2"><label className="grid gap-1.5 text-slate-700 text-label">Total tasks<input className="h-10 rounded-md border border-slate-200 px-3 text-sm" type="number" min="1" value={form.total_tasks} onChange={(event) => setForm((current) => ({ ...current, total_tasks: event.target.value }))} required /></label><label className="grid gap-1.5 text-slate-700 text-label">Completed tasks<input className="h-10 rounded-md border border-slate-200 px-3 text-sm" type="number" min="0" value={form.completed_tasks} onChange={(event) => setForm((current) => ({ ...current, completed_tasks: event.target.value }))} required /></label></div><label className="grid gap-1.5 text-slate-700 text-label">Status<select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={form.status} onChange={(event) => setForm((current) => ({ ...current, status: event.target.value }))}><option value="planned">Upcoming</option><option value="in_progress">In progress</option><option value="completed">Completed</option></select></label><div className="grid gap-4 sm:grid-cols-2"><label className="grid gap-1.5 text-slate-700 text-label">Start date<input className="h-10 rounded-md border border-slate-200 px-3 text-sm" type="date" value={form.start_date} onChange={(event) => setForm((current) => ({ ...current, start_date: event.target.value }))} required /></label><label className="grid gap-1.5 text-slate-700 text-label">End date<input className="h-10 rounded-md border border-slate-200 px-3 text-sm" type="date" value={form.end_date} onChange={(event) => setForm((current) => ({ ...current, end_date: event.target.value }))} required /></label></div><DialogFooter><Button type="button" variant="outline" onClick={() => setEditorOpen(false)}>Cancel</Button><Button type="submit" disabled={saving}>{saving ? "Saving…" : "Save activity"}</Button></DialogFooter></form></DialogContent></Dialog></>;
+
+  const saveActivity = async (event) => {
+    event.preventDefault();
+    if (!canEdit || saving || loading || loadError) return;
+    const stage = BLOCK_SEASON_STAGES.find(({ id }) => id === form.stage);
+    const existing = recordForStage(stage.id);
+    const total = Number(form.total_tasks);
+    const completed = form.status === "completed";
+    const values = {
+      ...form,
+      total_tasks: total,
+      completed_tasks: completed ? total : Number(form.completed_tasks),
+      completed,
+      completed_at: completed ? existing?.completed_at || new Date().toISOString() : "",
+    };
+    if (form.start_date !== (existing?.start_date || "") || form.end_date !== (existing?.end_date || "")) {
+      values.window_code = form.start_date || form.end_date ? "custom" : "";
+      values.window_label = [form.start_date, form.end_date].filter(Boolean).join(" – ");
+    }
+
+    setSaving(true);
+    try {
+      const record = existing
+        ? await base44.entities.FarmSeasonChecklist.update(existing.id, values)
+        : await base44.entities.FarmSeasonChecklist.create({
+          ...values,
+          farm_id: farm.id,
+          farm_name: farm.name,
+          block_id: block.id,
+          block_name: block.name,
+          block_code: block.block_code,
+          season_year: year,
+          stage_label: stage.label,
+          source: "farm_season_checklist",
+        });
+      setRecords((current) => [record, ...current.filter((row) => row.id !== record.id)]);
+      setForm(null);
+      toast.success(`${stage.label} updated`);
+    } catch (error) {
+      toast.error(error.message || "The seasonal activity could not be saved");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const updateForm = (key, value) => setForm((current) => ({ ...current, [key]: value }));
+  const updateStatus = (status) => setForm((current) => ({
+    ...current,
+    status,
+    completed_tasks: status === "planned" || current.status === "completed" ? 0 : current.completed_tasks,
+  }));
+  const rows = BLOCK_SEASON_STAGES.map((stage) => ({ ...stage, ...checklistProgress(recordForStage(stage.id)) }));
+  const statusBadge = (status) => <span className={cn("justify-self-start whitespace-nowrap rounded-full px-2 py-0.5 text-caption font-semibold", SEASON_STATUS[status].style)}>{SEASON_STATUS[status].label}</span>;
+  const currentStage = BLOCK_SEASON_STAGES.find(({ id }) => id === form?.stage);
+  const fieldClass = "h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm";
+
+  return (
+    <Dialog open={open} onOpenChange={(nextOpen) => {
+      if (saving) return;
+      setOpen(nextOpen);
+      if (!nextOpen) setForm(null);
+    }}>
+      <section className="overflow-hidden rounded-md border border-blue-200 bg-white">
+        <header className="flex items-center justify-between gap-2 px-3 pt-3">
+          <h2 className="flex min-w-0 items-center gap-2 text-blue-700 text-section-title">
+            <CalendarCheck2 className="h-3.5 w-3.5 shrink-0 text-blue-600" /> Season Checklist Progress
+          </h2>
+          <select aria-label="Season checklist year" className="h-7 rounded border border-slate-200 bg-white px-1.5 text-caption font-semibold text-slate-600" value={year} onChange={(event) => setYear(Number(event.target.value))}>
+            {SEASON_YEARS.map((item) => <option key={item} value={item}>{item}</option>)}
+          </select>
+        </header>
+        <div className="px-3 py-2">
+          {loading || loadError ? <p role={loadError ? "alert" : "status"} className="py-3 text-sm text-slate-600">{loadError || "Loading checklist…"}</p> : (
+            <table className="w-full text-left text-caption">
+              <thead className="border-b border-slate-100 text-slate-500">
+                <tr><th scope="col" className="pb-1.5">Activity</th><th scope="col" className="pb-1.5">Progress</th><th scope="col" className="pb-1.5">Status</th></tr>
+              </thead>
+              <tbody>
+                {rows.map((stage) => (
+                  <tr key={stage.id}>
+                    <th scope="row" className="py-1.5 pr-2 font-medium">{stage.label}</th>
+                    <td className="py-1.5 pr-2">
+                      <div className="flex items-center gap-2 text-slate-500">
+                        <span>{stage.count}/{stage.total}</span>
+                        <progress className="hidden h-1.5 w-full max-w-32 accent-emerald-700 sm:block" aria-label={`${stage.label} progress`} value={stage.count} max={stage.total} />
+                        <span className="hidden sm:inline">{Math.round(stage.count / stage.total * 100)}%</span>
+                      </div>
+                    </td>
+                    <td className="py-1.5">{statusBadge(stage.status)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+        <div className="border-t border-slate-100 px-3 py-1 text-center">
+          <DialogTrigger asChild>
+            <Button type="button" variant="ghost" size="sm" className="gap-1 text-blue-600">
+              View full seasonal checklist <ArrowRight className="h-3 w-3" aria-hidden="true" />
+            </Button>
+          </DialogTrigger>
+        </div>
+      </section>
+
+      <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Seasonal checklist</DialogTitle>
+          <DialogDescription>{blockLabel(block)} · {year}</DialogDescription>
+        </DialogHeader>
+        {loading || loadError ? <p role={loadError ? "alert" : "status"} className="text-sm">{loadError || "Loading checklist…"}</p> : form && canEdit ? (
+          <form onSubmit={saveActivity} className="space-y-4">
+            <h3 className="font-semibold">{currentStage.label}</h3>
+            <label className="grid gap-1.5 text-label">
+              Status
+              <select className={fieldClass} value={form.status} onChange={(event) => updateStatus(event.target.value)}>
+                {Object.entries(SEASON_STATUS).map(([status, { label }]) => <option key={status} value={status}>{label}</option>)}
+              </select>
+            </label>
+            <div className="grid grid-cols-2 gap-4">
+              <label className="grid gap-1.5 text-label">
+                Total tasks
+                <input className={fieldClass} type="number" min="1" required value={form.total_tasks} onChange={(event) => updateForm("total_tasks", event.target.value)} />
+              </label>
+              <label className="grid gap-1.5 text-label">
+                Completed tasks
+                <input className={fieldClass} type="number" min="0" max={Math.max(Number(form.total_tasks) - 1, 0)} required disabled={form.status !== "in_progress"} value={form.status === "completed" ? form.total_tasks : form.completed_tasks} onChange={(event) => updateForm("completed_tasks", event.target.value)} />
+              </label>
+              <label className="grid gap-1.5 text-label">
+                Start date
+                <input className={fieldClass} type="date" max={form.end_date || undefined} value={form.start_date} onChange={(event) => updateForm("start_date", event.target.value)} />
+              </label>
+              <label className="grid gap-1.5 text-label">
+                End date
+                <input className={fieldClass} type="date" min={form.start_date || undefined} value={form.end_date} onChange={(event) => updateForm("end_date", event.target.value)} />
+              </label>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" disabled={saving} onClick={() => setForm(null)}>Cancel</Button>
+              <Button type="submit" disabled={saving}>{saving ? "Saving…" : "Save activity"}</Button>
+            </DialogFooter>
+          </form>
+        ) : (
+          <ul className="divide-y rounded-md border px-3">
+            {rows.map((stage) => {
+              const record = recordForStage(stage.id);
+              const dates = record?.window_label || [record?.start_date, record?.end_date].filter(Boolean).join(" – ");
+              return (
+                <li key={stage.id} className="flex items-center justify-between gap-2 py-3">
+                  <div>
+                    <p className="font-medium">{stage.label}</p>
+                    <p className="text-caption text-slate-500">{stage.count}/{stage.total} tasks complete{dates && ` · ${dates}`}</p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    {statusBadge(stage.status)}
+                    {canEdit && <Button type="button" variant="outline" size="sm" aria-label={`Edit ${stage.label}`} onClick={() => openEditor(stage.id)}>Edit</Button>}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
 }
 
 export default function BlockProfileAdmin() {
   const { farmId, blockId } = useParams(); const navigate = useNavigate(); const { user } = useAuth();
   const [params] = useSearchParams();
-  const start = params.get('start') ?? yearStart();
-  const end = params.get('end') ?? today();
+  const start = params.get('start') ?? '';
+  const end = params.get('end') ?? '';
   const [farm, setFarm] = useState(null);
   const [block, setBlock] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -93,16 +294,17 @@ export default function BlockProfileAdmin() {
     setLoading(true);
     setError("");
     try {
-      const [farmResponse, blockResponse, dailyActivities, blocks] = await Promise.all([
+      const [farmResponse, blockResponse, dailyActivities, blocks, farms] = await Promise.all([
         base44.farms.get(farmId, { start, end }),
         base44.farms.getBlock(blockId, { start, end }),
         base44.entities.DailyActivity.listAll('-activity_date'),
         base44.entities.FarmBlock.listAll(),
+        base44.entities.Farm.listAll(),
       ]);
       if (String(blockResponse.farm_id) !== String(farmResponse.id)) {
         throw new Error("This block does not belong to the selected farm.");
       }
-      const model = taskLogProfile(farmResponse, dailyActivities, { start, end, blockId, blocks });
+      const model = taskLogProfile(farmResponse, dailyActivities, { start, end, blockId, blocks, farms });
       setFarm(farmResponse);
       setBlock({
         ...blockResponse,
@@ -133,10 +335,10 @@ export default function BlockProfileAdmin() {
   return <div className="block-profile-page mx-auto max-w-[1280px] pb-10 text-slate-700"><nav className="mb-3 flex flex-wrap items-center gap-1 text-caption font-semibold text-slate-500" aria-label="Breadcrumb"><Link to="/admin/farm-daily-activities/activities/farms" className="hover:text-emerald-800">Farms</Link><span>/</span><Link to={`/admin/farm-daily-activities/activities/farms/${farm.id}?tab=blocks`} className="hover:text-emerald-800">{scopeLabel(farm.name)}</Link><span>/</span><span className="text-slate-700">{block.block_code}</span></nav>
     <header className="rounded bg-[#2e7d32] px-5 py-4 text-white shadow-none"><div className="grid gap-4 lg:grid-cols-[170px_auto_minmax(0,1fr)] lg:items-center"><div><p className="text-caption font-bold uppercase tracking-[0.16em] text-emerald-100/75">{block.block_code}</p><h1 className="mt-1 text-page-title">{blockTitle}</h1><div className="mt-1 flex flex-wrap gap-x-3 text-caption text-emerald-100/80"><span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{farm.location || farm.region || "Location not recorded"}</span><span>Updated {formatDate(block.updated_at)}</span></div></div><div className="flex gap-2"><Button variant="secondary" size="sm" className="h-8 border-0 bg-white/10 text-caption text-white hover:bg-white/20" asChild><Link to={`/admin/farm-daily-activities/activities/farms/${farm.id}?tab=blocks`}><ArrowLeft className="mr-1 h-3.5 w-3.5" />Back to blocks</Link></Button>{(canEdit || (canChangeBlockStatus(user?.role) && block.status !== "merged")) ? <DropdownMenu><DropdownMenuTrigger asChild><Button variant="secondary" size="icon" className="h-8 w-8 border-0 bg-[#66bb6a] text-white hover:bg-[#c8e6c9] hover:text-[#123524]" aria-label="More block actions"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end">{canEdit ? <AdminActionButton action="edit" as={DropdownMenuItem} onClick={() => setEditOpen(true)} label="Edit block" /> : null}{canChangeBlockStatus(user?.role) && block.status !== "merged" ? <DropdownMenuItem className={block.status === "active" ? "text-destructive" : ""} onClick={() => setStatusAction(block.status === "active" ? "deactivate" : "reactivate")}>{block.status === "active" ? "Deactivate block" : "Reactivate block"}</DropdownMenuItem> : null}</DropdownMenuContent></DropdownMenu> : null}</div><div className="grid grid-cols-2 gap-x-4 gap-y-3 border-t border-white/10 pt-3 sm:grid-cols-4 lg:border-l lg:border-t-0 lg:pl-4 lg:pt-0"><div><p className="text-caption font-bold uppercase tracking-wide text-emerald-100/65">Block status</p><div className="mt-1"><EditableStatusBadge status={block.status} canEdit={canChangeBlockStatus(user?.role) && block.status !== "merged"} entityLabel={blockLabel(block)} onClick={() => setStatusAction(block.status === "active" ? "deactivate" : "reactivate")} /></div></div><div><p className="text-caption font-bold uppercase tracking-wide text-emerald-100/65">Mango varieties</p><p className="mt-1 truncate text-caption font-bold">{currentInventory.map((entry) => entry.variety_name).filter(Boolean).join(", ") || block.variety || "Not recorded"}</p></div><div><p className="text-caption font-bold uppercase tracking-wide text-emerald-100/65">Harvest types</p><p className="mt-1 text-caption font-bold">{activeHarvest ? humanize(activeHarvest.harvest_type) : "Not scheduled"}</p></div><div><p className="text-caption font-bold uppercase tracking-wide text-emerald-100/65">Next harvest</p><p className="mt-1 flex items-center gap-1 text-caption font-bold"><CalendarDays className="h-3.5 w-3.5 text-emerald-100" />{activeHarvest?.expected_start_date ? formatDate(activeHarvest.expected_start_date) : "Not scheduled"}</p></div></div></div></header>
     {block.status === "merged" && block.merge_info ? <div className="mt-4 flex gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900"><CheckCircle2 className="h-5 w-5 shrink-0" /><div><p className="font-medium">Merged on {formatDate(block.merge_info.effective_date)}</p><p className="mt-1">Historical records remain here. New operations should use the destination block.</p></div></div> : null}{error ? <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">The latest refresh failed: {error}. The last loaded values are still shown.</div> : null}
-    <TaskLogMetrics model={block.task_log} /><section className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6"><MetricCard icon={Ruler} label="Area" value={hasValue(block.size_acres) ? `${formatNumber(block.size_acres)} ac` : "No data yet"} /><MetricCard icon={Trees} label="Trees" value={analytics.inventory_record_count ? formatNumber(analytics.total_trees, 0) : "No data yet"} /><MetricCard icon={TrendingUp} label="Actual yield" value={`${formatNumber(block.task_log.totalYieldKg)} Kg`} /><MetricCard icon={Activity} label="Current stage" value={latestActivity ? humanize(latestActivity.category || latestActivity.activity_type) : "No data yet"} /><MetricCard icon={CalendarDays} label="Harvest window" value={activeHarvest ? humanize(activeHarvest.harvest_type) : "No data yet"} /><MetricCard icon={CalendarCheck2} label="Last activity" value={lastActivityDate ? formatDate(lastActivityDate) : "No data yet"} /></section>
+    <TaskLogMetrics model={block.task_log} /><section className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6"><MetricCard icon={Ruler} label="Area" value={hasValue(block.size_acres) ? `${formatNumber(block.size_acres)} ac` : "No data yet"} /><MetricCard icon={Trees} label="Trees" value={analytics.inventory_record_count ? formatNumber(analytics.total_trees, 0) : "No data yet"} /><MetricCard icon={TrendingUp} label="Actual yield" value={`${formatLogNumber(block.task_log.totalYieldKg, 3)} Kg`} /><MetricCard icon={Activity} label="Current stage" value={latestActivity ? humanize(latestActivity.category || latestActivity.activity_type) : "No data yet"} /><MetricCard icon={CalendarDays} label="Harvest window" value={activeHarvest ? humanize(activeHarvest.harvest_type) : "No data yet"} /><MetricCard icon={CalendarCheck2} label="Last activity" value={lastActivityDate ? formatDate(lastActivityDate) : "No data yet"} /></section>
     <TaskLogRecords activities={block.activity_periods} />
     <div className="mt-4 grid gap-4 lg:grid-cols-2"><div className="space-y-4"><Panel className="border-l-2 border-l-emerald-700" title="Block profile" icon={Sprout} action={canEdit ? <AdminActionButton action="edit" onClick={() => setEditOpen(true)} label="Edit details" /> : null}><dl className="grid gap-x-3 gap-y-4 px-3 py-4 sm:grid-cols-5 sm:px-4"><ProfileDatum label="Block code" value={block.block_code} /><ProfileDatum label="Early block" value={block.early_block_classification} /><ProfileDatum label="Variety" value={currentInventory.map((entry) => entry.variety_name).filter(Boolean).join(", ") || block.variety} /><ProfileDatum label="Size" value={hasValue(block.size_acres) ? `${formatNumber(block.size_acres)} acres` : null} /><ProfileDatum label="Soil / pH" value={`${block.soil_type || "No data yet"}${hasValue(block.soil_ph) ? ` · pH ${block.soil_ph}` : ""}`} /><ProfileDatum label="Fruit fly pressure" value={block.fruit_fly_pressure} /><ProfileDatum label="Disease rating" value={block.disease_rating} /><ProfileDatum label="Shoot maturity" value={hasValue(block.shoot_maturity) ? `${formatNumber(Number(block.shoot_maturity) * 100, 0)}%` : null} /><ProfileDatum label="Operations started" value={formatDate(block.operations_started_on)} /><ProfileDatum label="Planting started" value={formatDate(block.planting_started_on)} /></dl><div className="border-t border-slate-100 px-3 py-3 sm:px-4"><p className="text-caption font-bold uppercase tracking-wide text-slate-500">Description</p><p className="mt-1 text-caption leading-5 text-slate-600">{block.description || block.soil_notes || "No description recorded for this block."}</p></div></Panel><BlockActivityAnalytics activities={block.activity_periods} /></div>
-      <aside className="space-y-4"><CompactSeasonChecklist farm={farm} block={block} canEdit={canEdit} /><Panel title="Harvest periods" icon={CalendarDays} action={<span className="text-caption font-semibold text-emerald-700">{block.harvest_periods?.length ? `${block.harvest_periods.length} recorded` : ""}</span>}>{block.harvest_periods?.length ? <div className="divide-y divide-slate-100">{block.harvest_periods.slice(0, 3).map((period) => <div key={period.id} className="flex items-center justify-between gap-3 px-4 py-3"><div className="min-w-0"><p className="truncate text-caption font-semibold text-slate-700">{humanize(period.harvest_type)}</p><p className="mt-0.5 text-caption text-slate-500">{formatDate(period.expected_start_date)} – {formatDate(period.expected_end_date)}</p></div><StatusBadge status={period.status} /></div>)}</div> : <div className="grid min-h-20 place-items-center px-4 text-center"><div><CalendarDays className="mx-auto h-5 w-5 text-slate-300" /><p className="mt-1.5 text-caption font-semibold text-slate-600">No harvest periods recorded</p><p className="mt-0.5 text-caption text-slate-500">Harvest windows will appear here.</p></div></div>}</Panel><Panel title="Crop inventory" icon={Trees} action={canEdit ? <Button variant="ghost" size="sm" className="h-7 px-1.5 text-caption text-emerald-700" onClick={() => { setSelectedInventory(null); setInventoryOpen(true); }}>Record inventory</Button> : null}>{currentInventory.length ? <div className="divide-y divide-slate-100">{currentInventory.slice(0, 3).map((entry) => <button type="button" key={entry.id} disabled={!canEdit} onClick={() => { setSelectedInventory(entry); setInventoryOpen(true); }} className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left disabled:cursor-default"><div className="min-w-0"><p className="truncate text-caption font-semibold text-slate-700">{entry.variety_name || "Tree inventory"}</p><p className="mt-0.5 text-caption text-slate-500">{formatNumber(entry.productive_trees || 0, 0)} productive · planted {formatDate(entry.planting_date)}</p></div><span className="text-caption font-bold text-emerald-700">{formatNumber(entry.total_trees || 0, 0)}</span></button>)}</div> : <div className="grid min-h-20 place-items-center px-4 text-center"><div><Trees className="mx-auto h-5 w-5 text-slate-300" /><p className="mt-1.5 text-caption font-semibold text-slate-600">No inventory recorded</p><p className="mt-0.5 text-caption text-slate-500">Add tree inventory to track stock and usage.</p></div></div>}</Panel><YieldChart records={block.yield_records || []} title="Yield performance" /></aside></div>
+      <aside className="space-y-4"><CompactSeasonChecklist key={block.id} farm={farm} block={block} canEdit={canEdit} initialOpen={params.get("tab") === "season"} /><Panel title="Harvest periods" icon={CalendarDays} action={<span className="text-caption font-semibold text-emerald-700">{block.harvest_periods?.length ? `${block.harvest_periods.length} recorded` : ""}</span>}>{block.harvest_periods?.length ? <div className="divide-y divide-slate-100">{block.harvest_periods.slice(0, 3).map((period) => <div key={period.id} className="flex items-center justify-between gap-3 px-4 py-3"><div className="min-w-0"><p className="truncate text-caption font-semibold text-slate-700">{humanize(period.harvest_type)}</p><p className="mt-0.5 text-caption text-slate-500">{formatDate(period.expected_start_date)} – {formatDate(period.expected_end_date)}</p></div><StatusBadge status={period.status} /></div>)}</div> : <div className="grid min-h-20 place-items-center px-4 text-center"><div><CalendarDays className="mx-auto h-5 w-5 text-slate-300" /><p className="mt-1.5 text-caption font-semibold text-slate-600">No harvest periods recorded</p><p className="mt-0.5 text-caption text-slate-500">Harvest windows will appear here.</p></div></div>}</Panel><Panel title="Crop inventory" icon={Trees} action={canEdit ? <Button variant="ghost" size="sm" className="h-7 px-1.5 text-caption text-emerald-700" onClick={() => { setSelectedInventory(null); setInventoryOpen(true); }}>Record inventory</Button> : null}>{currentInventory.length ? <div className="divide-y divide-slate-100">{currentInventory.slice(0, 3).map((entry) => <button type="button" key={entry.id} disabled={!canEdit} onClick={() => { setSelectedInventory(entry); setInventoryOpen(true); }} className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left disabled:cursor-default"><div className="min-w-0"><p className="truncate text-caption font-semibold text-slate-700">{entry.variety_name || "Tree inventory"}</p><p className="mt-0.5 text-caption text-slate-500">{formatNumber(entry.productive_trees || 0, 0)} productive · planted {formatDate(entry.planting_date)}</p></div><span className="text-caption font-bold text-emerald-700">{formatNumber(entry.total_trees || 0, 0)}</span></button>)}</div> : <div className="grid min-h-20 place-items-center px-4 text-center"><div><Trees className="mx-auto h-5 w-5 text-slate-300" /><p className="mt-1.5 text-caption font-semibold text-slate-600">No inventory recorded</p><p className="mt-0.5 text-caption text-slate-500">Add tree inventory to track stock and usage.</p></div></div>}</Panel><YieldChart records={block.yield_records || []} title="Yield performance" /></aside></div>
     <BlockFormDialog open={editOpen} onOpenChange={setEditOpen} block={block} parentFarm={farm} saving={saving} unallocatedAcres={farm.analytics?.unallocatedSizeAcres} onSubmit={saveBlock} /><InventoryFormDialog open={inventoryOpen} onOpenChange={setInventoryOpen} inventory={selectedInventory} saving={saving} onSubmit={(payload) => mutate(() => selectedInventory ? base44.farms.updateInventory(selectedInventory.id, payload) : base44.farms.addInventory(block.id, payload), selectedInventory ? "Tree inventory updated" : "Tree inventory recorded", () => setInventoryOpen(false))} /><StatusActionDialog open={Boolean(statusAction)} onOpenChange={(open) => !open && setStatusAction(null)} entityLabel={blockLabel(block)} action={statusAction || "deactivate"} saving={saving} onSubmit={(payload) => mutate(() => statusAction === "deactivate" ? base44.farms.deactivateBlock(block.id, payload) : base44.farms.reactivateBlock(block.id), `Block ${statusAction === "deactivate" ? "deactivated" : "reactivated"}`, () => setStatusAction(null))} />
   </div>;
 }

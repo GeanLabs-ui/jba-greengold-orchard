@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { validateObjectiveAlignment } from "./objective-alignment.js";
 import { z } from "zod";
 import { closeDatabase, createDatabase } from "../db.js";
+import { scheduledCalendarAlert } from "../calendar-reminders.js";
 import type { AppVariables, AuthUser } from "../middleware/auth.js";
 import { checkRateLimit, requestIp } from "../rate-limit.js";
 import { timingSafeEqual } from "../security.js";
@@ -15,6 +16,7 @@ import {
   updateCanonicalFarmEntity,
 } from "./farm-entity-compat.js";
 import { generateEmployeeCode } from "./staff-identity.js";
+import { currencySchema, readCompanyProfile } from "./company-settings.js";
 
 const storefrontProductSchema = z.object({
   storefront: z.literal(true),
@@ -325,12 +327,38 @@ type JsonValue =
   null | string | number | boolean | JsonValue[] | { [key: string]: JsonValue };
 type JsonObject = { [key: string]: JsonValue };
 
+export async function insertAuditedEntity(
+  tx: import('postgres').TransactionSql, name: string, id: string, payload: JsonObject,
+  user: AuthUser | null, ip: string, now = new Date(),
+) {
+  await tx`
+    INSERT INTO entity_records (id, entity_name, organization_id, owner_user_id, data, created_by, updated_by, created_at, updated_at)
+    VALUES (${id}, ${name}, ${user?.organizationId || null}, NULL, ${tx.json(payload)}, ${user?.id ?? null}, ${user?.id ?? null}, ${now}, ${now})
+  `;
+  await tx`
+    INSERT INTO audit_events (id, user_id, action, target_table, record_id, new_values, ip_address)
+    VALUES (${crypto.randomUUID()}, ${user?.id ?? null}, 'create', ${name}, ${id}, ${tx.json(payload)}, ${ip})
+  `;
+}
+
 function entityName(value: string): string | null {
   return ENTITY_NAMES.has(value) ? value : null;
 }
 
 function isAdmin(user: AuthUser | null): boolean {
   return Boolean(user && adminRoles.has(user.role));
+}
+
+const placedOrderStatuses = new Set(['confirmed', 'processing', 'packed', 'dispatched', 'delivered']);
+
+function placedOrderAlert(id: string, order: JsonObject) {
+  return {
+    title: 'Order placed',
+    message: `${String(order.order_number || 'New order')}${order.customer_name ? ` · ${String(order.customer_name)}` : ''}`,
+    type: 'order', notification_type: 'order', channel: 'Admin', status: 'new',
+    order_id: id, record_id: id, entity_name: 'Order',
+    destination: `/admin/marketing/orders?order=${encodeURIComponent(id)}`,
+  };
 }
 
 function canRead(
@@ -430,6 +458,7 @@ router.get("/:entity", async (c) => {
   const blockIdFilter = c.req.query("block_id") || null;
   const seasonYearFilter = c.req.query("season_year") || null;
   const stageFilter = c.req.query("stage") || null;
+  const idFilter = c.req.query("id") || null;
   const sql = createDatabase(c.env);
   try {
     if (isCanonicalFarmEntity(name)) {
@@ -456,6 +485,7 @@ router.get("/:entity", async (c) => {
       rows = await sql`
         SELECT id, data, created_at, updated_at FROM entity_records
         WHERE entity_name = ${name} AND owner_user_id = ${user.id}
+          AND (${idFilter}::text IS NULL OR id = ${idFilter})
           AND (${farmIdFilter}::text IS NULL OR data->>'farm_id' = ${farmIdFilter})
           AND (${blockIdFilter}::text IS NULL OR data->>'block_id' = ${blockIdFilter})
           AND (${seasonYearFilter}::text IS NULL OR data->>'season_year' = ${seasonYearFilter})
@@ -466,6 +496,7 @@ router.get("/:entity", async (c) => {
       rows = await sql`
         SELECT id, data, created_at, updated_at FROM entity_records
         WHERE entity_name = ${name}
+          AND (${idFilter}::text IS NULL OR id = ${idFilter})
           AND (${farmIdFilter}::text IS NULL OR data->>'farm_id' = ${farmIdFilter})
           AND (${blockIdFilter}::text IS NULL OR data->>'block_id' = ${blockIdFilter})
           AND (${seasonYearFilter}::text IS NULL OR data->>'season_year' = ${seasonYearFilter})
@@ -479,6 +510,7 @@ router.get("/:entity", async (c) => {
       rows = await sql`
         SELECT id, data, created_at, updated_at FROM entity_records
         WHERE entity_name = ${name} AND organization_id IS NOT DISTINCT FROM ${user!.organizationId}
+          AND (${idFilter}::text IS NULL OR id = ${idFilter})
           AND (${farmIdFilter}::text IS NULL OR data->>'farm_id' = ${farmIdFilter})
           AND (${blockIdFilter}::text IS NULL OR data->>'block_id' = ${blockIdFilter})
           AND (${seasonYearFilter}::text IS NULL OR data->>'season_year' = ${seasonYearFilter})
@@ -605,6 +637,11 @@ router.post("/:entity", async (c) => {
 
   const sql = createDatabase(c.env);
   try {
+    if (name === "ExportShipment" && user) {
+      const currency = currencySchema.safeParse(payload.currency ?? (await readCompanyProfile(sql, user.organizationId)).currency);
+      if (!currency.success) return c.json({ error: { code: "VALIDATION_ERROR", message: "Choose a supported shipment currency." } }, 422);
+      payload.currency = currency.data;
+    }
     if (name === "Employee" && typeof payload.email === "string" && payload.email) {
       const duplicates = await sql<{ id: string }[]>`
         SELECT id FROM entity_records
@@ -683,14 +720,10 @@ router.post("/:entity", async (c) => {
     const id = crypto.randomUUID();
     const now = new Date();
     await sql.begin(async (transaction) => {
-      await transaction`
-        INSERT INTO entity_records (id, entity_name, organization_id, owner_user_id, data, created_by, updated_by, created_at, updated_at)
-        VALUES (${id}, ${name}, ${user?.organizationId || null}, ${null}, ${sql.json(payload)}, ${user?.id || null}, ${user?.id || null}, ${now}, ${now})
-      `;
-      await transaction`
-        INSERT INTO audit_events (id, user_id, action, target_table, record_id, new_values, ip_address)
-        VALUES (${crypto.randomUUID()}, ${user?.id || null}, 'create', ${name}, ${id}, ${sql.json(payload)}, ${requestIp(c.req.raw)})
-      `;
+      await insertAuditedEntity(transaction, name, id, payload, user, requestIp(c.req.raw), now);
+      const alert = name === 'CalendarEvent' ? scheduledCalendarAlert(id, payload)
+        : name === 'Order' && placedOrderStatuses.has(String(payload.status)) ? placedOrderAlert(id, payload) : null;
+      if (alert) await insertAuditedEntity(transaction, 'Notification', crypto.randomUUID(), alert, user, requestIp(c.req.raw), now);
       if (name === "Inquiry") {
         const sender =
           typeof payload.name === "string" ? payload.name : "Website visitor";
@@ -810,6 +843,11 @@ router.patch("/:entity/:id", async (c) => {
       },
       422,
     );
+  if (name === "ExportShipment" && "currency" in payload) {
+    const currency = currencySchema.safeParse(payload.currency);
+    if (!currency.success) return c.json({ error: { code: "VALIDATION_ERROR", message: "Choose a supported shipment currency." } }, 422);
+    payload.currency = currency.data;
+  }
   const sql = createDatabase(c.env);
   try {
     if (name === "DailyActivity") {
@@ -845,22 +883,39 @@ router.patch("/:entity/:id", async (c) => {
         throw error;
       }
     }
-    const rows = isAdmin(user)
-      ? await sql<
-          { id: string; data: JsonObject; created_at: Date; updated_at: Date }[]
-        >`
-          UPDATE entity_records SET data = data || ${sql.json(payload)}, updated_by = ${user!.id}, updated_at = now()
-          WHERE id = ${c.req.param("id")} AND entity_name = ${name}
-          RETURNING id, data, created_at, updated_at
-        `
-      : await sql<
-          { id: string; data: JsonObject; created_at: Date; updated_at: Date }[]
-        >`
-          UPDATE entity_records SET data = data || ${sql.json(payload)}, updated_by = ${user!.id}, updated_at = now()
-          WHERE id = ${c.req.param("id")} AND entity_name = ${name} AND organization_id IS NOT DISTINCT FROM ${user!.organizationId}
-          RETURNING id, data, created_at, updated_at
+    const recordId = c.req.param('id');
+    const admin = isAdmin(user);
+    const ip = requestIp(c.req.raw);
+    const record = await sql.begin(async (tx) => {
+      const submittingOrder = name === 'Order' && placedOrderStatuses.has(String(payload.status));
+      const previous = submittingOrder ? (await tx<{ status: string }[]>`
+        SELECT data->>'status' AS status FROM entity_records
+        WHERE id = ${recordId} AND entity_name = 'Order'
+          AND (${admin} OR organization_id IS NOT DISTINCT FROM ${user!.organizationId})
+        FOR UPDATE
+      `)[0] : null;
+      const [updated] = await tx<{ id: string; organization_id: string | null; data: JsonObject; created_at: Date; updated_at: Date }[]>`
+          UPDATE entity_records SET data = data || ${tx.json(payload)}, updated_by = ${user!.id}, updated_at = now()
+          WHERE id = ${recordId} AND entity_name = ${name}
+            AND (${admin} OR organization_id IS NOT DISTINCT FROM ${user!.organizationId})
+          RETURNING id, organization_id, data, created_at, updated_at
         `;
-    if (!rows[0])
+      if (!updated) return null;
+      await tx`INSERT INTO audit_events (id, user_id, action, target_table, record_id, new_values, ip_address) VALUES (${crypto.randomUUID()}, ${user!.id}, 'update', ${name}, ${updated.id}, ${tx.json(payload)}, ${ip})`;
+      if (previous?.status === 'draft') {
+        const [alreadyNotified] = await tx`
+          SELECT 1 FROM entity_records WHERE entity_name = 'Notification' AND data->>'order_id' = ${recordId} AND data->>'type' = 'order'
+          UNION ALL
+          SELECT 1 FROM audit_events WHERE target_table = 'Notification' AND action = 'delete' AND old_values->>'order_id' = ${recordId} AND old_values->>'type' = 'order'
+          LIMIT 1
+        `;
+        if (!alreadyNotified) {
+          await insertAuditedEntity(tx, 'Notification', crypto.randomUUID(), placedOrderAlert(updated.id, updated.data), { ...user!, organizationId: updated.organization_id }, ip);
+        }
+      }
+      return updated;
+    });
+    if (!record)
       return c.json(
         {
           error: { code: "NOT_FOUND", message: "Record not found" },
@@ -868,8 +923,7 @@ router.patch("/:entity/:id", async (c) => {
         },
         404,
       );
-    await sql`INSERT INTO audit_events (id, user_id, action, target_table, record_id, new_values, ip_address) VALUES (${crypto.randomUUID()}, ${user!.id}, 'update', ${name}, ${rows[0].id}, ${sql.json(payload)}, ${requestIp(c.req.raw)})`;
-    return c.json({ data: mapRecord(rows[0]), requestId: c.get("requestId") });
+    return c.json({ data: mapRecord(record), requestId: c.get("requestId") });
   } finally {
     await closeDatabase(sql);
   }
@@ -938,13 +992,18 @@ router.delete("/:entity/:id", async (c) => {
         throw error;
       }
     }
-    const rows = isAdmin(user)
-      ? await sql<
-          { id: string; data: JsonValue }[]
-        >`DELETE FROM entity_records WHERE id = ${c.req.param("id")} AND entity_name = ${name} RETURNING id, data`
-      : await sql<
-          { id: string; data: JsonValue }[]
-        >`DELETE FROM entity_records WHERE id = ${c.req.param("id")} AND entity_name = ${name} AND organization_id IS NOT DISTINCT FROM ${user!.organizationId} RETURNING id, data`;
+    // Keep the dismissal and its audit entry atomic so the reminder jobs never
+    // observe a gap between removal and the permanent record of that removal.
+    const rows = await sql`
+      WITH deleted AS (
+        DELETE FROM entity_records WHERE id = ${c.req.param("id")} AND entity_name = ${name}
+          AND (${isAdmin(user)} OR organization_id IS NOT DISTINCT FROM ${user!.organizationId})
+        RETURNING id, data
+      )
+      INSERT INTO audit_events (id, user_id, action, target_table, record_id, old_values, ip_address)
+      SELECT ${crypto.randomUUID()}, ${user!.id}, 'delete', ${name}, id, data, ${requestIp(c.req.raw)} FROM deleted
+      RETURNING record_id
+    `;
     if (!rows[0])
       return c.json(
         {
@@ -953,7 +1012,6 @@ router.delete("/:entity/:id", async (c) => {
         },
         404,
       );
-    await sql`INSERT INTO audit_events (id, user_id, action, target_table, record_id, old_values, ip_address) VALUES (${crypto.randomUUID()}, ${user!.id}, 'delete', ${name}, ${rows[0].id}, ${sql.json(rows[0].data)}, ${requestIp(c.req.raw)})`;
     return c.json({ data: { success: true }, requestId: c.get("requestId") });
   } finally {
     await closeDatabase(sql);

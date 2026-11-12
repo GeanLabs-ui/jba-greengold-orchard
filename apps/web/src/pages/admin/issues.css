@@ -14,7 +14,6 @@
 
 .issues-dashboard .is-badge.is-critical{background:#991b1b;color:#fff}.issues-dashboard .is-badge.is-high{background:#b45309;color:#fff}.issues-dashboard .is-badge.is-medium{background:#fef9c3;color:#713f12}
 
-.issues-dashboard .is-badge.is-critical i{background:#991b1b}.issues-dashboard .is-badge.is-high i{background:#b45309}.issues-dashboard .is-badge.is-medium i{background:#fef08a;border:1px solid #eab308}
 
 .is-report-stamp{white-space:nowrap}.is-pagination{display:flex;align-items:center;justify-content:flex-end;gap:10px;padding-top:10px;font-size:11px}.is-pagination>span:first-child{margin-right:auto}.is-pagination button{border:1px solid #cdded5;border-radius:4px;padding:4px 8px;background:white}.is-pagination button:disabled{opacity:.45;cursor:not-allowed}
 
