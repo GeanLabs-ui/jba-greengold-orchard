@@ -49,8 +49,10 @@ async function main() {
   // GitHub on every run; network failure and every other advisory fail closed.
   const withdrawn = new Set();
   if (report.vulnerabilities?.picomatch) {
-    const response = await fetch('https://api.github.com/advisories/GHSA-fc5q-39xc-vjpf', { headers: { Accept: 'application/vnd.github+json' }, signal: AbortSignal.timeout(15000) });
-    if (!response.ok) throw new Error('Could not verify advisory withdrawal');
+    const token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN;
+    const headers = { Accept: 'application/vnd.github+json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+    const response = await fetch('https://api.github.com/advisories/GHSA-fc5q-39xc-vjpf', { headers, signal: AbortSignal.timeout(15000) });
+    if (!response.ok) throw new Error(`Could not verify advisory withdrawal (HTTP ${response.status})`);
     const source = await response.json();
     if (source.ghsa_id === 'GHSA-fc5q-39xc-vjpf' && source.withdrawn_at) withdrawn.add(source.html_url);
   }

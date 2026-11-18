@@ -50,6 +50,8 @@ jobs:
       - run: npm ci
       - name: Audit all dependencies
         run: npm run audit:dependencies
+        env:
+          GH_TOKEN: ${{ github.token }}
       - name: Verify staging database and service bindings
         run: npm run deploy:verify -- --env=staging
         env:

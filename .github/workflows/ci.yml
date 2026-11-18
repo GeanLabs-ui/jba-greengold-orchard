@@ -58,5 +58,7 @@ jobs:
         run: node scripts/test-main-activities-migration.mjs
       - name: Audit all dependencies
         run: npm run audit:dependencies
+        env:
+          GH_TOKEN: ${{ github.token }}
       - name: Validate staging Worker bundle
         run: npx wrangler deploy --config apps/api/wrangler.jsonc --env staging --dry-run
