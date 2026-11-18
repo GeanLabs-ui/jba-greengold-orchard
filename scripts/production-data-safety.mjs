@@ -48,9 +48,17 @@ function docker(args, input, env = process.env) {
 
 await fs.mkdir(directory, { recursive: true });
 if (process.argv[2] === 'backup') {
+  const versionSql = postgres(databaseUrl, { max: 1, prepare: false });
+  let major;
+  try {
+    const [version] = await versionSql`SELECT current_setting('server_version_num') AS number`;
+    major = Math.floor(Number(version.number) / 10000);
+  } finally { await versionSql.end(); }
+  if (!Number.isInteger(major) || major < 14 || major > 20) throw new Error('Unsupported PostgreSQL recovery version');
+  const image = `postgres:${major}-bookworm`;
   const before = await snapshot(databaseUrl);
   const source = new URL(databaseUrl);
-  const dump = docker(['run', '--rm', '-e', 'PGPASSWORD', '-e', 'PGSSLMODE=require', 'postgres:17-bookworm', 'pg_dump',
+  const dump = docker(['run', '--rm', '-e', 'PGPASSWORD', '-e', 'PGSSLMODE=require', image, 'pg_dump',
     '--host=' + source.hostname, '--port=' + (source.port || '5432'), '--username=' + decodeURIComponent(source.username),
     '--dbname=' + source.pathname.slice(1), '--format=custom', '--no-owner', '--no-privileges'], undefined,
   { ...process.env, PGPASSWORD: decodeURIComponent(source.password) });
@@ -68,7 +76,7 @@ if (process.argv[2] === 'backup') {
   if (!dump.equals(recovered)) throw new Error('Encrypted backup did not round trip');
   const container = 'jba-release-restore-' + Date.now();
   const password = crypto.randomBytes(24).toString('hex');
-  docker(['run', '-d', '--name', container, '-e', 'POSTGRES_PASSWORD', '-e', 'POSTGRES_DB=restore_check', '-p', '127.0.0.1::5432', 'postgres:17-bookworm'], undefined, { ...process.env, POSTGRES_PASSWORD: password });
+  docker(['run', '-d', '--name', container, '-e', 'POSTGRES_PASSWORD', '-e', 'POSTGRES_DB=restore_check', '-p', '127.0.0.1::5432', image], undefined, { ...process.env, POSTGRES_PASSWORD: password });
   try {
     let ready = false;
     for (let i = 0; i < 30; i++) {
