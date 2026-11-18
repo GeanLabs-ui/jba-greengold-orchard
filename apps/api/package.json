@@ -13,10 +13,10 @@
   },
   "dependencies": {
     "hono": "^4.13.5",
-    "jose": "^6.2.8",
+    "jose": "^6.2.17",
     "mango-farm-authorization": "*",
     "mango-farm-database": "*",
-    "postgres": "^3.4.9",
+    "postgres": "^4.1.1",
     "zod": "^4.6.7"
   },
   "devDependencies": {
