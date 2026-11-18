@@ -1,4 +1,5 @@
-import { activityCost, activityRevenue, activityYieldKg, parseRecordDate } from './farm-operations-analytics';
+import { activityCost, activityRevenue, activityYieldKg } from './farm-operations-analytics';
+import { reportingDateKey, reportingYear, reportingYears } from './analytics-periods';
 
 const emptyPeriod = (label) => ({ label, cost: 0, revenue: 0, yieldKg: 0, profit: 0, records: 0 });
 const addActivity = (period, activity) => {
@@ -9,19 +10,19 @@ const addActivity = (period, activity) => {
   period.records += 1;
 };
 
-export function buildFarmPerformanceTrends(activities, selectedYear, currentYear = new Date().getFullYear()) {
+export function buildFarmPerformanceTrends(activities, selectedYear, currentYear = reportingYear()) {
   const dated = activities.map((activity) => ({
     activity,
-    date: parseRecordDate(activity.activity_date) || parseRecordDate(activity.created_date),
+    date: reportingDateKey(activity.activity_date ?? null) || reportingDateKey(activity.created_date ?? null),
   })).filter(({ date }) => date);
-  const years = [...new Set([currentYear, Number(selectedYear), ...dated.map(({ date }) => date.getFullYear())])]
-    .filter(Number.isFinite).sort((a, b) => a - b);
-  const yearly = years.map(year => emptyPeriod(String(year)));
+  const yearly = reportingYears(currentYear).map(year => emptyPeriod(String(year)));
   const byYear = new Map(yearly.map(period => [Number(period.label), period]));
   const monthly = Array.from({ length: 12 }, (_, month) => emptyPeriod(new Date(2000, month, 1).toLocaleString('en-US', { month: 'short' })));
   dated.forEach(({ activity, date }) => {
-    addActivity(byYear.get(date.getFullYear()), activity);
-    if (date.getFullYear() === Number(selectedYear)) addActivity(monthly[date.getMonth()], activity);
+    const [year, month] = date.split('-').map(Number);
+    const period = byYear.get(year);
+    if (period) addActivity(period, activity);
+    if (year === Number(selectedYear)) addActivity(monthly[month - 1], activity);
   });
   // A period with no rows is a gap. A logged zero remains a measurement.
   [...yearly, ...monthly].forEach((period) => {

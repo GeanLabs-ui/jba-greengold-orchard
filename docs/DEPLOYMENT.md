@@ -1,6 +1,6 @@
 # Cloudflare Pages and Neon deployment
 
-The canonical production domain is `jbagreengoldorchard.farm`; `www.jbagreengoldorchard.farm` should redirect to the apex. The requested text contained spaces and a spelling variation, neither of which can be used as a DNS hostname.
+The canonical production domain is `jbagreengold.com`.
 
 ## One-time platform setup
 
@@ -8,7 +8,7 @@ The canonical production domain is `jbagreengoldorchard.farm`; `www.jbagreengold
 2. Create Cloudflare Hyperdrive configurations for the staging and production Neon databases. Replace the zero placeholder IDs in `apps/api/wrangler.jsonc`. Use the Neon hostname and TLS settings Cloudflare documents for Hyperdrive.
 3. Enable R2 and create four private buckets: `jba-greengold-files-staging`, `jba-greengold-files-staging-backup`, `jba-greengold-files-production`, and `jba-greengold-files-production-backup`. Do not expose them with a public URL. Apply a retention lock to each backup bucket after testing the failed-upload cleanup path. The API dual-writes immutable UUID-keyed files and reads from the backup if the primary copy is missing.
 4. Create a Cloudflare Pages Direct Upload project named `jba-greengold-orchard`, with `main` as the production branch. This repository intentionally uses GitHub Actions Direct Upload; do not also connect Pages Git integration.
-5. Add `jbagreengoldorchard.farm` and `www.jbagreengoldorchard.farm` under Pages custom domains. Add `staging.jbagreengoldorchard.farm` to the staging branch when that DNS name is ready. Keep the DNS zone proxied through Cloudflare. Until the custom staging hostname resolves, use `https://staging.jba-greengold-orchard.pages.dev` as the canonical staging origin.
+5. Use `jbagreengold.com` as the production Pages custom domain and `https://staging.jba-greengold-orchard.pages.dev` as the canonical staging origin.
 6. Create separate Turnstile widgets for the staging and production hostnames. The deployment workflows synchronize `TURNSTILE_SECRET_KEY` from the matching GitHub environment to the matching Worker. Do not reuse production keys in staging.
 
 7. In Google Cloud Console, create separate OAuth 2.0 Web client IDs for staging and production. Add only the origins that actually serve each environment: authorize `https://staging.jba-greengold-orchard.pages.dev` for staging, add `https://staging.jbagreengoldorchard.farm` only after that custom hostname is active, and authorize the apex and `www` origins for production. No redirect URI is required for the Google Identity Services ID-token flow. Store each public client ID as that GitHub environment's required `GOOGLE_CLIENT_ID` variable.
@@ -22,7 +22,7 @@ The canonical production domain is `jbagreengoldorchard.farm`; `www.jbagreengold
    npx wrangler secret put RESEND_API_KEY --config apps/api/wrangler.jsonc --env production
    ```
 
-9. Verify the sending domain with the email provider before enabling password-reset email.
+9. Verify the sending domain with Resend before enabling staff invitations or password-reset email. Use the sending-only domain `notify.jbagreengold.com` with the DNS records shown by Resend. The Microsoft 365 mailbox uses the existing Exchange MX record at `jbagreengold.com`. Use a sending-only Resend key scoped to the verified domain.
 
 10. Enable Cloudflare managed WAF rules for the zone. Add a zone-level rate rule for repeated requests to `/api/v1/auth/*`, `/api/v1/applications`, and public inquiry endpoints; retain the application-level database rate limits as the authoritative fallback. Start in log mode, review staging traffic, and then block/challenge abusive traffic.
 
@@ -32,9 +32,11 @@ The canonical production domain is `jbagreengoldorchard.farm`; `www.jbagreengold
 
 Create `staging` and `production` environments. In each, add secrets `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `NEON_DATABASE_URL`, and `TURNSTILE_SECRET_KEY`; add variables `APP_URL`, `TURNSTILE_SITE_KEY`, and `GOOGLE_CLIENT_ID`. Scope the Cloudflare token to Workers Scripts edit, Pages edit, R2 edit, Hyperdrive read, and Account Settings read for this account only. Never use the Global API key.
 
-For staff invitations, configure `RESEND_API_KEY` as a Worker secret and verify `EMAIL_FROM` with Resend before inviting anyone. The staff invitation endpoint refuses to generate a link when the email provider is unavailable, so no setup token is exposed in an API response or application log.
+For staff invitations, configure `RESEND_API_KEY` as a Worker secret and verify the domain used by `EMAIL_FROM`. In **HR → Access**, send an invitation to a controlled address linked to Google. Check that Resend reports delivery, open the one-time link from the received email, and verify that the recipient can return through [Staff login](https://jbagreengold.com/staff-login) with the assigned access.
 
-Set production `APP_URL` to `https://jbagreengoldorchard.farm` and staging to `https://staging.jba-greengold-orchard.pages.dev` until the custom staging hostname is active and the deployment configuration is deliberately updated. Require reviewers on the production environment.
+For the company inbox and calendar, follow the [Microsoft 365 setup](COMPANY_OUTLOOK.md) and verify **Settings → Microsoft 365 connection** as a Super Admin.
+
+Set production `APP_URL` to `https://jbagreengold.com` and staging to `https://staging.jba-greengold-orchard.pages.dev`. Require reviewers on the production environment.
 
 Restrict `staging` deployments to `staging` and production deployments to `main`. Require an explicit approval on the production environment. Branch rules must require pull requests, `verify` and `analyze` checks, resolved conversations, and block force pushes/deletions.
 

@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { base44 } from '@/api/base44Client';
 import { subscribeToDataChanges } from '@/lib/data-sync';
-import { aggregateChartPeriods } from '@/lib/analytics-periods';
+import { aggregateChartPeriods, calendarAxisLabels, completeYearlyPeriods, reportingDateKey } from '@/lib/analytics-periods';
+import { useReportingYear } from '@/lib/use-reporting-year';
 import { formatChartValue, numericChartAxis } from '@/lib/analytics-chart-scale';
 import { websiteSales } from '@/lib/finance-data';
 import PageHeader from '@/components/shared/PageHeader';
@@ -16,6 +17,7 @@ export default function Reports() {
   const [period, setPeriod] = useState('monthly');
   const [start, setStart] = useState('');
   const [end, setEnd] = useState('');
+  const year = useReportingYear();
 
   useEffect(() => {
     let generation = 0;
@@ -41,10 +43,12 @@ export default function Reports() {
       revenue: order.total_amount,
       orders: 1,
     })).filter(row => {
-      const day = String(row.date || '').slice(0, 10);
-      return (!start || day >= start) && (!end || day <= end);
+      const day = reportingDateKey(row.date ?? null);
+      return day && (!start || day >= start) && (!end || day <= end);
     }), period, ['revenue', 'orders'],
   ), [orders, period, start, end]);
+  const showFullYears = period === 'yearly' && !start && !end;
+  const chartRows = showFullYears ? completeYearlyPeriods(rows, year, ['revenue', 'orders']) : rows;
   const revenue = rows.reduce((total, row) => total + (row.revenue ?? 0), 0);
   const count = rows.reduce((total, row) => total + row.orders, 0);
 
@@ -101,9 +105,9 @@ export default function Reports() {
         <label className="flex items-center gap-2">From <input type="date" className="rounded-md border bg-card px-2 py-1" value={start} onChange={event => setStart(event.target.value)} /></label>
         <label className="flex items-center gap-2">To <input type="date" className="rounded-md border bg-card px-2 py-1" value={end} onChange={event => setEnd(event.target.value)} /></label>
       </div>
-      {!orders && !error ? <p role="status">Loading report data…</p> : orders && !rows.length ? (
+      {!orders && !error ? <p role="status">Loading report data…</p> : orders && !chartRows.length ? (
         <p role="status" className="rounded-xl border bg-card p-6">No dated website orders match this selection.</p>
-      ) : rows.length > 0 && (
+      ) : orders && chartRows.length > 0 && (
         <div className="grid gap-4 lg:grid-cols-2">
           {[
             { key: 'revenue', title: 'Website revenue', unit: 'GHS', Chart: BarChart, Mark: Bar, color: '#16834e' },
@@ -111,16 +115,19 @@ export default function Reports() {
           ].map(({ key, title, unit, Chart, Mark, color }) => (
             <section key={key} className="min-w-0 rounded-xl border bg-card p-4">
               <h2 className="mb-3 text-section-title">{title}</h2>
-              {rows.some(row => row[key] != null) ? (
+              {showFullYears || rows.some(row => row[key] != null) ? (
+                <div className="relative">
                 <ResponsiveContainer width="100%" height={260}>
-                  <Chart data={rows}>
+                  <Chart data={chartRows}>
                     <CartesianGrid vertical={false} strokeDasharray="3 4" stroke="#dce6df" />
-                    <XAxis dataKey="label" interval="preserveStartEnd" minTickGap={18} tickLine={false} />
-                    <YAxis {...numericChartAxis(rows, [key])} tickLine={false} tickFormatter={value => formatChartValue(value, key === 'revenue' ? unit : '', { compact: true })} />
+                    <XAxis dataKey="label" {...(showFullYears ? calendarAxisLabels : { interval: 'preserveStartEnd', minTickGap: 18 })} tick={{ fontSize: 11 }} tickLine={false} />
+                    <YAxis {...numericChartAxis(chartRows, [key])} tickLine={false} tickFormatter={value => formatChartValue(value, key === 'revenue' ? unit : '', { compact: true })} />
                     <Tooltip formatter={value => [formatChartValue(value, unit), title]} />
                     <Mark dataKey={key} stroke={color} fill={color} isAnimationActive={false} />
                   </Chart>
                 </ResponsiveContainer>
+                {!rows.some(row => row[key] != null) && <p className="pointer-events-none absolute inset-0 grid place-items-center px-8 text-center text-sm text-muted-foreground">No recorded values for this metric.</p>}
+                </div>
               ) : <p role="status" className="py-8 text-sm text-muted-foreground">No recorded values for this metric.</p>}
             </section>
           ))}

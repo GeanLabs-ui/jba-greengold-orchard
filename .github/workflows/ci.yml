@@ -22,17 +22,17 @@ jobs:
         image: postgres:16-bookworm
         env:
           POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: mango_farm_test
+          POSTGRES_DB: mango_farm
           POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256 --auth-local=scram-sha-256
         ports:
-          - 5432:5432
+          - 15432:5432
         options: >-
           --health-cmd "pg_isready -U postgres"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
     env:
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/mango_farm_test
+      DATABASE_URL: postgresql://postgres:postgres@localhost:15432/mango_farm
     steps:
       - name: Configure runner Git default branch
         run: git config --global init.defaultBranch main
@@ -47,6 +47,11 @@ jobs:
         run: npm run db:check-migrations
       - name: Validate migrations and idempotency
         run: npm run db:migrate && npm run db:migrate
+      - name: Verify authenticated account and invitation database flows
+        run: npx vitest run apps/api/src/account-isolation.integration.test.ts apps/api/src/staff-invitations.integration.test.ts
+        env:
+          AUTH_DATABASE_TEST: '1'
+          STAFF_INVITATION_DATABASE_TEST: '1'
       - name: Verify new operational fields against PostgreSQL
         run: node scripts/verify-release-field-storage.mjs
       - name: Verify Main Activities migration preserves existing records

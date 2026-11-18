@@ -1,3 +1,4 @@
+import CardSurface from "@/components/shared/CardSurface";
 import AdminActionButton from '@/components/admin/AdminActionButton';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -220,13 +221,13 @@ export default function MasterScheduleView({
       {!embedded ? filterBar : null}
       {!embedded ? analysisBar : null}
       <div className="mobile-record-list md:hidden">
-        {visibleScheduleProjects.map((milestone) => <article key={milestone.id} className="mobile-record">
+        {visibleScheduleProjects.map((milestone) => <CardSurface key={milestone.id} className="mobile-record">
           <div className="flex flex-wrap items-center justify-between gap-2 text-xs"><span>{milestone.milestone_code || milestone.project_code}</span><SchedulePill value={normalizeMasterScheduleStatus(milestone.status)} /></div>
-          <h3 className="mt-2 text-base font-semibold">{milestone.title}</h3>
+          <h3 className="mt-2 text-base font-semibold">{embedded ? <button data-card-primary type="button" className="text-left" onClick={() => setOpenTaskId(milestone.id)}>{milestone.title}</button> : <Link data-card-primary to={`${taskBasePath}/${encodeURIComponent(milestone.id)}`}>{milestone.title}</Link>}</h3>
           <dl className="mobile-record-fields mt-3"><div><dt>Due</dt><dd>{displayDate(milestone.due_date)}</dd></div><div><dt>Owner</dt><dd>{milestone.owner_name || 'Not assigned'}</dd></div><div><dt>Complete</dt><dd>{Number(milestone.progress_percent || 0)}%</dd></div></dl>
           <details className="mobile-record-details"><summary>Task details</summary><dl className="mobile-record-fields"><div><dt>Start</dt><dd>{displayDate(milestone.start_date)}</dd></div><div><dt>Success criteria</dt><dd>{milestone.success_criteria || 'Not recorded'}</dd></div><div><dt>Subtasks</dt><dd>{milestone.completed_subtask_count || 0}/{milestone.subtask_count || 0} complete</dd></div></dl></details>
           <div className="mobile-record-actions"><button type="button" className={`drc-task-toggle ${milestone.is_enabled === false ? '' : 'on'}`} onClick={() => toggleProjectEnabled(milestone)} disabled={busyKey === milestone.id} aria-pressed={milestone.is_enabled !== false}><Power />{milestone.is_enabled === false ? 'Off' : 'On'}</button>{embedded ? <AdminActionButton action="edit" type="button" onClick={() => setOpenTaskId(milestone.id)} label="Edit Task" /> : <AdminActionButton action="edit" as={Link} to={`${taskBasePath}/${encodeURIComponent(milestone.id)}`} label="Edit Task" />}{deleteButton(milestone)}</div>
-        </article>)}
+        </CardSurface>)}
       </div>
       <div className="drc-table-shell hidden md:block">
         <table className="drc-table">

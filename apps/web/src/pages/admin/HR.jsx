@@ -1,3 +1,4 @@
+import CardSurface from "@/components/shared/CardSurface";
 import AnalyticsPie from '@/components/farm/AnalyticsPie';
 import { numericChartAxis } from '@/lib/analytics-chart-scale';
 import AdminActionButton from '@/components/admin/AdminActionButton';
@@ -736,10 +737,10 @@ export default function HR() {
             <div className="divide-y rounded-xl border border-border bg-card">
               {employees.map((employee) => {
                 const manager = managerById.get(employee.reports_to_employee_id);
-                return <article key={employee.id} className="flex flex-col gap-4 p-4 lg:flex-row lg:items-center">
+                return <CardSurface key={employee.id} className="flex flex-col gap-4 p-4 lg:flex-row lg:items-center">
                   <div className="flex min-w-0 flex-1 items-center gap-4"><div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-primary/10">{employee.photo_url ? <img src={employee.photo_url} alt="" className="h-full w-full object-cover" /> : <div className="grid h-full place-items-center font-semibold text-primary">{employee.first_name?.[0] || '?'}{employee.last_name?.[0] || ''}</div>}</div><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><p className="font-semibold">{nameOf(employee)}</p><StatusBadge status={employee.status || 'active'} /></div><p className="mt-1 text-sm text-muted-foreground">{employee.job_title || roleLabel(employee.workspace_role)} · {employee.employee_code || 'ID pending'}</p><p className="mt-1 text-xs text-muted-foreground">{employee.department_name || employee.department || 'No department'}{employee.sub_department_name ? ` › ${employee.sub_department_name}` : ''}{manager ? ` · Reports to ${nameOf(manager)}` : ' · Top-level reporting line'}</p></div></div>
-                  <div className="flex flex-wrap gap-2">{canManage && <EmployeeDialog employee={employee} employees={employees} departments={departments} currentUser={user} onSaved={load} trigger={<AdminActionButton action="edit" label="Edit" />} />}<StaffPassDialog employee={employee} trigger={<Button size="sm" variant="outline"><IdCard className="mr-2 h-4 w-4" />Staff pass</Button>} /></div>
-                </article>;
+                  <div className="flex flex-wrap gap-2">{canManage && <EmployeeDialog employee={employee} employees={employees} departments={departments} currentUser={user} onSaved={load} trigger={<AdminActionButton action="edit" label="Edit" />} />}<StaffPassDialog employee={employee} trigger={<Button data-card-primary size="sm" variant="outline"><IdCard className="mr-2 h-4 w-4" />Staff pass</Button>} /></div>
+                </CardSurface>;
               })}
             </div>
           ) : <div className="rounded-xl border border-dashed py-16 text-center text-sm text-muted-foreground">No employees registered.</div>}

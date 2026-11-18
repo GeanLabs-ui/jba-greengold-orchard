@@ -29,6 +29,7 @@ export async function exportDashboardPdf(element, filename) {
     onclone: (clonedDocument, clone) => {
       clonedDocument.body.appendChild(clone);
       Object.assign(clone.style, { position: 'absolute', left: '0', top: '0', margin: '0', width: `${width}px`, height: `${height}px`, overflow: 'visible' });
+      clone.querySelector('.secretary-widget')?.remove();
       const scroll = clone.querySelector('.admin-scroll-content');
       if (scroll) {
         scroll.scrollTop = 0;

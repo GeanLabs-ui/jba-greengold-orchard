@@ -151,6 +151,7 @@ export const farmBlocks = pgTable('farm_blocks', {
   farmId: text('farm_id').notNull().references(() => farms.id, { onDelete: 'cascade' }),
   blockCode: text('block_code').notNull(),
   name: text('name').notNull(),
+  imageUrl: text('image_url'),
   sizeAcres: real('size_acres'),
   latitude: real('latitude'),
   longitude: real('longitude'),

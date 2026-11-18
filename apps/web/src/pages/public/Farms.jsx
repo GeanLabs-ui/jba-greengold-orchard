@@ -1,3 +1,4 @@
+import CardSurface from "@/components/shared/CardSurface";
 import OptimizedVideo from '@/components/public/OptimizedVideo';
 import React, { useEffect, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
@@ -175,7 +176,7 @@ export default function Farms() {
             </motion.div>
           </div>
 
-          <motion.section
+          <CardSurface as={motion.section}
             {...reveal}
             className="mt-9 grid gap-7 rounded-2xl border border-[#123524]/10 bg-[#f4fbf5] p-5 shadow-[0_14px_40px_rgba(28,52,40,0.06)] lg:grid-cols-[1.05fr_0.68fr_0.92fr] lg:p-6"
             onMouseEnter={() => setDetailsHovered(true)}
@@ -218,7 +219,7 @@ export default function Farms() {
                   </div>
                 ))}
               </dl>
-              <Link to={`/farms/${encodeURIComponent(selectedFarm.slug)}`} onClick={(event) => { event.preventDefault(); setProfileFarm(selectedFarm); }} className="mt-5 inline-flex items-center gap-3 text-sm font-semibold text-[#2e7d32] hover:underline">
+              <Link data-card-primary to={`/farms/${encodeURIComponent(selectedFarm.slug)}`} onClick={(event) => { event.preventDefault(); setProfileFarm(selectedFarm); }} className="mt-5 inline-flex items-center gap-3 text-sm font-semibold text-[#2e7d32] hover:underline">
                 Read full farm profile <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
@@ -274,7 +275,7 @@ export default function Farms() {
                 <span>Distance: {selectedFarm.distance}</span>
               </div>
             </form>
-          </motion.section>
+          </CardSurface>
 
           <motion.div {...reveal} className="relative mt-7 overflow-hidden rounded-xl bg-[#123524] px-7 py-7 text-white sm:px-10">
             <div className="relative z-10 grid gap-7 sm:grid-cols-[0.55fr_0.8fr_1fr] sm:items-center">

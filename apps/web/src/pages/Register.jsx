@@ -3,8 +3,8 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { customerDestination } from '@/lib/login-audience';
 import { useGoogleClientId } from '@/lib/use-google-client-id';
-import { UserPlus, Loader2 } from 'lucide-react';
-import AuthLayout from '@/components/AuthLayout';
+import { Loader2 } from 'lucide-react';
+import CustomerAuthLayout from '@/components/CustomerAuthLayout';
 import GoogleSignInButton from '@/components/GoogleSignInButton';
 import LocalCustomerRegistration from '@/components/LocalCustomerRegistration';
 
@@ -37,11 +37,10 @@ export default function Register() {
   }, []);
 
   return (
-    <AuthLayout
-      icon={UserPlus}
-      title="Create your client account"
-      subtitle={localLoginEnabled ? 'Create a client account for local testing.' : 'Sign up with your Google account to access the client portal.'}
-      footer={<>Already have an account?{' '}<Link to={`/login?from_url=${encodeURIComponent(fromUrl)}`} className="text-primary font-medium hover:underline">Log in</Link></>}
+    <CustomerAuthLayout
+      title="Create an account"
+      subtitle={localLoginEnabled ? 'Create a customer account for local testing.' : 'Sign up to order mangoes directly from our farm.'}
+      footer={<>Already have an account?{' '}<Link to={`/login?from_url=${encodeURIComponent(fromUrl)}`} className="hover:underline">Log in</Link></>}
     >
       {error && <div role="alert" className="mb-4 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
       {loadingConfig ? <p role="status">Loading sign-up...</p> : localLoginEnabled ? <LocalCustomerRegistration destination={fromUrl} /> : googleAvailable ? (
@@ -58,6 +57,6 @@ export default function Register() {
         </p>
       )}
       {!localLoginEnabled && <p className="mt-5 text-center text-sm leading-6 text-muted-foreground">Use one Google account to manage your orders, payments, and documents. No separate password is needed.</p>}
-    </AuthLayout>
+    </CustomerAuthLayout>
   );
 }

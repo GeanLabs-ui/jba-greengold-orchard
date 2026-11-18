@@ -1,9 +1,10 @@
 import * as React from "react"
 
 import { cn } from "@/lib/utils"
+import CardSurface from '@/components/shared/CardSurface';
 
 const Card = React.forwardRef(({ className, ...props }, ref) => (
-  <div
+  <CardSurface as="div"
     ref={ref}
     data-ui="card"
     className={cn("rounded border bg-card text-card-foreground shadow-none", className)}

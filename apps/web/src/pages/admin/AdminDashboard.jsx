@@ -1,5 +1,7 @@
+import CardSurface from "@/components/shared/CardSurface";
 import { formatChartValue, nonNegativeChartRows, numericChartAxis, positivePieSlices } from '@/lib/analytics-chart-scale';
-import { reportingMonths } from '@/lib/analytics-periods';
+import { calendarAxisLabels } from '@/lib/analytics-periods';
+import { useReportingYear } from '@/lib/use-reporting-year';
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BarChart3, Bug, ClipboardList, Clock3, Coins, Droplets, Globe2, House, Leaf, MapPin, PackageOpen, Plane, ReceiptText, Sprout, TrendingUp, Truck, Warehouse } from 'lucide-react';
@@ -53,8 +55,7 @@ export default function AdminDashboard() {
   const [selectedScope, setSelectedScope] = useState('all');
   const generation = useRef(0);
   const dashboardRef = useRef(null);
-  const year = new Date().getFullYear();
-  const month = new Date().getMonth() + 1;
+  const year = useReportingYear();
   const load = useCallback(async () => {
     const request = ++generation.current;
     setLoading(true);
@@ -75,9 +76,7 @@ export default function AdminDashboard() {
     return () => { generation.current += 1; clearTimeout(timer); clearInterval(interval); window.removeEventListener('focus', refreshVisible); unsubscribe(); };
   }, [load]);
   const model = useMemo(() => buildOrchardDashboard(data || {}, year), [data, year]);
-  const performance = useMemo(() => period === 'Yearly' ? model.yearlyPerformance : groupPerformance(
-    reportingMonths(model.months, year, year, month, row => row.profit != null), period, year,
-  ), [model, period, year, month]);
+  const performance = useMemo(() => period === 'Yearly' ? model.yearlyPerformance : groupPerformance(model.months, period, year), [model, period, year]);
   const chart = useMemo(() => nonNegativeChartRows(performance, ['revenue', 'cost', 'profit']), [performance]);
   const exportPdf = useCallback(async () => {
     setExporting(true);
@@ -120,7 +119,7 @@ export default function AdminDashboard() {
       </div>
       <div className="orchard-analysis">
         <Panel title="Business Performance" icon={TrendingUp} className="orchard-business" action={<div className="orchard-tabs" aria-label="Performance period">{['Monthly', 'Quarterly', 'Yearly'].map((item) => <button key={item} type="button" aria-pressed={period === item} onClick={() => setPeriod(item)}>{item}</button>)}</div>}>
-          <div className="orchard-business-chart">{chart.some(row => row.profit != null) ? <ResponsiveContainer width="100%" height="100%"><ComposedChart data={chart} margin={{ top: 8, right: 7, left: -14, bottom: 0 }}><CartesianGrid stroke="#e8edf0" vertical={false} /><XAxis dataKey="name" tick={{ fontSize: 10, fill: '#546174' }} axisLine={{ stroke: '#cbd5df' }} tickLine={false} interval="preserveStartEnd" minTickGap={12} /><YAxis allowDataOverflow {...numericChartAxis(chart, ['revenue', 'cost', 'profit'])} allowDecimals={false} tickFormatter={axisMoney} tick={{ fontSize: 10, fill: '#546174' }} axisLine={false} tickLine={false} width={62} /><Tooltip formatter={(value, label) => [formatChartValue(value, 'GHS'), readable(label)]} /><Bar name="Revenue" dataKey="revenue" fill="#27c397" maxBarSize={15} isAnimationActive={false} /><Bar name="Cost" dataKey="cost" fill="#fb7185" maxBarSize={15} isAnimationActive={false} /><Line name="Profit" dataKey="profit" stroke="#3266cc" strokeWidth={2} dot={{ r: 3, fill: '#3266cc', stroke: '#fff', strokeWidth: 1 }} isAnimationActive={false} /></ComposedChart></ResponsiveContainer> : <p className="orchard-empty">No recorded performance for this period.</p>}</div><div className="orchard-chart-key"><span><i style={{ background: '#27c397' }} />Revenue (₵)</span><span><i style={{ background: '#fb7185' }} />Cost (₵)</span><span><i style={{ background: '#3266cc' }} />Profit (₵)</span></div>
+          <div className="orchard-business-chart relative"><ResponsiveContainer width="100%" height="100%"><ComposedChart data={chart} margin={{ top: 8, right: 7, left: -14, bottom: 0 }}><CartesianGrid stroke="#e8edf0" vertical={false} /><XAxis dataKey="name" tick={{ fontSize: 10, fill: '#546174' }} axisLine={{ stroke: '#cbd5df' }} tickLine={false} {...calendarAxisLabels} /><YAxis allowDataOverflow {...numericChartAxis(chart, ['revenue', 'cost', 'profit'])} allowDecimals={false} tickFormatter={axisMoney} tick={{ fontSize: 10, fill: '#546174' }} axisLine={false} tickLine={false} width={62} /><Tooltip formatter={(value, label) => [formatChartValue(value, 'GHS'), readable(label)]} /><Bar name="Revenue" dataKey="revenue" fill="#27c397" maxBarSize={15} isAnimationActive={false} /><Bar name="Cost" dataKey="cost" fill="#fb7185" maxBarSize={15} isAnimationActive={false} /><Line name="Profit" dataKey="profit" stroke="#3266cc" strokeWidth={2} dot={{ r: 3, fill: '#3266cc', stroke: '#fff', strokeWidth: 1 }} isAnimationActive={false} /></ComposedChart></ResponsiveContainer>{!chart.some(row => row.profit != null) && <p className="orchard-empty pointer-events-none absolute inset-0 grid place-items-center">No recorded performance for this period.</p>}</div><div className="orchard-chart-key"><span><i style={{ background: '#27c397' }} />Revenue (₵)</span><span><i style={{ background: '#fb7185' }} />Cost (₵)</span><span><i style={{ background: '#3266cc' }} />Profit (₵)</span></div>
         </Panel>
         <Panel title="Sales Breakdown" icon={CircleCediSign} className="orchard-sales"><div className="orchard-split"><Donut rows={sales} value={compact(model.revenue)} label="Total Revenue" palette={salesPalette} /><Legend rows={sales} total={model.revenue} currency palette={salesPalette} /></div><div className="orchard-markets"><Globe2 /><div><strong>Export Markets</strong><span>{model.markets.join(' | ') || 'No export destinations recorded'}</span></div><Plane /></div></Panel>
         <Panel title="Expense Breakdown" icon={ReceiptText} className="orchard-expenses"><ExpenseBreakdownContent rows={model.expenses} farms={model.expenseFarms} /></Panel>
@@ -167,7 +166,7 @@ export default function AdminDashboard() {
           </Dialog>
         </Panel>
         <Panel title="Harvest & Sales" icon={Sprout} className="orchard-harvest"><div className="orchard-harvest-tiles"><div><PackageOpen /><span>Harvested<strong>{number(model.harvested)} <em>Kg</em></strong><small>{model.forecast > 0 ? `${pct(model.harvested, model.forecast)} of forecast` : 'Recorded output'}</small></span></div><div><Clock3 /><span>Remaining<strong>{model.forecast > 0 ? number(model.remaining) : '—'} <em>Kg</em></strong><small>{model.forecast > 0 ? `${pct(model.remaining, model.forecast)} of forecast` : 'No forecast recorded'}</small></span></div></div><Progress value={percentage(model.harvested, model.forecast)} label="Harvest progress" /><p>{number(model.harvested)} Kg harvested <span>|</span> {model.forecast > 0 ? `${number(model.remaining)} Kg remaining` : 'Forecast unavailable'}</p></Panel>
-        <Panel title="Upcoming Farm Tasks" icon={ClipboardList} className="orchard-tasks" action={<Link to="/admin/calendar">View All</Link>}><div className="orchard-task-list">{model.tasks.slice(0, 3).map(task => <article key={task.id}><div><time>{new Date(task.date).toLocaleDateString('en', { month: 'short', day: '2-digit' })}</time><Status value={task.status || 'scheduled'} /></div><Link className="orchard-task-link" to={task.path}>{task.title}</Link><small>{task.scope}</small></article>)}{!model.tasks.length && <div className="orchard-empty">No upcoming farm tasks scheduled</div>}</div></Panel>
+        <Panel title="Upcoming Farm Tasks" icon={ClipboardList} className="orchard-tasks" action={<Link to="/admin/calendar">View All</Link>}><div className="orchard-task-list">{model.tasks.slice(0, 3).map(task => <CardSurface key={task.id}><div><time>{new Date(task.date).toLocaleDateString('en', { month: 'short', day: '2-digit' })}</time><Status value={task.status || 'scheduled'} /></div><Link data-card-primary className="orchard-task-link" to={task.path}>{task.title}</Link><small>{task.scope}</small></CardSurface>)}{!model.tasks.length && <div className="orchard-empty">No upcoming farm tasks scheduled</div>}</div></Panel>
       </div>
       <section className="orchard-block-management">
         <header>

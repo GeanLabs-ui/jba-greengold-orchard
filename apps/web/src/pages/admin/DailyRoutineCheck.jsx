@@ -1,3 +1,4 @@
+import CardSurface from "@/components/shared/CardSurface";
 import { blockLabel, farmSelectOptions, blockSelectOptions, resolveOperationalScope } from '@/lib/farm-scope';
 import AdminActionButton from '@/components/admin/AdminActionButton';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -1055,7 +1056,7 @@ export default function DailyRoutineCheck({ initialView = 'dashboard', riskOnly 
 
       <section className={`drc-view ${view === 'sources' ? 'active' : ''}`}>
         <div className="drc-panel drc-sources">{SOURCE_NOTES.map((source) => (
-          <div key={source.title}><b>{source.title}</b><p>{source.copy}</p>{source.url ? <a href={source.url} target="_blank" rel="noreferrer">Open source ↗</a> : <span />}</div>
+          <CardSurface as="div" key={source.title}><b>{source.title}</b><p>{source.copy}</p>{source.url ? <a data-card-primary href={source.url} target="_blank" rel="noreferrer">Open source ↗</a> : <span />}</CardSurface>
         ))}</div>
       </section>
 

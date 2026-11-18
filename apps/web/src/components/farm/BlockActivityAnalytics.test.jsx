@@ -6,18 +6,20 @@ import BlockActivityAnalytics from './BlockActivityAnalytics';
 describe('block activity costs', () => {
   it('shows net recorded cost by activity category and the signed total', () => {
     const html = renderToStaticMarkup(<BlockActivityAnalytics activities={[
+      { category: 'Pruning', actual_cost: -4.5 },
       { category: 'Fertilizer Application', actual_cost: 60.25, cost: 600 },
       { category: 'Fertilizer Application', actual_cost: 0, cost: 100 },
       { category: 'Fertilizer Application', cost: -10 },
-      { category: 'Pruning', actual_cost: -4.5 },
       { category: 'Irrigation', projected_cost: 400 },
     ]} />);
 
     expect(html).toContain('Activity Cost by Category');
     expect(html).toContain('GH₵45.75 total');
-    expect(html).toContain('Fertilizer Application <strong>GH₵50.25');
-    expect(html).toContain('Pruning <strong>GH₵-4.5');
-    expect(html).not.toContain('Irrigation <strong>');
+    expect(html).toContain('aria-label="Activity costs, highest to lowest"');
+    expect(html).toContain('GH₵50.25');
+    expect(html).toContain('GH₵-4.5');
+    expect(html.indexOf('Fertilizer Application')).toBeLessThan(html.indexOf('Pruning'));
+    expect(html).not.toContain('>Irrigation</span>');
   });
 
   it('shows a recorded-cost empty state when all category totals are zero', () => {

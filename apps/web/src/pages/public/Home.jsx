@@ -1,3 +1,4 @@
+import CardSurface from "@/components/shared/CardSurface";
 import './home-layout.css';
 import OptimizedVideo from '@/components/public/OptimizedVideo';
 import React, { useEffect, useState } from 'react';
@@ -170,11 +171,11 @@ function SectionHeading({ eyebrow, title, children, dark = false }) {
   );
 }
 
-function SmallAction({ to, children, external = false, className = '' }) {
+function SmallAction({ to, children, external = false, className = '', ...actionProps }) {
   const props = external ? { href: to, target: '_blank', rel: 'noreferrer' } : { to };
   const Component = external ? 'a' : Link;
   return (
-    <Component {...props} className={`home-action inline-flex items-center gap-2 bg-[#2e7d32] px-4 py-2 text-xs font-bold uppercase tracking-[0.06em] text-white transition-colors hover:bg-[#c8e6c9] hover:text-[#123524] ${className}`}>
+    <Component {...props} {...actionProps} className={`home-action inline-flex items-center gap-2 bg-[#2e7d32] px-4 py-2 text-xs font-bold uppercase tracking-[0.06em] text-white transition-colors hover:bg-[#c8e6c9] hover:text-[#123524] ${className}`}>
       {children} <ArrowRight className="h-3.5 w-3.5" />
     </Component>
   );
@@ -255,7 +256,7 @@ function ProductCarousel({ products }) {
 
 function ProductFeature() {
   return (
-    <article className="grid items-center gap-9 md:grid-cols-2">
+    <CardSurface className="grid items-center gap-9 md:grid-cols-2">
       <motion.div initial={{ opacity: 0, x: -22 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true, amount: 0.3 }} transition={{ duration: 0.5 }}>
         <ProductCarousel products={featuredProducts} />
       </motion.div>
@@ -263,9 +264,9 @@ function ProductFeature() {
         <p className="text-xs font-black tracking-[0.12em] text-[#2e7d32]">JBA PRODUCTS</p>
         <h2 className="mt-2 font-heading text-3xl font-black tracking-tight">Quality customers can trust.</h2>
         <div className="mt-4 border-l-[5px] border-[#c8e6c9] bg-[#2e7d32] px-5 py-4 text-sm leading-6 text-white">From fresh fruit to value-added products, our careful handling and dependable supply protect quality at every stage.</div>
-        <div className="mt-5"><SmallAction to="/products">Explore products</SmallAction></div>
+        <div className="mt-5"><SmallAction data-card-primary to="/products">Explore products</SmallAction></div>
       </div>
-    </article>
+    </CardSurface>
   );
 }
 
@@ -314,7 +315,7 @@ function AudienceShowcase() {
 
         <div className="mt-7 grid gap-4 lg:grid-cols-2">
           {audiences.map(({ title, description, image, imageAlt, icon: Icon }, index) => (
-            <motion.article key={title} initial={{ opacity: 0, y: 22 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.15 }} transition={{ delay: index * 0.08, duration: 0.45 }} className="group overflow-hidden rounded-[1.25rem] border border-[#e8f5e9] bg-white shadow-[0_10px_24px_rgba(18,63,27,.07)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_32px_rgba(18,63,27,.12)] sm:grid sm:grid-cols-[45%_55%]">
+            <CardSurface as={motion.article} key={title} initial={{ opacity: 0, y: 22 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.15 }} transition={{ delay: index * 0.08, duration: 0.45 }} className="group overflow-hidden rounded-[1.25rem] border border-[#e8f5e9] bg-white shadow-[0_10px_24px_rgba(18,63,27,.07)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_32px_rgba(18,63,27,.12)] sm:grid sm:grid-cols-[45%_55%]">
               <div className="relative h-44 overflow-hidden bg-[#f4fbf5] sm:h-auto sm:min-h-52">
                 <img src={image} alt={imageAlt} className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.035]" loading="lazy" />
               </div>
@@ -322,9 +323,9 @@ function AudienceShowcase() {
                 <span className="grid h-8 w-8 place-items-center rounded-full bg-[#f4fbf5] text-[#123524]"><Icon className="h-4 w-4" /></span>
                 <h3 className="mt-3 font-heading text-xl font-black leading-tight tracking-[-0.035em] text-[#123524]">{title}</h3>
                 <p className="mt-2 text-sm leading-5 text-[#355e3b]">{description}</p>
-                <Link to="/contact" className="home-action mt-3 inline-flex items-center gap-2 text-sm font-black text-[#2e7d32] transition-colors hover:text-[#123524]">Learn more <ArrowRight className="h-4 w-4" /></Link>
+                <Link data-card-primary to="/contact" className="home-action mt-3 inline-flex items-center gap-2 text-sm font-black text-[#2e7d32] transition-colors hover:text-[#123524]">Learn more <ArrowRight className="h-4 w-4" /></Link>
               </div>
-            </motion.article>
+            </CardSurface>
           ))}
         </div>
       </div>

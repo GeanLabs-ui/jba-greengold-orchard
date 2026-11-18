@@ -12,6 +12,7 @@ import {
   type AuthUser,
 } from "../middleware/auth.js";
 import { requestIp } from "../rate-limit.js";
+import { deleteFarmProfile, FarmDeletionError } from './farm-deletion.js';
 import {
   checkFarmSizeAllocation,
   computeFarmAnalytics,
@@ -127,6 +128,7 @@ const inventoryEntrySchema = inventoryEntryFields
 
 const blockCreateSchema = z.object({
   block_code: z.string().trim().min(1).max(50),
+  image_url: farmImagePreviewUrl,
   name: z.string().trim().min(1).max(200),
   description: z.string().trim().max(2000).nullable().optional(),
   early_block_classification: z
@@ -637,7 +639,7 @@ router.get("/farms/:id", requirePermission("farms.read"), async (c) => {
     if (!farm) return errorResponse(c, "NOT_FOUND", "Farm not found", 404);
 
     const blocks = await sql`
-      SELECT id, farm_id, block_code, name, description, early_block_classification, year_planted,
+      SELECT id, farm_id, block_code, name, image_url, description, early_block_classification, year_planted,
         size_acres, latitude, longitude, soil_type, soil_ph, soil_notes,
         variety, tree_count, status, programme_code, source, early_harvest, shoot_maturity,
         forecast_yield_kg, fruit_fly_pressure, disease_rating,
@@ -1022,13 +1024,13 @@ router.post(
       const block = await sql.begin(async (transaction) => {
         const [inserted] = await transaction`
         INSERT INTO farm_blocks (
-          id, farm_id, block_code, name, description, early_block_classification, year_planted,
+          id, farm_id, block_code, name, image_url, description, early_block_classification, year_planted,
           size_acres, latitude, longitude, soil_type, soil_ph, soil_notes,
           early_harvest, shoot_maturity, forecast_yield_kg, actual_yield_kg, variety, fruit_fly_pressure, disease_rating, disease_severity,
           status, operations_started_on, planting_started_on,
           organization_id, created_by, updated_by
         ) VALUES (
-          ${blockId}, ${farm.id}, ${parsed.data.block_code}, ${parsed.data.name},
+          ${blockId}, ${farm.id}, ${parsed.data.block_code}, ${parsed.data.name}, ${parsed.data.image_url ?? null},
           ${parsed.data.description ?? null}, ${parsed.data.early_block_classification ?? null}, ${parsed.data.year_planted ?? null},
           ${parsed.data.size_acres ?? null},
           ${parsed.data.latitude ?? null}, ${parsed.data.longitude ?? null}, ${parsed.data.soil_type ?? null},
@@ -1254,6 +1256,7 @@ router.patch(
 
       const rows = await sql`
       UPDATE farm_blocks SET
+        image_url = ${merged.image_url ?? null},
         farm_id = ${nextFarmId}, block_code = ${merged.block_code ?? existing.block_code}, name = ${merged.name ?? existing.name},
         description = ${"description" in parsed.data ? (parsed.data.description ?? null) : existing.description},
         early_block_classification = ${"early_block_classification" in parsed.data ? (parsed.data.early_block_classification ?? null) : existing.early_block_classification},
@@ -1932,5 +1935,21 @@ router.post(
     }
   },
 );
+
+for (const kind of ['farm', 'block'] as const) {
+  router.delete(`/${kind === 'farm' ? 'farms' : 'blocks'}/:id`, requirePermission(kind === 'farm' ? 'farms.delete' : 'blocks.delete'), requireCsrf(), async c => {
+    const parsed = z.object({ confirmation: z.string().min(1).max(200) }).safeParse(await parseBody(c));
+    if (!parsed.success) return errorResponse(c, 'CONFIRMATION_REQUIRED', 'Enter the record code to confirm deletion.', 422);
+    const sql = createDatabase(c.env);
+    try {
+      const result = await deleteFarmProfile(sql, kind, c.req.param('id')!, parsed.data.confirmation, c.get('user')!, requestIp(c.req.raw));
+      return c.json({ data: result, requestId: c.get('requestId') });
+    } catch (error) {
+      if (error instanceof FarmDeletionError) return errorResponse(c, error.code, error.message, error.status);
+      if ((error as { code?: string }).code === '23503') return errorResponse(c, 'LINKED_RECORDS', 'New linked records prevent deletion. Refresh and review this record’s history.', 409);
+      throw error;
+    } finally { await closeDatabase(sql); }
+  });
+}
 
 export default router;
