@@ -1,15 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { formatChartValue, measurementScales, nonNegativeChartRows, numericChartAxis, positivePieSlices, projectionDomain } from './analytics-chart-scale';
-import { aggregateChartPeriods, reportingMonths } from './analytics-periods';
+import { aggregateChartPeriods, reportingDateKey, reportingYear, reportingYears } from './analytics-periods';
 
 describe('data-driven chart presentation', () => {
-  it('grows the monthly axis with the calendar and retains any later recorded month', () => {
-    const rows = Array.from({ length: 12 }, (_, index) => ({ records: index === 3 ? 1 : 0 }));
-    const hasRecords = row => row.records > 0;
-    expect(reportingMonths(rows, 2026, 2026, 2, hasRecords)).toHaveLength(4);
-    expect(reportingMonths(rows, 2026, 2026, 6, hasRecords)).toHaveLength(6);
-    expect(reportingMonths(rows, 2025, 2026, 6, hasRecords)).toHaveLength(12);
-    expect(reportingMonths(rows, 2027, 2026, 6, hasRecords)).toHaveLength(4);
+  it('extends the reporting calendar at Accra midnight, independent of the timestamp offset', () => {
+    const before = reportingYear(new Date('2036-01-01T00:59:59+01:00'));
+    const after = reportingYear(new Date('2035-12-31T19:00:00-05:00'));
+    expect(reportingYears(before)).toEqual([2025, 2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033, 2034, 2035]);
+    expect(reportingYears(after)).toEqual([...reportingYears(before), 2036]);
+    expect(reportingDateKey('2035-12-31')).toBe('2035-12-31');
+    expect(reportingDateKey('2036-02-30T00:00:00Z')).toBeNull();
+    expect(aggregateChartPeriods([{ date: '2035-12-31T19:00:00-05:00', value: 7 }], 'monthly', ['value']))
+      .toMatchObject([{ key: '2036-01-01', value: 7 }]);
   });
   it('expands with signed values, uses bounded ticks and preserves small fractions', () => {
     const small = numericChartAxis([{ value: -0.15 }, { value: 0 }, { value: 0.21 }], ['value']);

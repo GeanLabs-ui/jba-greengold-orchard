@@ -1,4 +1,4 @@
-import { aggregateChartPeriods } from './analytics-periods';
+import { aggregateChartPeriods, completeYearlyPeriods, reportingDateKey, reportingYear } from './analytics-periods';
 import { buildFarmCalendarEvents } from './production-calendar';
 import { amount, invoiceBalance, outstandingInvoice } from './admin-dashboard';
 import { activityCost, activityRevenue, activityYieldKg, activityMatchesBlock, buildFarmOperationsAnalytics, normalizeStatus } from './farm-operations-analytics';
@@ -17,8 +17,8 @@ export const readable = (value) => String(value || 'Not recorded').replaceAll('_
 
 // All financial and output summaries cover the selected calendar year. Physical
 // farm/block properties are the current records, not historical snapshots.
-export function buildOrchardDashboard(data, year = new Date().getFullYear(), now = new Date()) {
-  const inYear = (value) => new Date(value).getFullYear() === year;
+export function buildOrchardDashboard(data, year = reportingYear(), now = new Date()) {
+  const inYear = (value) => reportingDateKey(value ?? null)?.slice(0, 4) === String(year);
   const farms = (data.farms || []).filter(active).sort((a, b) => String(a.name).localeCompare(String(b.name), undefined, { numeric: true }));
   const blocks = (data.blocks || []).filter(active).map((row) => ({ ...row, area_acres: row.size_acres ?? row.area_acres ?? row.acres, mango_variety: varietiesOf(row).join(', ') }))
     .sort((a, b) => String(a.block_code || a.name).localeCompare(String(b.block_code || b.name), undefined, { numeric: true }));
@@ -60,9 +60,10 @@ export function buildOrchardDashboard(data, year = new Date().getFullYear(), now
     ...loggedActivities.map(row => ({ date: row.activity_date || row.created_date, cost: activityCost(row) })),
   ], 'monthly', ['revenue', 'cost']);
   const monthlyTotals = new Map(monthlyHistory.map(row => [row.key, row]));
-  const yearlyPerformance = aggregateChartPeriods(
+  const yearlyHistory = aggregateChartPeriods(
     monthlyHistory.map(row => ({ ...row, date: row.key })), 'yearly', ['revenue', 'cost'],
-  ).map(({ label: name, revenue, cost }) => ({
+  );
+  const yearlyPerformance = completeYearlyPeriods(yearlyHistory, year, ['revenue', 'cost']).map(({ label: name, revenue, cost }) => ({
     name, revenue, cost,
     profit: revenue == null && cost == null ? null : (revenue ?? 0) - (cost ?? 0),
   }));

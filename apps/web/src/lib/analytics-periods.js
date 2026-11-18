@@ -1,18 +1,50 @@
 const shortDate = new Intl.DateTimeFormat('en-GH', { day: 'numeric', month: 'short', timeZone: 'UTC' });
 const monthYear = new Intl.DateTimeFormat('en-GH', { month: 'short', year: 'numeric', timeZone: 'UTC' });
+const accraCalendar = new Intl.DateTimeFormat('en-GH', {
+  timeZone: 'Africa/Accra', calendar: 'gregory', numberingSystem: 'latn',
+  year: 'numeric', month: '2-digit', day: '2-digit',
+});
 
-export function reportingMonths(rows, year, currentYear, currentMonth, hasRecords) {
-  if (year < currentYear) return rows;
-  const lastRecordedMonth = rows.findLastIndex(hasRecords) + 1;
-  const through = year === currentYear ? Math.max(currentMonth, lastRecordedMonth) : lastRecordedMonth;
-  return rows.slice(0, through);
+export function reportingDateKey(value = new Date()) {
+  if (!value) return null;
+  const datePrefix = typeof value === 'string' && value.match(/^\d{4}-\d{2}-\d{2}(?=$|T| )/)?.[0];
+  if (datePrefix) {
+    const day = new Date(datePrefix);
+    if (!Number.isFinite(day.getTime()) || day.toISOString().slice(0, 10) !== datePrefix) return null;
+    if (value === datePrefix) return datePrefix;
+  }
+  // Interpret timestamps with no explicit offset as Accra time (UTC+00:00).
+  const localTimestamp = typeof value === 'string' && /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(:\d{2}(\.\d+)?)?$/.test(value);
+  const date = new Date(localTimestamp ? value.replace(' ', 'T') + 'Z' : value);
+  if (!Number.isFinite(date.getTime())) return null;
+  const parts = Object.fromEntries(accraCalendar.formatToParts(date).map(({ type, value }) => [type, value]));
+  return `${parts.year.padStart(4, '0')}-${parts.month}-${parts.day}`;
 }
+
+export function reportingYear(now = new Date()) {
+  return Number(reportingDateKey(now)?.slice(0, 4));
+}
+
+export function reportingYears(currentYear = reportingYear()) {
+  return Array.from({ length: Math.max(2035, currentYear) - 2025 + 1 }, (_, index) => 2025 + index);
+}
+
+export function completeYearlyPeriods(rows, currentYear, keys) {
+  const byYear = new Map(rows.map(row => [row.label, row]));
+  const missing = Object.fromEntries(keys.map(key => [key, null]));
+  return reportingYears(currentYear).map(year => {
+    const label = String(year);
+    return byYear.get(label) ?? { key: `${year}-01-01`, label, ...missing };
+  });
+}
+
+export const calendarAxisLabels = { interval: 0, angle: -90, textAnchor: 'end', height: 46 };
 
 export function aggregateChartPeriods(records, granularity, keys) {
   const groups = new Map();
   for (const row of records) {
-    const dateKey = String(row.date || '').slice(0, 10);
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) continue;
+    const dateKey = reportingDateKey(row.date ?? null);
+    if (!dateKey || !/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) continue;
     const date = new Date(dateKey + 'T00:00:00Z');
     if (!Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== dateKey) continue;
     const year = date.getUTCFullYear();

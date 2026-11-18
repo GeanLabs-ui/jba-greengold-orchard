@@ -1,0 +1,18 @@
+.task-log-records-layout {
+  container-type: inline-size;
+  overflow-wrap: anywhere;
+}
+
+.task-log-records-list {
+  display: none;
+}
+
+@container (width < 62rem) {
+  .task-log-table {
+    display: none;
+  }
+
+  .task-log-records-list {
+    display: block;
+  }
+}

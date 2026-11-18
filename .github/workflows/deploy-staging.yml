@@ -73,6 +73,17 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
           BOOK5_IMPORT_KEY: ${{ secrets.BOOK5_IMPORT_KEY }}
+      - name: Prove encrypted database recovery on staging
+        run: node scripts/production-data-safety.mjs backup
+        env:
+          DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+      - name: Save encrypted staging recovery evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: staging-recovery-verification-${{ github.run_id }}
+          path: test-results/production-safety/
+          retention-days: 14
+          if-no-files-found: error
       - name: Apply staging database migrations
         id: migrations
         shell: bash

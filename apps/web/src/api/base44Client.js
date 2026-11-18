@@ -507,6 +507,16 @@ const farms = {
     publishDataChange("FarmBlock", "create", record?.id);
     return record;
   },
+  async deleteFarm(id, confirmation) {
+    const result = await request(`/farms/${encodeURIComponent(id)}`, { method: 'DELETE', body: { confirmation } });
+    publishDataChange('Farm', 'delete', id);
+    return result;
+  },
+  async deleteBlock(id, confirmation) {
+    const result = await request(`/blocks/${encodeURIComponent(id)}`, { method: 'DELETE', body: { confirmation } });
+    publishDataChange('FarmBlock', 'delete', id);
+    return result;
+  },
   getBlock(id, filters = {}) {
     const params = new URLSearchParams();
     Object.entries(filters).forEach(([key, value]) => {

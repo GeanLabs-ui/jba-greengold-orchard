@@ -1,3 +1,4 @@
+import CardSurface from "@/components/shared/CardSurface";
 import AnalyticsPie from '@/components/farm/AnalyticsPie';
 import { MANGO_VARIETIES, mangoVarietyBucket } from '@/lib/mango-varieties';
 import { formatChartValue, numericChartAxis } from '@/lib/analytics-chart-scale';
@@ -176,6 +177,7 @@ const activityCategories = [
   'Irrigation',
   'Spraying',
   'Fertilizer Application',
+  'Flower Induction',
   'Pest Inspection',
   'Disease Inspection',
   'Harvesting',
@@ -891,13 +893,13 @@ const DailyActivityLog = ({
         </div>
         {pageItems.map((item, index) => {
           const itemId = rowId(item, pageStart + index);
-          return <article key={itemId} className="mobile-record">
+          return <CardSurface key={itemId} className="mobile-record">
             <div className="flex flex-wrap items-center justify-between gap-2 text-xs"><span>{formatDate(item.activity_date)}</span><span className="rounded bg-muted px-2 py-1">{item.status || 'Pending'}</span></div>
             <h3 className="mt-2 text-base font-semibold">{item.description || item.title || item.category || 'Activity'}</h3>
             <dl className="mobile-record-fields mt-3"><div><dt>Farm / block</dt><dd>{scopeLabel(item.farm_name) || '—'} · {blockLabel(item) || '—'}</dd></div><div><dt>Actual cost</dt><dd className="text-rose-600">{formatCurrency(activityCost(item))}</dd></div><div><dt>Actual revenue</dt><dd className="text-blue-600">{formatCurrency(activityRevenue(item))}</dd></div></dl>
-            <button type="button" className="mt-2 min-h-11 font-semibold text-primary" aria-expanded={selectedId === itemId} onClick={() => selectedId === itemId ? closeDetails() : pinDetails(itemId)}>{selectedId === itemId ? 'Hide details' : 'View activity details'}</button>
+            <button data-card-primary type="button" className="mt-2 min-h-11 font-semibold text-primary" aria-expanded={selectedId === itemId} onClick={() => selectedId === itemId ? closeDetails() : pinDetails(itemId)}>{selectedId === itemId ? 'Hide details' : 'View activity details'}</button>
             {selectedId === itemId && renderActivityDetails(item, itemId)}
-          </article>;
+          </CardSurface>;
         })}
       </div>
       <TaskLogMetrics model={totals} />

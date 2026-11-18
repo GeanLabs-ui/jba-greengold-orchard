@@ -1,4 +1,3 @@
-import AnalyticsPie from './AnalyticsPie';
 import { aggregateChartPeriods } from '@/lib/analytics-periods';
 import { formatChartValue, numericChartAxis } from '@/lib/analytics-chart-scale';
 import { activityCost, activityYieldKg } from '@/lib/farm-operations-analytics';
@@ -39,7 +38,8 @@ export default function BlockActivityAnalytics({ activities = [] }) {
       totalCost += cost;
     });
     const categoryCosts = [...categories].map(([name, value]) => ({ name, value }))
-      .sort((left, right) => right.value - left.value);
+      .filter(({ value }) => value !== 0)
+      .sort((left, right) => right.value - left.value || left.name.localeCompare(right.name));
     return { trend, input: [...input.values()], categoryCosts, totalCost };
   }, [activities]);
 
@@ -51,15 +51,16 @@ export default function BlockActivityAnalytics({ activities = [] }) {
         <h2 className="text-slate-800 text-section-title">Activity Cost by Category</h2>
         <span className="text-caption font-semibold text-slate-500">{formatChartValue(metrics.totalCost, 'GHS')} total</span>
       </header>
-      <div className="p-3">
-        <AnalyticsPie
-          rows={metrics.categoryCosts}
-          unit="GHS"
-          title="Activity cost by category"
-          showAdjustments
-          emptyMessage="No actual cost recorded for this period."
-        />
-      </div>
+      {metrics.categoryCosts.length ? (
+        <ul className="divide-y divide-slate-100 px-4 text-caption" aria-label="Activity costs, highest to lowest">
+          {metrics.categoryCosts.map(({ name, value }) => (
+            <li key={name} className="flex items-baseline justify-between gap-3 py-2">
+              <span className="min-w-0 break-words">{name}</span>
+              <strong className="shrink-0 tabular-nums">{formatChartValue(value, 'GHS')}</strong>
+            </li>
+          ))}
+        </ul>
+      ) : <p className="p-4 text-caption text-muted-foreground">No actual cost recorded for this period.</p>}
     </article>
   </section>;
 }

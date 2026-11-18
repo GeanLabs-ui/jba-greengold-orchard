@@ -13,3 +13,11 @@ it('rejects new advisories even when the legacy source matches', () => {
 it('rejects unresolvable or cyclic vulnerability chains', () => {
   expect(assessAudit({ vulnerabilities: { a: { via: ['b'] }, b: { via: ['a'] } } }, true)).toEqual(['a', 'b']);
 });
+it('accepts a verified withdrawn advisory while rejecting other active findings', () => {
+  const url = 'https://github.com/advisories/GHSA-fc5q-39xc-vjpf';
+  const report = { vulnerabilities: { picomatch: { via: [{ name: 'picomatch', url }] }, vite: { via: ['picomatch'] } } };
+  expect(assessAudit(report, false)).toEqual(['picomatch', 'vite']);
+  expect(assessAudit(report, false, new Set([url]))).toEqual([]);
+  report.vulnerabilities.picomatch.via.push({ name: 'picomatch', url: 'active-advisory' });
+  expect(assessAudit(report, false, new Set([url]))).toEqual(['picomatch', 'vite']);
+});

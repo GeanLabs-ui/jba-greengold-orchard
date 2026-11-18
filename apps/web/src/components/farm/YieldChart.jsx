@@ -5,6 +5,8 @@ import { BarChart3 } from 'lucide-react';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { groupYieldRecords } from '@/lib/farm-management';
+import { calendarAxisLabels } from '@/lib/analytics-periods';
+import { useReportingYear } from '@/lib/use-reporting-year';
 
 const chartConfig = {
   actual: { label: 'Actual yield', color: '#2e7d32' },
@@ -21,7 +23,9 @@ const labelForDate = (value, granularity) => {
 
 export default function YieldChart({ records = [], title = 'Yield trend' }) {
   const [granularity, setGranularity] = useState('monthly');
-  const data = useMemo(() => groupYieldRecords(records, granularity), [records, granularity]);
+  const year = useReportingYear();
+  const data = useMemo(() => groupYieldRecords(records, granularity, year), [records, granularity, year]);
+  const hasYield = data.some(row => row.actual != null || row.forecast != null);
 
   return (
     <section className="rounded-xl border bg-card p-4 sm:p-5" aria-labelledby="yield-chart-title">
@@ -42,7 +46,8 @@ export default function YieldChart({ records = [], title = 'Yield trend' }) {
         </Select>
       </div>
       {data.length ? (
-        <ChartContainer config={chartConfig} className="mt-5 h-[280px] w-full aspect-auto">
+        <div className="relative mt-5">
+        <ChartContainer config={chartConfig} className="h-[280px] w-full aspect-auto">
           <ComposedChart data={data} margin={{ left: 4, right: 12, top: 8, bottom: 0 }}>
             <defs>
               <linearGradient id="actualYieldFill" x1="0" y1="0" x2="0" y2="1">
@@ -51,13 +56,15 @@ export default function YieldChart({ records = [], title = 'Yield trend' }) {
               </linearGradient>
             </defs>
             <CartesianGrid vertical={false} strokeDasharray="3 3" />
-            <XAxis dataKey="date" tickFormatter={(value) => labelForDate(value, granularity)} tickLine={false} axisLine={false} minTickGap={24} />
+            <XAxis dataKey="date" tickFormatter={(value) => labelForDate(value, granularity)} tickLine={false} axisLine={false} {...(granularity === 'yearly' ? calendarAxisLabels : { minTickGap: 24 })} />
             <YAxis {...numericChartAxis(data, ['actual', 'forecast'])} allowDataOverflow allowDecimals={false} tickFormatter={(value) => formatChartValue(value, '', { compact: true })} tickLine={false} axisLine={false} width={42} />
             <ChartTooltip content={<ChartTooltipContent labelFormatter={(value) => labelForDate(value, granularity)} />} />
             <Area type="monotone" dataKey="actual" stroke="var(--color-actual)" fill="url(#actualYieldFill)" strokeWidth={2.5} />
             <Line type="monotone" dataKey="forecast" stroke="var(--color-forecast)" strokeWidth={2} strokeDasharray="5 4" dot={false} />
           </ComposedChart>
         </ChartContainer>
+        {!hasYield && <p className="pointer-events-none absolute inset-0 grid place-items-center text-center text-sm text-muted-foreground">No yield data for this period</p>}
+        </div>
       ) : (
         <div className="mt-5 flex min-h-64 flex-col items-center justify-center rounded-lg border border-dashed bg-muted/20 px-6 text-center">
           <BarChart3 className="h-8 w-8 text-muted-foreground/60" />

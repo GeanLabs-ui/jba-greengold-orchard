@@ -10,7 +10,7 @@ const legacySourceHash = '746849f267c4868a53729225bd85c7dccd387712136fb305fcc0a3
 // after minimatch 3. Its published version range also matches the legacy line.
 // Accept only the reviewed, integrity-locked legacy source; fail for every other
 // advisory, version, source change or unresolved dependency chain.
-export function assessAudit(report, legacyVerified) {
+export function assessAudit(report, legacyVerified, withdrawn = new Set()) {
   const entries = report.vulnerabilities || {};
   const reviewed = name => {
     const seen = new Set();
@@ -26,12 +26,12 @@ export function assessAudit(report, legacyVerified) {
       }
     };
     visit(name);
-    return !unresolved && leaves.length > 0 && leaves.every(via => legacyVerified && via.name === 'minimatch' && via.url === advisory);
+    return !unresolved && leaves.length > 0 && leaves.every(via => withdrawn.has(via.url) || (legacyVerified && via.name === 'minimatch' && via.url === advisory));
   };
   return Object.keys(entries).filter(name => !reviewed(name));
 }
 
-function main() {
+async function main() {
   const npmCli = process.env.npm_execpath;
   if (!npmCli) throw new Error('Run through npm run audit:dependencies');
   const result = spawnSync(process.execPath, [npmCli, 'audit', '--json'], { encoding: 'utf8', maxBuffer: 10 * 1024 * 1024 });
@@ -45,8 +45,17 @@ function main() {
     const source = readFileSync(new URL('../node_modules/minimatch/minimatch.js', import.meta.url));
     verified = pkg.version === '3.1.5' && createHash('sha256').update(source).digest('hex') === legacySourceHash;
   }
-  const unaddressed = assessAudit(report, verified);
-  console.log(JSON.stringify({ advisories: report.metadata?.vulnerabilities, reviewedLegacySourceException: verified, unaddressed }));
+  // npm's feed can lag GitHub withdrawals. Verify the exact advisory against
+  // GitHub on every run; network failure and every other advisory fail closed.
+  const withdrawn = new Set();
+  if (report.vulnerabilities?.picomatch) {
+    const response = await fetch('https://api.github.com/advisories/GHSA-fc5q-39xc-vjpf', { headers: { Accept: 'application/vnd.github+json' }, signal: AbortSignal.timeout(15000) });
+    if (!response.ok) throw new Error('Could not verify advisory withdrawal');
+    const source = await response.json();
+    if (source.ghsa_id === 'GHSA-fc5q-39xc-vjpf' && source.withdrawn_at) withdrawn.add(source.html_url);
+  }
+  const unaddressed = assessAudit(report, verified, withdrawn);
+  console.log(JSON.stringify({ advisories: report.metadata?.vulnerabilities, reviewedLegacySourceException: verified, withdrawnAdvisories: [...withdrawn], unaddressed }));
   if (unaddressed.length) process.exitCode = 1;
 }
 

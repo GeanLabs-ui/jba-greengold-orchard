@@ -119,21 +119,37 @@ async function verifyGoogleCredential(env: Env, credential: string): Promise<Goo
   }
 }
 
-async function deliverStaffInvitation(env: Env, email: string, fullName: string | undefined, token: string): Promise<boolean> {
-  if (!env.RESEND_API_KEY) return false;
-  const acceptUrl = `${env.PASSWORD_RESET_URL.replace('/reset-password', '/accept-staff-invite')}?token=${encodeURIComponent(token)}`;
+class StaffInvitationEmailError extends Error {}
+
+function canLinkExistingStaffAccount(user: { role: string; status: string; google_subject: string | null }, role: string) {
+  return user.status === 'active' && !user.google_subject && user.role === role && staffRoles.includes(user.role as (typeof staffRoles)[number]);
+}
+
+async function deliverStaffInvitation(c: AppContext, email: string, fullName: string | undefined, token: string): Promise<void> {
+  const { env } = c;
+  const acceptUrl = new URL('/accept-staff-invite', env.PASSWORD_RESET_URL);
+  acceptUrl.searchParams.set('token', token);
   const recipient = fullName ? ` ${escapeHtml(fullName)}` : '';
-  const response = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      from: env.EMAIL_FROM,
-      to: [email],
-      subject: 'Set up your JBA GreenGold Orchard staff account',
-      html: `<p>Hello${recipient},</p><p>You have been invited to the JBA GreenGold Orchard staff workspace.</p><p><a href="${acceptUrl}">Set up your account with Google</a></p><p>For your security, open this link and sign in with <strong>${escapeHtml(email)}</strong>. It expires in 24 hours and can be used once.</p>`,
-    }),
-  });
-  return response.ok;
+  let status: number | undefined;
+  try {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      signal: AbortSignal.timeout(8_000),
+      headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from: env.EMAIL_FROM,
+        to: [email],
+        subject: 'Set up your JBA GreenGold Orchard staff account',
+        html: `<p>Hello${recipient},</p><p>You have been invited to the JBA GreenGold Orchard staff workspace.</p><p><a href="${escapeHtml(acceptUrl.toString())}">Set up your account with Google</a></p><p>For your security, open this link and sign in with <strong>${escapeHtml(email)}</strong>. It expires in 24 hours and can be used once.</p>`,
+      }),
+    });
+    if (response.ok) return;
+    status = response.status;
+  } catch {
+    // Provider timeouts and network failures also roll back the invitation.
+  }
+  console.warn(JSON.stringify({ event: 'staff_invitation_email_failed', requestId: c.get('requestId'), status }));
+  throw new StaffInvitationEmailError();
 }
 
 function googleAccountUnavailable(c: AppContext, reason: string) {
@@ -424,39 +440,50 @@ router.post('/staff-invitations', requireRole('super_admin', 'hr_officer'), requ
       c.header('Retry-After', String(limit.retryAfter));
       return c.json({ error: { code: 'RATE_LIMITED', message: 'Too many staff invitations' }, requestId: c.get('requestId') }, 429);
     }
-    await sql`
-      UPDATE staff_invitations SET revoked_at = now()
-      WHERE email = ${parsed.data.email} AND accepted_at IS NULL AND revoked_at IS NULL AND expires_at <= now()
-    `;
-    const pending = await sql<{ id: string }[]>`
-      SELECT id FROM staff_invitations
-      WHERE email = ${parsed.data.email} AND accepted_at IS NULL AND revoked_at IS NULL
-      LIMIT 1
-    `;
-    if (pending[0]) return c.json({ error: { code: 'INVITATION_PENDING', message: 'An active invitation already exists for this email' }, requestId: c.get('requestId') }, 409);
-
+    const { email, fullName, role, employeeId } = parsed.data;
     const invitationId = crypto.randomUUID();
     const token = randomToken();
     const tokenHash = await sha256(token);
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
-    await sql`
-      INSERT INTO staff_invitations (id, email, full_name, role, page_access, employee_id, token_hash, invited_by, expires_at)
-      VALUES (${invitationId}, ${parsed.data.email}, ${parsed.data.fullName || null}, ${parsed.data.role}, ${sql.json(pageAccess)}, ${parsed.data.employeeId || null}, ${tokenHash}, ${inviter.id}, ${expiresAt})
-    `;
-    if (parsed.data.employeeId) {
-      await sql`
-        UPDATE entity_records
-        SET data = data || ${sql.json({ workspace_role: parsed.data.role, page_access: pageAccess, invitation_status: 'pending' })}, updated_by = ${inviter.id}, updated_at = now()
-        WHERE id = ${parsed.data.employeeId} AND entity_name = 'Employee'
+    const result = await sql.begin(async (transaction) => {
+      const [existingUser] = await transaction<{ role: string; status: string; google_subject: string | null }[]>`
+        SELECT role, status, google_subject FROM users WHERE email = ${email}
       `;
-    }
-    await sql`
-      INSERT INTO audit_events (id, user_id, action, target_table, record_id, new_values, ip_address)
-      VALUES (${crypto.randomUUID()}, ${inviter.id}, 'staff_invited', 'staff_invitations', ${invitationId}, ${sql.json({ email: parsed.data.email, role: parsed.data.role })}, ${requestIp(c.req.raw)})
-    `;
-    const delivered = await deliverStaffInvitation(c.env, parsed.data.email, parsed.data.fullName, token);
-    if (!delivered) return c.json({ error: { code: 'EMAIL_DELIVERY_FAILED', message: 'The invitation was saved but the email could not be delivered. Try again later.' }, requestId: c.get('requestId') }, 502);
-    return c.json({ data: { invitation: { id: invitationId, email: parsed.data.email, role: parsed.data.role, page_access: pageAccess, employee_id: parsed.data.employeeId || null, expiresAt } }, requestId: c.get('requestId') }, 201);
+      if (existingUser && !canLinkExistingStaffAccount(existingUser, role)) return 'account_exists';
+
+      await transaction`
+        UPDATE staff_invitations SET revoked_at = now()
+        WHERE lower(email) = ${email} AND accepted_at IS NULL AND revoked_at IS NULL AND expires_at <= now()
+      `;
+      const [invitation] = await transaction<{ id: string }[]>`
+        INSERT INTO staff_invitations (id, email, full_name, role, page_access, employee_id, token_hash, invited_by, expires_at)
+        VALUES (${invitationId}, ${email}, ${fullName || null}, ${role}, ${sql.json(pageAccess)}, ${employeeId || null}, ${tokenHash}, ${inviter.id}, ${expiresAt})
+        ON CONFLICT (lower(email)) WHERE accepted_at IS NULL AND revoked_at IS NULL DO NOTHING
+        RETURNING id
+      `;
+      if (!invitation) return 'pending';
+
+      if (employeeId) {
+        await transaction`
+          UPDATE entity_records
+          SET data = data || ${sql.json({ workspace_role: role, page_access: pageAccess, invitation_status: 'pending' })}, updated_by = ${inviter.id}, updated_at = now()
+          WHERE id = ${employeeId} AND entity_name = 'Employee' AND lower(data->>'email') = ${email}
+        `;
+      }
+      await transaction`
+        INSERT INTO audit_events (id, user_id, action, target_table, record_id, new_values, ip_address)
+        VALUES (${crypto.randomUUID()}, ${inviter.id}, 'staff_invited', 'staff_invitations', ${invitationId}, ${sql.json({ email, role })}, ${requestIp(c.req.raw)})
+      `;
+      // Commit the invitation and employee status only after Resend accepts the email.
+      await deliverStaffInvitation(c, email, fullName, token);
+      return 'sent';
+    });
+    if (result === 'account_exists') return c.json({ error: { code: 'ACCOUNT_EXISTS', message: 'This email already belongs to an account. Manage existing staff access or use a different Google email.' }, requestId: c.get('requestId') }, 409);
+    if (result === 'pending') return c.json({ error: { code: 'INVITATION_PENDING', message: 'An active invitation already exists for this email' }, requestId: c.get('requestId') }, 409);
+    return c.json({ data: { invitation: { id: invitationId, email, role, page_access: pageAccess, employee_id: employeeId || null, expiresAt } }, requestId: c.get('requestId') }, 201);
+  } catch (error) {
+    if (!(error instanceof StaffInvitationEmailError)) throw error;
+    return c.json({ error: { code: 'EMAIL_DELIVERY_FAILED', message: 'The email service could not send the invitation. You can try again.' }, requestId: c.get('requestId') }, 502);
   } finally {
     await closeDatabase(sql);
   }
@@ -471,12 +498,13 @@ router.patch('/staff-invitations/:id', requireRole('super_admin', 'hr_officer'),
   }
   const sql = createDatabase(c.env);
   try {
-    const rows = await sql<{ id: string; employee_id: string | null; role: Role; page_access: unknown }[]>`
+    const rows = await sql<{ id: string; email: string; employee_id: string | null; role: Role; page_access: unknown }[]>`
       UPDATE staff_invitations
       SET role = COALESCE(${parsed.data.role || null}, role),
           page_access = COALESCE(${parsed.data.pageAccess ? sql.json(parsed.data.pageAccess) : null}, page_access)
       WHERE id = ${c.req.param('id')} AND accepted_at IS NULL AND revoked_at IS NULL AND expires_at > now()
-      RETURNING id, employee_id, role, page_access
+        AND (${actor.role === 'super_admin'} OR role <> 'admin')
+      RETURNING id, email, employee_id, role, page_access
     `;
     if (!rows[0]) return c.json({ error: { code: 'NOT_FOUND', message: 'Active invitation not found' }, requestId: c.get('requestId') }, 404);
     const updatedPageAccess = Array.isArray(rows[0].page_access) ? rows[0].page_access.filter((item): item is string => typeof item === 'string') : [];
@@ -484,7 +512,7 @@ router.patch('/staff-invitations/:id', requireRole('super_admin', 'hr_officer'),
       await sql`
         UPDATE entity_records
         SET data = data || ${sql.json({ workspace_role: rows[0].role, page_access: updatedPageAccess })}, updated_by = ${actor.id}, updated_at = now()
-        WHERE id = ${rows[0].employee_id} AND entity_name = 'Employee'
+        WHERE id = ${rows[0].employee_id} AND entity_name = 'Employee' AND lower(data->>'email') = ${rows[0].email}
       `;
     }
     return c.json({ data: { invitation: rows[0] }, requestId: c.get('requestId') });
@@ -561,30 +589,29 @@ router.post('/staff-invitations/accept', async (c) => {
     const tokenHash = await sha256(parsed.data.token);
     const result = await sql.begin(async (transaction) => {
       const invitations = await transaction<{
-        id: string; email: string; full_name: string | null; role: Role; page_access: unknown; employee_id: string | null; invited_by: string;
+        id: string; email: string; full_name: string | null; role: Role; page_access: unknown; invited_by: string;
       }[]>`
-        SELECT id, email, full_name, role, page_access, employee_id, invited_by
+        SELECT id, email, full_name, role, page_access, invited_by
         FROM staff_invitations
         WHERE token_hash = ${tokenHash} AND accepted_at IS NULL AND revoked_at IS NULL AND expires_at > now()
         FOR UPDATE
       `;
       const invitation = invitations[0];
       if (!invitation || invitation.email !== claims.email) return null;
-      const existingUsers = await transaction<{ id: string; google_subject: string | null; role: string; status: string }[]>`
-        SELECT id, google_subject, role, status FROM users WHERE email = ${claims.email} LIMIT 1 FOR UPDATE
+      const existingUsers = await transaction<{ id: string; google_subject: string | null; role: string; status: string; page_access: unknown }[]>`
+        SELECT id, google_subject, role, status, page_access FROM users WHERE email = ${claims.email} LIMIT 1 FOR UPDATE
       `;
       const existingUser = existingUsers[0];
-      if (existingUser && (!matchesAudience(existingUser.role, 'staff') || existingUser.status !== 'active')) return { conflict: true };
-      if (existingUser?.google_subject && existingUser.google_subject !== claims.sub) return { conflict: true };
+      if (existingUser && !canLinkExistingStaffAccount(existingUser, invitation.role)) return { conflict: true };
       const userId = existingUser?.id || crypto.randomUUID();
-      const pageAccess = Array.isArray(invitation.page_access)
-        ? invitation.page_access.filter((item): item is (typeof staffPageKeys)[number] => typeof item === 'string' && staffPageKeys.includes(item as (typeof staffPageKeys)[number]))
+      const storedPageAccess = existingUser ? existingUser.page_access : invitation.page_access;
+      const pageAccess = Array.isArray(storedPageAccess)
+        ? storedPageAccess.filter((item): item is (typeof staffPageKeys)[number] => typeof item === 'string' && staffPageKeys.includes(item as (typeof staffPageKeys)[number]))
         : rolePageDefaults[invitation.role as (typeof staffRoles)[number]] || ['dashboard'];
       if (existingUser) {
         await transaction`
           UPDATE users
-          SET google_subject = ${claims.sub}, full_name = COALESCE(${invitation.full_name}, ${claims.name || claims.email.split('@')[0]}),
-              role = ${invitation.role}, page_access = ${sql.json(pageAccess)}, status = 'active', email_verified_at = now(), last_login_at = now(), updated_at = now()
+          SET google_subject = ${claims.sub}, email_verified_at = now(), last_login_at = now(), updated_at = now()
           WHERE id = ${userId}
         `;
       } else {
@@ -597,7 +624,7 @@ router.post('/staff-invitations/accept', async (c) => {
         UPDATE entity_records
         SET data = data || ${sql.json({ user_id: userId, workspace_role: invitation.role, page_access: pageAccess, invitation_status: 'accepted', account_status: 'active' })}, updated_at = now()
         WHERE entity_name = 'Employee'
-          AND (id = ${invitation.employee_id || ''} OR lower(data->>'email') = ${claims.email})
+          AND lower(data->>'email') = ${claims.email}
       `;
       await transaction`UPDATE staff_invitations SET accepted_at = now() WHERE id = ${invitation.id}`;
       await transaction`DELETE FROM sessions WHERE user_id = ${userId}`;

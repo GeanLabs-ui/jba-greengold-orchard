@@ -146,7 +146,10 @@ describe('orchard reference dashboard', () => {
       orders: [{ order_date: '2027-02-01', total_amount: 800_000 }],
       dailyActivities: [{ activity_date: '2026-11-01', actual_cost: 100 }],
     }, 2027);
-    expect(result.yearlyPerformance).toEqual([
+    expect(result.yearlyPerformance).toHaveLength(11);
+    expect(result.yearlyPerformance[0]).toEqual({ name: '2025', revenue: null, cost: null, profit: null });
+    expect(result.yearlyPerformance.at(-1)).toEqual({ name: '2035', revenue: null, cost: null, profit: null });
+    expect(result.yearlyPerformance.filter(row => row.profit != null)).toEqual([
       { name: '2026', revenue: null, cost: 100, profit: -100 },
       { name: '2027', revenue: 800_000, cost: null, profit: 800_000 },
     ]);

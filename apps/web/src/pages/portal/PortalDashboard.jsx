@@ -1,3 +1,4 @@
+import CardSurface from "@/components/shared/CardSurface";
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ShoppingCart, CreditCard, FileText, Wallet, ArrowRight, Package, CheckCircle2 } from 'lucide-react';
@@ -37,10 +38,10 @@ export default function PortalDashboard() {
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
-        <div className="rounded-xl border border-border bg-card shadow-sm">
+        <CardSurface as="div" className="rounded-xl border border-border bg-card shadow-sm">
           <div className="flex items-center justify-between border-b border-border p-4">
             <h3 className="text-card-title">Recent Orders</h3>
-            <Link to="/portal/orders" className="flex items-center gap-1 text-sm text-primary hover:underline">View all <ArrowRight className="h-3 w-3" /></Link>
+            <Link data-card-primary to="/portal/orders" className="flex items-center gap-1 text-sm text-primary hover:underline">View all <ArrowRight className="h-3 w-3" /></Link>
           </div>
           <div className="divide-y divide-border">
             {orders.length > 0 ? orders.map((order) => (
@@ -53,12 +54,12 @@ export default function PortalDashboard() {
               </div>
             )) : <div className="p-8 text-center text-sm text-muted-foreground">No orders yet.</div>}
           </div>
-        </div>
+        </CardSurface>
 
-        <div className="rounded-xl border border-border bg-card shadow-sm">
+        <CardSurface as="div" className="rounded-xl border border-border bg-card shadow-sm">
           <div className="flex items-center justify-between border-b border-border p-4">
             <h3 className="text-card-title">Pending Invoices</h3>
-            <Link to="/portal/payments" className="flex items-center gap-1 text-sm text-primary hover:underline">View all <ArrowRight className="h-3 w-3" /></Link>
+            <Link data-card-primary to="/portal/payments" className="flex items-center gap-1 text-sm text-primary hover:underline">View all <ArrowRight className="h-3 w-3" /></Link>
           </div>
           <div className="divide-y divide-border">
             {invoices.length > 0 ? invoices.map((inv) => (
@@ -68,7 +69,7 @@ export default function PortalDashboard() {
               </div>
             )) : <div className="p-8 text-center text-sm text-muted-foreground"><CheckCircle2 className="mx-auto h-8 w-8 text-emerald-500 mb-2" />All invoices are paid!</div>}
           </div>
-        </div>
+        </CardSurface>
       </div>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

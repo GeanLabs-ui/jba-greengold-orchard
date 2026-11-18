@@ -9,7 +9,9 @@ const activities = [
 describe('farm performance trends', () => {
   it('starts with the earliest recorded year, aggregates actual readings and preserves all twelve months', () => {
     const { yearly, monthly } = buildFarmPerformanceTrends(activities, 2026, 2026);
-    expect(yearly.map(row => row.label)).toEqual(['2025', '2026']);
+    expect(yearly).toHaveLength(11);
+    expect(yearly[0].label).toBe('2025');
+    expect(yearly.at(-1)).toMatchObject({ label: '2035', cost: null });
     expect(yearly[1]).toMatchObject({ cost: 70, revenue: 250, profit: 180, yieldKg: 2000 });
     expect(monthly).toHaveLength(12);
     expect(monthly[0]).toMatchObject({ label: 'Jan', cost: 20, profit: 80 });
@@ -29,27 +31,29 @@ describe('farm performance trends', () => {
     const data = { farms: [{ id: 'a', name: 'Farm A' }, { id: 'b', name: 'Farm B' }], blocks: [{ id: 'a1', farm_id: 'a' }, { id: 'b1', farm_id: 'b' }], dailyActivities: activities };
     for (const filter of [{ farmId: 'a' }, { blockId: 'a1' }]) {
       const scoped = buildFarmOperationsAnalytics(data, filter).activities;
-      expect(buildFarmPerformanceTrends(scoped, 2026, 2026).yearly.at(-1).cost).toBe(20);
+      expect(buildFarmPerformanceTrends(scoped, 2026, 2026).yearly.find(row => row.label === '2026').cost).toBe(20);
     }
   });
   it('reports undated records and uses valid creation dates', () => {
     const result = buildFarmPerformanceTrends([{ created_date: '2026-02-01', cost: 30 }, { actual_cost: 90 }], 2026, 2026);
     expect(result.undatedCount).toBe(1);
-    expect(result.yearly[0].profit).toBe(-30);
+    expect(result.yearly[1].profit).toBe(-30);
     expect(result.monthly[1].cost).toBe(30);
   });
   it('extends automatically without losing the starting year or historical totals', () => {
     const nextYear = buildFarmPerformanceTrends(activities, 2027, 2027);
     expect(nextYear.yearly[1].cost).toBe(70);
     expect(nextYear.yearly[2]).toMatchObject({ label: '2027', cost: null });
-    const later = buildFarmPerformanceTrends(activities, 2032, 2032);
-    expect(later.yearly.map(row => row.label)).toEqual(['2025', '2026', '2032']);
+    const later = buildFarmPerformanceTrends(activities, 2036, 2036);
+    expect(later.yearly).toHaveLength(12);
+    expect(later.yearly.at(-1)).toMatchObject({ label: '2036', cost: null });
     expect(later.yearly[1].cost).toBe(70);
+    expect(later.monthly[11]).toMatchObject({ label: 'Dec', cost: null });
   });
   it('includes future data years and does not invent zero readings for unrecorded future years', () => {
     const result = buildFarmPerformanceTrends([{ activity_date: '2033-01-01', actual_cost: 100, actual_revenue: 60 }], 2033, 2026);
-    expect(result.yearly.at(-1)).toMatchObject({ label: '2033', profit: -40, records: 1 });
-    expect(result.yearly[0]).toMatchObject({ label: '2026', cost: null, revenue: null, yieldKg: null, profit: null, records: 0 });
+    expect(result.yearly.find(row => row.label === '2033')).toMatchObject({ profit: -40, records: 1 });
+    expect(result.yearly[0]).toMatchObject({ label: '2025', cost: null, revenue: null, yieldKg: null, profit: null, records: 0 });
   });
 });
 

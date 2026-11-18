@@ -1,3 +1,4 @@
+import CardSurface from "@/components/shared/CardSurface";
 import {
   Anchor,
   ArrowRight,
@@ -162,7 +163,7 @@ export default function Export() {
 
           <div className="grid gap-5 md:grid-cols-2">
             {freightModes.map((mode) => (
-              <article key={mode.title} className="group overflow-hidden rounded-lg border border-[#c8e6c9] bg-white transition duration-300 hover:-translate-y-1 hover:shadow-xl">
+              <CardSurface key={mode.title} className="group overflow-hidden rounded-lg border border-[#c8e6c9] bg-white transition duration-300 hover:-translate-y-1 hover:shadow-xl">
                 <div className="relative h-36 overflow-hidden">
                   <img src={mode.image} alt={mode.imageAlt} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" loading="lazy" />
                   <span className="absolute -bottom-5 left-6 grid h-12 w-12 place-items-center rounded-full bg-[#123524] text-[#a5d6a7] ring-4 ring-white">
@@ -172,11 +173,11 @@ export default function Export() {
                 <div className="px-7 pb-5 pt-9">
                   <h3 className="text-card-title">{mode.title}</h3>
                   <ul className="mt-3 space-y-1">{mode.points.map((point) => <GoldBullet key={point}>{point}</GoldBullet>)}</ul>
-                  <Link to="/contact?topic=export" className="mt-4 inline-flex items-center text-sm font-semibold text-[#123524] hover:text-[#6b8e23]">
+                  <Link data-card-primary to="/contact?topic=export" className="mt-4 inline-flex items-center text-sm font-semibold text-[#123524] hover:text-[#6b8e23]">
                     Learn more <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </div>
-              </article>
+              </CardSurface>
             ))}
           </div>
         </div>
@@ -220,14 +221,14 @@ export default function Export() {
 
         <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {logistics.map((item) => (
-            <article key={item.title} className="grid grid-cols-[42%_1fr] gap-3 rounded-lg border border-[#c8e6c9] bg-white p-3 transition hover:border-[#6b8e23] hover:shadow-md">
+            <CardSurface key={item.title} className="grid grid-cols-[42%_1fr] gap-3 rounded-lg border border-[#c8e6c9] bg-white p-3 transition hover:border-[#6b8e23] hover:shadow-md">
               <img src={item.image} alt={item.alt} className="h-full min-h-32 w-full rounded-md object-cover" loading="lazy" />
               <div>
                 <h3 className="text-card-title">{item.title}</h3>
                 <ul className="mt-2 space-y-1">{item.points.map((point) => <GoldBullet key={point}>{point}</GoldBullet>)}</ul>
-                <Link to="/contact?topic=logistics" className="mt-2 inline-flex items-center text-xs font-semibold text-[#123524]">Learn more <ArrowRight className="ml-1 h-3 w-3" /></Link>
+                <Link data-card-primary to="/contact?topic=logistics" className="mt-2 inline-flex items-center text-xs font-semibold text-[#123524]">Learn more <ArrowRight className="ml-1 h-3 w-3" /></Link>
               </div>
-            </article>
+            </CardSurface>
           ))}
         </div>
 

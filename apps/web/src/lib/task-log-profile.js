@@ -1,4 +1,5 @@
 import { activityCost, activityRevenue, activityYieldKg } from './farm-operations-analytics';
+import { reportingDateKey } from './analytics-periods';
 import { BLOCK_CODES, blockLabel, farmCode, matchesFarmScope, scopeLabel } from './farm-scope';
 
 export function uniqueTaskLogRows(activities) {
@@ -21,7 +22,7 @@ export function taskLogTotals(activities) {
   }, { totalCost: 0, totalRevenue: 0, totalYieldKg: 0 });
 }
 
-export const taskLogDate = (row) => String(row.activity_date || row.created_date || '').slice(0, 10);
+export const taskLogDate = (row) => reportingDateKey(row.activity_date ?? null) || reportingDateKey(row.created_date ?? null) || '';
 
 // Each row has one owner at each reporting level. Whole-farm and multi-block
 // entries belong to the farm when all referenced blocks belong to that farm.
@@ -37,9 +38,10 @@ export function groupTaskLog(records, { farms = [], blocks = [], start, end } = 
   };
   const structure = { farms, blocks };
   const blockById = new Map(blocks.map((block) => [String(block.id), block]));
-  const activities = uniqueTaskLogRows(records).filter((row) => (
-    (!start || taskLogDate(row) >= start) && (!end || (taskLogDate(row) && taskLogDate(row) <= end))
-  )).sort((a, b) => taskLogDate(b).localeCompare(taskLogDate(a)));
+  const activities = uniqueTaskLogRows(records).map(row => ({ row, date: taskLogDate(row) }))
+    .filter(({ date }) => (!start || date >= start) && (!end || (date && date <= end)))
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .map(({ row }) => row);
 
   for (const row of activities) {
     const linkedBlock = row.block_id && blockById.get(String(row.block_id));

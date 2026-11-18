@@ -1,3 +1,4 @@
+import CardSurface from "@/components/shared/CardSurface";
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Download, FileText, Image as ImageIcon, UsersRound, Mail, Linkedin, Facebook, Instagram, Youtube } from 'lucide-react';
@@ -58,12 +59,12 @@ export default function News() {
     return () => { active = false; };
   }, []);
   const releases = [...referenceReleases, ...posts.filter((post) => !referenceReleases.some((release) => release.title === post.title))];
-  const releaseCards = (items) => items.map((post) => <article key={post.id || post.slug} className="nr-release-card">
+  const releaseCards = (items) => items.map((post) => <CardSurface key={post.id || post.slug} className="nr-release-card">
     {post.crop ? <ReferenceImage crop={post.crop} alt={post.title} /> : post.featured_image ? <img className="nr-post-image" src={post.featured_image} alt={post.title} loading="lazy" /> : <div className="nr-post-placeholder"><ImageIcon aria-hidden="true" /></div>}
     <div className="nr-release-copy"><time dateTime={post.published_at || undefined}>{dateLabel(post.published_at)}</time><h3>{post.title}</h3><p>{post.excerpt}</p>
-      {post.slug ? <Link className="nr-button" to={`/news/${encodeURIComponent(post.slug)}`}>Read More <ArrowRight /></Link> : <button type="button" className="nr-button" onClick={() => setDialog({ type: 'release', post })}>Read More <ArrowRight /></button>}
+      {post.slug ? <Link data-card-primary className="nr-button" to={`/news/${encodeURIComponent(post.slug)}`}>Read More <ArrowRight /></Link> : <button data-card-primary type="button" className="nr-button" onClick={() => setDialog({ type: 'release', post })}>Read More <ArrowRight /></button>}
     </div>
-  </article>);
+  </CardSurface>);
   return <div className="newsroom-page">
     <section className="nr-hero" aria-labelledby="newsroom-title">
       <div className="nr-hero-art" aria-hidden="true" />
