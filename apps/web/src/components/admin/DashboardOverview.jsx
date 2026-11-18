@@ -67,7 +67,6 @@ export function DashboardDepartments({ data, expensesMtd }) {
     '/admin/reports': 'Business reporting and exports',
     '/admin/system-log': 'Activity history and audit trail',
     '/admin/settings': 'Workspace configuration',
-    '/admin/secretary': 'Assistant, follow-ups and task management',
   };
   return (    <details className="dashboard-departments" open><summary className="text-section-title">Department overview</summary><p className="text-xs text-muted-foreground mt-1 mb-4">Current records across business, production and system pages. Select a department to explore.</p>
       {adminNavSections.map((section) => <div key={section.title} className="dashboard-department-group"><h3>{section.title}</h3><div className="dashboard-department-grid">{section.items.map(({ label, path, icon: Icon }) => <Link key={path} to={path}><Icon size={18} /><div><strong>{label}</strong><span>{departmentNotes[path] || 'Open workspace'}</span></div><ArrowRight size={14} /></Link>)}</div></div>)}

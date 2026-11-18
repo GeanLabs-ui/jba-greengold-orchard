@@ -657,31 +657,6 @@ export const companySettings = {
   departments: (signal) => request('/company-settings/departments', { signal, cache: 'no-store' }),
   saveDepartment: (id, body, accountUserId) => request(`/company-settings/departments/${encodeURIComponent(id)}`, { method: 'POST', body, accountUserId }),
 };
-export const secretary = {
-  tasks: (offset = 0) => request(`/secretary/tasks?offset=${offset}`),
-  updateTask: async (id, payload) => {
-    const result = await request(`/secretary/tasks/${encodeURIComponent(id)}`, { method: 'PATCH', body: payload });
-    publishDataChange('FarmTask', 'update', id);
-    return result;
-  },
-  status: () => request('/secretary/status'),
-  runs: () => request('/secretary/runs'),
-  run: (payload) => request('/secretary/runs', { method: 'POST', body: payload }),
-  propose: (payload) => request('/secretary/proposals', { method: 'POST', body: payload }),
-  decide: async (id, decision) => {
-    const result = await request(`/secretary/runs/${encodeURIComponent(id)}/decision`, { method: 'POST', body: { decision } });
-    if (result.created_daily_log_ids?.length) {
-      invalidateApiEntity('DailyActivity');
-      publishDataChange('DailyActivity', 'create');
-    }
-    if (result.task_id) {
-      invalidateApiEntity('FarmTask');
-      publishDataChange('FarmTask', 'create', result.task_id);
-    }
-    return result;
-  },
-  records: (entity, offset = 0) => request(`/secretary/records?entity=${encodeURIComponent(entity)}&offset=${offset}`),
-};
 const objectives = { list: () => request('/objectives'), save: async (body) => { const data = await request('/objectives', { method: 'POST', body }); publishDataChange('ObjectiveCycle'); return data; } };
 
 const apiBase44 = { objectives, auth, entities, applications, commerce, files, farms, staff, activityLog, account };
