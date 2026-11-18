@@ -1,6 +1,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import postgres from 'postgres';
-import { seal, unseal, fingerprint } from './data-import/secure-payload.mjs';
+import { seal, unseal } from './data-import/secure-payload.mjs';
+import { assertExistingRowsPreserved } from './business-data-preservation.mjs';
 
 const phase = process.argv[2];
 if (!['before', 'after'].includes(phase)) throw new Error('Expected before or after');
@@ -25,16 +26,7 @@ try {
   if (phase === 'after') {
     const before = unseal(await readFile(new URL('before.enc', output), 'utf8'), key);
     for (const [table, rows] of Object.entries(before)) {
-      const remaining = new Map();
-      for (const row of snapshot[table] || []) {
-        const hash = fingerprint(row);
-        remaining.set(hash, (remaining.get(hash) || 0) + 1);
-      }
-      for (const row of rows) {
-        const hash = fingerprint(row), count = remaining.get(hash) || 0;
-        if (!count) throw new Error(`Existing data changed or disappeared in ${table}; inspect encrypted snapshots before proceeding`);
-        remaining.set(hash, count - 1);
-      }
+      assertExistingRowsPreserved(table, rows, snapshot[table] || []);
     }
   }
   console.log(JSON.stringify({ phase, tables: Object.fromEntries(Object.entries(snapshot).map(([name, rows]) => [name, rows.length])), existingDataPreserved: phase === 'after' }));
