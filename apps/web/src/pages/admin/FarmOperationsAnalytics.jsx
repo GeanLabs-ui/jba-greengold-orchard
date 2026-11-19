@@ -1,10 +1,14 @@
+import CardSurface from "@/components/shared/CardSurface";
+import { taskLogTaskLink } from "@/lib/season-readiness";
 import { farmScopeOptions, blockLabel } from '@/lib/farm-scope';
 import BlockPerformanceChart from '@/components/farm/BlockPerformanceChart';
 import FarmPerformanceTrends from '@/components/farm/FarmPerformanceTrends';
+import { reportingYears } from '@/lib/analytics-periods';
+import { useReportingYear } from '@/lib/use-reporting-year';
 import CostBreakdown from '@/components/farm/CostBreakdown';
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   ArrowDown, CalendarDays, ChartNoAxesCombined, Pencil,
   House, Banknote, MapPin, ReceiptText, Coins, Sprout, TrendingUp, Trophy,
@@ -115,7 +119,8 @@ export default function FarmOperationsAnalytics({ data }) {
   const [period, setPeriod] = useState('all');
   const [farmFilter, setFarmFilter] = useState('all');
   const [selectedTrendYear, setTrendYear] = useState(null);
-  const trendYear = selectedTrendYear ?? now.getFullYear();
+  const currentYear = useReportingYear();
+  const trendYear = selectedTrendYear ?? currentYear;
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
   const [toolbarTarget, setToolbarTarget] = useState(null);
@@ -279,10 +284,10 @@ export default function FarmOperationsAnalytics({ data }) {
       const location = [farmFor(row), blockLabel(row)].filter((value) => value && value !== '—').join(' · ') || 'Unassigned farm';
       const assignedTo = row.responsible || row.assigned_workers || row.supervisor_name || 'Not recorded';
       const cost = number(row.actual_cost ?? row.cost);
-      return <article key={row.id || row.activity_code || index} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-2.5 transition-colors hover:bg-muted/30">
-        <div className="min-w-0"><p className="truncate text-caption font-semibold text-slate-800">{activityName}</p><p className="mt-0.5 truncate text-caption text-muted-foreground">{formatDate(row.activity_date || row.created_date)} · {location} · {assignedTo}</p></div>
+      return <CardSurface key={row.id || row.activity_code || index} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-2.5 transition-colors hover:bg-muted/30">
+        <div className="min-w-0"><p className="truncate text-caption font-semibold text-slate-800">{taskLogTaskLink(row) ? <Link data-card-primary to={taskLogTaskLink(row)}>{activityName}</Link> : activityName}</p><p className="mt-0.5 truncate text-caption text-muted-foreground">{formatDate(row.activity_date || row.created_date)} · {location} · {assignedTo}</p></div>
         <div className="flex shrink-0 items-center gap-3"><StatusPill status={row.status || 'Pending'} /><span className="min-w-14 text-right text-caption font-semibold text-[#d64545]">{cost ? formatCedis(cost) : '—'}</span></div>
-      </article>;
+      </CardSurface>;
     })}</div> : <EmptyState />}
   </AnalyticsPanel>;
   const analyticsToolbar = <div className="analytics-toolbar flex flex-wrap items-center gap-1">
@@ -305,8 +310,7 @@ export default function FarmOperationsAnalytics({ data }) {
       <span className="sr-only">Monthly performance year</span>
       <CalendarDays className="pointer-events-none absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-[#256b2a]" />
       <select value={trendYear} onChange={(event) => setTrendYear(Number(event.target.value))} className="h-7 rounded-md border border-border bg-card pl-6 pr-6 text-caption font-medium outline-none focus:ring-2 focus:ring-primary/25">
-        {[...new Set([now.getFullYear(), trendYear, ...activities.map(row => recordDate(row, ['activity_date', 'created_date'])?.getFullYear()).filter(Number.isFinite)])]
-          .sort((a, b) => a - b).map((year) => <option key={year} value={year}>{year}</option>)}
+        {reportingYears(currentYear).map((year) => <option key={year} value={year}>{year}</option>)}
       </select>
     </label>
   </div>;

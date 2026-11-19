@@ -1,3 +1,9 @@
+import DeleteFarmRecordDialog from '@/components/farm/DeleteFarmRecordDialog';
+import CardSurface from "@/components/shared/CardSurface";
+import SeasonReadinessCard from "@/components/farm/SeasonReadinessCard";
+import { seasonReadiness } from "@/lib/season-readiness";
+import { taskLogDate } from "@/lib/task-log-profile";
+import FarmActivationToggle from "@/components/farm/FarmActivationToggle";
 import AnalyticsPie from '@/components/farm/AnalyticsPie';
 import TaskLogRecords from '@/components/farm/TaskLogRecords';
 import TaskLogMetrics from '@/components/farm/TaskLogMetrics';
@@ -6,7 +12,7 @@ import { subscribeToDataChanges } from '@/lib/data-sync';
 import { blockLabel, scopeLabel } from '@/lib/farm-scope';
 import AdminActionButton from '@/components/admin/AdminActionButton';
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft,
   CalendarDays,
@@ -21,6 +27,7 @@ import {
   SunMedium,
   Trees,
   TrendingUp,
+  Trash2,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { base44 } from "@/api/base44Client";
@@ -28,7 +35,6 @@ import {
   BlockFormDialog,
   FarmFormDialog,
   MergeBlocksDialog,
-  StatusActionDialog,
 } from "@/components/farm/FarmManagementDialogs";
 import FarmPerformanceTrends from "@/components/farm/FarmPerformanceTrends";
 import BlockPerformanceChart from "@/components/farm/BlockPerformanceChart";
@@ -38,13 +44,13 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/AuthContext";
 import {
+  canDeleteFarmRecords,
+  canChangeBlockStatus,
   canManageBlocks,
   canManageFarms,
   canMergeBlocks,
@@ -70,6 +76,7 @@ const periodLabel = (period) =>
 
 function SectionBand({ number, title, subtitle, tone, children }) {
   const tones = {
+    grey: "bg-slate-600",
     green: "bg-gradient-to-r from-emerald-950 to-emerald-800",
     gold: "bg-gradient-to-r from-amber-600 to-amber-500",
     teal: "bg-gradient-to-r from-teal-800 to-teal-500",
@@ -99,37 +106,6 @@ function SectionBand({ number, title, subtitle, tone, children }) {
   );
 }
 
-function ReadinessCard({ icon: Icon, title, count, total, completed, accent }) {
-  const percent = total ? Math.round((count / total) * 100) : 0;
-  const colors = {
-    green: "bg-lime-50 text-lime-700",
-    gold: "bg-amber-50 text-amber-600",
-    leaf: "bg-emerald-50 text-emerald-700",
-  };
-  return (
-    <article className="grid grid-cols-[auto_1fr] gap-x-3 rounded-lg border border-slate-100 bg-white p-3.5 shadow-[0_2px_12px_rgba(15,23,42,0.03)]">
-      <span className={`grid h-9 w-9 place-items-center rounded-lg ${colors[accent]}`}>
-        <Icon className="h-5 w-5" />
-      </span>
-      <div className="min-w-0">
-        <h3 className="text-slate-800 text-card-title">{title}</h3>
-        <p className="mt-0.5 text-caption font-medium text-slate-600">
-          {count ? `${count} of ${total} blocks scheduled` : "Not scheduled"}
-        </p>
-        <div className="mt-2 flex items-center gap-2">
-          <Progress value={percent} className="h-1.5 flex-1 bg-slate-100" />
-          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-caption font-semibold text-slate-500">
-            {percent}%
-          </span>
-        </div>
-        <p className="mt-1.5 text-caption text-slate-500">
-          {count ? `${completed} completed` : `0 / ${total} stages scheduled`}
-        </p>
-      </div>
-    </article>
-  );
-}
-
 function BlockStage({ icon: Icon, label, scheduled }) {
   return (
     <div className="flex items-center gap-1.5 text-caption text-slate-600">
@@ -143,26 +119,28 @@ function BlockStage({ icon: Icon, label, scheduled }) {
   );
 }
 
-function BlockOverviewCard({ block, start, end }) {
-  const activities = block.activity_periods;
+function BlockOverviewCard({ block, start, end, canEdit, onChanged, farmInactive }) {
+  const inactive = block.status !== "active" || farmInactive;
+  const activities = block.activity_periods || [];
   const fertilizer = activities.some((period) => /fertili/i.test(period.category || period.activity_type));
   const flowering = activities.some((period) => /flower|induction/i.test(period.category || period.activity_type));
   const harvest = Boolean(blockHarvest(block));
   const scheduled = [fertilizer, flowering, harvest].filter(Boolean).length;
   const completed = activities.filter((period) => String(period.status).toLowerCase() === "completed").length;
   return (
-    <Link
-      to={`/admin/farm-daily-activities/activities/farms/${block.farm_id}/blocks/${block.id}?${new URLSearchParams({ start, end })}`}
-      className="group min-w-0 rounded-lg border border-slate-100 bg-white p-3 shadow-[0_2px_12px_rgba(15,23,42,0.03)] transition hover:-translate-y-0.5 hover:border-teal-300 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600"
-    >
-      <div className="mb-2 flex items-center justify-between">
-        <span className="rounded bg-teal-600 px-2 py-0.5 text-caption font-bold text-white">
-          {block.block_code}
-        </span>
-        <span className="text-caption font-medium uppercase tracking-wide text-slate-400">
-          {humanize(block.status)}
-        </span>
+    <CardSurface className={`group min-w-0 rounded-lg border p-3 shadow-[0_2px_12px_rgba(15,23,42,0.03)] transition hover:shadow-md ${inactive ? "border-slate-200 bg-slate-100 grayscale" : "border-emerald-200 bg-white hover:border-emerald-300"}`}>
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <Link
+          data-card-primary
+          to={`/admin/farm-daily-activities/activities/farms/${block.farm_id}/blocks/${block.id}?${new URLSearchParams({ start, end })}`}
+          className="rounded bg-emerald-600 px-2 py-0.5 text-caption font-bold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
+          aria-label={`View ${blockLabel(block)}`}
+        >
+          {block.block_code || blockLabel(block)}
+        </Link>
+        <FarmActivationToggle record={block} kind="block" canEdit={canEdit} onChanged={onChanged} />
       </div>
+      {farmInactive ? <p className="mb-2 text-caption text-slate-500">Farm deactivated</p> : null}
       <div className="flex gap-3">
         <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-teal-50 text-teal-700">
           <Sprout className="h-6 w-6" />
@@ -176,23 +154,25 @@ function BlockOverviewCard({ block, start, end }) {
       <div className="mt-2 border-t border-slate-100 pt-2 text-center text-caption font-medium text-slate-500">
         {scheduled} / 3 planned&nbsp;&nbsp; • &nbsp;&nbsp;{completed} completed log entries
       </div>
-    </Link>
+    </CardSurface>
   );
 }
 
 export default function FarmProfileAdmin() {
   const { farmId } = useParams();
+  const navigate = useNavigate();
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [farm, setFarm] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [trendYear, setTrendYear] = useState(null);
+  const [readinessYear, setReadinessYear] = useState("all");
   const [start, setStart] = useState('');
   const [end, setEnd] = useState('');
   const [farmDialog, setFarmDialog] = useState(false);
   const [blockDialog, setBlockDialog] = useState(false);
-  const [statusDialog, setStatusDialog] = useState(null);
   const [mergeDialog, setMergeDialog] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -209,6 +189,8 @@ export default function FarmProfileAdmin() {
       setFarm({
         ...farmWithTaskLog(profile, records, { start, end, blocks, farms }),
         performanceActivities: taskLogProfile(profile, records, { blocks, farms }).activities,
+        readinessRecords: records,
+        readinessStructure: { blocks, farms },
       });
     } catch (loadError) {
       setError(loadError.message || "Unable to load this farm.");
@@ -276,22 +258,13 @@ export default function FarmProfileAdmin() {
     ...new Set(farmHarvestPeriods.map((period) => period.harvest_type).filter(Boolean)),
   ];
   const activityPeriods = farm?.activity_periods || [];
-  const readiness = useMemo(() => {
-    const total = activeBlocks.length;
-    const summarize = (matcher, source = activityPeriods) => {
-      const matching = source.filter(matcher);
-      return {
-        count: new Set(matching.map((period) => period.block_id).filter(Boolean)).size,
-        completed: matching.filter((period) => String(period.status).toLowerCase() === "completed").length,
-      };
-    };
-    return {
-      total,
-      fertilizer: summarize((period) => /fertili/i.test(period.category || period.activity_type)),
-      flowering: summarize((period) => /flower|induction/i.test(period.category || period.activity_type)),
-      harvest: summarize(() => true, farmHarvestPeriods),
-    };
-  }, [activeBlocks.length, activityPeriods, farmHarvestPeriods]);
+  const readiness = useMemo(() => seasonReadiness(farm?.readinessRecords || [], {
+    farm, ...farm?.readinessStructure, year: readinessYear,
+  }), [farm, readinessYear]);
+  const readinessYears = useMemo(() => [...new Set([
+    String(new Date().getFullYear()),
+    ...(farm?.readinessRecords || []).map((row) => taskLogDate(row).slice(0, 4)).filter(Boolean),
+  ])].sort().reverse(), [farm]);
   const loadImpact = useCallback((id) => base44.farms.mergeImpact(id), []);
 
   if (loading && !farm) {
@@ -341,8 +314,8 @@ export default function FarmProfileAdmin() {
       ) : null}
 
       <section className="overflow-hidden rounded-xl border border-emerald-900/10 bg-slate-50 shadow-sm">
-        <SectionBand title="Farm Summary" tone="green" />
-        <div className="bg-gradient-to-r from-emerald-950 to-emerald-800 px-4 pb-4 text-white">
+        <SectionBand title="Farm Summary" tone={farm.status === "active" ? "green" : "grey"} />
+        <div className={`px-4 pb-4 text-white ${farm.status === "active" ? "bg-gradient-to-r from-emerald-950 to-emerald-800" : "bg-slate-600 grayscale"}`}>
           <div className="grid gap-4 md:grid-cols-[minmax(8rem,20%)_minmax(0,1fr)] lg:gap-5">
             <div className="relative min-h-36 overflow-hidden rounded-lg border border-white/20 shadow-sm">
               <img
@@ -356,15 +329,7 @@ export default function FarmProfileAdmin() {
                 <div className="min-w-0">
                   <h1 className="break-words text-page-title">{scopeLabel(farm.name)}</h1>
                   <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-caption text-emerald-50">
-                    <button
-                      type="button"
-                      disabled={!canManageFarms(user?.role)}
-                      onClick={() => setStatusDialog(farm.status === "active" ? "deactivate" : "reactivate")}
-                      className="rounded-full bg-emerald-400/20 px-2.5 py-1 font-semibold text-emerald-50 disabled:cursor-default"
-                    >
-                      <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-lime-400" />
-                      {humanize(farm.status)}
-                    </button>
+                    <FarmActivationToggle record={farm} canEdit={canManageFarms(user?.role)} onChanged={loadFarm} />
                     <span>Updated {formatDate(farm.updated_at)}</span>
                   </div>
                 </div>
@@ -390,9 +355,8 @@ export default function FarmProfileAdmin() {
                       {canMergeBlocks(user?.role) && activeBlocks.length > 1 ? (
                         <DropdownMenuItem onClick={() => setMergeDialog(true)}><Merge className="mr-2 h-4 w-4" />Merge blocks</DropdownMenuItem>
                       ) : null}
-                      {canManageFarms(user?.role) ? (
-                        <><DropdownMenuSeparator /><DropdownMenuItem className={farm.status === "active" ? "text-destructive" : ""} onClick={() => setStatusDialog(farm.status === "active" ? "deactivate" : "reactivate")}>{farm.status === "active" ? "Deactivate farm" : "Reactivate farm"}</DropdownMenuItem></>
-                      ) : null}
+
+                      {canDeleteFarmRecords(user?.role) ? <DropdownMenuItem className="text-destructive" onClick={() => setDeleteOpen(true)}><Trash2 className="mr-2 h-4 w-4" />Delete farm</DropdownMenuItem> : null}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
@@ -402,7 +366,7 @@ export default function FarmProfileAdmin() {
                   { icon: Ruler, label: "Declared area", value: farm.size_acres == null ? "No data yet" : formatNumber(farm.size_acres) + " ac" },
                   { icon: Trees, label: "Current trees", value: analytics.inventoryRecordCount ? formatNumber(analytics.totalTrees, 0) : "No data yet" },
                   { icon: TrendingUp, label: "Yield in period", value: analytics.yieldRecordCount ? formatNumber(analytics.totalYieldKg) + " Kg" : "No data yet" },
-                  { icon: Grid2X2, label: "Active blocks", value: activeBlocks.length },
+                  { icon: Grid2X2, label: "Total blocks", value: farm.blocks.length },
                   { icon: Leaf, label: "Mango variety", value: blockVarieties.join(", ") || "Not recorded" },
                   { icon: ShoppingBasket, label: "Harvest type", value: harvestTypes.map(humanize).join(", ") || "Not scheduled" },
                   { icon: CalendarDays, label: "Next harvest period", value: periodLabel(nextHarvest) },
@@ -424,8 +388,9 @@ export default function FarmProfileAdmin() {
       <section className="overflow-hidden rounded-xl border border-amber-100 bg-amber-50/40 shadow-sm">
         <SectionBand number="1" title="Season Readiness" tone="gold">
           <div className="flex items-center gap-2">
-            <select value={start.slice(0, 4)} onChange={(event) => setStart(`${event.target.value}-01-01`)} className="h-7 rounded-md border-0 bg-white px-3 text-caption font-semibold text-slate-700 outline-none">
-              {[new Date().getFullYear() - 1, new Date().getFullYear(), new Date().getFullYear() + 1].map((year) => <option key={year}>{year}</option>)}
+            <select aria-label="Season readiness year" value={readinessYear} onChange={(event) => setReadinessYear(event.target.value)} className="h-7 rounded-md border-0 bg-white px-3 text-caption font-semibold text-slate-700 outline-none">
+              <option value="all">All years</option>
+              {readinessYears.map((year) => <option key={year} value={year}>{year}</option>)}
             </select>
             <Button asChild size="sm" variant="secondary" className="h-7 bg-white text-caption text-slate-700 hover:bg-slate-100">
               <Link to="/admin/calendar"><CalendarDays className="mr-1.5 h-3.5 w-3.5" />Manage plan</Link>
@@ -433,20 +398,20 @@ export default function FarmProfileAdmin() {
           </div>
         </SectionBand>
         <div className="grid gap-3 p-3 lg:grid-cols-3">
-          <ReadinessCard icon={Leaf} title="Fertilizer" count={readiness.fertilizer.count} total={readiness.total} completed={readiness.fertilizer.completed} accent="green" />
-          <ReadinessCard icon={SunMedium} title="Flower induction" count={readiness.flowering.count} total={readiness.total} completed={readiness.flowering.completed} accent="gold" />
-          <ReadinessCard icon={ShoppingBasket} title="Harvest" count={readiness.harvest.count} total={readiness.total} completed={readiness.harvest.completed} accent="leaf" />
+          <SeasonReadinessCard icon={Leaf} title="Fertilizer" model={readiness.fertilizer} total={readiness.total} accent="green" />
+          <SeasonReadinessCard icon={SunMedium} title="Flower induction" model={readiness.flowering} total={readiness.total} accent="gold" />
+          <SeasonReadinessCard icon={ShoppingBasket} title="Harvest" model={readiness.harvest} total={readiness.total} accent="leaf" />
         </div>
       </section>
 
       <section className="overflow-hidden rounded-xl border border-teal-100 bg-teal-50/30 shadow-sm">
         <SectionBand number="2" title="Blocks Overview" subtitle="Your farm blocks and their schedule status." tone="teal">
-          <span className="text-caption font-medium text-white/85">{activeBlocks.length} blocks total</span>
+          <span className="text-caption font-medium text-white/85">{farm.blocks.length} blocks total · {farm.blocks.filter((block) => block.status === "inactive").length} deactivated</span>
         </SectionBand>
         <div className="grid gap-3 p-3 sm:grid-cols-2 lg:grid-cols-5">
-          {activeBlocks.map((block) => <BlockOverviewCard key={block.id} block={block} start={start} end={end} />)}
-          {!activeBlocks.length ? (
-            <div className="col-span-full rounded-lg border border-dashed border-teal-200 bg-white p-8 text-center text-sm text-slate-500">No active blocks have been added to this farm yet.</div>
+          {farm.blocks.map((block) => <BlockOverviewCard key={block.id} block={block} start={start} end={end} canEdit={canChangeBlockStatus(user?.role)} onChanged={loadFarm} farmInactive={farm.status !== "active"} />)}
+          {!farm.blocks.length ? (
+            <div className="col-span-full rounded-lg border border-dashed border-teal-200 bg-white p-8 text-center text-sm text-slate-500">No blocks have been added to this farm yet.</div>
           ) : null}
         </div>
         {farm.farmLevelRows.length > 0 ? (
@@ -524,8 +489,8 @@ export default function FarmProfileAdmin() {
           )
         }
       />
-      <BlockFormDialog open={blockDialog} onOpenChange={setBlockDialog} saving={saving} unallocatedAcres={unallocated} onSubmit={(payload) => mutate(() => base44.farms.createBlock(farm.id, payload), "Block created", () => setBlockDialog(false))} />
-      <StatusActionDialog open={Boolean(statusDialog)} onOpenChange={(open) => !open && setStatusDialog(null)} entityLabel={scopeLabel(farm.name)} action={statusDialog || "deactivate"} saving={saving} onSubmit={(payload) => mutate(() => statusDialog === "deactivate" ? base44.farms.deactivate(farm.id, payload) : base44.farms.reactivate(farm.id), `Farm ${statusDialog === "deactivate" ? "deactivated" : "reactivated"}`, () => setStatusDialog(null))} />
+      <BlockFormDialog open={blockDialog} onOpenChange={setBlockDialog} parentFarm={farm} saving={saving} unallocatedAcres={unallocated} onSubmit={(payload) => mutate(() => base44.farms.createBlock(farm.id, payload), "Block created", () => setBlockDialog(false))} />
+      <DeleteFarmRecordDialog open={deleteOpen} onOpenChange={setDeleteOpen} kind="farm" record={farm} onDeleted={() => { toast.success('Farm deleted'); navigate('/admin/farm-daily-activities/activities/farms'); }} />
       <MergeBlocksDialog open={mergeDialog} onOpenChange={setMergeDialog} farm={farm} blocks={farm.blocks || []} saving={saving} loadImpact={loadImpact} onSubmit={(payload) => mutate(() => base44.farms.mergeBlocks(payload), "Blocks merged safely", () => setMergeDialog(false))} />
     </div>
   );

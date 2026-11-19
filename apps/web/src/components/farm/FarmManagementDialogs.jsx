@@ -1,7 +1,9 @@
-import { blockLabel, scopeLabel } from '@/lib/farm-scope';
-import AdminActionButton from '@/components/admin/AdminActionButton';
+import FarmEditorFields from './FarmEditorFields';
+import BlockEditorFields from './BlockEditorFields';
+import './farm-management-dialogs.css';
+import { blockLabel } from '@/lib/farm-scope';
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, CalendarDays, FileText, ImagePlus, Info, Leaf, Loader2, MapPin, Plus } from 'lucide-react';
+import { AlertTriangle, Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -28,99 +30,62 @@ const Field = ({ label, children, hint }) => (
   </div>
 );
 
-const BlockSection = ({ icon: Icon, title, children, className = '' }) => (
-  <section className={`block-editor-section rounded-lg border border-slate-200 bg-white p-2 ${className}`}>
-    <h3 className="mb-1 flex items-center gap-1.5 text-emerald-900 text-card-title"><Icon className="h-4 w-4 text-emerald-700" /><span className="card-heading-text">{title}</span></h3>
-    {children}
-  </section>
-);
-
-const DiseaseSeveritySelector = ({ value, onChange }) => (
-  <div className="grid grid-cols-3 gap-3">
-    {[
-      ['Low', 'border-emerald-300 text-emerald-800'],
-      ['Medium', 'border-amber-400 text-amber-900'],
-      ['High', 'border-red-300 text-red-700'],
-    ].map(([severity, tone]) => <button key={severity} type="button" onClick={() => onChange(severity)} className={`flex h-10 items-center justify-center gap-2 rounded-md border text-sm font-medium transition ${value === severity ? `${tone} bg-white ring-1 ring-current` : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}><span className={`h-3.5 w-3.5 rounded-full border-2 ${tone}`} />{severity}</button>)}
-  </div>
-);
-
 export function FarmFormDialog({ open, onOpenChange, farm, onSubmit, saving }) {
   const [form, setForm] = useState(emptyFarm);
   const [imageFile, setImageFile] = useState(null);
   const [dirty, setDirty] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [submitError, setSubmitError] = useState('');
   useEffect(() => {
     if (!open) return;
     setForm(farm ? { ...emptyFarm, ...farm, size_acres: farm.size_acres ?? '' } : emptyFarm);
     setImageFile(null);
     setDirty(false);
+    setSubmitError('');
   }, [open, farm]);
 
   const change = (key, value) => { setForm((current) => ({ ...current, [key]: value })); setDirty(true); };
   const requestClose = (nextOpen) => {
-    if (!nextOpen && dirty && !saving && !window.confirm('Discard your unsaved farm changes?')) return;
+    if (!nextOpen && (saving || uploading)) return;
+    if (!nextOpen && dirty && !saving && !uploading && !window.confirm('Discard your unsaved farm changes?')) return;
     onOpenChange(nextOpen);
   };
   const submit = async (event) => {
     event.preventDefault();
+    setSubmitError('');
+    setUploading(true);
+    try {
+    let imageUrl = form.image_url || null;
+    if (imageFile) {
+      const uploaded = await base44.files.upload(imageFile, farm?.id || crypto.randomUUID());
+      imageUrl = `${uploaded.url}?preview=1`;
+    }
     const saved = await onSubmit({
       ...form,
       size_acres: optionalNumber(form.size_acres),
       latitude: optionalNumber(form.latitude),
       longitude: optionalNumber(form.longitude),
       soil_ph: optionalNumber(form.soil_ph),
-      image_file: imageFile || undefined,
+      image_url: imageUrl,
+      operations_started_on: form.operations_started_on || null,
+      planting_started_on: form.planting_started_on || null,
     });
     if (saved !== false) setDirty(false);
+    } catch (error) { setSubmitError(error.message || 'Unable to save the profile.'); }
+    finally { setUploading(false); }
   };
 
   return (
     <Dialog open={open} onOpenChange={requestClose}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>{farm ? 'Edit farm' : 'Add farm'}</DialogTitle>
-          <DialogDescription>{farm ? 'Update the farm profile. Calculated totals are managed from its blocks.' : 'Create the main physical farm location before adding operational blocks.'}</DialogDescription>
+      <DialogContent className="farm-profile-dialog create-block-dialog create-farm-dialog">
+        <DialogHeader className="profile-form-header">
+          <DialogTitle>{farm ? 'Edit farm' : 'Create farm'}</DialogTitle>
+          <DialogDescription>Add farm details, location and growing conditions.</DialogDescription>
         </DialogHeader>
-        <form onSubmit={submit} className="space-y-5">
-          {farm ? (
-            <Field label="Farm image" hint="JPG, PNG, or WebP up to 5 MB. The image appears in the Farm Summary header.">
-              <label className="group flex cursor-pointer items-center gap-4 rounded-lg border border-dashed bg-muted/20 p-3 transition hover:border-emerald-400 hover:bg-emerald-50/40 text-label">
-                <span className="grid h-20 w-28 place-items-center rounded-md bg-muted text-muted-foreground"><ImagePlus className="h-6 w-6" /></span>
-                <span className="min-w-0 text-sm">
-                  <span className="block font-medium">{imageFile ? imageFile.name : 'Choose farm image'}</span>
-                  <span className="mt-1 block text-xs text-muted-foreground">Click to browse from your device</span>
-                </span>
-                <Input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  className="sr-only"
-                  onChange={(event) => {
-                    const file = event.target.files?.[0] || null;
-                    setImageFile(file);
-                    if (file) setDirty(true);
-                  }}
-                />
-              </label>
-            </Field>
-          ) : null}
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Farm name"><Input required value={form.name} onChange={(event) => change('name', event.target.value)} placeholder="Farm A" /></Field>
-            <Field label="Farm code"><Input required value={form.farm_code} onChange={(event) => change('farm_code', event.target.value.toUpperCase())} placeholder="FARM-A" /></Field>
-            <Field label="Location"><Input value={form.location || ''} onChange={(event) => change('location', event.target.value)} placeholder="Community or area" /></Field>
-            <Field label="Region"><Input value={form.region || ''} onChange={(event) => change('region', event.target.value)} placeholder="Region" /></Field>
-            <Field label="GPS latitude"><Input type="number" min="-90" max="90" step="any" value={form.latitude ?? ''} onChange={(event) => change('latitude', event.target.value)} placeholder="6.5244" /></Field>
-            <Field label="GPS longitude"><Input type="number" min="-180" max="180" step="any" value={form.longitude ?? ''} onChange={(event) => change('longitude', event.target.value)} placeholder="-1.5856" /></Field>
-            <Field label="Soil type"><Input value={form.soil_type || ''} onChange={(event) => change('soil_type', event.target.value)} placeholder="Sandy loam" /></Field>
-            <Field label="Soil pH"><Input type="number" min="0" max="14" step="0.1" value={form.soil_ph ?? ''} onChange={(event) => change('soil_ph', event.target.value)} /></Field>
-            <Field label="Declared size (acres)" hint="Active block allocation cannot exceed this size without an authorized override."><Input type="number" min="0.01" step="0.01" value={form.size_acres} onChange={(event) => change('size_acres', event.target.value)} /></Field>
-            <Field label="Owner or tenancy reference"><Input value={form.owner_name || ''} onChange={(event) => change('owner_name', event.target.value)} /></Field>
-            <Field label="Operations started"><Input type="date" value={form.operations_started_on || ''} onChange={(event) => change('operations_started_on', event.target.value)} /></Field>
-            <Field label="Mango planting started"><Input type="date" value={form.planting_started_on || ''} onChange={(event) => change('planting_started_on', event.target.value)} /></Field>
-          </div>
-          <Field label="Soil profile notes"><Textarea value={form.soil_notes || ''} onChange={(event) => change('soil_notes', event.target.value)} rows={2} placeholder="Drainage, texture, test observations, or amendments" /></Field>
-          <Field label="Description"><Textarea value={form.description || ''} onChange={(event) => change('description', event.target.value)} rows={3} /></Field>
-          <Field label="Location or management notes"><Textarea value={form.notes || ''} onChange={(event) => change('notes', event.target.value)} rows={3} /></Field>
-          <DialogFooter><Button type="button" variant="outline" onClick={() => requestClose(false)}>Cancel</Button><Button disabled={saving}>{saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}{farm ? 'Save changes' : 'Create farm'}</Button></DialogFooter>
+        <form onSubmit={submit}>
+          <div className="profile-form-body cb-body"><FarmEditorFields form={form} change={change} imageFile={imageFile} onImageChange={(file) => { setImageFile(file); setDirty(true); }} busy={saving || uploading} /></div>
+          {submitError ? <p role="alert" className="px-4 py-2 text-sm text-destructive">{submitError}</p> : null}
+          <DialogFooter className="profile-form-footer cb-footer"><p>Review your details before saving.</p><Button type="button" variant="outline" onClick={() => requestClose(false)}>Cancel</Button><Button type="submit" disabled={saving || uploading}>{saving || uploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}{farm ? 'Save changes' : 'Create farm'}</Button></DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
@@ -135,9 +100,12 @@ const emptyBlock = {
   operations_started_on: '', planting_started_on: '', inventory: [],
 };
 
-export function BlockFormDialog({ open, onOpenChange, block, parentFarm, onSubmit, saving, unallocatedAcres }) {
+export function BlockFormDialog({ open, onOpenChange, block, parentFarm, onSubmit, saving }) {
   const [form, setForm] = useState(emptyBlock);
+  const [imageFile, setImageFile] = useState(null);
   const [dirty, setDirty] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [submitError, setSubmitError] = useState('');
   const [farms, setFarms] = useState([]);
   useEffect(() => {
     if (!open) return;
@@ -153,8 +121,10 @@ export function BlockFormDialog({ open, onOpenChange, block, parentFarm, onSubmi
       actual_yield_kg: block.actual_yield_kg ?? '',
       mango_variety: block.mango_variety ?? block.variety ?? '',
       inventory: block.inventory?.length ? block.inventory : [],
-    } : { ...emptyBlock, inventory: [] });
+    } : { ...emptyBlock, inventory: [emptyInventory(), emptyInventory()] });
     setDirty(false);
+    setImageFile(null);
+    setSubmitError('');
   }, [open, block, parentFarm?.id, parentFarm?.name]);
   useEffect(() => {
     if (!open || !block) return;
@@ -171,7 +141,8 @@ export function BlockFormDialog({ open, onOpenChange, block, parentFarm, onSubmi
     setDirty(true);
   };
   const requestClose = (nextOpen) => {
-    if (!nextOpen && dirty && !saving && !window.confirm('Discard your unsaved block changes?')) return;
+    if (!nextOpen && (saving || uploading)) return;
+    if (!nextOpen && dirty && !saving && !uploading && !window.confirm('Discard your unsaved block changes?')) return;
     onOpenChange(nextOpen);
   };
   const submit = async (event) => {
@@ -185,8 +156,19 @@ export function BlockFormDialog({ open, onOpenChange, block, parentFarm, onSubmi
       planting_date: entry.planting_date || null,
       notes: entry.notes || '',
     }));
+    setSubmitError('');
+    setUploading(true);
+    try {
+    let imageUrl = form.image_url || null;
+    if (imageFile) {
+      const uploaded = await base44.files.upload(imageFile, block?.id || parentFarm?.id || crypto.randomUUID());
+      imageUrl = `${uploaded.url}?preview=1`;
+    }
     const saved = await onSubmit({
       ...form,
+      image_url: imageUrl,
+      operations_started_on: form.operations_started_on || null,
+      planting_started_on: form.planting_started_on || null,
       description: String(form.description || '').trim() || null,
       early_block_classification: form.early_block_classification || null,
       year_planted: form.year_planted === '' ? null : Number(form.year_planted),
@@ -204,21 +186,21 @@ export function BlockFormDialog({ open, onOpenChange, block, parentFarm, onSubmi
       inventory: block ? undefined : inventory,
     });
     if (saved !== false) setDirty(false);
+    } catch (error) { setSubmitError(error.message || 'Unable to save the profile.'); }
+    finally { setUploading(false); }
   };
 
   return (
     <Dialog open={open} onOpenChange={requestClose}>
-      <DialogContent className="z-[70] max-h-[calc(100vh-2rem)] w-[min(100vw-2rem,1080px)] overflow-hidden p-0 sm:max-w-[1080px]">
-        <form onSubmit={submit} className="block-editor space-y-2 p-2 sm:p-3">
-          <div className="grid gap-2 lg:grid-cols-2">
-            <BlockSection icon={Info} title="Basic information"><div className="grid gap-2 sm:grid-cols-2">{block ? <Field label="Parent farm"><Select key={`${form.farm_id}:${farms.map((farm) => farm.id).join(',')}`} value={form.farm_id || ''} onValueChange={changeParentFarm}><SelectTrigger><SelectValue placeholder="Select parent farm" /></SelectTrigger><SelectContent>{[...farms, ...(form.farm_id && !farms.some((farm) => farm.id === form.farm_id) ? [{ id: form.farm_id, name: form.farm_name || 'Current farm' }] : [])].map((farm) => <SelectItem key={farm.id} value={farm.id}>{scopeLabel(farm.name)}</SelectItem>)}</SelectContent></Select></Field> : <Field label="Block name"><Input required value={form.name} onChange={(event) => change('name', event.target.value)} placeholder="A1" /></Field>}<Field label="Block code"><Input required value={form.block_code} onChange={(event) => change('block_code', event.target.value.toUpperCase())} placeholder="A1" /></Field><Field label="Mango variety"><Select value={form.mango_variety || 'not-recorded'} onValueChange={(value) => change('mango_variety', value === 'not-recorded' ? '' : value)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="not-recorded">Not recorded</SelectItem><SelectItem value="Kent">Kent</SelectItem><SelectItem value="Keitt">Keitt</SelectItem><SelectItem value="Other">Other</SelectItem></SelectContent></Select></Field><Field label="Early block"><Select value={form.early_block_classification || 'not-recorded'} onValueChange={(value) => change('early_block_classification', value === 'not-recorded' ? '' : value)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="not-recorded">Not recorded</SelectItem><SelectItem value="Yes">Yes</SelectItem><SelectItem value="Mid">Mid</SelectItem><SelectItem value="New">New</SelectItem></SelectContent></Select></Field><Field label="Year planted"><Input type="number" min="1900" max="2200" value={form.year_planted} onChange={(event) => change('year_planted', event.target.value)} placeholder="Not recorded" /></Field><Field label="Acres"><Input type="number" min="0.01" step="0.01" value={form.size_acres} onChange={(event) => change('size_acres', event.target.value)} placeholder="Not recorded" /></Field><Field label="Maturity (%)"><Input type="number" min="0" max="100" step="1" value={form.maturity_percent} onChange={(event) => change('maturity_percent', event.target.value)} placeholder="100" /></Field><Field label="Yields (kg)"><div className="grid grid-cols-2 gap-1.5"><Input type="number" min="0" step="0.01" value={form.forecast_yield_kg} onChange={(event) => change('forecast_yield_kg', event.target.value)} placeholder="Forecast" /><Input type="number" min="0" step="0.01" value={form.actual_yield_kg} onChange={(event) => change('actual_yield_kg', event.target.value)} placeholder="Actual" /></div></Field></div></BlockSection>
-            <BlockSection icon={Leaf} title="Agronomy"><div className="grid gap-2 sm:grid-cols-2"><Field label="Fruit flies (risk)"><Select value={form.fruit_fly_pressure || 'not-recorded'} onValueChange={(value) => change('fruit_fly_pressure', value === 'not-recorded' ? '' : value)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="not-recorded">Not recorded</SelectItem><SelectItem value="Low">Low</SelectItem><SelectItem value="Medium">Medium</SelectItem><SelectItem value="High">High</SelectItem></SelectContent></Select></Field><Field label="Disease name"><Input value={form.disease_rating || ''} onChange={(event) => change('disease_rating', event.target.value)} placeholder="Not recorded" /></Field></div><div className="mt-2"><Field label="Disease severity"><DiseaseSeveritySelector value={form.disease_severity} onChange={(value) => change('disease_severity', value)} /></Field></div><div className="mt-2"><Field label="Description"><Textarea value={form.description || ''} onChange={(event) => change('description', event.target.value)} rows={2} placeholder="Field description from the farm register" /></Field></div></BlockSection>
-            <BlockSection icon={MapPin} title="Location & soil"><div className="grid gap-2 sm:grid-cols-2"><Field label="GPS latitude"><Input type="number" min="-90" max="90" step="any" value={form.latitude ?? ''} onChange={(event) => change('latitude', event.target.value)} placeholder="e.g. 6.5244" /></Field><Field label="GPS longitude"><Input type="number" min="-180" max="180" step="any" value={form.longitude ?? ''} onChange={(event) => change('longitude', event.target.value)} placeholder="e.g. -1.5856" /></Field><Field label="Soil type"><Input value={form.soil_type || ''} onChange={(event) => change('soil_type', event.target.value)} placeholder="Sandy loam" /></Field><Field label="Soil pH"><Input type="number" min="0" max="14" step="0.1" value={form.soil_ph ?? ''} onChange={(event) => change('soil_ph', event.target.value)} placeholder="Not recorded" /></Field></div></BlockSection>
-            <BlockSection icon={CalendarDays} title="Dates"><div className="grid gap-2 sm:grid-cols-2"><Field label="Operations started"><Input type="date" value={form.operations_started_on || ''} onChange={(event) => change('operations_started_on', event.target.value)} /></Field><Field label="Planting started"><Input type="date" value={form.planting_started_on || ''} onChange={(event) => change('planting_started_on', event.target.value)} /></Field></div></BlockSection>
+      <DialogContent className="farm-profile-dialog create-block-dialog">
+        <DialogHeader className="sr-only"><DialogTitle>{block ? 'Edit farm block' : 'Create farm block'}</DialogTitle><DialogDescription>Add block details, growing conditions and tree inventory.</DialogDescription></DialogHeader>
+        <div className="cb-topbar" />
+        <form onSubmit={submit} className="block-editor">
+          <div className="profile-form-body cb-body">
+            <BlockEditorFields form={form} change={change} block={block} farms={farms} changeParentFarm={changeParentFarm} changeInventory={changeInventory} setInventory={(inventory) => change('inventory', inventory)} imageFile={imageFile} onImageChange={(file) => { setImageFile(file); setDirty(true); }} busy={saving || uploading} />
           </div>
-          <BlockSection icon={FileText} title="Notes"><Field label="Soil and land notes"><Textarea value={form.soil_notes || ''} onChange={(event) => change('soil_notes', event.target.value)} rows={2} placeholder="Add notes about soil conditions, land features, drainage, previous crops, etc." /></Field></BlockSection>
-          {!block ? <div className="space-y-3 rounded-lg border bg-muted/20 p-4"><div className="flex items-center justify-between"><div><h3 className="text-card-title">Crop and tree inventory</h3><p className="text-xs text-muted-foreground">Add one row per variety planted in this block.</p></div><Button type="button" variant="outline" size="sm" onClick={() => { setForm((current) => ({ ...current, inventory: [...current.inventory, emptyInventory()] })); setDirty(true); }}><Plus className="mr-1 h-4 w-4" />Variety</Button></div>{form.inventory.map((entry, index) => <div key={index} className="grid gap-3 border-t pt-3 sm:grid-cols-6"><Field label="Variety"><Input required value={entry.variety_name} onChange={(event) => changeInventory(index, 'variety_name', event.target.value)} /></Field><Field label="Total"><Input required type="number" min="0" value={entry.total_trees} onChange={(event) => changeInventory(index, 'total_trees', event.target.value)} /></Field><Field label="Productive"><Input required type="number" min="0" value={entry.productive_trees} onChange={(event) => changeInventory(index, 'productive_trees', event.target.value)} /></Field><Field label="Young"><Input type="number" min="0" value={entry.non_productive_trees} onChange={(event) => changeInventory(index, 'non_productive_trees', event.target.value)} /></Field><Field label="Dead/removed"><Input type="number" min="0" value={entry.dead_trees} onChange={(event) => changeInventory(index, 'dead_trees', event.target.value)} /></Field><div className="flex items-end"><AdminActionButton action="delete" type="button" disabled={form.inventory.length === 1} aria-label="Remove variety" onClick={() => { setForm((current) => ({ ...current, inventory: current.inventory.filter((_, entryIndex) => entryIndex !== index) })); setDirty(true); }} /></div></div>)}</div> : null}
-          <DialogFooter className="border-t border-slate-100 pt-2"><Button type="button" size="sm" variant="outline" onClick={() => requestClose(false)}>Cancel</Button><Button size="sm" disabled={saving}>{saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}{block ? 'Save block' : 'Create block'}</Button></DialogFooter>
+          {submitError ? <p role="alert" className="px-4 py-2 text-sm text-destructive">{submitError}</p> : null}
+          <DialogFooter className="profile-form-footer cb-footer"><p>Review your details before saving.</p><Button type="button" size="sm" variant="outline" onClick={() => requestClose(false)}>Cancel</Button><Button type="submit" size="sm" disabled={saving || uploading}>{saving || uploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}{block ? 'Save block' : 'Create block'}</Button></DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
@@ -243,7 +225,7 @@ export function InventoryFormDialog({ open, onOpenChange, inventory, onSubmit, s
       notes: form.notes || '',
     });
   };
-  return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="sm:max-w-2xl"><DialogHeader><DialogTitle>{inventory ? 'Update tree inventory' : 'Record tree inventory'}</DialogTitle><DialogDescription>{inventory ? 'The current record will be closed and this revision becomes the current inventory, preserving history.' : 'Record a mango variety and its current tree condition for this block.'}</DialogDescription></DialogHeader><form onSubmit={submit} className="space-y-4"><div className="grid gap-4 sm:grid-cols-2"><Field label="Mango variety"><Input required value={form.variety_name} onChange={(event) => change('variety_name', event.target.value)} /></Field><Field label="Planting date"><Input type="date" value={form.planting_date || ''} onChange={(event) => change('planting_date', event.target.value)} /></Field><Field label="Total trees"><Input required type="number" min="0" value={form.total_trees} onChange={(event) => change('total_trees', event.target.value)} /></Field><Field label="Productive trees"><Input required type="number" min="0" value={form.productive_trees} onChange={(event) => change('productive_trees', event.target.value)} /></Field><Field label="Young / non-productive"><Input type="number" min="0" value={form.non_productive_trees} onChange={(event) => change('non_productive_trees', event.target.value)} /></Field><Field label="Dead / removed"><Input type="number" min="0" value={form.dead_trees} onChange={(event) => change('dead_trees', event.target.value)} /></Field></div><Field label="Tree observations"><Textarea value={form.notes || ''} onChange={(event) => change('notes', event.target.value)} rows={3} placeholder="Health, replacements, pruning needs, or field observations" /></Field><DialogFooter><Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button><Button disabled={saving}>{saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}{inventory ? 'Save revision' : 'Record inventory'}</Button></DialogFooter></form></DialogContent></Dialog>;
+  return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="farm-profile-dialog"><DialogHeader className="profile-form-header"><DialogTitle>{inventory ? 'Update tree inventory' : 'Record tree inventory'}</DialogTitle><DialogDescription>{inventory ? 'The current record will be closed and this revision becomes the current inventory, preserving history.' : 'Record a mango variety and its current tree condition for this block.'}</DialogDescription></DialogHeader><form onSubmit={submit}><div className="profile-form-body space-y-4"><div className="grid gap-4 sm:grid-cols-2"><Field label="Mango variety"><Input required value={form.variety_name} onChange={(event) => change('variety_name', event.target.value)} /></Field><Field label="Planting date"><Input type="date" value={form.planting_date || ''} onChange={(event) => change('planting_date', event.target.value)} /></Field><Field label="Total trees"><Input required type="number" min="0" value={form.total_trees} onChange={(event) => change('total_trees', event.target.value)} /></Field><Field label="Productive trees"><Input required type="number" min="0" value={form.productive_trees} onChange={(event) => change('productive_trees', event.target.value)} /></Field><Field label="Young / non-productive"><Input type="number" min="0" value={form.non_productive_trees} onChange={(event) => change('non_productive_trees', event.target.value)} /></Field><Field label="Dead / removed"><Input type="number" min="0" value={form.dead_trees} onChange={(event) => change('dead_trees', event.target.value)} /></Field></div><Field label="Tree observations"><Textarea value={form.notes || ''} onChange={(event) => change('notes', event.target.value)} rows={3} placeholder="Health, replacements, pruning needs, or field observations" /></Field></div><DialogFooter className="profile-form-footer"><Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button><Button disabled={saving}>{saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}{inventory ? 'Save revision' : 'Record inventory'}</Button></DialogFooter></form></DialogContent></Dialog>;
 }
 
 const activityTypes = ['land_preparation', 'soil_testing', 'planting', 'irrigation', 'fertilization', 'pruning', 'pest_control', 'disease_management', 'flowering', 'fruit_development', 'tree_inspection', 'harvesting'];

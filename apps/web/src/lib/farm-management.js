@@ -1,4 +1,4 @@
-import { aggregateChartPeriods } from './analytics-periods';
+import { aggregateChartPeriods, completeYearlyPeriods } from './analytics-periods';
 
 const FARM_WRITE_ROLES = new Set(['super_admin', 'admin', 'farm_manager']);
 const BLOCK_WRITE_ROLES = new Set(['super_admin', 'admin', 'farm_manager', 'farm_supervisor']);
@@ -9,6 +9,7 @@ export const canManageFarms = (role) => FARM_WRITE_ROLES.has(String(role || '').
 export const canManageBlocks = (role) => BLOCK_WRITE_ROLES.has(String(role || '').toLowerCase());
 export const canChangeBlockStatus = (role) => BLOCK_STATUS_ROLES.has(String(role || '').toLowerCase());
 export const canMergeBlocks = (role) => BLOCK_MERGE_ROLES.has(String(role || '').toLowerCase());
+export const canDeleteFarmRecords = (role) => String(role || '').toLowerCase() === 'super_admin';
 
 export const formatNumber = (value) => {
   if (value === null || value === undefined || Number.isNaN(Number(value))) return 'No data yet';
@@ -26,12 +27,14 @@ export const humanize = (value) => String(value || '')
   .replace(/_/g, ' ')
   .replace(/\b\w/g, (character) => character.toUpperCase());
 
-export function groupYieldRecords(records = [], granularity = 'monthly') {
-  return aggregateChartPeriods(records.map(record => ({
+export function groupYieldRecords(records = [], granularity = 'monthly', currentYear) {
+  const rows = aggregateChartPeriods(records.map(record => ({
     date: record.record_date,
     actual: record.actual_yield_kg,
     forecast: record.forecast_yield_kg,
-  })), granularity, ['actual', 'forecast']).map(({ key, actual, forecast }) => ({
+  })), granularity, ['actual', 'forecast']);
+  const periods = granularity === 'yearly' ? completeYearlyPeriods(rows, currentYear, ['actual', 'forecast']) : rows;
+  return periods.map(({ key, actual, forecast }) => ({
     date: key, actual, forecast,
   }));
 }

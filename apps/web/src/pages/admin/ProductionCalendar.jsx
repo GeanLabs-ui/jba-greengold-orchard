@@ -1,17 +1,13 @@
 import { scopeLabel, farmScopeOptions, resolveOperationalScope } from '@/lib/farm-scope';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useLocation, useSearchParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
 import {
-  Bell, CalendarCheck2, Check, ChevronLeft, ChevronRight, CircleAlert, Clock3,
-  Cloud, Download, ExternalLink, Link2, ListChecks, Plus, RefreshCw, Settings2, X,
+  Bell, CalendarCheck2, Download, ExternalLink, RefreshCw, Settings2, X,
 } from 'lucide-react';
-import PageHeader from '@/components/shared/PageHeader';
-import CompanyOutlook from '@/components/admin/CompanyOutlook';
-import { useAuth } from '@/lib/AuthContext';
+import CompanyCalendarWorkspace from '@/components/admin/CompanyCalendarWorkspace';
 import { Button } from '@/components/ui/button';
-import { base44, companyOutlook } from '@/api/base44Client';
+import { base44 } from '@/api/base44Client';
 import { subscribeToDataChanges } from '@/lib/data-sync';
 import { useToast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
@@ -21,16 +17,8 @@ import {
   outlookCalendarUrl, buildFarmCalendarEvents, calendarStatusToTask,
 } from '@/lib/production-calendar';
 
-const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const STATUS_LABELS = {
   scheduled: 'Scheduled', in_progress: 'In progress', completed: 'Completed', blocked: 'Blocked', cancelled: 'Cancelled',
-};
-const STATUS_STYLES = {
-  scheduled: 'border-blue-200 bg-blue-50 text-blue-700',
-  in_progress: 'border-amber-200 bg-amber-50 text-amber-700',
-  completed: 'border-emerald-200 bg-emerald-50 text-emerald-700',
-  blocked: 'border-red-200 bg-red-50 text-red-700',
-  cancelled: 'border-slate-200 bg-slate-100 text-slate-600',
 };
 const harvestStatusFromCalendar = (status) => ({ scheduled: 'planned', in_progress: 'active', completed: 'completed', cancelled: 'cancelled' })[status] || 'planned';
 const PRIORITIES = ['Low', 'Medium', 'High', 'Critical'];
@@ -55,12 +43,6 @@ const eventDate = (day, time, allDay, end = false) => {
   if (end) value.setUTCDate(value.getUTCDate() + 1);
   return value.toISOString();
 };
-const formatTime = (event) => event.all_day
-  ? 'All day'
-  : new Date(event.start_at).toLocaleTimeString('en-GH', { hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Accra' });
-const formatLongDate = (value) => new Date(`${dateKey(value)}T12:00:00Z`).toLocaleDateString('en-GH', {
-  weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Africa/Accra',
-});
 const feedUrl = (connection) => {
   if (!connection?.feed_token || import.meta.env.VITE_DEMO_MODE === 'true') return '';
   const apiBase = (import.meta.env.VITE_API_BASE_URL || '/api/v1').replace(/\/$/, '');
@@ -69,50 +51,7 @@ const feedUrl = (connection) => {
 };
 
 export default function ProductionCalendar() {
-  const { user } = useAuth();
-  const [params, setParams] = useSearchParams();
-  const admin = user?.role === 'super_admin';
-  const mailboxes = useQuery({
-    queryKey: ['company-outlook', user?.id, 'mailboxes'],
-    queryFn: ({ signal }) => companyOutlook.mailboxes(signal),
-    enabled: Boolean(user) && import.meta.env.VITE_DEMO_MODE !== 'true', retry: false, gcTime: 0,
-  });
-  const departments = mailboxes.data || [];
-  if (import.meta.env.VITE_DEMO_MODE === 'true') return <FarmCalendar />;
-
-  const department = departments.find(item => item.id === params.get('department'));
-  const requested = params.get('view');
-  const view = params.has('event') || requested === 'farm' ? 'farm'
-    : requested === 'department' ? 'department' : admin ? (requested === 'inbox' ? 'inbox' : 'calendar') : 'farm';
-  if (!admin && view === 'farm' && !departments.length) return <FarmCalendar />;
-
-  function selectView(nextView, departmentId) {
-    setParams((current) => {
-      const next = new URLSearchParams(current);
-      next.delete('event');
-      next.delete('department');
-      if (nextView === 'calendar') next.delete('view');
-      else next.set('view', nextView);
-      if (departmentId) next.set('department', departmentId);
-      return next;
-    });
-  }
-
-  return (
-    <>
-      <nav aria-label="Calendar views" className="mb-5 flex flex-wrap gap-2 border-b pb-3">
-        {[...(admin ? [['calendar', 'Company calendar'], ['inbox', 'Company inbox']] : []), ['farm', 'Farm schedule']].map(([id, label]) => (
-          <Button key={id} size="sm" variant={id === view ? 'default' : 'ghost'} aria-current={id === view ? 'page' : undefined} onClick={() => selectView(id)}>{label}</Button>
-        ))}
-        {departments.length > 0 && <select aria-label="Department inbox" className="h-9 max-w-full rounded-md border bg-background px-2 text-sm" value={view === 'department' ? department?.id || '' : ''} onChange={event => event.target.value && selectView('department', event.target.value)}>
-          <option value="">Department inboxes</option>
-          {departments.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
-        </select>}
-      </nav>
-      {view === 'department' && !department ? <p role="status" className="text-sm text-muted-foreground">{mailboxes.isPending ? 'Loading department inboxes…' : mailboxes.error?.message || 'This department inbox is unavailable to your account.'}</p>
-        : view === 'farm' ? <FarmCalendar /> : <CompanyOutlook key={`${user.id}:${view}:${department?.id || ''}`} userId={user.id} view={view} department={view === 'department' ? department : undefined} />}
-    </>
-  );
+  return <FarmCalendar />;
 }
 
 function FarmCalendar() {
@@ -120,7 +59,6 @@ function FarmCalendar() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { key: locationKey } = useLocation();
   const requestedEvent = searchParams.get('event');
-  const eventLinkTarget = useRef(null);
   const now = new Date();
   const [viewDate, setViewDate] = useState(() => new Date(now.getFullYear(), now.getMonth(), 1));
   const [selectedDate, setSelectedDate] = useState(todayKey());
@@ -179,38 +117,11 @@ function FarmCalendar() {
     const date = new Date(eventDateFromLink);
     setViewDate(new Date(date.getUTCFullYear(), date.getUTCMonth(), 1));
   }, [eventDateFromLink, locationKey, requestedEvent]);
-  useEffect(() => {
-    if (!loading && !showEditor && eventDateFromLink && selectedDate === dateKey(eventDateFromLink)) {
-      eventLinkTarget.current?.scrollIntoView({ block: 'nearest' });
-    }
-  }, [eventDateFromLink, loading, locationKey, requestedEvent, selectedDate, showEditor]);
-
-  const byDate = useMemo(() => events.reduce((map, event) => {
-    const key = dateKey(event.start_at);
-    if (!map[key]) map[key] = [];
-    map[key].push(event);
-    return map;
-  }, {}), [events]);
-
-  const calendarDays = useMemo(() => {
-    const first = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1);
-    const gridStart = new Date(first);
-    gridStart.setDate(first.getDate() - first.getDay());
-    return Array.from({ length: 42 }, (_, index) => {
-      const value = new Date(gridStart);
-      value.setDate(gridStart.getDate() + index);
-      return value;
-    });
-  }, [viewDate]);
-
-  const selectedEvents = useMemo(() => (byDate[selectedDate] || []).sort((a, b) => String(a.start_at).localeCompare(String(b.start_at))), [byDate, selectedDate]);
-  const upcoming = useMemo(() => events.filter((event) => dateKey(event.start_at) >= todayKey() && !['completed', 'cancelled'].includes(event.status)).sort((a, b) => String(a.start_at).localeCompare(String(b.start_at))), [events]);
-  const overdue = events.filter((event) => new Date(event.end_at || event.start_at) < new Date() && !['completed', 'cancelled'].includes(event.status));
   const connected = connections.find((item) => item.status === 'connected') || connections[0];
 
-  const startCreate = (day = selectedDate) => {
+  const startCreate = (day = selectedDate, defaults = {}) => {
     setEditing(null);
-    setForm(blankForm(day));
+    setForm({ ...blankForm(day), ...defaults });
     setShowEditor(true);
   };
 
@@ -336,100 +247,22 @@ function FarmCalendar() {
 
   return (
     <div>
-      <PageHeader title="Production Calendar">
-        <Button variant="outline" size="sm" onClick={() => downloadICalendar(events, connected?.calendar_name)}><Download className="mr-2 h-4 w-4" />Export .ics</Button>
-        <Button variant="outline" size="sm" onClick={() => setShowConnections(true)}><Link2 className="mr-2 h-4 w-4" />Subscription link</Button>
-        <Button size="sm" onClick={() => startCreate()}><Plus className="mr-2 h-4 w-4" />Schedule activity</Button>
-      </PageHeader>
-
-      <div className="mb-5 grid gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-2 xl:grid-cols-4">
-        <Summary label="This month" value={events.filter((item) => dateKey(item.start_at).slice(0, 7) === `${viewDate.getFullYear()}-${String(viewDate.getMonth() + 1).padStart(2, '0')}`).length} icon={CalendarCheck2} />
-        <Summary label="Upcoming" value={upcoming.length} icon={Clock3} />
-        <Summary label="Completed" value={events.filter((item) => item.status === 'completed').length} icon={Check} />
-        <Summary label="Needs attention" value={overdue.length + events.filter((item) => item.status === 'blocked').length} icon={CircleAlert} alert />
-      </div>
-
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
-        <section className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="icon" onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1))}><ChevronLeft className="h-4 w-4" /></Button>
-              <h2 className="min-w-44 text-center text-section-title">{viewDate.toLocaleDateString('en-GH', { month: 'long', year: 'numeric' })}</h2>
-              <Button variant="outline" size="icon" onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1))}><ChevronRight className="h-4 w-4" /></Button>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={() => { const current = new Date(); setViewDate(new Date(current.getFullYear(), current.getMonth(), 1)); setSelectedDate(todayKey()); }}>Today</Button>
-              <Button variant="ghost" size="icon" onClick={() => load()} disabled={loading}><RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} /></Button>
-            </div>
-          </div>
-          <div className="grid grid-cols-7 border-b border-border bg-muted/40">
-            {WEEKDAYS.map((day) => <div key={day} className="py-2 text-center text-caption font-bold uppercase tracking-wider text-muted-foreground">{day}</div>)}
-          </div>
-          <motion.div layout className="grid grid-cols-7">
-            {calendarDays.map((day) => {
-              const key = day.toISOString().slice(0, 10);
-              const dayEvents = byDate[key] || [];
-              const inMonth = day.getMonth() === viewDate.getMonth();
-              const selected = selectedDate === key;
-              return (
-                <button key={key} type="button" onClick={() => setSelectedDate(key)} onDoubleClick={() => startCreate(key)} className={cn(
-                  'min-h-28 border-b border-r border-border p-2 text-left transition-colors hover:bg-primary/[0.03] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary',
-                  !inMonth && 'bg-muted/20 text-muted-foreground', selected && 'bg-primary/[0.06]',
-                )}>
-                  <span className={cn('grid h-7 w-7 place-items-center rounded-full text-xs font-semibold', key === todayKey() && 'bg-primary text-primary-foreground')}>{day.getDate()}</span>
-                  <div className="mt-1 space-y-1">
-                    {dayEvents.slice(0, 3).map((item) => <span key={item.id} className={cn('block truncate rounded border px-1.5 py-1 text-caption font-semibold', STATUS_STYLES[item.status] || STATUS_STYLES.scheduled, searchParams.get('event') === String(item.id) && 'ring-2 ring-primary')} aria-current={searchParams.get('event') === String(item.id) ? 'true' : undefined}>{formatTime(item)} · {item.title}</span>)}
-                    {dayEvents.length > 3 && <span className="block px-1 text-caption font-medium text-muted-foreground">+{dayEvents.length - 3} more</span>}
-                  </div>
-                </button>
-              );
-            })}
-          </motion.div>
-        </section>
-
-        <aside className="self-start rounded-xl border border-border bg-card shadow-sm xl:sticky xl:top-20">
-          <div className="flex items-start justify-between border-b border-border p-4">
-            <div><p className="text-xs font-semibold uppercase tracking-wider text-primary">Selected day</p><h2 className="mt-1 text-section-title">{formatLongDate(selectedDate)}</h2></div>
-            <Button size="icon" variant="ghost" onClick={() => startCreate(selectedDate)}><Plus className="h-4 w-4" /></Button>
-          </div>
-          <div className="max-h-[620px] overflow-y-auto p-3">
-            {!loading && requestedEvent && !eventDateFromLink && <p role="status" className="mb-3 rounded-md border p-3 text-sm">This calendar activity is no longer available.</p>}
-            {selectedEvents.length ? selectedEvents.map((event) => (
-              <div key={event.id} ref={requestedEvent === String(event.id) ? eventLinkTarget : null} role="button" tabIndex={0} onClick={() => startEdit(event)} onKeyDown={(keyEvent) => ['Enter', ' '].includes(keyEvent.key) && startEdit(event)} className={cn('mb-2 block w-full cursor-pointer rounded-lg border border-border p-3 text-left transition hover:border-primary/40 hover:bg-muted/40', requestedEvent === String(event.id) && 'border-primary ring-2 ring-primary/30')} aria-current={requestedEvent === String(event.id) ? 'true' : undefined}>
-                <div className="flex items-start justify-between gap-3"><span className="text-sm font-semibold leading-5">{event.title}</span><span className={cn('shrink-0 rounded-full border px-2 py-0.5 text-caption font-bold', STATUS_STYLES[event.status])}>{STATUS_LABELS[event.status]}</span></div>
-                <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground"><Clock3 className="h-3.5 w-3.5" />{formatTime(event)}{event.assigned_to_name ? ` · ${event.assigned_to_name}` : ''}</p>
-                {searchParams.get('event') === String(event.id) && <div className="mt-3 space-y-2 text-sm">
-                  {(event.description || event.notes) && <p className="whitespace-pre-wrap">{event.description || event.notes}</p>}
-                  <p>{event.block_name || event.field_area || event.farm_name || blocks.find((block) => String(block.id) === String(event.block_id))?.block_code || farms.find((farm) => String(farm.id) === String(event.farm_id))?.name || 'Unassigned'}</p>
-                  <p>Completion: {Number(event.progress_percent || 0)}%</p>
-                </div>}
-                <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-muted"><span className="block h-full rounded-full bg-primary" style={{ width: `${Math.min(100, Number(event.progress_percent || 0))}%` }} /></div>
-                <div className="mt-2 flex gap-1" onClick={(click) => click.stopPropagation()}>
-                  {event.status !== 'in_progress' && !['completed', 'cancelled'].includes(event.status) && <TinyAction onClick={() => quickStatus(event, 'in_progress')}>Start</TinyAction>}
-                  {event.status !== 'completed' && event.status !== 'cancelled' && <TinyAction onClick={() => quickStatus(event, 'completed')}>Complete</TinyAction>}
-                  <a href={googleCalendarUrl(event)} target="_blank" rel="noreferrer" className="ml-auto rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground" title="Add to Google Calendar"><ExternalLink className="h-3.5 w-3.5" /></a>
-                </div>
-              </div>
-            )) : <div className="py-12 text-center"><ListChecks className="mx-auto h-8 w-8 text-muted-foreground/50" /><p className="mt-3 text-sm text-muted-foreground">No activity scheduled.</p><Button className="mt-4" size="sm" onClick={() => startCreate(selectedDate)}>Add activity</Button></div>}
-          </div>
-          <div className="border-t border-border p-4">
-            <div className="flex items-center justify-between text-xs"><span className="flex items-center gap-2 text-muted-foreground"><Cloud className="h-3.5 w-3.5" />Farm schedule feed</span><span className={cn('font-semibold', connected ? 'text-emerald-700' : 'text-amber-700')}>{connected ? 'Configured' : 'Not configured'}</span></div>
-          </div>
-        </aside>
-      </div>
+      <CompanyCalendarWorkspace
+        events={events} farms={farms} loading={loading} viewDate={viewDate} setViewDate={setViewDate}
+        selectedDate={selectedDate} setSelectedDate={setSelectedDate} requestedEvent={requestedEvent}
+        onCreate={startCreate} onEdit={startEdit} onStatus={quickStatus}
+        onExport={() => downloadICalendar(events, connected?.calendar_name)}
+        onSubscription={() => setShowConnections(true)}
+      />
 
       <AnimatePresence>
-        {showEditor && <EventEditor event={editing} form={form} setForm={setForm} farms={farms} blocks={blocks} saving={saving} onClose={() => { setShowEditor(false); setSearchParams({ view: 'farm' }); }} onSubmit={submitEvent} />}
+        {showEditor && <EventEditor event={editing} form={form} setForm={setForm} farms={farms} blocks={blocks} saving={saving} onClose={() => { setShowEditor(false); setSearchParams(current => { const next = new URLSearchParams(current); next.delete('event'); return next; }); }} onSubmit={submitEvent} />}
         {showConnections && <ConnectionEditor connection={connected} events={events} saving={saving} onClose={() => setShowConnections(false)} onSave={saveConnection} />}
       </AnimatePresence>
     </div>
   );
 }
 
-function Summary({ label, value, icon: Icon, alert }) {
-  return <div className="flex items-center justify-between bg-card px-4 py-4"><div><p className="text-xs text-muted-foreground">{label}</p><p className="mt-1 text-2xl font-bold">{value}</p></div><Icon className={cn('h-5 w-5 text-primary', alert && value > 0 && 'text-red-600')} /></div>;
-}
-function TinyAction({ children, onClick }) { return <button type="button" onClick={onClick} className="rounded-md bg-muted px-2 py-1 text-caption font-semibold hover:bg-primary/10 hover:text-primary">{children}</button>; }
 function Field({ label, children, className }) { return <label className={cn('block', className)}><span className="mb-1.5 block text-xs font-semibold text-muted-foreground">{label}</span>{children}</label>; }
 const inputClass = 'h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15';
 
@@ -469,7 +302,7 @@ function ConnectionEditor({ connection, events, saving, onClose, onSave }) {
 function Modal({ title, copy, onClose, children }) {
   return <motion.div key={title} className="fixed inset-0 z-50 grid place-items-center bg-black/45 p-4 backdrop-blur-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
     <motion.section role="dialog" aria-modal="true" aria-label={title} className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-xl border border-border bg-card shadow-2xl" initial={{ opacity: 0, y: 16, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.98 }} transition={{ duration: 0.18 }}>
-      <div className="sticky top-0 z-10 flex items-start justify-between border-b border-border bg-card px-5 py-4"><div><h2 className="text-section-title">{title}</h2><p className="mt-1 text-xs text-muted-foreground">{copy}</p></div><Button size="icon" variant="ghost" onClick={onClose}><X className="h-4 w-4" /></Button></div><div className="p-5">{children}</div>
+      <div className="sticky top-0 z-10 flex items-start justify-between border-b border-border bg-card px-5 py-4"><div><h2 className="text-section-title">{title}</h2><p className="mt-1 text-xs text-muted-foreground">{copy}</p></div><Button size="icon" variant="ghost" aria-label="Close" onClick={onClose}><X className="h-4 w-4" /></Button></div><div className="p-5">{children}</div>
     </motion.section>
   </motion.div>;
 }

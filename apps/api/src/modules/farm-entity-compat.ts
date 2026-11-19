@@ -126,6 +126,7 @@ function blockRecord(row: Record<string, unknown>): Record<string, unknown> {
     soil_type: row.soil_type,
     soil_ph: row.soil_ph,
     soil_notes: row.soil_notes,
+    image_url: row.image_url,
     description: row.description,
     early_block_classification: row.early_block_classification,
     year_planted: row.year_planted,
@@ -301,13 +302,13 @@ export async function createCanonicalFarmEntity(
   const variety = textValue(payload.mango_variety ?? payload.variety);
   const rows = await sql`
     INSERT INTO farm_blocks (
-      id, farm_id, block_code, name, description, early_block_classification, year_planted,
+      id, farm_id, block_code, name, image_url, description, early_block_classification, year_planted,
       size_acres, latitude, longitude, soil_type, soil_ph, soil_notes,
       variety, tree_count, status, organization_id,
       programme_code, source, early_harvest, shoot_maturity, forecast_yield_kg, actual_yield_kg,
       fruit_fly_pressure, disease_rating, disease_severity, operations_started_on, planting_started_on, created_by, updated_by
     ) VALUES (
-      ${id}, ${farm.id}, ${blockCode}, ${textValue(payload.name) || blockCode},
+      ${id}, ${farm.id}, ${blockCode}, ${textValue(payload.name) || blockCode}, ${imagePreviewUrl(payload.image_url)},
       ${textValue(payload.description)}, ${textValue(payload.early_block_classification)},
       ${payload.year_planted == null ? null : Math.trunc(numberValue(payload.year_planted))},
       ${positiveOrNull(payload.size_acres ?? payload.acres ?? payload.area_acres)},
@@ -412,6 +413,7 @@ export async function updateCanonicalFarmEntity(
     : nextText(payload, 'variety', existing.variety);
   const rows = await sql`
     UPDATE farm_blocks SET
+      image_url = ${'image_url' in payload ? imagePreviewUrl(payload.image_url) : existing.image_url},
       farm_id = ${nextFarmId}, block_code = ${nextCode}, name = ${nextText(payload, 'name', existing.name) || existing.name},
       description = ${nextText(payload, 'description', existing.description)},
       early_block_classification = ${nextText(payload, 'early_block_classification', existing.early_block_classification)},

@@ -1,3 +1,4 @@
+import CardSurface from "@/components/shared/CardSurface";
 import { groupTaskLog, taskLogTotals } from '@/lib/task-log-profile';
 import { subscribeToDataChanges } from '@/lib/data-sync';
 import TaskLogMetrics from '@/components/farm/TaskLogMetrics';
@@ -12,7 +13,6 @@ import {
   LandPlot,
   Layers3,
   MapPin,
-  MoreVertical,
   Plus,
   Sprout,
   Trees,
@@ -21,9 +21,9 @@ import toast from "react-hot-toast";
 import { base44 } from "@/api/base44Client";
 import {
   FarmFormDialog,
-  StatusActionDialog,
 } from "@/components/farm/FarmManagementDialogs";
 import { Button } from "@/components/ui/button";
+import FarmActivationToggle from "@/components/farm/FarmActivationToggle";
 import {
   Select,
   SelectContent,
@@ -32,12 +32,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/lib/AuthContext";
 import {
   canManageBlocks,
@@ -73,38 +67,12 @@ const FarmSkeleton = () => (
   </div>
 );
 
-const farmCardPalettes = [
-  {
-    accent: "bg-emerald-700",
-    icon: "bg-emerald-50 text-emerald-700",
-    metric: "text-emerald-700",
-    panel: "bg-emerald-50/80",
-    button: "border-emerald-300 text-emerald-800 hover:bg-emerald-50",
-  },
-  {
-    accent: "bg-blue-700",
-    icon: "bg-blue-50 text-blue-700",
-    metric: "text-blue-700",
-    panel: "bg-blue-50/80",
-    button: "border-blue-300 text-blue-800 hover:bg-blue-50",
-  },
-  {
-    accent: "bg-amber-600",
-    icon: "bg-amber-50 text-amber-700",
-    metric: "text-amber-700",
-    panel: "bg-amber-50/80",
-    button: "border-amber-300 text-amber-800 hover:bg-amber-50",
-  },
-];
-
-const paletteForFarm = (farm) => {
-  const identity = String(farm.farm_code || farm.name || "").trim();
-  const suffix = identity.slice(-1).toUpperCase();
-  if (/^[A-Z]$/.test(suffix)) {
-    return farmCardPalettes[(suffix.charCodeAt(0) - 65) % farmCardPalettes.length];
-  }
-  const hash = [...identity].reduce((total, character) => total + character.charCodeAt(0), 0);
-  return farmCardPalettes[hash % farmCardPalettes.length];
+const activeFarmPalette = {
+  accent: "bg-emerald-700",
+  icon: "bg-emerald-50 text-emerald-700",
+  metric: "text-emerald-700",
+  panel: "bg-emerald-50/80",
+  button: "border-emerald-300 text-emerald-800 hover:bg-emerald-50",
 };
 
 const cardNumber = (value, digits = 1) => (
@@ -121,12 +89,6 @@ const FarmMetric = ({ icon: Icon, label, value, detail, palette }) => (
     </div>
   </div>
 );
-
-const statusClassName = (status) => {
-  if (status === "active") return "bg-emerald-50 text-emerald-700";
-  if (status === "inactive") return "bg-amber-50 text-amber-700";
-  return "bg-slate-100 text-slate-600";
-};
 
 async function listAllFarmCards() {
   const limit = 250;
@@ -149,7 +111,6 @@ export default function FarmsAdmin() {
   const [location, setLocation] = useState("all");
   const [variety, setVariety] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [statusDialog, setStatusDialog] = useState(null);
   const [saving, setSaving] = useState(false);
 
   const loadFarms = useCallback(async () => {
@@ -211,27 +172,6 @@ export default function FarmsAdmin() {
     } catch (saveError) {
       toast.error(saveError.message || "Unable to create farm");
       throw saveError;
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const changeFarmStatus = async (payload) => {
-    if (!statusDialog?.farm) return;
-    setSaving(true);
-    try {
-      if (statusDialog.action === "deactivate") {
-        await base44.farms.deactivate(statusDialog.farm.id, payload);
-      } else {
-        await base44.farms.reactivate(statusDialog.farm.id);
-      }
-      toast.success(
-        `${statusDialog.farm.name} ${statusDialog.action === "deactivate" ? "deactivated" : "reactivated"}`,
-      );
-      setStatusDialog(null);
-      await loadFarms();
-    } catch (saveError) {
-      toast.error(saveError.message || "Unable to change farm status");
     } finally {
       setSaving(false);
     }
@@ -327,11 +267,22 @@ export default function FarmsAdmin() {
         </div>
       ) : null}
 
+      {!loading && !error ? (
+        <p className="mb-3 text-caption text-muted-foreground">
+          {farms.length} farms total · {farms.filter((farm) => farm.status === "inactive").length} deactivated
+          {status !== "all" || location !== "all" || variety !== "all" ? ` · ${visibleFarms.length} shown` : ""}
+        </p>
+      ) : null}
       {!loading && !error && visibleFarms.length ? (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {visibleFarms.map((farm) => {
             const nextHarvest = farm.next_harvest;
-            const palette = paletteForFarm(farm);
+            const inactive = farm.status !== "active";
+            const palette = inactive ? {
+              accent: "bg-slate-400", icon: "bg-slate-200 text-slate-500",
+              metric: "text-slate-500", panel: "bg-slate-200/60",
+              button: "border-slate-300 text-slate-600 hover:bg-slate-200",
+            } : activeFarmPalette;
             const harvestName = nextHarvest?.harvest_type
               ? humanize(nextHarvest.harvest_type)
               : "No harvest";
@@ -339,9 +290,9 @@ export default function FarmsAdmin() {
               ? `${formatDate(nextHarvest.expected_start_date)} – ${formatDate(nextHarvest.expected_end_date)}`
               : "scheduled";
             return (
-              <article
+              <CardSurface
                 key={farm.id}
-                className="group flex min-w-0 flex-col overflow-hidden rounded-xl border bg-card shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md"
+                className={`group flex min-w-0 flex-col overflow-hidden rounded-xl border shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md ${inactive ? "bg-slate-100 grayscale" : "bg-card"}`}
               >
                 <div className={`h-1 ${palette.accent}`} />
                 <div className="flex flex-1 flex-col px-4 pb-3 pt-4">
@@ -358,34 +309,11 @@ export default function FarmsAdmin() {
                         </p>
                       </div>
                     </div>
-                    <div className="flex shrink-0 items-center gap-1">
-                      <span className={`rounded-md px-2 py-1 text-caption font-medium capitalize ${statusClassName(farm.status)}`}>
-                        {farm.status}
-                      </span>
-                      {canManageFarms(user?.role) ? (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full" aria-label={`Open actions for ${scopeLabel(farm.name)}`}>
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() => setStatusDialog({
-                                farm,
-                                action: farm.status === "active" ? "deactivate" : "reactivate",
-                              })}
-                            >
-                              {farm.status === "active" ? "Deactivate farm" : "Reactivate farm"}
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      ) : null}
-                    </div>
+                    <FarmActivationToggle record={farm} canEdit={canManageFarms(user?.role)} onChanged={loadFarms} />
                   </div>
                   <div className="mt-3 grid grid-cols-[repeat(3,minmax(0,1fr))_minmax(0,1.4fr)] divide-x border-y py-2">
                     <FarmMetric icon={LandPlot} label="Area" value={cardNumber(farm.size_acres)} detail="acres" palette={palette} />
-                    <FarmMetric icon={Grid2X2} label="Blocks" value={cardNumber(farm.active_block_count, 0)} detail="active" palette={palette} />
+                    <FarmMetric icon={Grid2X2} label="Blocks" value={cardNumber(farm.block_count, 0)} detail="total" palette={palette} />
                     <FarmMetric icon={Trees} label="Trees" value={cardNumber(farm.total_trees, 0)} detail="trees" palette={palette} />
                     <FarmMetric icon={CalendarDays} label="Harvest" value={harvestName} detail={harvestPeriod} palette={palette} />
                   </div>
@@ -417,14 +345,14 @@ export default function FarmsAdmin() {
                       </Button>
                     ) : <span />}
                     <Button variant="outline" size="sm" className={`text-caption ${palette.button}`} asChild>
-                      <Link to={`/admin/farm-daily-activities/activities/farms/${farm.id}`}>
+                      <Link data-card-primary to={`/admin/farm-daily-activities/activities/farms/${farm.id}`}>
                         View farm
                         <ArrowRight className="ml-1 h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
                       </Link>
                     </Button>
                   </div>
                 </div>
-              </article>
+              </CardSurface>
             );
           })}
         </div>
@@ -447,14 +375,7 @@ export default function FarmsAdmin() {
         onSubmit={createFarm}
         saving={saving}
       />
-      <StatusActionDialog
-        open={Boolean(statusDialog)}
-        onOpenChange={(open) => !open && setStatusDialog(null)}
-        entityLabel={statusDialog?.farm?.name || "farm"}
-        action={statusDialog?.action || "deactivate"}
-        saving={saving}
-        onSubmit={changeFarmStatus}
-      />
+
     </div>
   );
 }

@@ -9,6 +9,7 @@ import '@/platform-consistency.css'
 import '@/public-heroes.css'
 import '@/mobile-responsive.css'
 import '@/card-alignment.css'
+import '@/card-interactions.css'
 
 async function clearLocalPreviewWorker() {
   if (!import.meta.env.DEV || !['localhost', '127.0.0.1'].includes(window.location.hostname) || !('serviceWorker' in navigator)) return false;

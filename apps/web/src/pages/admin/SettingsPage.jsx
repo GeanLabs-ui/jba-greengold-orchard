@@ -1,3 +1,4 @@
+import CardSurface from "@/components/shared/CardSurface";
 import React, { useState } from 'react';
 import { Shield, Bell, Database, Globe, Mail } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -159,12 +160,12 @@ export default function SettingsPage() {
           <p className="mt-2 text-sm text-muted-foreground">{canManageAccess ? 'Choose a role to manage individual staff accounts and their page access in HR.' : 'Staff access is managed in HR by Super Admins and authorized HR Officers.'}</p>
           <div className="mt-4 space-y-2">
             {STAFF_ROLES.map(([role, label]) => (
-              <div key={role} className="flex items-center justify-between rounded-lg border border-border px-3 py-2">
+              <CardSurface as="div" key={role} className="flex items-center justify-between rounded-lg border border-border px-3 py-2">
                 <span className="text-sm font-medium">{label}</span>
                 {canManageAccess && (role !== 'admin' || user.role === 'super_admin') && (
-                  <Button variant="ghost" size="sm" asChild><Link to={`/admin/hr?tab=access&role=${role}`} aria-label={`Manage ${label} access`}>Manage</Link></Button>
+                  <Button variant="ghost" size="sm" asChild><Link data-card-primary to={`/admin/hr?tab=access&role=${role}`} aria-label={`Manage ${label} access`}>Manage</Link></Button>
                 )}
-              </div>
+              </CardSurface>
             ))}
           </div>
         </div>

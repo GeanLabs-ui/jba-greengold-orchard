@@ -1,3 +1,4 @@
+import CardSurface from "@/components/shared/CardSurface";
 import AdminActionButton from '@/components/admin/AdminActionButton';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useBrowserLayoutEffect } from '@/lib/use-browser-layout-effect';
@@ -151,7 +152,7 @@ export default function FarmActivitiesPage() {
         const readiness = task.success_criteria ?? activity?.readiness ?? '';
         const number = task.activity_sequence || (currentPage - 1) * 10 + index + 1;
         return <tr key={task.id} aria-busy={busy === task.id}>
-          <td className="fa-action-timing"><button className="fa-workbook-action" onClick={() => openEditor(task)}>{number}. {task.title}</button><p>Timing: {timing || 'Not specified'}</p>{task.is_enabled === false && <small>Tracking off</small>}</td>
+          <td className="fa-action-timing"><button data-card-primary className="fa-workbook-action" onClick={() => openEditor(task)}>{number}. {task.title}</button><p>Timing: {timing || 'Not specified'}</p>{task.is_enabled === false && <small>Tracking off</small>}</td>
           <td className="fa-physical-signs">{readiness}</td>
           <td><ActivityDateRange iconOnly label={`Dates for ${task.title}`} start={task.start_date} end={task.due_date} disabled={!canEdit || Boolean(busy)} onApply={(start, end) => save(task, { start_date: start, due_date: end })} /></td>
           <td><ActivityStatus label={`Status for ${task.title}`} value={task.status} onChange={(status) => save(task, { status })} disabled={!canEdit || Boolean(busy)} />{overdueActivity(task) && <span className="fa-overdue">Overdue</span>}</td>
@@ -164,16 +165,16 @@ export default function FarmActivitiesPage() {
     <div className="fa-mobile-cards">{visible.map((task, index) => {
       const activity = activityForTask(task);
       const number = task.activity_sequence || (currentPage - 1) * 10 + index + 1;
-      return <article key={task.id}>
+      return <CardSurface key={task.id}>
         <h3 className="fa-mobile-workbook-heading">ACTION &amp; TIMING</h3>
-        <div className="fa-action-timing"><button className="fa-workbook-action" onClick={() => openEditor(task)}>{number}. {task.title}</button><p>Timing: {task.timing ?? activity?.timing ?? 'Not specified'}</p></div>
+        <div className="fa-action-timing"><button data-card-primary className="fa-workbook-action" onClick={() => openEditor(task)}>{number}. {task.title}</button><p>Timing: {task.timing ?? activity?.timing ?? 'Not specified'}</p></div>
         <h3 className="fa-mobile-workbook-heading">PHYSICAL SIGNS TO LOOK FOR</h3>
         <div className="fa-physical-signs">{task.success_criteria ?? activity?.readiness ?? ''}</div>
         <div><span className="fa-mobile-field-label">Date</span><ActivityDateRange label={`Dates for ${task.title}`} start={task.start_date} end={task.due_date} disabled={!canEdit || Boolean(busy)} onApply={(start, end) => save(task, { start_date: start, due_date: end })} /></div>
         <div className="fa-mobile-status"><div><span className="fa-mobile-field-label">Status</span><ActivityStatus label={`Status for ${task.title}`} value={task.status} disabled={!canEdit || Boolean(busy)} onChange={(status) => save(task, { status })} /></div><div><span className="fa-mobile-field-label">Complete</span><ActivityCompletion label={`Completion for ${task.title}`} value={task.progress_percent} disabled={!canEdit || Boolean(busy)} onChange={(progress_percent) => save(task, { progress_percent })} /></div>{overdueActivity(task) && <span className="fa-overdue">Overdue</span>}</div>
         <div><span className="fa-mobile-field-label">Note</span><button className="fa-note" aria-label={`Note for ${task.title}`} onClick={() => openEditor(task)}>{task.notes || 'Add note…'}</button></div>
         <div className="fa-mobile-actions"><span className="fa-mobile-field-label">Actions</span>{actions(task)}</div>
-      </article>;
+      </CardSurface>;
     })}</div>
     {!filtered.length && <div className="fa-empty"><ClipboardList /><h2>No activities found</h2><p>{tasks.length ? 'Try another search or clear your filters.' : 'Add your first farm activity to get started.'}</p>{tasks.length > 0 && <button onClick={() => filter(defaultFilters)}>Clear filters</button>}</div>}
     </>}
