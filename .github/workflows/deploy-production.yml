@@ -73,7 +73,7 @@ jobs:
       - name: Apply verified additive production migrations
         run: npm run db:migrate
         env:
-          DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+          DATABASE_URL: ${{ secrets.NEON_MIGRATION_DATABASE_URL }}
       - name: Verify existing production data after migrations
         run: node scripts/production-data-safety.mjs verify
         env:
