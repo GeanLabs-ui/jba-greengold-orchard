@@ -80,11 +80,13 @@ if (process.argv[2] === 'backup') {
   try {
     let ready = false;
     for (let i = 0; i < 30; i++) {
-      if (spawnSync('docker', ['exec', container, 'pg_isready', '-U', 'postgres']).status === 0) { ready = true; break; }
+      // The image briefly starts a socket-only initialization server. Wait for
+      // TCP so recovery cannot race that server's deliberate shutdown.
+      if (spawnSync('docker', ['exec', container, 'pg_isready', '-h', '127.0.0.1', '-U', 'postgres', '-d', 'restore_check']).status === 0) { ready = true; break; }
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
     if (!ready) throw new Error('Recovery database did not become ready');
-    docker(['exec', '-i', container, 'pg_restore', '-U', 'postgres', '-d', 'restore_check', '--no-owner', '--no-privileges', '--exit-on-error'], recovered);
+    docker(['exec', '-i', '-e', 'PGPASSWORD', container, 'pg_restore', '-h', '127.0.0.1', '-U', 'postgres', '-d', 'restore_check', '--no-owner', '--no-privileges', '--exit-on-error'], recovered, { ...process.env, PGPASSWORD: password });
     const port = docker(['port', container, '5432']).toString().trim().split(':').at(-1);
     const restored = await snapshot(`postgresql://postgres:${password}@127.0.0.1:${port}/restore_check`, before);
     compare(before, restored);
