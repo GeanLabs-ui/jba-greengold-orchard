@@ -58,6 +58,9 @@ try {
       results.push({ device, route, status: 'passed', screenshot });
     }
     assert.deepEqual(errors, [], `${device}: uncaught browser errors or broken resources`);
+    // Signed-out session probes return 401; other console errors fail release verification.
+    const unexpectedConsoleErrors = consoleErrors.filter(message => !/^Failed to load resource: the server responded with a status of 401(?:\s|$)/.test(message));
+    assert.deepEqual(unexpectedConsoleErrors, [], `${device}: unexpected browser console errors`);
     results.push({ device, consoleErrors });
     await context.close();
   }
