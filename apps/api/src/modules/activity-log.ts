@@ -1,17 +1,22 @@
 import { Hono } from 'hono';
 import { closeDatabase, createDatabase } from '../db.js';
-import { requireAuth, requireCsrf, requireRole, type AppVariables } from '../middleware/auth.js';
+import { requireAuth, requireCsrf, requireRole, requirePageAccess, type AppVariables } from '../middleware/auth.js';
 import { requestIp } from '../rate-limit.js';
 
 const router = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 
-router.get('/', requireRole('super_admin', 'admin', 'auditor'), async (c) => {
+router.get('/', requirePageAccess('system_log'), async (c) => {
   const limit = Math.min(Math.max(Number(c.req.query('limit') || 200), 1), 500);
   const sql = createDatabase(c.env);
+  const user = c.get('user')!;
   try {
     const rows = await sql<{ id: string; action: string; target_table: string; record_id: string; new_values: Record<string, unknown> | null; timestamp: Date; email: string | null }[]>`
       SELECT audit.id, audit.action, audit.target_table, audit.record_id, audit.new_values, audit.timestamp, users.email
       FROM audit_events audit LEFT JOIN users ON users.id = audit.user_id
+      WHERE (${user.role === 'super_admin'} OR audit.user_id=${user.id}
+        OR EXISTS (SELECT 1 FROM organization_members om WHERE om.user_id=audit.user_id AND om.organization_id=${user.organizationId})
+        OR (${user.organizationId}::text IS NULL AND audit.user_id IS NOT NULL
+          AND NOT EXISTS (SELECT 1 FROM organization_members om WHERE om.user_id=audit.user_id)))
       ORDER BY audit.timestamp DESC LIMIT ${limit}
     `;
     return c.json({ data: rows.map((row) => ({

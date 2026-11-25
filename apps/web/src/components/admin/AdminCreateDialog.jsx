@@ -92,7 +92,7 @@ export default function AdminCreateDialog({
 
     const payload = fields.reduce((next, field) => {
       const rawValue = values[field.name];
-      next[field.name] = field.type === 'number' && rawValue !== '' ? (field.allowDecimals ? Number(rawValue) : Math.round(Number(rawValue))) * (field.inputScale || 1) : rawValue;
+      next[field.name] = field.type === 'number' && rawValue !== '' ? (field.allowDecimals || /amount|cost|price|revenue|wage|salary/i.test(field.name) ? Number(rawValue) : Math.round(Number(rawValue))) * (field.inputScale || 1) : rawValue;
       return next;
     }, {});
 
@@ -171,7 +171,7 @@ export default function AdminCreateDialog({
           <Input
             id={field.name}
             type={field.type || 'text'}
-            step={field.allowDecimals ? 'any' : field.step ?? (field.type === 'number' ? 1 : undefined)}
+            step={field.allowDecimals || /amount|cost|price|revenue|wage|salary/i.test(field.name) ? 'any' : field.step ?? (field.type === 'number' ? 1 : undefined)}
             required={field.required}
             value={value}
             onChange={(event) => updateValue(field.name, event.target.value)}
@@ -269,6 +269,7 @@ export default function AdminCreateDialog({
                 {fields.map((field) => renderField(field, field.wide ? 'sm:col-span-2' : ''))}
               </div>
               {fields.some(field => field.name === 'activity_date') && fields.some(field => field.name === 'title') && <ObjectiveAlignment values={values} onChange={updateValue} />}
+              {saveError && <p role="alert" className="text-sm text-red-700">{saveError}</p>}
               <Button type="submit" className="w-full gradient-mango text-white" disabled={saving}>
                 {saving ? 'Saving...' : submitLabel}
               </Button>

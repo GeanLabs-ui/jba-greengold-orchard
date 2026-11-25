@@ -1,4 +1,6 @@
 import { Hono } from "hono";
+import { canAccessWorkspaceEntity, hasWorkspacePage } from 'mango-farm-authorization';
+import { hydrateEmployeeNames, syncEmployeeAccountName } from './staff-directory.js';
 import { validateObjectiveAlignment } from "./objective-alignment.js";
 import { z } from "zod";
 import { closeDatabase, createDatabase } from "../db.js";
@@ -17,6 +19,9 @@ import {
 } from "./farm-entity-compat.js";
 import { generateEmployeeCode } from "./staff-identity.js";
 import { currencySchema, readCompanyProfile } from "./company-settings.js";
+import { handlesSalesMutation, mutateSalesRecord, SalesRecordError } from "./sales-records.js";
+import { deleteIndependentEntity, EntityDeletionError } from "./entity-deletion.js";
+import { mutateInventoryMovement, InventoryCorrectionError } from "./inventory-corrections.js";
 
 const storefrontProductSchema = z.object({
   storefront: z.literal(true),
@@ -369,14 +374,14 @@ function canRead(
   if (publicAccess) return true;
   if (!user) return false;
   if (user.role === "customer") return CUSTOMER_READ.has(name);
-  if (isAdmin(user)) return true;
-  if (["Department", "Employee"].includes(name) && user.pageAccess?.includes("hr")) return true;
-  return ROLE_READ_ENTITIES[user.role]?.has(name) ?? false;
+  if (user.pageAccess) return canAccessWorkspaceEntity(user, name);
+  return isAdmin(user) || canAccessWorkspaceEntity(user, name) || (ROLE_READ_ENTITIES[user.role]?.has(name) ?? false);
 }
 
 export function canWrite(user: AuthUser | null, name: string): boolean {
   if (!user) return false;
-  if (["Department", "Employee"].includes(name)) return ["super_admin", "hr_officer"].includes(user.role);
+  if (["Department", "Employee"].includes(name)) return ["super_admin", "hr_officer"].includes(user.role) && hasWorkspacePage(user, 'hr');
+  if (user.pageAccess) return canAccessWorkspaceEntity(user, name, true);
   return isAdmin(user) || (ROLE_WRITE_ENTITIES[user.role]?.has(name) ?? false);
 }
 
@@ -518,6 +523,7 @@ router.get("/:entity", async (c) => {
         ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}
       `;
     }
+    if (name === 'Employee' && user) await hydrateEmployeeNames(sql, user, rows);
     return c.json({
       data: rows.map((row) => {
         const record = mapRecord(row);
@@ -637,6 +643,24 @@ router.post("/:entity", async (c) => {
 
   const sql = createDatabase(c.env);
   try {
+    if (name === 'StockMovement' && payload.inventory_ledger === true) {
+      try {
+        const record = await mutateInventoryMovement(sql, 'create', crypto.randomUUID(), payload, user!, requestIp(c.req.raw));
+        return c.json({ data: mapRecord(record!), requestId: c.get('requestId') }, 201);
+      } catch (error) {
+        if (error instanceof InventoryCorrectionError) return c.json({ error: { code: 'STOCK_CORRECTION_REQUIRED', message: error.message }, requestId: c.get('requestId') }, error.status);
+        throw error;
+      }
+    }
+    if (handlesSalesMutation(name, 'create')) {
+      try {
+        const record = await mutateSalesRecord(sql, name, 'create', crypto.randomUUID(), payload, user!, requestIp(c.req.raw));
+        return c.json({ data: mapRecord(record!), requestId: c.get("requestId") }, 201);
+      } catch (error) {
+        if (error instanceof SalesRecordError) return c.json({ error: { code: 'SALES_CORRECTION_REQUIRED', message: error.message }, requestId: c.get('requestId') }, error.status);
+        throw error;
+      }
+    }
     if (name === "ExportShipment" && user) {
       const currency = currencySchema.safeParse(payload.currency ?? (await readCompanyProfile(sql, user.organizationId)).currency);
       if (!currency.success) return c.json({ error: { code: "VALIDATION_ERROR", message: "Choose a supported shipment currency." } }, 422);
@@ -850,6 +874,24 @@ router.patch("/:entity/:id", async (c) => {
   }
   const sql = createDatabase(c.env);
   try {
+    if (name === 'StockMovement') {
+      try {
+        const record = await mutateInventoryMovement(sql, 'update', c.req.param("id"), payload, user!, requestIp(c.req.raw));
+        return c.json({ data: mapRecord(record!), requestId: c.get('requestId') });
+      } catch (error) {
+        if (error instanceof InventoryCorrectionError) return c.json({ error: { code: 'STOCK_CORRECTION_REQUIRED', message: error.message }, requestId: c.get('requestId') }, error.status);
+        throw error;
+      }
+    }
+    if (handlesSalesMutation(name, 'update')) {
+      try {
+        const record = await mutateSalesRecord(sql, name, 'update', c.req.param("id"), payload, user!, requestIp(c.req.raw));
+        return c.json({ data: mapRecord(record!), requestId: c.get("requestId") });
+      } catch (error) {
+        if (error instanceof SalesRecordError) return c.json({ error: { code: 'SALES_CORRECTION_REQUIRED', message: error.message }, requestId: c.get('requestId') }, error.status);
+        throw error;
+      }
+    }
     if (name === "DailyActivity") {
       const existing = c.req.param("id") ? (await sql<{ data: JsonObject }[]>`SELECT data FROM entity_records WHERE id = ${c.req.param("id")} AND entity_name = 'DailyActivity' AND organization_id IS NOT DISTINCT FROM ${user!.organizationId}`)[0]?.data : null;
       const merged = { ...(existing || {}), ...payload };
@@ -901,6 +943,9 @@ router.patch("/:entity/:id", async (c) => {
           RETURNING id, organization_id, data, created_at, updated_at
         `;
       if (!updated) return null;
+      if (name === 'Employee' && ('full_name' in payload || 'first_name' in payload || 'last_name' in payload)) {
+        await syncEmployeeAccountName(tx, updated.data, updated.organization_id);
+      }
       await tx`INSERT INTO audit_events (id, user_id, action, target_table, record_id, new_values, ip_address) VALUES (${crypto.randomUUID()}, ${user!.id}, 'update', ${name}, ${updated.id}, ${tx.json(payload)}, ${ip})`;
       if (previous?.status === 'draft') {
         const [alreadyNotified] = await tx`
@@ -966,6 +1011,24 @@ router.delete("/:entity/:id", async (c) => {
     );
   const sql = createDatabase(c.env);
   try {
+    if (name === 'StockMovement') {
+      try {
+        const record = await mutateInventoryMovement(sql, 'delete', c.req.param("id"), {}, user!, requestIp(c.req.raw));
+        return c.json({ data: { success: true }, requestId: c.get('requestId') });
+      } catch (error) {
+        if (error instanceof InventoryCorrectionError) return c.json({ error: { code: 'STOCK_CORRECTION_REQUIRED', message: error.message }, requestId: c.get('requestId') }, error.status);
+        throw error;
+      }
+    }
+    if (handlesSalesMutation(name, 'delete')) {
+      try {
+        const record = await mutateSalesRecord(sql, name, 'delete', c.req.param("id"), {}, user!, requestIp(c.req.raw));
+        return c.json({ data: { success: true }, requestId: c.get("requestId") });
+      } catch (error) {
+        if (error instanceof SalesRecordError) return c.json({ error: { code: 'SALES_CORRECTION_REQUIRED', message: error.message }, requestId: c.get('requestId') }, error.status);
+        throw error;
+      }
+    }
     if (isCanonicalFarmEntity(name)) {
       try {
         await archiveCanonicalFarmEntity(
@@ -992,27 +1055,13 @@ router.delete("/:entity/:id", async (c) => {
         throw error;
       }
     }
-    // Keep the dismissal and its audit entry atomic so the reminder jobs never
-    // observe a gap between removal and the permanent record of that removal.
-    const rows = await sql`
-      WITH deleted AS (
-        DELETE FROM entity_records WHERE id = ${c.req.param("id")} AND entity_name = ${name}
-          AND (${isAdmin(user)} OR organization_id IS NOT DISTINCT FROM ${user!.organizationId})
-        RETURNING id, data
-      )
-      INSERT INTO audit_events (id, user_id, action, target_table, record_id, old_values, ip_address)
-      SELECT ${crypto.randomUUID()}, ${user!.id}, 'delete', ${name}, id, data, ${requestIp(c.req.raw)} FROM deleted
-      RETURNING record_id
-    `;
-    if (!rows[0])
-      return c.json(
-        {
-          error: { code: "NOT_FOUND", message: "Record not found" },
-          requestId: c.get("requestId"),
-        },
-        404,
-      );
-    return c.json({ data: { success: true }, requestId: c.get("requestId") });
+    try {
+      const result = await deleteIndependentEntity(sql, name, c.req.param("id"), user!, requestIp(c.req.raw));
+      return c.json({ data: result, requestId: c.get("requestId") });
+    } catch (error) {
+      if (error instanceof EntityDeletionError) return c.json({ error: { code: error.status === 404 ? 'NOT_FOUND' : 'LINKED_RECORDS', message: error.message }, requestId: c.get('requestId') }, error.status);
+      throw error;
+    }
   } finally {
     await closeDatabase(sql);
   }

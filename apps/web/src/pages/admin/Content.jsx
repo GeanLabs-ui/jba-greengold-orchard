@@ -6,6 +6,7 @@ import StatusBadge from '@/components/shared/StatusBadge';
 import { formatDate } from '@/components/shared/format';
 import DataTable from '@/components/shared/DataTable';
 import AdminCreateDialog from '@/components/admin/AdminCreateDialog';
+import EntityRecordActions from '@/components/admin/EntityRecordActions';
 import { base44 } from '@/api/base44Client';
 import { subscribeToDataChanges } from '@/lib/data-sync';
 
@@ -23,6 +24,7 @@ const postFields = [
 ];
 
 const slugify = (value) => String(value).trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+const editPostFields = [...postFields, { name: 'content', label: 'Article Content', type: 'textarea', wide: true }];
 
 export default function NewsPosts() {
   const [params] = useSearchParams();
@@ -53,7 +55,7 @@ export default function NewsPosts() {
       <PageHeader>
         <AdminCreateDialog title="New Post" description="Create a news post for the public site." buttonLabel="New Post" fields={postFields} onCreate={createPost} onCreated={load} submitLabel="Create Post" />
       </PageHeader>
-          {loading ? <PageSkeleton variant="table" contentOnly /> : <DataTable items={recordId ? posts.filter((post) => post.id === recordId) : posts} columns={[
+          {loading ? <PageSkeleton variant="table" contentOnly /> : <DataTable items={recordId ? posts.filter((post) => post.id === recordId) : posts} rowActions={record => <EntityRecordActions entity="NewsPost" record={record} fields={editPostFields} onChanged={load} />} columns={[
             { key: 'title', label: 'Title' }, { key: 'category', label: 'Category' }, { key: 'author_name', label: 'Author' },
             { key: 'published_at', label: 'Published', format: formatDate }, { key: 'status', label: 'Status', render: (value) => <StatusBadge status={value} /> },
           ]} />}

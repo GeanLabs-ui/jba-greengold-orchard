@@ -1,13 +1,15 @@
 import { aggregateChartPeriods, completeYearlyPeriods, reportingDateKey, reportingYear } from './analytics-periods';
 import { buildFarmCalendarEvents } from './production-calendar';
 import { amount, invoiceBalance, outstandingInvoice } from './admin-dashboard';
-import { activityCost, activityRevenue, activityYieldKg, activityMatchesBlock, buildFarmOperationsAnalytics, normalizeStatus } from './farm-operations-analytics';
-import { activityScopeValue, farmCode, matchesFarmScope } from './farm-scope';
+import { activityCost, activityRevenue, activityYieldKg, buildFarmOperationsAnalytics, normalizeStatus } from './farm-operations-analytics';
+import { activityScopeValue, farmCode } from './farm-scope';
 import { PROGRAMME_CODE } from '../data/dailyRoutineProgramme';
 import { buildCostTypeBreakdown } from './activity-cost-types';
 import { MANGO_VARIETIES, mangoVarietyBucket } from './mango-varieties';
+import { groupTaskLog, taskLogTotals, uniqueTaskLogRows } from './task-log-profile';
 
 const active = (row) => !row.archived_at && !['inactive', 'archived', 'merged', 'cancelled'].includes(normalizeStatus(row.status));
+const currentStructure = (row) => !row.archived_at && !['archived', 'merged', 'cancelled'].includes(normalizeStatus(row.status));
 const sum = (rows, value) => rows.reduce((total, row) => total + value(row), 0);
 const closed = (row) => ['completed', 'approved', 'delivered', 'received', 'accepted', 'refunded', 'cancelled', 'closed', 'resolved', 'rejected', 'archived'].includes(normalizeStatus(row.status));
 const varietiesOf = (row) => [...(Array.isArray(row.varieties) ? row.varieties : []), ...(Array.isArray(row.mango_varieties) ? row.mango_varieties : []), row.mango_variety || row.variety]
@@ -15,13 +17,18 @@ const varietiesOf = (row) => [...(Array.isArray(row.varieties) ? row.varieties :
 export const percentage = (value, total) => total > 0 ? Math.round(value / total * 100) : null;
 export const readable = (value) => String(value || 'Not recorded').replaceAll('_', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
 
-// All financial and output summaries cover the selected calendar year. Physical
-// farm/block properties are the current records, not historical snapshots.
+// Performance charts and output cover the selected calendar year. The total
+// financial cards and expense breakdown cover All dates, matching the task log.
+// Physical farm/block totals include deactivated records.
 export function buildOrchardDashboard(data, year = reportingYear(), now = new Date()) {
   const inYear = (value) => reportingDateKey(value ?? null)?.slice(0, 4) === String(year);
-  const farms = (data.farms || []).filter(active).sort((a, b) => String(a.name).localeCompare(String(b.name), undefined, { numeric: true }));
-  const blocks = (data.blocks || []).filter(active).map((row) => ({ ...row, area_acres: row.size_acres ?? row.area_acres ?? row.acres, mango_variety: varietiesOf(row).join(', ') }))
+  const farms = (data.farms || []).filter(currentStructure).sort((a, b) => String(a.name).localeCompare(String(b.name), undefined, { numeric: true }));
+  const blocks = (data.blocks || []).filter(currentStructure).map((row) => ({ ...row, area_acres: row.size_acres ?? row.area_acres ?? row.acres, mango_variety: varietiesOf(row).join(', ') }))
     .sort((a, b) => String(a.block_code || a.name).localeCompare(String(b.block_code || b.name), undefined, { numeric: true }));
+  const deactivatedFarms = farms.filter(row => normalizeStatus(row.status) === 'inactive').map(row => row.name || farmCode(row) || 'Unnamed farm');
+  const deactivatedBlocks = blocks.filter(row => normalizeStatus(row.status) === 'inactive').map(row => row.block_code || row.name || 'Unnamed block');
+  const allTaskLogs = uniqueTaskLogRows(data.dailyActivities || []);
+  const totalCost = taskLogTotals(allTaskLogs).totalCost;
   const seenActivities = new Set();
   const loggedActivities = (data.dailyActivities || []).filter((row) => {
     if (!active(row)) return false;
@@ -32,6 +39,7 @@ export function buildOrchardDashboard(data, year = reportingYear(), now = new Da
   });
   const activities = loggedActivities.filter(row => inYear(row.activity_date || row.created_date));
   const loggedOrders = (data.orders || []).filter(row => active(row) && normalizeStatus(row.status) !== 'draft');
+  const totalRevenue = sum(loggedOrders, (row) => amount(row.total_amount));
   const orders = loggedOrders.filter(row => inYear(row.order_date || row.created_date));
   const revenue = sum(orders, (row) => amount(row.total_amount));
   const cost = sum(activities, activityCost);
@@ -39,11 +47,12 @@ export function buildOrchardDashboard(data, year = reportingYear(), now = new Da
   const forecast = sum(blocks, (row) => Math.max(0, amount(row.forecast_yield_kg)));
   // The expense card mirrors the overview's default All dates breakdown,
   // including its signed cost adjustments and canonical category normalization.
-  const expenseAnalytics = buildFarmOperationsAnalytics({ ...data, dailyActivities: (data.dailyActivities || []).filter(active) });
-  const expenses = buildCostTypeBreakdown(expenseAnalytics.costRows);
-  const expenseTotal = expenseAnalytics.totalCost;
+  const expenseAnalytics = buildFarmOperationsAnalytics(data);
+  const costRows = allTaskLogs.map(row => ({ ...row, value: activityCost(row) })).filter(row => row.value !== 0);
+  const expenses = buildCostTypeBreakdown(costRows);
+  const expenseTotal = totalCost;
   const expenseFarmMap = new Map();
-  expenseAnalytics.costRows.forEach((row) => {
+  costRows.forEach((row) => {
     const name = expenseAnalytics.farmFor(row);
     expenseFarmMap.set(name, (expenseFarmMap.get(name) || 0) + row.value);
   });
@@ -77,22 +86,14 @@ export function buildOrchardDashboard(data, year = reportingYear(), now = new Da
       profit: values?.revenue != null || values?.cost != null ? (values.revenue ?? 0) - (values.cost ?? 0) : null,
     };
   });
-  // Allocate a record only once: multi-block and unassigned output remains in
-  // an explicit unallocated row, rather than being counted against each farm.
+  // Use the same ownership ledger as farm and block profiles. Explicit shared
+  // block scopes take precedence over stale farm labels and IDs.
+  const ledger = groupTaskLog(activities, { farms, blocks });
   const blocksById = new Map(blocks.map(block => [String(block.id), block]));
-  const resolvedBlocks = new Map(activities.map((row) => {
-    if (row.block_id) return [row, blocksById.get(String(row.block_id)) ?? null];
-    const matches = blocks.filter((block) => activityMatchesBlock(row, block));
-    return [row, matches.length === 1 ? matches[0] : null];
-  }));
+  const resolvedBlocks = new Map([...ledger.byBlock].flatMap(([id, rows]) => rows.map(row => [row, blocksById.get(id)])));
+  const resolvedFarms = new Map([...ledger.byFarm].flatMap(([id, rows]) => rows.map(row => [row, id])));
   const recordBlock = (row) => resolvedBlocks.get(row);
-  const recordFarm = (row) => {
-    const block = recordBlock(row);
-    if (block) return block.farm_id;
-    if (row.farm_id && !row.shared_scope) return row.farm_id;
-    const matches = farms.filter((farm) => matchesFarmScope(row, `farm:${farm.id}`, { farms, blocks }));
-    return matches.length === 1 ? matches[0].id : null;
-  };
+  const recordFarm = (row) => resolvedFarms.get(row);
   blocks.forEach((block) => {
     const rows = activities.filter((row) => String(recordBlock(row)?.id || '') === String(block.id));
     block.actual_yield_kg = sum(rows, activityYieldKg);
@@ -128,7 +129,7 @@ export function buildOrchardDashboard(data, year = reportingYear(), now = new Da
       const rows = activities.filter((row) => !recordBlock(row) && !['__all__', '__shared__'].includes(activityScopeValue(row)) && String(recordFarm(row) || '') === String(farm.id));
       return { ...summarizeStructure(farm.blocks), id: `farm:${farm.id}`, farm_id: farm.id, label: farmCode(farm) || farm.name, kind: 'farm', actual_yield_kg: sum(rows, activityYieldKg), status: farm.status || 'active' };
     }),
-    ...production.flatMap((farm) => farm.blocks.map((block) => ({ ...block, id: `block:${block.id}`, block_id: block.id, label: block.block_code || block.name, kind: 'block', status: block.farming_stage || block.status }))),
+    ...production.flatMap((farm) => farm.blocks.map((block) => ({ ...block, id: `block:${block.id}`, block_id: block.id, label: block.block_code || block.name, kind: 'block', status: !active(block) ? block.status : block.farming_stage || block.status }))),
   ];
   const unallocated = Math.max(0, Math.round((harvested - sum(production, (row) => row.yieldKg)) * 1000) / 1000);
   const emptyVarieties = () => Object.fromEntries(MANGO_VARIETIES.map(name => [name, 0]));
@@ -208,7 +209,7 @@ export function buildOrchardDashboard(data, year = reportingYear(), now = new Da
       item('Returns', openCount('returns'), 'Open returns · all time', '/admin/marketing/sales'),
     ] },
   ];
-  return { farms, blocks, sharedBlock, blockManagement, revenue, cost, profit: revenue - cost, harvested, forecast, remaining: Math.max(0, forecast - harvested), production, unallocated, varieties, varietyNames, varietyBreakdown, expenses, expenseTotal, expenseFarms, sales, months, yearlyPerformance, tasks, markets, departments };
+  return { farms, blocks, deactivatedFarms, deactivatedBlocks, sharedBlock, blockManagement, totalCost, totalRevenue, totalBalance: totalRevenue - totalCost, revenue, cost, profit: revenue - cost, harvested, forecast, remaining: Math.max(0, forecast - harvested), production, unallocated, varieties, varietyNames, varietyBreakdown, expenses, expenseTotal, expenseFarms, sales, months, yearlyPerformance, tasks, markets, departments };
 }
 
 export function filterBlockManagement(rows, selection = 'all') {

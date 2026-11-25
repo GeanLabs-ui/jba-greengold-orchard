@@ -7,13 +7,15 @@ import { formatCurrency, formatDate } from '@/components/shared/format';
 import DataTable from '@/components/shared/DataTable';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AdminCreateDialog from '@/components/admin/AdminCreateDialog';
+import EntityRecordActions from '@/components/admin/EntityRecordActions';
+import { requireNoLinkedRecords } from '@/lib/record-actions';
 import { base44 } from '@/api/base44Client';
 
 const purchaseOrderFields = [
   { name: 'supplier_name', label: 'Supplier', required: true },
   { name: 'order_date', label: 'Order Date', type: 'date', required: true },
   { name: 'expected_delivery_date', label: 'Expected Delivery', type: 'date' },
-  { name: 'total_amount', label: 'Total Amount', type: 'number', required: true },
+  { name: 'total_amount', label: 'Total Amount', type: 'number', allowDecimals: true, required: true },
   {
     name: 'status',
     label: 'Status',
@@ -28,6 +30,15 @@ const purchaseOrderFields = [
   },
 ];
 
+const supplierFields = [
+  { name: 'name', label: 'Supplier Name', required: true },
+  { name: 'supplier_code', label: 'Supplier Code' },
+  { name: 'email', label: 'Email', type: 'email' },
+  { name: 'phone', label: 'Phone' },
+  { name: 'country', label: 'Country' },
+  { name: 'status', label: 'Status', type: 'select', options: [{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }] },
+];
+
 export default function Procurement() {
   const [suppliers, setSuppliers] = useState([]);
   const [pos, setPos] = useState([]);
@@ -36,8 +47,8 @@ export default function Procurement() {
   const load = () => {
     setLoading(true);
     Promise.all([
-      base44.entities.Supplier.list(),
-      base44.entities.PurchaseOrder.list('-order_date', 50),
+      base44.entities.Supplier.listAll(),
+      base44.entities.PurchaseOrder.listAll('-order_date'),
     ]).then(([sups, orders]) => {
       setSuppliers(sups || []);
       setPos(orders || []);
@@ -51,6 +62,10 @@ export default function Procurement() {
     ...payload,
     po_number: `PO-${Date.now().toString().slice(-6)}`,
   });
+
+  const guardSupplierDelete = (supplier) => requireNoLinkedRecords(base44, 'PurchaseOrder',
+    [['supplier_id', supplier.id], ['supplier_name', supplier.name], ['supplier_code', supplier.supplier_code]],
+    'This supplier is linked to purchase orders. Keep the supplier inactive to preserve those records.');
 
   return (
     <div>
@@ -77,7 +92,7 @@ export default function Procurement() {
 
         <TabsContent value="orders" className="mt-4">
           {loading ? <PageSkeleton contentOnly /> : (
-            <DataTable items={pos} columns={[
+            <DataTable items={pos} rowActions={record => <EntityRecordActions entity="PurchaseOrder" record={record} fields={purchaseOrderFields} onChanged={load} />} columns={[
               { key: 'po_number', label: 'PO #' },
               { key: 'supplier_name', label: 'Supplier' },
               { key: 'order_date', label: 'Date', format: formatDate },
@@ -110,6 +125,7 @@ export default function Procurement() {
                     <span className="text-xs font-medium">{'★'.repeat(s.performance_rating)}{'☆'.repeat(5 - s.performance_rating)}</span>
                   </div>
                 )}
+                <div className="mt-4 border-t pt-3"><EntityRecordActions entity="Supplier" record={s} fields={supplierFields} onChanged={load} deleteGuard={guardSupplierDelete} /></div>
               </div>
             )) : <div className="col-span-full text-center py-12 text-muted-foreground">No suppliers registered.</div>}
           </div>

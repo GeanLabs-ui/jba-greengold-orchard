@@ -8,12 +8,14 @@ import { Button } from '@/components/ui/button';
 import DataTable from '@/components/shared/DataTable';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AdminCreateDialog from '@/components/admin/AdminCreateDialog';
+import EntityRecordActions from '@/components/admin/EntityRecordActions';
 import { base44 } from '@/api/base44Client';
 
 const certificationFields = [
   { name: 'name', label: 'Document Name', required: true },
   { name: 'issuer', label: 'Issuer' },
   { name: 'certificate_number', label: 'Certificate #' },
+  { name: 'document_url', label: 'Document URL', type: 'url', wide: true },
   { name: 'valid_from', label: 'Valid From', type: 'date' },
   { name: 'valid_to', label: 'Valid To', type: 'date' },
   {
@@ -37,7 +39,7 @@ export default function Documents() {
   const load = () => {
     setLoading(true);
     Promise.all([
-      base44.entities.Certification.list(),
+      base44.entities.Certification.listAll(),
       base44.entities.Notification.list('-created_date', 50),
     ]).then(([certs, notifs]) => {
       setCertifications(certs || []);
@@ -90,6 +92,7 @@ export default function Documents() {
                       </a>
                     </Button>
                   )}
+                  <div className="mt-4 border-t pt-3"><EntityRecordActions entity="Certification" record={cert} fields={certificationFields} onChanged={load} /></div>
                 </div>
               )) : <div className="col-span-full text-center py-12 text-muted-foreground"><FolderOpen className="mx-auto h-12 w-12" /><p className="mt-3">No certifications registered.</p></div>}
             </div>

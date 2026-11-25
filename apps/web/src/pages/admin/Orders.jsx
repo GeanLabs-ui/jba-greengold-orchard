@@ -3,12 +3,17 @@ import { useLocation, useSearchParams } from 'react-router-dom';
 import { ChevronDown, ChevronUp, Globe2, Loader2, PackageCheck, Search, Truck } from 'lucide-react';
 import PageSkeleton from '@/components/shared/PageSkeleton';
 import StatusBadge from '@/components/shared/StatusBadge';
-import { formatCurrency, formatDate } from '@/components/shared/format';
+import { formatCurrency as formatCurrencyValue, formatDate } from '@/components/shared/format';
 import { Input } from '@/components/ui/input';
 import AdminCreateDialog from '@/components/admin/AdminCreateDialog';
 import { base44 } from '@/api/base44Client';
 import { subscribeToDataChanges } from '@/lib/data-sync';
+import EntityRecordActions from '@/components/admin/EntityRecordActions';
+import { orderFields as correctionFields, salesDeleteDescription } from '@/lib/sales-record-fields';
+import { useAuth } from '@/lib/AuthContext';
+import { canCorrectEntity } from '@/lib/record-actions';
 
+const formatCurrency = value => formatCurrencyValue(value, 2);
 const statusOptions = [
   { value: 'draft', label: 'Draft' },
   { value: 'confirmed', label: 'Confirmed' },
@@ -46,6 +51,7 @@ const statusCopy = {
 const displayDateTime = (value) => value ? new Intl.DateTimeFormat('en-GH', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) : '—';
 
 export default function Orders() {
+  const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const { key: locationKey } = useLocation();
   const requestedId = searchParams.get('order');
@@ -65,7 +71,7 @@ export default function Orders() {
       setLoading(true);
       setError('');
       try {
-        const recent = await base44.entities.Order.list('-order_date', 250) || [];
+        const recent = await base44.entities.Order.listAll('-order_date') || [];
         const linkedOrder = requestedId && (recent.find((order) => order.id === requestedId)
           || (await base44.entities.Order.filter({ id: requestedId }, '-order_date', 1))[0]);
         if (request !== generation) return;
@@ -148,10 +154,6 @@ export default function Orders() {
           });
         }
       }
-      if (status === 'cancelled') {
-        const relatedInvoices = await base44.entities.Invoice.filter({ order_number: order.order_number }, '-created_date', 10);
-        await Promise.all(relatedInvoices.filter((invoice) => invoice.status !== 'paid').map((invoice) => base44.entities.Invoice.update(invoice.id, { status: 'void', balance_due: 0 })));
-      }
     } catch (updateError) {
       setError(updateError.message || 'The order status could not be updated.');
     } finally {
@@ -179,7 +181,7 @@ export default function Orders() {
           <Input aria-label="Search orders" placeholder="Search order, customer, email or phone..." value={search} onChange={(event) => setSearch(event.target.value)} className="pl-9" />
         </div>
         <div className="justify-self-end">
-        <AdminCreateDialog title="New Order" description="Create a customer order and add it to the fulfillment pipeline." buttonLabel="New Order" fields={orderFields} onCreate={createOrder} submitLabel="Create Order" />
+        {canCorrectEntity(user, 'Order') && <AdminCreateDialog title="New Order" description="Create a customer order and add it to the fulfillment pipeline." buttonLabel="New Order" fields={orderFields} onCreate={createOrder} submitLabel="Create Order" />}
         </div>
       </div>
 
@@ -212,7 +214,7 @@ export default function Orders() {
               <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Date</th>
               <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Source</th>
               <th className="px-4 py-3 text-right font-semibold text-blue-600">Revenue</th>
-              <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Fulfillment status</th>
+              <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Fulfillment status</th><th className="px-4 py-3 text-left font-semibold text-muted-foreground">Actions</th>
             </tr></thead>
             <tbody className="divide-y divide-border">
               {filtered.length ? filtered.map((order) => (
@@ -227,15 +229,16 @@ export default function Orders() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <StatusBadge status={order.status} />
-                        <select value={order.status || 'draft'} onChange={(event) => updateStatus(order, event.target.value)} disabled={updatingId === order.id} className="h-8 rounded-md border border-border bg-background px-2 text-xs outline-none focus:ring-2 focus:ring-ring">
+                        <select value={order.status || 'draft'} onChange={(event) => updateStatus(order, event.target.value)} disabled={updatingId === order.id || !canCorrectEntity(user, 'Order')} className="h-8 rounded-md border border-border bg-background px-2 text-xs outline-none focus:ring-2 focus:ring-ring">
                           {statusOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                         </select>
                         {updatingId === order.id ? <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /> : null}
                       </div>
                     </td>
+                    <td className="px-4 py-3"><EntityRecordActions entity="Order" record={order} fields={correctionFields} deleteDescription={salesDeleteDescription} /></td>
                   </tr>
                   {expandedId === order.id && (
-                    <tr className="bg-muted/20"><td colSpan={7} className="px-6 py-6">
+                    <tr className="bg-muted/20"><td colSpan={8} className="px-6 py-6">
                       <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr_1fr]">
                         <div><h3 className="flex items-center uppercase text-muted-foreground text-card-title"><PackageCheck className="mr-2 h-4 w-4" /><span className="card-heading-text">Products</span></h3>
                           <div className="mt-3 space-y-2">{order.items?.length ? order.items.map((item) => <div key={`${order.id}-${item.product_id}`} className="flex justify-between gap-3 rounded-lg border border-border bg-card px-3 py-2"><span><span className="font-medium">{item.product_name}</span><span className="ml-2 text-xs text-muted-foreground">× {item.quantity}</span></span><span className="font-medium text-blue-600">{formatCurrency(item.line_total)}</span></div>) : <p className="text-sm text-muted-foreground">No line items recorded for this order.</p>}</div>
@@ -250,7 +253,7 @@ export default function Orders() {
                     </td></tr>
                   )}
                 </Fragment>
-              )) : <tr><td colSpan={7} className="px-4 py-12 text-center text-muted-foreground">No orders found.</td></tr>}
+              )) : <tr><td colSpan={8} className="px-4 py-12 text-center text-muted-foreground">No orders found.</td></tr>}
             </tbody>
           </table>
         </div>

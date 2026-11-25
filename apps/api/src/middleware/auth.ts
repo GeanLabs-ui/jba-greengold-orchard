@@ -1,6 +1,6 @@
 import type { MiddlewareHandler } from 'hono';
 import type { Role, Permission } from 'mango-farm-authorization';
-import { hasPermission } from 'mango-farm-authorization';
+import { hasWorkspacePermission, hasWorkspacePage } from 'mango-farm-authorization';
 import { closeDatabase, createDatabase } from '../db.js';
 import { LOCAL_SESSION_COOKIE, parseCookies, SESSION_COOKIE, sha256, timingSafeEqual } from '../security.js';
 import { isLocalTestAccount, localTestLoginEnabled } from '../modules/local-development.js';
@@ -64,6 +64,15 @@ export const loadSession = (): MiddlewareHandler<{ Bindings: Env; Variables: App
       LIMIT 1
     `;
     const row = rows[0];
+    // Older accepted invitations did not provision organization membership.
+    // Resolve only an unambiguous organization from that account's accepted invite.
+    if (row && !row.organization_id && row.role !== 'customer' && row.role !== 'user') {
+      const organizations = await sql<{ organization_id: string }[]>`SELECT DISTINCT om.organization_id FROM staff_invitations i
+        JOIN organization_members om ON om.user_id=i.invited_by
+        WHERE lower(i.email)=lower(${row.email}) AND i.accepted_at IS NOT NULL
+          AND NOT EXISTS (SELECT 1 FROM organization_members direct WHERE direct.user_id=${row.user_id})`;
+      if (organizations.length === 1) row.organization_id = organizations[0].organization_id;
+    }
     // Copied test records/sessions must not become usable in another environment.
     if (row && (!isLocalTestAccount(row.user_id) || localTestLoginEnabled(c.env))) {
       c.set('user', {
@@ -109,6 +118,13 @@ export const requireRole = (...roles: Role[]): MiddlewareHandler<{ Bindings: Env
 export const requirePermission = (permission: Permission): MiddlewareHandler<{ Bindings: Env; Variables: AppVariables }> => async (c, next) => {
   const user = c.get('user');
   if (!user) return c.json({ error: { code: 'UNAUTHORIZED', message: 'Authentication required' }, requestId: c.get('requestId') }, 401);
-  if (!hasPermission(user.role, permission)) return c.json({ error: { code: 'FORBIDDEN', message: 'Insufficient permissions' }, requestId: c.get('requestId') }, 403);
+  if (!hasWorkspacePermission(user, permission)) return c.json({ error: { code: 'FORBIDDEN', message: 'Insufficient permissions' }, requestId: c.get('requestId') }, 403);
+  return next();
+};
+
+export const requirePageAccess = (page: string): MiddlewareHandler<{ Bindings: Env; Variables: AppVariables }> => async (c, next) => {
+  const user = c.get('user');
+  if (!user) return c.json({ error: { code: 'UNAUTHORIZED', message: 'Authentication required' } }, 401);
+  if (!hasWorkspacePage(user, page)) return c.json({ error: { code: 'FORBIDDEN', message: 'Access denied' } }, 403);
   return next();
 };

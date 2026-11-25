@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
+import { subscribeToDataChanges } from './data-sync';
 
 const AuthContext = createContext();
 
@@ -12,14 +13,15 @@ export const AuthProvider = ({ children }) => {
   const [authChecked, setAuthChecked] = useState(false);
   const [appPublicSettings, setAppPublicSettings] = useState({ public_settings: {} });
 
-  const checkUserAuth = useCallback(async () => {
+  const checkUserAuth = useCallback(async ({ background = false } = {}) => {
     try {
-      setIsLoadingAuth(true);
+      if (!background) setIsLoadingAuth(true);
       setAuthError(null);
       const currentUser = await base44.auth.me();
-      setUser(currentUser);
+      setUser(previous => JSON.stringify(previous) === JSON.stringify(currentUser) ? previous : currentUser);
       setIsAuthenticated(true);
-    } catch {
+    } catch (error) {
+      if (background && ![401, 403].includes(error.status)) return;
       setUser(null);
       setIsAuthenticated(false);
     } finally {
@@ -38,6 +40,10 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     checkAppState();
   }, [checkAppState]);
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    return subscribeToDataChanges(() => checkUserAuth({ background: true }), ['StaffUser', 'Employee'], { refreshOnFocus: true, refreshIntervalMs: 30000 });
+  }, [isAuthenticated, checkUserAuth]);
 
   const logout = async (shouldRedirect = true) => {
     await base44.auth.logout();
