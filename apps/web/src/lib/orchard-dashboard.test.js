@@ -3,8 +3,47 @@ import { buildOrchardDashboard, filterBlockManagement, groupPerformance } from '
 import { PROGRAMME_CODE } from '../data/dailyRoutineProgramme';
 import { buildFarmOperationsAnalytics } from './farm-operations-analytics';
 import { buildCostTypeBreakdown } from './activity-cost-types';
+import { groupTaskLog, taskLogTotals } from './task-log-profile';
 
 describe('orchard reference dashboard', () => {
+  it('counts deactivated farms and blocks and identifies each in the overview', () => {
+    const blocks = Array.from({ length: 10 }, (_, index) => ({
+      id: `block-${index}`, farm_id: index < 5 ? 'a' : 'b',
+      block_code: `${index < 5 ? 'A' : 'B'}${index % 5 + 1}`,
+      status: index === 7 ? 'inactive' : 'active', farming_stage: 'flowering',
+    }));
+    const result = buildOrchardDashboard({
+      farms: [{ id: 'a', name: 'Farm A', status: 'active' }, { id: 'b', name: 'Farm B', status: 'inactive' }], blocks,
+    }, 2026);
+    expect(result.farms).toHaveLength(2);
+    expect(result.blocks).toHaveLength(10);
+    expect(result.deactivatedFarms).toEqual(['Farm B']);
+    expect(result.deactivatedBlocks).toEqual(['B3']);
+    expect(result.blockManagement.find(row => row.block_id === 'block-7').status).toBe('inactive');
+  });
+  it('reconciles all-date cost cards and expense breakdown with the complete Daily Task Log', () => {
+    const duplicate = { id: 'shared', activity_date: '2025-12-31', shared_scope: 'Farm A&B', actual_cost: 100.25 };
+    const dailyActivities = [
+      duplicate, { ...duplicate },
+      { id: 'inactive-block', block_id: 'b3', activity_date: '2026-01-01', actual_cost: 50.5 },
+      { id: 'unassigned', actual_cost: 25.75 },
+      { id: 'adjustment', activity_date: '2027-01-01', actual_cost: -10.25 },
+      { id: 'cancelled', activity_date: '2026-01-02', status: 'cancelled', actual_cost: 2 },
+    ];
+    const result = buildOrchardDashboard({
+      farms: [{ id: 'b', name: 'Farm B' }], blocks: [{ id: 'b3', farm_id: 'b', block_code: 'B3', status: 'inactive' }], dailyActivities,
+      orders: [{ order_date: '2025-01-01', total_amount: 300 }, { order_date: '2026-01-01', total_amount: 20 }],
+    }, 2026);
+    expect(result.totalCost).toBe(taskLogTotals(dailyActivities).totalCost);
+    expect(result.totalCost).toBe(168.25);
+    expect(result.expenseTotal).toBe(result.totalCost);
+    expect(result.expenses.reduce((total, row) => total + row.value, 0)).toBe(result.totalCost);
+    expect(result.totalRevenue).toBe(320);
+    expect(result.totalBalance).toBe(151.75);
+    // The performance chart retains its explicit annual scope.
+    expect(result.cost).toBe(50.5);
+    expect(result.months[0].cost).toBe(50.5);
+  });
   it('orders A&B, A, B and blocks, with scope-specific kg readings and one complete filter', () => {
     const data = {
       farms: [{ id: 'a', name: 'Farm Land A' }, { id: 'b', name: 'Farm Land B' }],
@@ -165,6 +204,25 @@ describe('orchard reference dashboard', () => {
     expect(result.unallocated).toBe(400);
     expect(result.varieties).toEqual([{ name: 'Kent', value: 0 }, { name: 'Keitt', value: 1200 }, { name: 'Others', value: 400 }]);
     expect(result.forecast).toBe(0);
+  });
+  it('matches profile ownership for legacy shared scopes with stale farm references', () => {
+    const data = {
+      farms: [{ id: 'a', name: 'Farm A' }, { id: 'b', name: 'Farm B' }],
+      blocks: [{ id: 'a1', farm_id: 'a', block_code: 'A1' }, { id: 'a2', farm_id: 'a', block_code: 'A2' }, { id: 'b1', farm_id: 'b', block_code: 'B1' }],
+      dailyActivities: [
+        { id: 'cross-farm', activity_date: '2026-01-01', farm_id: 'a', block_name: 'A1, B1', output_quantity_kg: 125 },
+        { id: 'same-farm', activity_date: '2026-01-01', farm_id: 'b', block_name: 'A1, A2', output_quantity_kg: 250 },
+        { id: 'legacy-block', activity_date: '2026-01-01', farm_id: 'b', block_name: 'A1', output_quantity_kg: 500 },
+      ],
+    };
+    const dashboard = buildOrchardDashboard(data, 2026);
+    const ledger = groupTaskLog(data.dailyActivities, data);
+    expect(dashboard.production.map(row => row.yieldKg)).toEqual([750, 0]);
+    expect(dashboard.production.map(row => row.yieldKg)).toEqual(data.farms.map(farm => taskLogTotals(ledger.byFarm.get(farm.id) || []).totalYieldKg));
+    expect(dashboard.blocks.map(row => row.actual_yield_kg)).toEqual([500, 0, 0]);
+    expect(dashboard.unallocated).toBe(125);
+    expect(dashboard.harvested).toBe(875);
+    expect(dashboard.varieties.reduce((total, row) => total + row.value, 0)).toBe(875);
   });
   it('keeps empty workspaces empty and only includes future open tasks', () => {
     expect(buildOrchardDashboard({}, 2026)).toMatchObject({ revenue: 0, harvested: 0, tasks: [], varieties: [{ value: 0 }, { value: 0 }, { value: 0 }], production: [] });

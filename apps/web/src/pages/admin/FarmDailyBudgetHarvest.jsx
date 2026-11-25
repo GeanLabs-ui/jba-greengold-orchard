@@ -125,5 +125,5 @@ export default function FarmDailyBudgetHarvest() {
 
   if (loading && !financeRecords.length && !harvests.length) return <PageSkeleton variant="harvest" />;
 
-  return <div className="drc-page drc-embedded-schedule"><BudgetHarvestView blocks={blocks} busyKey={busyKey} embedded finance={finance} financeRecords={financeRecords} harvestDialog={harvestDialog} harvests={harvests} onAddHarvest={addHarvest} onUpdateBudget={updateBudget} today={TODAY} /></div>;
+  return <div className="drc-page drc-embedded-schedule"><BudgetHarvestView blocks={blocks} busyKey={busyKey} embedded finance={finance} financeRecords={financeRecords} harvestDialog={harvestDialog} harvests={harvests} onAddHarvest={addHarvest} onUpdateBudget={updateBudget} onRecordsChanged={() => load({ silent: true })} today={TODAY} /></div>;
 }

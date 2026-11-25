@@ -1,3 +1,4 @@
+import EntityRecordActions from '@/components/admin/EntityRecordActions';
 import { farmSelectOptions, blockSelectOptions, resolveOperationalScope, blockLabel } from '@/lib/farm-scope';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
@@ -24,6 +25,7 @@ import HarvestCalendar from '@/components/harvest/HarvestCalendar';
 import AdminCreateDialog from '@/components/admin/AdminCreateDialog';
 import { Progress } from '@/components/ui/progress';
 import { base44 } from '@/api/base44Client';
+import { canCorrectEntity } from '@/lib/record-actions';
 
 const phases = [
   {
@@ -331,14 +333,14 @@ export default function Harvests({ embedded = false }) {
   const load = () => {
     setLoading(true);
     Promise.all([
-      base44.entities.Farm.list('-created_date').catch(() => []),
-      base44.entities.FarmBlock.list('-created_date').catch(() => []),
-      base44.entities.Harvest.list('-harvest_date').catch(() => []),
-      base44.entities.HarvestBatch.list('-harvest_date').catch(() => []),
-      base44.entities.FarmProcessLog.list('-created_date').catch(() => []),
-      base44.entities.FarmTask.list('-due_date').catch(() => []),
-      base44.entities.CropPlan.list('-created_date').catch(() => []),
-      base44.entities.FarmProject.list('-due_date').catch(() => []),
+      base44.entities.Farm.listAll('-created_date').catch(() => []),
+      base44.entities.FarmBlock.listAll('-created_date').catch(() => []),
+      base44.entities.Harvest.listAll('-harvest_date').catch(() => []),
+      base44.entities.HarvestBatch.listAll('-harvest_date').catch(() => []),
+      base44.entities.FarmProcessLog.listAll('-created_date').catch(() => []),
+      base44.entities.FarmTask.listAll('-due_date').catch(() => []),
+      base44.entities.CropPlan.listAll('-created_date').catch(() => []),
+      base44.entities.FarmProject.listAll('-due_date').catch(() => []),
       base44.auth.me().catch(() => null),
     ])
       .then(([farmData, blockData, harvestData, batchData, logData, taskData, cropPlanData, projectData, user]) => {
@@ -347,6 +349,7 @@ export default function Harvests({ embedded = false }) {
         setHarvests([
           ...(harvestData || []),
           ...(batchData || []).map((batch) => ({
+            record_entity: "HarvestBatch",
             ...batch,
             total_quantity: batch.total_quantity ?? batch.quantity_harvested_kg,
             quality_grade: batch.quality_grade || 'Processed ledger',
@@ -399,6 +402,12 @@ export default function Harvests({ embedded = false }) {
   const blockOptions = useMemo(() => blockSelectOptions(blocks), [blocks]);
 
   const activeProcessConfig = processEntityConfig[view];
+  const sourceActions = (entity, record, fields, onUpdate) => {
+    if (!canCorrectEntity(currentUser, entity)) return null;
+    const activity = record.activity_id || record.source_activity_id;
+    if (activity || record.activity_code) return <a href={`/admin/farm-daily-activities/activities/records?${activity ? `record=${encodeURIComponent(activity)}` : `code=${encodeURIComponent(record.activity_code)}`}&entity=DailyActivity`} className="text-primary underline">Edit source task log</a>;
+    return <EntityRecordActions entity={entity} record={record} fields={fields} onChanged={load} onUpdate={onUpdate} />;
+  };
   const processItems = {
     tasks,
     'crop-plans': cropPlans,
@@ -633,6 +642,7 @@ export default function Harvests({ embedded = false }) {
           </div>
           <DataTable
             items={filteredLogs}
+            rowActions={record => sourceActions('FarmProcessLog', record, logFields)}
             emptyMessage="No phase logs found."
             columns={[
               { key: 'log_code', label: 'Code' },
@@ -651,6 +661,7 @@ export default function Harvests({ embedded = false }) {
       ) : activeProcessConfig ? (
         <DataTable
           items={processItems[view]}
+          rowActions={record => sourceActions(activeProcessConfig.entity, record, buildProcessFields(view, farmOptions, blockOptions), (_record, payload) => base44.entities[activeProcessConfig.entity].update(record.id, { ...payload, ...resolveOperationalScope(payload, farms, blocks) }))}
           emptyMessage={`No ${activeProcessConfig.button.toLowerCase()} records found.`}
           columns={activeProcessConfig.columns}
         />
@@ -659,6 +670,7 @@ export default function Harvests({ embedded = false }) {
       ) : (
         <DataTable
           items={harvests}
+          rowActions={record => record.record_entity === 'HarvestBatch' ? canCorrectEntity(currentUser, 'HarvestBatch') && <a href={`/admin/farm-daily-activities/activities/records?record=${encodeURIComponent(record.id)}&entity=HarvestBatch`} className="text-primary underline">Edit harvest source</a> : sourceActions('Harvest', record, harvestFields)}
           emptyMessage="No harvest batches found."
           columns={[
             { key: 'harvest_code', label: 'Code' },

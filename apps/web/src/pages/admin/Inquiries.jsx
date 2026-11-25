@@ -29,9 +29,18 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { useToast } from '@/components/ui/use-toast';
 import { base44 } from '@/api/base44Client';
 import { subscribeToDataChanges } from '@/lib/data-sync';
+import EntityRecordActions from '@/components/admin/EntityRecordActions';
 
 const statusOptions = ['all', 'new', 'in_progress', 'resolved', 'closed'];
 const humanize = (value) => String(value || 'general').replaceAll('_', ' ');
+const inquiryFields = [
+  { name: 'name', label: 'Client Name', required: true },
+  { name: 'email', label: 'Email', type: 'email', required: true },
+  { name: 'phone', label: 'Phone' },
+  { name: 'company', label: 'Company' },
+  { name: 'subject', label: 'Subject', required: true, wide: true },
+  { name: 'message', label: 'Message', type: 'textarea', required: true, wide: true },
+];
 const identityLabels = {
   legalName: 'Legal name',
   country: 'Issuing country',
@@ -59,7 +68,7 @@ export default function Inquiries() {
     setError('');
     try {
       const [inquiryRecords, reviewRecords] = await Promise.all([
-        base44.entities.Inquiry.list('-created_date', 250),
+        base44.entities.Inquiry.listAll('-created_date'),
         base44.account.reviews(),
       ]);
       setInquiries(inquiryRecords || []);
@@ -189,6 +198,7 @@ export default function Inquiries() {
               selectedId={selectedId}
               onRowClick={selectInquiry}
               emptyMessage="No client inquiries match these filters."
+              rowActions={record => <EntityRecordActions entity="Inquiry" record={record} fields={inquiryFields} onChanged={load} />}
               columns={[
                 { key: 'subject', label: 'Subject', render: (value, inquiry) => <div><p className="font-semibold">{value || 'Website inquiry'}</p><p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">{inquiry.message}</p></div> },
                 { key: 'name', label: 'Client', render: (value, inquiry) => <div><p>{value}</p><p className="mt-0.5 text-xs text-muted-foreground">{inquiry.email}</p></div> },

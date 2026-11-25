@@ -5,7 +5,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Banknote, CalendarDays, Filter, MapPin, RotateCcw, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
 import StatusBadge from '@/components/shared/StatusBadge';
 import PageSkeleton from '@/components/shared/PageSkeleton';
-import { formatCurrency, formatDate } from '@/components/shared/format';
+import { formatCurrency as formatCurrencyValue, formatDate } from '@/components/shared/format';
 import DataTable from '@/components/shared/DataTable';
 import MetricCard from '@/components/shared/MetricCard';
 import { Button } from '@/components/ui/button';
@@ -24,6 +24,7 @@ import {
   websiteSales,
 } from '@/lib/finance-data';
 
+const formatCurrency = value => formatCurrencyValue(value, 2);
 const canClearActivityCosts = (user) => (
   ['super_admin', 'admin', 'farm_manager'].includes(String(user?.role || '').trim().toLowerCase())
 );
@@ -300,7 +301,7 @@ export default function Finance() {
               { key: 'status', label: 'Status', render: (value) => <StatusBadge status={String(value || '').toLowerCase()} label={value} /> },
             ]}
             rowActions={canClearActivityCosts(user) ? (activity) => (
-              <AdminActionButton action="delete" type="button" disabled={deletingId === activity.id} onClick={() => deleteActivityCost(activity)} label="Delete" />
+              <><a className="inline-flex items-center rounded border px-3 py-1.5 text-xs font-semibold text-primary" href={`/admin/farm-daily-activities/activities/records?activityId=${encodeURIComponent(activity.id)}`}>Edit task cost</a><AdminActionButton action="delete" type="button" disabled={deletingId === activity.id} onClick={() => deleteActivityCost(activity)} label="Delete" /></>
             ) : undefined}
           />
         )}

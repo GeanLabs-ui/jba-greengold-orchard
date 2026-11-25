@@ -7,6 +7,8 @@ import { formatDateTime } from '@/components/shared/format';
 import DataTable from '@/components/shared/DataTable';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AdminCreateDialog from '@/components/admin/AdminCreateDialog';
+import EntityRecordActions from '@/components/admin/EntityRecordActions';
+import { requireNoLinkedRecords } from '@/lib/record-actions';
 import { base44 } from '@/api/base44Client';
 import { subscribeToDataChanges } from '@/lib/data-sync';
 
@@ -29,6 +31,15 @@ const deliveryFields = [
   },
 ];
 
+const vehicleFields = [
+  { name: 'vehicle_code', label: 'Vehicle Code', required: true },
+  { name: 'plate_number', label: 'Plate Number', required: true },
+  { name: 'vehicle_type', label: 'Vehicle Type' },
+  { name: 'capacity_kg', label: 'Capacity (Kg)', type: 'number', allowDecimals: true },
+  { name: 'driver_name', label: 'Driver' },
+  { name: 'status', label: 'Status', type: 'select', options: [{ value: 'available', label: 'Available' }, { value: 'in_use', label: 'In use' }, { value: 'maintenance', label: 'Maintenance' }, { value: 'inactive', label: 'Inactive' }] },
+];
+
 export default function Logistics() {
   const [deliveries, setDeliveries] = useState([]);
   const [vehicles, setVehicles] = useState([]);
@@ -37,8 +48,8 @@ export default function Logistics() {
   const load = () => {
     setLoading(true);
     Promise.all([
-      base44.entities.Delivery.list('-created_date', 50),
-      base44.entities.Vehicle.list(),
+      base44.entities.Delivery.listAll('-created_date'),
+      base44.entities.Vehicle.listAll(),
     ]).then(([dels, vehs]) => {
       setDeliveries(dels || []);
       setVehicles(vehs || []);
@@ -60,6 +71,10 @@ export default function Logistics() {
     ...payload,
     delivery_code: `DEL-${Date.now().toString().slice(-6)}`,
   });
+
+  const guardVehicleDelete = (vehicle) => requireNoLinkedRecords(base44, 'Delivery',
+    [['vehicle_id', vehicle.id], ['vehicle_plate', vehicle.plate_number], ['vehicle_code', vehicle.vehicle_code]],
+    'This vehicle is linked to deliveries. Set it inactive to preserve delivery history.');
 
   const inTransit = deliveries.filter((d) => d.status === 'in_transit').length;
   const delivered = deliveries.filter((d) => d.status === 'delivered').length;
@@ -90,7 +105,7 @@ export default function Logistics() {
 
         <TabsContent value="deliveries" className="mt-4">
           {loading ? <PageSkeleton contentOnly /> : (
-            <DataTable items={deliveries} columns={[
+            <DataTable items={deliveries} rowActions={record => <EntityRecordActions entity="Delivery" record={record} fields={deliveryFields} onChanged={load} />} columns={[
               { key: 'delivery_code', label: 'Code' },
               { key: 'order_number', label: 'Order #' },
               { key: 'customer_name', label: 'Customer' },
@@ -118,6 +133,7 @@ export default function Logistics() {
                   {v.capacity_kg && <p>Capacity: {v.capacity_kg.toLocaleString(undefined, { maximumFractionDigits: 0 })} kg</p>}
                   {v.driver_name && <p>Driver: {v.driver_name}</p>}
                 </div>
+                <div className="mt-4 border-t pt-3"><EntityRecordActions entity="Vehicle" record={v} fields={vehicleFields} onChanged={load} deleteGuard={guardVehicleDelete} /></div>
               </div>
             )) : <div className="col-span-full text-center py-12 text-muted-foreground">No vehicles registered.</div>}
           </div>

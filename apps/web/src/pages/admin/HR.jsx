@@ -1,3 +1,5 @@
+import EntityRecordActions from '@/components/admin/EntityRecordActions';
+import { guardDepartmentDeletion, guardEmployeeDeletion, departmentCorrectionPayload } from '@/lib/hr-calendar-record-guards';
 import CardSurface from "@/components/shared/CardSurface";
 import AnalyticsPie from '@/components/farm/AnalyticsPie';
 import { numericChartAxis } from '@/lib/analytics-chart-scale';
@@ -31,7 +33,9 @@ import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { ADMIN_PAGE_ACCESS, ROLE_PAGE_DEFAULTS, STAFF_ROLES, canManageHumanResources, pageAccessForUser } from '@/lib/access-control';
 import { subscribeToDataChanges } from '@/lib/data-sync';
+import { mergeStaffDirectory } from '@/lib/staff-directory';
 
+const departmentCorrectionFields = [{ name: 'name', label: 'Department name', required: true }, { name: 'code', label: 'Code', required: true }, { name: 'status', label: 'Status', type: 'select', options: [{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }] }];
 const employmentTypes = [
   ['full_time', 'Full-time'], ['part_time', 'Part-time'], ['contract', 'Contract'], ['seasonal', 'Seasonal'],
 ];
@@ -406,7 +410,7 @@ function AttendanceDashboard({ attendance, employees, departments }) {
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.75fr)_minmax(300px,0.75fr)]">
         <AttendancePanel title="Recent Attendance Records" action={<span className="text-xs text-muted-foreground">{filtered.length} records</span>}>
           {filtered.length ? <div className="overflow-x-auto"><table className="w-full min-w-[680px] text-xs"><thead className="bg-muted/50 text-muted-foreground"><tr><th className="px-4 py-3 text-left font-medium">Employee</th><th className="px-4 py-3 text-left font-medium">Department</th><th className="px-4 py-3 text-left font-medium">Date</th><th className="px-4 py-3 text-left font-medium">Check In</th><th className="px-4 py-3 text-left font-medium">Check Out</th><th className="px-4 py-3 text-left font-medium">Status</th><th className="w-10 px-2 py-3"><span className="sr-only">Actions</span></th></tr></thead><tbody className="divide-y divide-border">{filtered.slice(0, 8).map((record, index) => {
-            const employee = employeeById.get(record.employee_id); const department = record.department_name || record.department || employee?.department_name || employee?.department || 'Not assigned';
+            const employee = employeeById.get(record.employee_id); const department = departments.find(item => item.id === (record.department_id || employee?.department_id))?.name || record.department_name || record.department || employee?.department_name || employee?.department || 'Not assigned';
             return <tr key={record.id || `${record.employee_id}-${record.attendance_date}-${index}`} className="hover:bg-muted/25"><td className="px-4 py-3 font-medium">{record.employee_name || nameOf(employee)}</td><td className="px-4 py-3 text-muted-foreground">{department}</td><td className="px-4 py-3">{formatDate(record.attendance_date)}</td><td className="px-4 py-3">{displayTime(record.check_in_at)}</td><td className="px-4 py-3">{displayTime(record.check_out_at)}</td><td className="px-4 py-3"><StatusBadge status={attendanceStatus(record.status)} /></td><td className="px-2 py-3 text-muted-foreground"><MoreHorizontal className="h-4 w-4" /></td></tr>;
           })}</tbody></table></div> : <p className="px-4 py-12 text-center text-sm text-muted-foreground">Attendance records will appear here as staff activity is generated.</p>}
         </AttendancePanel>
@@ -489,7 +493,7 @@ function DepartmentDialog({ departments, parentId = '', trigger, onSaved }) {
 
 function EmployeeDialog({ employee, employees, departments, currentUser, trigger, onSaved }) {
   const { toast } = useToast();
-  const editing = Boolean(employee);
+  const editing = Boolean(employee && !employee.account_only);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [photo, setPhoto] = useState(null);
@@ -504,6 +508,7 @@ function EmployeeDialog({ employee, employees, departments, currentUser, trigger
       job_title: employee?.job_title || '', joining_at: employee?.joining_at?.slice(0, 16) || localDateTime(), employment_type: employee?.employment_type || 'full_time',
       department_id: employee?.department_id || '', sub_department_id: employee?.sub_department_id || '', reports_to_employee_id: employee?.reports_to_employee_id || '',
       workspace_role: role, status: employee?.status || 'active',
+      ...(employee?.account_only ? { user_id: employee.user_id } : {}),
     });
     setPageAccess(accessOf(employee, role)); setPhoto(null);
   };
@@ -537,7 +542,7 @@ function EmployeeDialog({ employee, employees, departments, currentUser, trigger
         const uploaded = await base44.files.upload(photo, saved.id);
         saved = await base44.entities.Employee.update(saved.id, { photo_file_id: uploaded.id, photo_url: uploaded.url.startsWith('blob:') ? uploaded.url : `${uploaded.url}?preview=1` });
       }
-      if (!editing) {
+      if (!editing && !employee?.account_only) {
         try {
           await base44.staff.invite({ fullName: payload.full_name, email: payload.email, role: payload.workspace_role, pageAccess, employeeId: saved.id });
         } catch (inviteError) {
@@ -568,13 +573,13 @@ function EmployeeDialog({ employee, employees, departments, currentUser, trigger
             <div><Label className="text-label">Joining date and time</Label><Input type="datetime-local" value={form.joining_at || ''} onChange={(event) => update('joining_at', event.target.value)} required disabled={editing} /></div>
             <div><Label className="text-label">Main department</Label><Select value={form.department_id || ''} onValueChange={(value) => setForm((current) => ({ ...current, department_id: value, sub_department_id: '' }))}><SelectTrigger><SelectValue placeholder="Select department" /></SelectTrigger><SelectContent>{mainDepartments.map((item) => <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>)}</SelectContent></Select></div>
             <div><Label className="text-label">Sub-department</Label><Select value={form.sub_department_id || 'none'} onValueChange={(value) => update('sub_department_id', value === 'none' ? '' : value)} disabled={!form.department_id}><SelectTrigger><SelectValue placeholder="Optional" /></SelectTrigger><SelectContent><SelectItem value="none">No sub-department</SelectItem>{subDepartments.map((item) => <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>)}</SelectContent></Select></div>
-            <div><Label className="text-label">Reports to</Label><Select value={form.reports_to_employee_id || 'none'} onValueChange={(value) => update('reports_to_employee_id', value === 'none' ? '' : value)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="none">No manager / top level</SelectItem>{employees.filter((item) => item.id !== employee?.id).map((item) => <SelectItem key={item.id} value={item.id}>{nameOf(item)} · {item.job_title || item.employee_code}</SelectItem>)}</SelectContent></Select></div>
+            <div><Label className="text-label">Reports to</Label><Select value={form.reports_to_employee_id || 'none'} onValueChange={(value) => update('reports_to_employee_id', value === 'none' ? '' : value)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="none">No manager / top level</SelectItem>{employees.filter((item) => !item.account_only && item.id !== employee?.id).map((item) => <SelectItem key={item.id} value={item.id}>{nameOf(item)} · {item.job_title || item.employee_code}</SelectItem>)}</SelectContent></Select></div>
             <div><Label className="text-label">Employment type</Label><Select value={form.employment_type || 'full_time'} onValueChange={(value) => update('employment_type', value)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{employmentTypes.map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select></div>
             <div><Label className="text-label">Workspace role</Label><Select value={form.workspace_role || 'farm_supervisor'} onValueChange={changeRole} disabled={editing}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{roleOptions.map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select></div>
             <div><Label className="text-label">Staff photo</Label><Input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setPhoto(event.target.files?.[0] || null)} /></div>
           </div>
           {!editing && <div><div className="mb-3 flex items-center justify-between"><div><p className="text-sm font-semibold">Page access</p><p className="text-xs text-muted-foreground">A page switched off will be hidden and blocked for this staff account.</p></div><span className="text-xs text-muted-foreground">{pageAccess.length} enabled</span></div><PageAccessGrid selected={pageAccess} onChange={setPageAccess} /></div>}
-          <DialogFooter><Button type="submit" disabled={saving || !form.department_id}>{saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}{editing ? 'Save changes' : 'Create employee and invite'}</Button></DialogFooter>
+          <DialogFooter><Button type="submit" disabled={saving || !form.department_id}>{saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}{editing ? 'Save changes' : employee?.account_only ? 'Complete staff profile' : 'Create employee and invite'}</Button></DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
@@ -677,25 +682,34 @@ export default function HR() {
   const [attendance, setAttendance] = useState([]);
   const [accounts, setAccounts] = useState([]);
   const [invitations, setInvitations] = useState([]);
+  const [staffSummary, setStaffSummary] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const load = async () => {
     setLoading(true);
     try {
-      const [employeeRows, attendanceRows, departmentRows, staffUsers, staffInvites] = await Promise.all([
-        base44.entities.Employee.list('-created_date', 250), base44.entities.Attendance.listAll('-attendance_date'),
-        base44.entities.Department.list('name', 250), canManage ? base44.staff.listUsers() : Promise.resolve({ users: [] }),
+      const [employeeRows, attendanceRows, departmentRows, staffUsers, staffInvites, summary, directory] = await Promise.all([
+        base44.entities.Employee.listAll('-created_date'), base44.entities.Attendance.listAll('-attendance_date'),
+        base44.entities.Department.listAll('name'), canManage ? base44.staff.listUsers() : Promise.resolve({ users: [] }),
         canManage ? base44.staff.listInvitations() : Promise.resolve({ invitations: [] }),
+        base44.staff.summary(),
+        base44.staff.directory(),
       ]);
-      setEmployees(employeeRows || []); setAttendance(attendanceRows || []); setDepartments(departmentRows || []);
+      const departmentNames = new Map((departmentRows || []).map(item => [item.id, item.name]));
+      const staff = mergeStaffDirectory(employeeRows || [], directory?.users || []).map(employee => ({ ...employee,
+        department_name: departmentNames.get(employee.department_id) || employee.department_name,
+        sub_department_name: departmentNames.get(employee.sub_department_id) || employee.sub_department_name,
+      }));
+      setEmployees(staff); setAttendance(attendanceRows || []); setDepartments(departmentRows || []);
       setAccounts(staffUsers?.users || []); setInvitations(staffInvites?.invitations || []);
+      setStaffSummary(summary);
     } catch (error) {
       toast({ title: 'HR records could not be loaded', description: error.message, variant: 'destructive' });
     } finally { setLoading(false); }
   };
   useEffect(() => {
     load();
-    return subscribeToDataChanges(load, ['Employee', 'Attendance', 'Department']);
+    return subscribeToDataChanges(load, ['Employee', 'Attendance', 'Department', 'StaffUser'], { refreshOnFocus: true, refreshIntervalMs: 30000 });
   }, [canManage]);
 
   const mainDepartments = departments.filter((item) => !item.parent_department_id);
@@ -723,10 +737,10 @@ export default function HR() {
       </PageHeader>
 
       <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Metric icon={Users} value={employees.length} label="Employees" tone="text-primary" />
+        <Metric icon={Users} value={staffSummary?.total ?? '—'} label="Staff" tone="text-primary" />
         <Metric icon={Building2} value={mainDepartments.length} label="Main departments" tone="text-emerald-600" />
         <Metric icon={Network} value={subDepartments.length} label="Sub-departments" tone="text-blue-600" />
-        <Metric icon={ShieldCheck} value={employees.filter((employee) => employee.status === 'active').length} label="Active staff" tone="text-violet-600" />
+        <Metric icon={ShieldCheck} value={staffSummary?.active ?? '—'} label="Active staff" tone="text-violet-600" />
       </div>
 
       <Tabs value={activeTab} onValueChange={value => setFilter('tab', value === 'staff' ? null : value)}>
@@ -739,7 +753,7 @@ export default function HR() {
                 const manager = managerById.get(employee.reports_to_employee_id);
                 return <CardSurface key={employee.id} className="flex flex-col gap-4 p-4 lg:flex-row lg:items-center">
                   <div className="flex min-w-0 flex-1 items-center gap-4"><div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-primary/10">{employee.photo_url ? <img src={employee.photo_url} alt="" className="h-full w-full object-cover" /> : <div className="grid h-full place-items-center font-semibold text-primary">{employee.first_name?.[0] || '?'}{employee.last_name?.[0] || ''}</div>}</div><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><p className="font-semibold">{nameOf(employee)}</p><StatusBadge status={employee.status || 'active'} /></div><p className="mt-1 text-sm text-muted-foreground">{employee.job_title || roleLabel(employee.workspace_role)} · {employee.employee_code || 'ID pending'}</p><p className="mt-1 text-xs text-muted-foreground">{employee.department_name || employee.department || 'No department'}{employee.sub_department_name ? ` › ${employee.sub_department_name}` : ''}{manager ? ` · Reports to ${nameOf(manager)}` : ' · Top-level reporting line'}</p></div></div>
-                  <div className="flex flex-wrap gap-2">{canManage && <EmployeeDialog employee={employee} employees={employees} departments={departments} currentUser={user} onSaved={load} trigger={<AdminActionButton action="edit" label="Edit" />} />}<StaffPassDialog employee={employee} trigger={<Button data-card-primary size="sm" variant="outline"><IdCard className="mr-2 h-4 w-4" />Staff pass</Button>} /></div>
+                  <div className="flex flex-wrap gap-2">{canManage && !employee.account_only && <EntityRecordActions entity="Employee" record={employee} canEdit={false} canDelete={!employee.user_id} deleteGuard={record => guardEmployeeDeletion(base44, record)} onChanged={load} label={nameOf(employee)} />}{canManage && <EmployeeDialog employee={employee} employees={employees} departments={departments} currentUser={user} onSaved={load} trigger={<AdminActionButton action="edit" label="Edit" />} />}{!employee.account_only && <StaffPassDialog employee={employee} trigger={<Button data-card-primary size="sm" variant="outline"><IdCard className="mr-2 h-4 w-4" />Staff pass</Button>} />}</div>
                 </CardSurface>;
               })}
             </div>
@@ -750,7 +764,7 @@ export default function HR() {
           {loading ? <PageSkeleton contentOnly /> : mainDepartments.length ? <div className="space-y-4">{mainDepartments.map((department) => {
             const children = departments.filter((item) => item.parent_department_id === department.id);
             const directCount = employees.filter((item) => item.department_id === department.id).length;
-            return <section key={department.id} className="rounded-xl border border-border bg-card"><div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4"><div><div className="flex items-center gap-2"><Building2 className="h-4 w-4 text-primary" /><p className="font-semibold">{department.name}</p><span className="rounded bg-muted px-2 py-0.5 font-mono text-caption">{department.code}</span></div><p className="mt-1 text-xs text-muted-foreground">{directCount} staff · {children.length} sub-departments</p></div>{canManage && <DepartmentDialog departments={departments} parentId={department.id} onSaved={load} trigger={<Button size="sm" variant="outline"><Plus className="mr-2 h-4 w-4" />Add sub-department</Button>} />}</div><div className="divide-y">{children.length ? children.map((child) => <div key={child.id} className="flex items-center gap-3 px-5 py-3 text-sm"><ChevronRight className="h-4 w-4 text-muted-foreground" /><span className="font-medium">{child.name}</span><span className="font-mono text-xs text-muted-foreground">{child.code}</span><span className="ml-auto text-xs text-muted-foreground">{employees.filter((item) => item.sub_department_id === child.id).length} staff</span></div>) : <p className="px-5 py-4 text-sm text-muted-foreground">No sub-departments yet.</p>}</div></section>;
+            return <section key={department.id} className="rounded-xl border border-border bg-card"><div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4"><div><div className="flex items-center gap-2"><Building2 className="h-4 w-4 text-primary" /><p className="font-semibold">{department.name}</p><span className="rounded bg-muted px-2 py-0.5 font-mono text-caption">{department.code}</span>{canManage && <EntityRecordActions entity="Department" record={department} fields={departmentCorrectionFields} deleteGuard={record => guardDepartmentDeletion(base44, record)} onUpdate={async (record, payload) => base44.entities.Department.update(record.id, await departmentCorrectionPayload(base44, record, payload))} onChanged={load} />}</div><p className="mt-1 text-xs text-muted-foreground">{directCount} staff · {children.length} sub-departments</p></div>{canManage && <DepartmentDialog departments={departments} parentId={department.id} onSaved={load} trigger={<Button size="sm" variant="outline"><Plus className="mr-2 h-4 w-4" />Add sub-department</Button>} />}</div><div className="divide-y">{children.length ? children.map((child) => <div key={child.id} className="flex items-center gap-3 px-5 py-3 text-sm"><ChevronRight className="h-4 w-4 text-muted-foreground" /><span className="font-medium">{child.name}</span><span className="font-mono text-xs text-muted-foreground">{child.code}</span>{canManage && <EntityRecordActions entity="Department" record={child} fields={departmentCorrectionFields} deleteGuard={record => guardDepartmentDeletion(base44, record)} onUpdate={async (record, payload) => base44.entities.Department.update(record.id, await departmentCorrectionPayload(base44, record, payload))} onChanged={load} />}<span className="ml-auto text-xs text-muted-foreground">{employees.filter((item) => item.sub_department_id === child.id).length} staff</span></div>) : <p className="px-5 py-4 text-sm text-muted-foreground">No sub-departments yet.</p>}</div></section>;
           })}</div> : <div className="rounded-xl border border-dashed py-16 text-center text-sm text-muted-foreground">Create the first main department to begin the organization structure.</div>}
         </TabsContent>
 

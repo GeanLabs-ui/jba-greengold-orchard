@@ -7,9 +7,12 @@ const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "/api/v1").replace(
 );
 let csrfToken = null;
 let csrfUserId = null;
+let sessionAccess = null;
 
 const rememberSession = (data) => {
-  if (csrfUserId !== (data.user?.id || null)) clearApiReadCache();
+  const access = JSON.stringify([data.user?.id, data.user?.role, data.user?.pageAccess ?? data.user?.page_access]);
+  if (sessionAccess !== access) clearApiReadCache();
+  sessionAccess = access;
   csrfToken = data.csrf_token;
   csrfUserId = data.user?.id || null;
 };
@@ -285,6 +288,8 @@ const auth = {
   },
   async updateProfile({ fullName }) {
     const data = await request('/auth/me', { method: 'PATCH', body: { fullName } });
+    publishDataChange('Employee', 'update', data.user?.id);
+    publishDataChange('StaffUser', 'update', data.user?.id);
     return data.user;
   },
   async register({ email, password }) {
@@ -364,27 +369,38 @@ const applications = {
 };
 
 const staff = {
+  directory: () => request('/auth/staff-directory', { cache: 'no-store' }),
+  summary: () => request('/auth/staff-summary', { cache: 'no-store' }),
   listInvitations() {
     return request('/auth/staff-invitations');
   },
-  invite(payload) {
-    return request('/auth/staff-invitations', { method: 'POST', body: payload });
+  async invite(payload) {
+    const result = await request('/auth/staff-invitations', { method: 'POST', body: payload });
+    publishDataChange('StaffUser', 'invite');
+    return result;
   },
-  updateInvitation(id, payload) {
-    return request(`/auth/staff-invitations/${encodeURIComponent(id)}`, { method: 'PATCH', body: payload });
+  async updateInvitation(id, payload) {
+    const result = await request(`/auth/staff-invitations/${encodeURIComponent(id)}`, { method: 'PATCH', body: payload });
+    publishDataChange('StaffUser', 'update', id);
+    return result;
   },
   listUsers() {
     return request('/auth/staff-users');
   },
-  updateUser(id, payload) {
-    return request(`/auth/staff-users/${encodeURIComponent(id)}`, { method: 'PATCH', body: payload });
+  async updateUser(id, payload) {
+    const result = await request(`/auth/staff-users/${encodeURIComponent(id)}`, { method: 'PATCH', body: payload });
+    publishDataChange('StaffUser', 'update', id);
+    publishDataChange('Employee', 'update', id);
+    return result;
   },
-  acceptInvitation({ token, credential }) {
-    return request('/auth/staff-invitations/accept', {
+  async acceptInvitation({ token, credential }) {
+    const result = await request('/auth/staff-invitations/accept', {
       method: 'POST',
       body: { token, credential },
       publicRequest: true,
     });
+    publishDataChange('StaffUser', 'accept');
+    return result;
   },
 };
 

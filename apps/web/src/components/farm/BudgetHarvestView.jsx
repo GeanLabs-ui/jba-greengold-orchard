@@ -1,6 +1,10 @@
+import React from 'react';
 import { blockLabel } from '@/lib/farm-scope';
 import { CheckCircle2, CloudSun, Loader2, Plus, Sprout, Target } from 'lucide-react';
 import CircleCediSign from '@/components/icons/CircleCediSign';
+import EntityRecordActions from '@/components/admin/EntityRecordActions';
+import { useAuth } from '@/lib/AuthContext';
+import { canCorrectEntity } from '@/lib/record-actions';
 import '@/pages/admin/DailyRoutineCheck.css';
 
 const displayDate = (value) => {
@@ -19,6 +23,20 @@ const FinanceRow = ({ label, value, icon: Icon }) => {
 };
 const Empty = ({ title, copy }) => <div className="drc-empty"><CloudSun /><b>{title}</b><p>{copy}</p></div>;
 const Field = ({ label, children }) => <label className="drc-field text-label"><span>{label}</span>{children}</label>;
+const budgetFields = [
+  { name: 'category', label: 'Cost category', required: true },
+  { name: 'planned_amount', label: 'Planned amount (₵)', type: 'number', allowDecimals: true, required: true },
+  { name: 'actual_amount', label: 'Actual amount (₵)', type: 'number', allowDecimals: true, required: true },
+];
+const lotDetailFields = [{ name: 'buyer', label: 'Buyer' }, { name: 'notes', label: 'Notes', type: 'textarea', wide: true }];
+
+function LotCorrections({ record, onChanged, user }) {
+  if (!canCorrectEntity(user, 'HarvestBatch')) return null;
+  const activity = record.activity_id || record.source_activity_id;
+  if (activity || record.activity_code) return <a className="text-primary underline" href={`/admin/farm-daily-activities/activities/records?${activity ? `record=${encodeURIComponent(activity)}` : `code=${encodeURIComponent(record.activity_code)}`}&entity=DailyActivity`}>Edit source task log</a>;
+  return <div className="space-y-1"><EntityRecordActions entity="HarvestBatch" record={record} fields={lotDetailFields} onChanged={onChanged} label={record.lot_code || record.batch_number || record.id} />
+    <p className="max-w-xs text-xs text-muted-foreground">Buyer and notes can be corrected here. Harvest quantities and grading history are preserved; linked quality and stock records prevent deletion.</p></div>;
+}
 
 export const summarizeBudgetHarvest = (financeRecords, harvests) => {
   const planned = financeRecords.reduce((sum, item) => sum + Number(item.planned_amount || item.amount || 0), 0);
@@ -39,8 +57,10 @@ export default function BudgetHarvestView({
   harvests,
   onAddHarvest,
   onUpdateBudget,
+  onRecordsChanged,
   today,
 }) {
+  const { user } = useAuth();
   return (
     <>
       <section className={`drc-view active ${embedded ? 'drc-embedded-view' : ''}`}>
@@ -48,11 +68,11 @@ export default function BudgetHarvestView({
         <div className="drc-finance-grid">
           <div className="drc-table-shell">
             <table className="drc-table drc-cost-table">
-              <thead><tr><th>Cost category</th><th>Planned</th><th>Actual</th><th>Variance</th></tr></thead>
+              <thead><tr><th>Cost category</th><th>Planned</th><th>Actual</th><th>Variance</th><th>Actions</th></tr></thead>
               <tbody>{financeRecords.map((record) => {
                 const planned = Number(record.planned_amount || record.amount || 0);
                 const actual = Number(record.actual_amount || 0);
-                return <tr key={record.id}><td><b>{record.category}</b></td><td className="drc-cost">{money(planned)}</td><td><input className="drc-inline drc-money drc-cost" type="number" min="0" defaultValue={actual} onBlur={(event) => Number(event.target.value) !== actual && onUpdateBudget(record, event.target.value)} /></td><td className={planned - actual < 0 ? 'negative' : 'positive'}>{money(planned - actual)}</td></tr>;
+                return <tr key={record.id}><td><b>{record.category}</b></td><td className="drc-cost">{money(planned)}</td><td><input className="drc-inline drc-money drc-cost" type="number" min="0" defaultValue={actual} disabled={!canCorrectEntity(user, 'FarmFinanceRecord')} onBlur={(event) => Number(event.target.value) !== actual && onUpdateBudget(record, event.target.value)} /></td><td className={planned - actual < 0 ? 'negative' : 'positive'}>{money(planned - actual)}</td><td><EntityRecordActions entity="FarmFinanceRecord" record={{ ...record, planned_amount: planned }} fields={budgetFields} onChanged={onRecordsChanged} /></td></tr>;
               })}</tbody>
             </table>
           </div>
@@ -69,11 +89,11 @@ export default function BudgetHarvestView({
           <PanelHead title="Harvest & packhouse log" copy="Grade percentage and revenue are calculated from each lot" />
           <div className="drc-table-shell flat">{harvests.length ? (
             <table className="drc-table">
-              <thead><tr><th>Date</th><th>Lot</th><th>Block</th><th>Variety</th><th>Harvested</th><th>Grade A</th><th>Grade A %</th><th>Buyer</th><th>Revenue</th></tr></thead>
+              <thead><tr><th>Date</th><th>Lot</th><th>Block</th><th>Variety</th><th>Harvested</th><th>Grade A</th><th>Grade A %</th><th>Buyer</th><th>Revenue</th><th>Actions</th></tr></thead>
               <tbody>{harvests.map((harvest) => {
                 const harvested = Number(harvest.quantity_harvested_kg || 0);
                 const gradeA = Number(harvest.grade_a_kg || 0);
-                return <tr key={harvest.id}><td>{displayDate(harvest.harvest_date)}</td><td>{harvest.lot_code || harvest.batch_number}</td><td>{harvest.block_name}</td><td>{harvest.variety || harvest.mango_variety}</td><td className="drc-yield">{harvested} kg</td><td className="drc-yield">{gradeA} kg</td><td className="drc-yield">{harvested ? Math.round((gradeA / harvested) * 100) : 0}%</td><td>{harvest.buyer}</td><td className="drc-revenue">{money(harvested * Number(harvest.price_per_kg || 0))}</td></tr>;
+                return <tr key={harvest.id}><td>{displayDate(harvest.harvest_date)}</td><td>{harvest.lot_code || harvest.batch_number}</td><td>{harvest.block_name}</td><td>{harvest.variety || harvest.mango_variety}</td><td className="drc-yield">{harvested} kg</td><td className="drc-yield">{gradeA} kg</td><td className="drc-yield">{harvested ? Math.round((gradeA / harvested) * 100) : 0}%</td><td>{harvest.buyer}</td><td className="drc-revenue">{money(harvested * Number(harvest.price_per_kg || 0))}</td><td><LotCorrections record={harvest} onChanged={onRecordsChanged} user={user} /></td></tr>;
               })}</tbody>
             </table>
           ) : <Empty title="No harvest lots recorded" copy="Grade A performance and revenue will appear here." />}</div>

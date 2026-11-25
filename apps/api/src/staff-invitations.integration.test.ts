@@ -14,7 +14,7 @@ declare const process: { env: Record<string, string | undefined> };
 describe.skipIf(!process.env.AUTH_DATABASE_TEST)('PostgreSQL staff invitations', () => {
   it('retries a failed send and lets the invited Google identity join and sign back in as staff', async () => {
     const databaseUrl = new URL(process.env.DATABASE_URL!);
-    if (!['localhost', '127.0.0.1'].includes(databaseUrl.hostname) || !['15432', '5432'].includes(databaseUrl.port)) throw new Error('Local test database required');
+    if (!['localhost', '127.0.0.1'].includes(databaseUrl.hostname) || databaseUrl.port !== '15432') throw new Error('Local test database required');
     const db = postgres(databaseUrl.toString(), { max: 1, prepare: false });
     const rollback = new Error('ROLLBACK_TEST_FIXTURES');
     try {

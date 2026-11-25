@@ -1052,7 +1052,7 @@ export default function DailyRoutineCheck({ initialView = 'dashboard', riskOnly 
         </div>
       </section>
 
-      {view === 'finance' ? <BudgetHarvestView blocks={shared.blocks} busyKey={busyKey} finance={finance} financeRecords={shared.financeRecords} harvestDialog={harvestDialog} harvests={shared.harvests} onAddHarvest={addHarvest} onUpdateBudget={updateBudget} today={TODAY} /> : null}
+      {view === 'finance' ? <BudgetHarvestView blocks={shared.blocks} busyKey={busyKey} finance={finance} financeRecords={shared.financeRecords} harvestDialog={harvestDialog} harvests={shared.harvests} onAddHarvest={addHarvest} onUpdateBudget={updateBudget} onRecordsChanged={() => reload({ silent: true })} today={TODAY} /> : null}
 
       <section className={`drc-view ${view === 'sources' ? 'active' : ''}`}>
         <div className="drc-panel drc-sources">{SOURCE_NOTES.map((source) => (
