@@ -1,3 +1,4 @@
+import EntityRecordActions from '@/components/admin/EntityRecordActions';
 import CardSurface from "@/components/shared/CardSurface";
 import AnalyticsPie from '@/components/farm/AnalyticsPie';
 import { MANGO_VARIETIES, mangoVarietyBucket } from '@/lib/mango-varieties';
@@ -60,7 +61,7 @@ import {
 } from 'recharts';
 import MetricCard from '@/components/shared/MetricCard';
 import StatusBadge from '@/components/shared/StatusBadge';
-import DataTable from '@/components/shared/DataTable';
+import SharedDataTable from '@/components/shared/DataTable';
 import AdminCreateDialog from '@/components/admin/AdminCreateDialog';
 const FarmOperationsAnalytics = lazy(() => import('@/pages/admin/FarmOperationsAnalytics'));
 import PageSkeleton from '@/components/shared/PageSkeleton';
@@ -76,6 +77,7 @@ import { formatCurrency, formatDate, formatNumber } from '@/components/shared/fo
 import { base44 } from '@/api/base44Client';
 import { subscribeToDataChanges } from '@/lib/data-sync';
 import { resolveActivitySharedScope } from '@/lib/activity-shared-scope';
+import { canCorrectEntity } from '@/lib/record-actions';
 
 const today = new Date().toISOString().slice(0, 10);
 const shortDate = (value) => String(value || '').slice(0, 10);
@@ -274,6 +276,31 @@ const Timeline = ({ items }) => (
     ))}
   </div>
 );
+
+const CorrectionContext = React.createContext(null);
+function OperationalCorrections({ entity, record }) {
+  const context = React.useContext(CorrectionContext);
+  if (!context || !canCorrectEntity(context.user, entity)) return null;
+  const source = record.activity_id || record.source_activity_id;
+  if (source && entity !== 'DailyActivity') return <a className="text-sm font-semibold text-primary underline" href={`/admin/farm-daily-activities/activities/records?record=${encodeURIComponent(source)}&entity=DailyActivity`}>Edit source task log</a>;
+  if (record.activity_code && entity !== 'DailyActivity') return <a className="text-sm font-semibold text-primary underline" href={`/admin/farm-daily-activities/activities/records?code=${encodeURIComponent(record.activity_code)}&entity=DailyActivity`}>Edit source task log</a>;
+  if (record.work_order_id && !['DailyActivity', 'WorkOrder'].includes(entity)) return <a className="text-sm font-semibold text-primary underline" href={`/admin/farm-daily-activities/activities/records?record=${encodeURIComponent(record.work_order_id)}&entity=WorkOrder`}>Edit source work order</a>;
+  if (entity === 'DailyActivity') return <div className="flex flex-wrap items-center gap-2">{context.editActivity(record)}<EntityRecordActions entity={entity} record={record} canEdit={false} onChanged={context.load} /></div>;
+  const fields = context.fields[entity] || [];
+  const stockHistory = ['InputUsage', 'InventoryUsage'].includes(entity);
+  const protectedMetadata = {
+    FarmAttendance: ['role', 'team', 'activity', 'notes'],
+    QualityCheck: ['inspector', 'stage', 'defect_type', 'fruit_size', 'fruit_color', 'ripeness_level', 'disease_signs', 'bruising', 'notes'],
+    WasteLoss: ['reason', 'reported_by', 'action_taken', 'notes'],
+    ...(entity === 'FarmExpense' && String(record.status).toLowerCase() === 'approved' ? { FarmExpense: ['description', 'vendor', 'payment_method', 'approved_by', 'notes'] } : {}),
+  }[entity];
+  const correctionFields = fields.filter(field => field.type !== 'file' && (!stockHistory || ['notes', 'weather_condition', 'safety_notes'].includes(field.name)) && (!protectedMetadata || protectedMetadata.includes(field.name)));
+  return <div className="space-y-1"><EntityRecordActions entity={entity} record={record} fields={correctionFields} onChanged={context.load}
+    canDelete={!stockHistory && !protectedMetadata} onUpdate={entity === 'WorkOrder' ? context.updateWorkOrder : undefined} />
+    {stockHistory && <p className="text-xs text-muted-foreground">Stock quantities are preserved here. Correct the originating task log or record a stock adjustment; deleting usage history would not restore stock.</p>}
+    {protectedMetadata && <p className="text-xs text-muted-foreground">Details can be corrected here. Quantity and financial history are preserved because this record also created related ledger entries.</p>}
+  </div>;
+}
 
 const emptyColumns = [{ key: 'name', label: 'Record' }];
 
@@ -1010,6 +1037,18 @@ const DailyActivityLog = ({
     </div>
   );
 };
+
+const operationalColumnEntities = new Map([
+  [activityColumns,'DailyActivity'],[workOrderColumns,'WorkOrder'],[harvestColumns,'HarvestBatch'],
+  [attendanceColumns,'FarmAttendance'],[equipmentColumns,'Equipment'],[inputColumns,'FarmInput'],
+  [inputUsageColumns,'InputUsage'],[inventoryUsageColumns,'InventoryUsage'],[qcColumns,'QualityCheck'],
+  [lossColumns,'WasteLoss'],[weatherColumns,'WeatherLog'],[expenseColumns,'FarmExpense'],[reportColumns,'DailyReport'],
+]);
+
+function DataTable({ columns, rowActions, ...props }) {
+  const entity = operationalColumnEntities.get(columns);
+  return <SharedDataTable {...props} columns={columns} rowActions={rowActions || (entity ? record => <OperationalCorrections entity={entity} record={record} /> : undefined)} />;
+}
 
 export default function FarmDailyActivities() {
   const { toast } = useToast();
@@ -2539,7 +2578,7 @@ export default function FarmDailyActivities() {
             onRowClick={(record) => selectRecord(selectedKey, record)}
           />
         </Panel>
-        {renderDetail(selected, fields)}
+        {renderDetail(selected, fields, { activity: 'DailyActivity', workOrder: 'WorkOrder', harvest: 'HarvestBatch', equipment: 'Equipment', input: 'FarmInput', qc: 'QualityCheck', loss: 'WasteLoss', expense: 'FarmExpense', report: 'DailyReport' }[selectedKey])}
       </div>
     );
   };
@@ -2601,7 +2640,7 @@ export default function FarmDailyActivities() {
 
   const renderConfigPanel = (title, noteType, fields, columns) => (
     <Panel title={title} action={createAction(`Add ${title}`, fields, createConfigRecord(noteType), `Add ${title}`)}>
-      <DataTable items={configRows(noteType)} columns={columns} />
+      <DataTable items={configRows(noteType)} columns={columns} rowActions={record => <EntityRecordActions entity="FarmNote" record={record} fields={fields} onChanged={load} onUpdate={(_record,payload) => base44.entities.FarmNote.update(record.id,{title:payload.name || title,content:JSON.stringify(payload)})} />} />
     </Panel>
   );
 
@@ -2675,9 +2714,9 @@ export default function FarmDailyActivities() {
     </div>
   );
 
-  const renderDetail = (record, fields) => (
+  const renderDetail = (record, fields, entity = sourceEntity || 'DailyActivity') => (
     <Panel title={record?.title || record?.batch_number || record?.report_code || record?.activity_code || 'Record Details'} description="Complete field-level view for the selected operational record.">
-      {record ? <FieldGrid fields={fields(record)} /> : <p className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">No record available.</p>}
+      {record ? <><FieldGrid fields={fields(record)} /><div className="mt-4"><OperationalCorrections entity={entity} record={record} /></div></> : <p className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">No record available.</p>}
     </Panel>
   );
 
@@ -3177,6 +3216,13 @@ export default function FarmDailyActivities() {
 
   const pageInfo = getPageInfo();
   return (
+    <CorrectionContext.Provider value={{ user, load: async () => { await load(); if (sourceId) await directSource.refetch(); }, editActivity: record => editAction('Edit Activity', dailyActivityLogFields, record, updateDailyActivity, 'Edit'), updateWorkOrder, fields: {
+      DailyActivity: activityFields, WorkOrder: workOrderFields,
+      HarvestBatch: harvestFields.filter(field => ['notes','supervisor','team','truck','driver'].includes(field.name)),
+      FarmAttendance: attendanceFields, Equipment: equipmentFields, FarmInput: inputFields,
+      InputUsage: inputUsageFields, InventoryUsage: inventoryUsageFields, QualityCheck: qcFields,
+      WasteLoss: lossFields, WeatherLog: weatherFields, FarmExpense: expenseFields, DailyReport: reportFields,
+    } }}>
     <div className={`space-y-6${activeScreen === 'Master Schedule' ? ' farm-schedule-content' : ''}`}>
       {!['Daily Task Log', 'Operations Analytics Overview', 'Master Schedule', 'Risk Register', 'Farms'].includes(activeScreen) && <h1 className="text-page-title">{activeScreen}</h1>}
       {!['Daily Task Log', 'Operations Analytics Overview'].includes(activeScreen) && (!pageInfo.hideSearch || pageInfo.action) ? <div data-page-navigation className="-mt-3 border-b border-border pb-3">
@@ -3200,5 +3246,6 @@ export default function FarmDailyActivities() {
         <Suspense fallback={<PageSkeleton variant="page" />}>{renderScreen()}</Suspense>
       </main>
     </div>
+    </CorrectionContext.Provider>
   );
 }

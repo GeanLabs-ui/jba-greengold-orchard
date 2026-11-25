@@ -1,3 +1,4 @@
+import EntityRecordActions from '@/components/admin/EntityRecordActions';
 import AdminActionButton from '@/components/admin/AdminActionButton';
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
@@ -82,7 +83,7 @@ export default function ProductManager() {
       { key: 'category', label: 'Category', render: value => PRODUCT_CATEGORIES.find(category => category.id === value)?.label || value },
       { key: 'price', label: 'Price', format: formatProductPrice },
       { key: 'status', label: 'Status' },
-    ]} rowActions={product => <AdminActionButton action="edit" disabled={!!error} aria-label={`Edit ${product.name}`} onClick={() => edit(product)} />} />}
+    ]} rowActions={product => <><AdminActionButton action="edit" disabled={!!error} aria-label={`Edit ${product.name}`} onClick={() => edit(product)} /><EntityRecordActions entity="Product" record={{...product,id:product.recordId || product.id}} canEdit={false} label={product.name} deleteLabel="Remove from shop" deletedLabel="removed from shop" onChanged={load} deleteDescription="Remove this product from the shop by retaining it as a draft. Existing orders, product history and images are preserved. You can publish it again using Edit." onDelete={async () => {const payload={storefront:true,catalog_id:product.id,name:product.name,description:product.description,category:product.category,price:product.price,image:product.image,status:'draft'}; if(product.recordId) await base44.entities.Product.update(product.recordId,payload); else await base44.entities.Product.create(payload);}} /></>} />}
     <Dialog open={!!editing} onOpenChange={open => { if (!open && !saving && !uploading) setEditing(null); }}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
         <DialogHeader><DialogTitle>{editing?.id ? 'Edit Product' : 'Add Product'}</DialogTitle><DialogDescription>Published products appear in the shop. Images fit the same fixed frame as existing products.</DialogDescription></DialogHeader>

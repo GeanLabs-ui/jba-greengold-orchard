@@ -1,11 +1,12 @@
+import { objectiveRemovalError } from './objective-removal.js';
 import { Hono } from 'hono';
 import { closeDatabase, createDatabase } from '../db.js';
-import { requireCsrf, requireRole, type AppVariables } from '../middleware/auth.js';
+import { requireCsrf, requirePageAccess, requireRole, type AppVariables } from '../middleware/auth.js';
 import { calculateCycle, cycleSchema, type Cycle, type Log } from './objective-model.js';
 import { requestIp } from '../rate-limit.js';
 
 const router = new Hono<{ Bindings: Env; Variables: AppVariables }>();
-router.use('*', requireRole('super_admin', 'admin', 'farm_manager', 'farm_supervisor', 'auditor'), requireCsrf());
+router.use('*', requirePageAccess('objectives'), requireCsrf());
 type StoredCycle = Cycle & { closed_at?: string; snapshot?: ReturnType<typeof calculateCycle>; history?: { date: string; author: string; action: string }[] };
 type Row = { id: string; data: StoredCycle };
 
@@ -35,6 +36,9 @@ router.post('/', requireRole('super_admin', 'admin'), async c => {
       if ((existing?.data.revision ?? 0) !== input.revision) return { error: 'This cycle changed in another session. Refresh before saving.', status: 409 as const };
       if (input.close && (!input.review.trim() || !input.objectives.length)) return { error: 'Closing requires objectives and management review notes.', status: 422 as const };
       if (input.close && input.year > new Date().getUTCFullYear()) return { error: 'A future year cannot be closed.', status: 422 as const };
+      const linkedLogs = await tx<{data: Record<string,unknown>}[]>`SELECT data FROM entity_records WHERE entity_name='DailyActivity' AND organization_id IS NOT DISTINCT FROM ${user.organizationId}`;
+      const removalError = objectiveRemovalError(existing?.data, input, linkedLogs.map(row=>row.data));
+      if (removalError) return {error:removalError,status:409 as const};
       const data: StoredCycle = { ...input, close: false, revision: input.revision + 1,
         history: [...(existing?.data.history || []), { date: new Date().toISOString(), author: user.full_name || user.email, action: input.close ? 'Year closed and results frozen' : existing ? 'Objective cycle updated' : 'Objective cycle created' }] };
       if (input.close) {

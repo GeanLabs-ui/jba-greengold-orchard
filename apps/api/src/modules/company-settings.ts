@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
 import { closeDatabase, createDatabase, type Database } from '../db.js';
-import { requireAuth, requireCsrf, requireRole, type AppVariables, type AuthUser } from '../middleware/auth.js';
+import { requireAuth, requireCsrf, requireRole, requirePageAccess, type AppVariables, type AuthUser } from '../middleware/auth.js';
 
 const router = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 export const companyEmail = 'info@jbagreengold.com';
@@ -60,7 +60,7 @@ router.get('/currency', async (c) => {
   } finally { await closeDatabase(sql); }
 });
 
-router.get('/', requireRole('super_admin', 'admin'), async (c) => {
+router.get('/', requirePageAccess('settings'), async (c) => {
   const user = c.get('user')!;
   if (user.role === 'admin' && user.pageAccess && !user.pageAccess.includes('settings')) return c.json({ error: { message: 'Settings access is required.' } }, 403);
   const sql = createDatabase(c.env);
@@ -69,7 +69,7 @@ router.get('/', requireRole('super_admin', 'admin'), async (c) => {
   } finally { await closeDatabase(sql); }
 });
 
-router.post('/', requireRole('super_admin', 'admin'), async (c) => {
+router.post('/', requirePageAccess('settings'), async (c) => {
   const user = c.get('user')!;
   if (user.role === 'admin' && user.pageAccess && !user.pageAccess.includes('settings')) return c.json({ error: { message: 'Settings access is required.' } }, 403);
   const input = profile.safeParse(await c.req.json().catch(() => null));

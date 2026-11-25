@@ -15,6 +15,23 @@ import {
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
+import EntityRecordActions from '@/components/admin/EntityRecordActions';
+import { requireNoLinkedRecords } from '@/lib/record-actions';
+
+const customerFields = [
+  { name: 'customer_type', label: 'Customer Type', type: 'select', options: ['local', 'corporate', 'export', 'walk_in'].map(value => ({ value, label: value.replaceAll('_', ' ') })) },
+  { name: 'code', label: 'Customer Code' },
+  { name: 'first_name', label: 'First Name', required: true },
+  { name: 'last_name', label: 'Last Name' },
+  { name: 'company_name', label: 'Company Name' },
+  { name: 'email', label: 'Email', type: 'email' },
+  { name: 'phone', label: 'Phone' },
+  { name: 'country', label: 'Country' },
+  { name: 'region', label: 'Region' },
+  { name: 'city', label: 'City' },
+  { name: 'address_line1', label: 'Address' },
+  { name: 'notes', label: 'Notes', type: 'textarea', wide: true },
+];
 
 export default function CRM() {
   const { user } = useAuth();
@@ -27,7 +44,7 @@ export default function CRM() {
   const [form, setForm] = useState({ customer_type: 'local', code: '', first_name: '', last_name: '', company_name: '', email: '', phone: '', country: 'Ghana', region: '', city: '', address_line1: '', notes: '' });
 
   const load = () => {
-    base44.entities.Customer.list('-created_date')
+    base44.entities.Customer.listAll('-created_date')
       .then((data) => { setCustomers(data || []); setLoading(false); })
       .catch(() => setLoading(false));
   };
@@ -62,6 +79,13 @@ export default function CRM() {
     } catch {
       toast({ title: 'Error creating customer', variant: 'destructive' });
     }
+  };
+
+  const guardCustomerDelete = async (customer) => {
+    const references = [['customer_id', customer.id], ['customer_code', customer.code], ['customer_email', customer.email], ['contact_email', customer.email],
+      ['customer_name', [customer.first_name, customer.last_name].filter(Boolean).join(' ')], ['customer_name', customer.company_name]];
+    await Promise.all(['Order', 'Invoice', 'Payment', 'Quotation', 'Return', 'CustomerContract'].map(entity =>
+      requireNoLinkedRecords(base44, entity, references, 'This customer is linked to business records. Keep the customer record to preserve that history.')));
   };
 
   return (
@@ -158,6 +182,7 @@ export default function CRM() {
                 </div>
                 <StatusBadge status={c.status} />
               </div>
+              <div className="mt-3 border-t pt-3"><EntityRecordActions entity="Customer" record={c} fields={customerFields} onChanged={load} deleteGuard={guardCustomerDelete} /></div>
             </div>
           ))
         ) : (

@@ -1,4 +1,5 @@
 // Use the same persisted entities as the production and business pages. listAll
+import { canAccessWorkspaceEntity } from 'mango-farm-authorization';
 // is required: the ordinary list endpoint only returns the first page.
 export const dashboardSources = {
   farms: 'Farm', blocks: 'FarmBlock', dailyActivities: 'DailyActivity',
@@ -11,10 +12,12 @@ export const dashboardSources = {
   exports: 'ExportShipment',
 };
 
-export async function loadDashboardRecords(entities) {
+export async function loadDashboardRecords(entities, user) {
+  const restrictedSources = [];
   const entries = await Promise.all(Object.entries(dashboardSources).map(async ([key, entity]) => {
+    if (user && !canAccessWorkspaceEntity(user, entity)) { restrictedSources.push(entity); return [key, []]; }
     try { return [key, await entities[entity].listAll('-created_date')]; }
     catch (error) { throw new Error(`${entity} records could not be loaded: ${error.message}`); }
   }));
-  return Object.fromEntries(entries);
+  return { ...Object.fromEntries(entries), restrictedSources };
 }

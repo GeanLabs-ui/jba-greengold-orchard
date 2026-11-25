@@ -2,7 +2,7 @@ import type { Context } from "hono";
 import { Hono } from "hono";
 import type postgres from "postgres";
 import { z } from "zod";
-import { hasPermission } from "mango-farm-authorization";
+import { hasWorkspacePermission } from "mango-farm-authorization";
 import { closeDatabase, createDatabase, type Database } from "../db.js";
 import {
   requireAuth,
@@ -1008,7 +1008,7 @@ router.post(
           incomingSizeAcres: parsed.data.size_acres,
           allowOverride:
             parsed.data.allow_size_override &&
-            (isAdmin(user) || hasPermission(user.role, "farms.update")),
+            hasWorkspacePermission(user, "farms.update"),
         });
         if (!allocation.allowed) {
           return errorResponse(
@@ -1242,7 +1242,7 @@ router.patch(
           incomingSizeAcres: parsed.data.size_acres ?? existing.size_acres,
           allowOverride:
             parsed.data.allow_size_override &&
-            (isAdmin(user) || hasPermission(user.role, "farms.update")),
+            hasWorkspacePermission(user, "farms.update"),
         });
         if (!allocation.allowed) {
           return errorResponse(

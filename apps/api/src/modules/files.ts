@@ -1,7 +1,8 @@
 import { Hono, type Context } from 'hono';
 import { closeDatabase, createDatabase } from '../db.js';
 import type { AppVariables } from '../middleware/auth.js';
-import { requireCsrf, requireRole } from '../middleware/auth.js';
+import { requireCsrf, requireAuth } from '../middleware/auth.js';
+import { hasWorkspacePage, canAccessWorkspaceEntity } from 'mango-farm-authorization';
 
 const router = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
@@ -27,14 +28,26 @@ function hasValidSignature(file: File, bytes: Uint8Array): boolean {
   return !bytes.includes(0);
 }
 
-router.get('/:id', requireRole('super_admin', 'admin', 'farm_manager', 'farm_supervisor', 'hr_officer'));
+const fileAccess = async (c: Context<{ Bindings: Env; Variables: AppVariables }>, next: () => Promise<void>) => {
+  if (!['documents','farms','farm_daily_activities','hr','export_ops','content','inventory'].some(page => hasWorkspacePage(c.get('user'), page))) return c.json({ error: { code: 'FORBIDDEN', message: 'File access is not enabled.' } }, 403);
+  return next();
+};
+router.get('/:id', requireAuth(), fileAccess);
 
 router.get('/:id', async (c) => {
   const sql = createDatabase(c.env);
   try {
-    const rows = await sql<{ object_key: string; original_name: string; content_type: string; status: string }[]>`SELECT object_key, original_name, content_type, status FROM file_objects WHERE id = ${c.req.param('id')} AND object_key NOT LIKE 'account/%' LIMIT 1`;
+    const user = c.get('user')!;
+    const rows = await sql<{ object_key: string; original_name: string; content_type: string; status: string; entity_name: string | null }[]>`SELECT f.object_key, f.original_name, f.content_type, f.status, er.entity_name FROM file_objects f
+      LEFT JOIN entity_records er ON er.id=f.record_id
+      WHERE f.id = ${c.req.param('id')} AND f.object_key NOT LIKE 'account/%'
+      AND (${user.role === 'super_admin'} OR f.owner_user_id=${user.id}
+        OR (er.id IS NOT NULL AND er.organization_id IS NOT DISTINCT FROM ${user.organizationId})
+        OR (er.id IS NULL AND (EXISTS (SELECT 1 FROM organization_members om WHERE om.user_id=f.owner_user_id AND om.organization_id=${user.organizationId})
+          OR (${user.organizationId}::text IS NULL AND NOT EXISTS (SELECT 1 FROM organization_members om WHERE om.user_id=f.owner_user_id))))) LIMIT 1`;
     const file = rows[0];
     if (!file || file.status !== 'active') return c.json({ error: { code: 'NOT_FOUND', message: 'File not found' }, requestId: c.get('requestId') }, 404);
+    if (file.entity_name && !canAccessWorkspaceEntity(user, file.entity_name)) return c.json({ error: { code: 'FORBIDDEN', message: 'Access denied' } }, 403);
     let object = await c.env.PRIVATE_FILES.get(file.object_key);
     let recoveredBody: ArrayBuffer | null = null;
     if (!object?.body) {
@@ -121,8 +134,8 @@ async function uploadFile(c: Context<{ Bindings: Env; Variables: AppVariables }>
   } finally { await closeDatabase(sql); }
 }
 
-const canUpload = requireRole('super_admin', 'admin', 'farm_manager', 'farm_supervisor', 'hr_officer');
-router.post('/', canUpload, requireCsrf(), (c) => uploadFile(c));
-router.post('/issue-attachments', canUpload, requireCsrf(), (c) => uploadFile(c, true));
+const canUpload = fileAccess;
+router.post('/', requireAuth(), canUpload, requireCsrf(), (c) => uploadFile(c));
+router.post('/issue-attachments', requireAuth(), canUpload, requireCsrf(), (c) => uploadFile(c, true));
 
 export default router;

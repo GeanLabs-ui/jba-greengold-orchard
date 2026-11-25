@@ -51,7 +51,7 @@ describe('farm operations analytics', () => {
     expect(result.activeTasks).toBe(1);
   });
 
-  it('filters by farm and date while using current active block inventory for trees', () => {
+  it('filters by farm and date while retaining inactive block inventory for trees', () => {
     const result = buildFarmOperationsAnalytics({
       farms,
       blocks,
@@ -68,10 +68,39 @@ describe('farm operations analytics', () => {
     });
 
     expect(result.visibleFarms).toHaveLength(1);
-    expect(result.visibleBlocks.map((block) => block.id)).toEqual(['a1']);
-    expect(result.totalTrees).toBe(120);
+    expect(result.visibleBlocks.map((block) => block.id)).toEqual(['a1', 'a2']);
+    expect(result.totalTrees).toBe(200);
     expect(result.totalCost).toBe(20);
     expect(result.totalRevenue).toBe(40);
+  });
+
+  it('retains all ten orchard blocks including inactive B3 and inactive farms in physical totals', () => {
+    const orchardBlocks = Array.from({ length: 10 }, (_, index) => ({
+      id: `block-${index}`, farm_id: index < 5 ? 'farm-a' : 'farm-b',
+      block_code: `${index < 5 ? 'A' : 'B'}${index % 5 + 1}`,
+      status: index === 7 ? 'inactive' : 'active', tree_count: 100,
+    }));
+    const data = {
+      farms: [farms[0], { ...farms[1], status: 'inactive' }, { id: 'old', status: 'archived' }],
+      blocks: [...orchardBlocks, { id: 'old', farm_id: 'farm-a', status: 'archived', tree_count: 900 },
+        { id: 'merged', farm_id: 'farm-a', status: 'merged', tree_count: 900 },
+        { id: 'archived-date', farm_id: 'farm-a', archived_at: '2026-01-01', tree_count: 900 }],
+      dailyActivities: [{ id: 'b3-log', block_id: 'block-7', actual_cost: 50, output_quantity_kg: 20 }],
+    };
+    const overview = buildFarmOperationsAnalytics(data);
+    expect(overview.visibleFarms.map(row => row.id)).toEqual(['farm-a', 'farm-b']);
+    expect(overview.visibleBlocks).toHaveLength(10);
+    expect(overview.visibleBlocks.find(row => row.block_code === 'B3').status).toBe('inactive');
+    expect(overview.totalTrees).toBe(1000);
+    const selectedFarm = buildFarmOperationsAnalytics(data, { farmId: 'farm-b' });
+    expect(selectedFarm.visibleFarms[0].status).toBe('inactive');
+    expect(selectedFarm.visibleBlocks).toHaveLength(5);
+    expect(selectedFarm.totalTrees).toBe(500);
+    const selectedBlock = buildFarmOperationsAnalytics(data, { blockId: 'block-7' });
+    expect(selectedBlock.visibleBlocks.map(row => row.block_code)).toEqual(['B3']);
+    expect(selectedBlock.totalTrees).toBe(100);
+    expect(selectedBlock.totalCost).toBe(50);
+    expect(selectedBlock.totalYieldKg).toBe(20);
   });
 
   it('normalizes harvest quantities from full and compact daily log entries', () => {

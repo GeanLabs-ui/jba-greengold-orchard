@@ -64,7 +64,9 @@ export function activityMatchesBlock(activity, block) {
     || blockLabels.some((label) => hasSameValue(activity.block_code, label));
 }
 
-const isActiveStructure = (record) => !['inactive', 'archived', 'merged'].includes(normalizeStatus(record.status));
+// Deactivation stops current work, but does not remove physical land or trees.
+const isCurrentStructure = (record) => !record.archived_at
+  && !['archived', 'merged'].includes(normalizeStatus(record.status));
 
 export function buildFarmOperationsAnalytics(
   { farms = [], blocks = [], dailyActivities = [] },
@@ -110,10 +112,10 @@ export function buildFarmOperationsAnalytics(
   };
 
   const selectedBlock = blockById.get(String(blockId));
-  const visibleFarms = farms.filter((farm) => isActiveStructure(farm)
+  const visibleFarms = farms.filter((farm) => isCurrentStructure(farm)
     && (farmId === 'all' || String(farm.id) === String(farmId))
     && (blockId === 'all' || String(farm.id) === String(selectedBlock?.farm_id)));
-  const visibleBlocks = blocks.filter((block) => isActiveStructure(block) && matchesFarm(block)
+  const visibleBlocks = blocks.filter((block) => isCurrentStructure(block) && matchesFarm(block)
     && (blockId === 'all' || String(block.id) === String(blockId)));
   const activities = dailyActivities.filter((activity) => !activity.archived_at
     && !['archived', 'cancelled', 'canceled', 'deleted'].includes(normalizeStatus(activity.status))

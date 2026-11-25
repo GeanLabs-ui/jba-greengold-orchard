@@ -1,3 +1,5 @@
+import EntityRecordActions from '@/components/admin/EntityRecordActions';
+import { requireNoLinkedRecords } from '@/lib/record-actions';
 import React, { useEffect, useState } from 'react';
 import { Search, Package, AlertTriangle, ArrowDownUp } from 'lucide-react';
 import PageHeader from '@/components/shared/PageHeader';
@@ -48,9 +50,9 @@ export default function Inventory() {
   const load = () => {
     setLoading(true);
     Promise.all([
-      base44.entities.StockItem.list('-created_date', 100),
-      base44.entities.StockMovement.list('-created_date', 50),
-      base44.entities.Warehouse.list(),
+      base44.entities.StockItem.listAll('-created_date'),
+      base44.entities.StockMovement.listAll('-created_date'),
+      base44.entities.Warehouse.listAll(),
     ]).then(([stock, moves, whs]) => {
       setStockItems(stock || []);
       setMovements(moves || []);
@@ -74,17 +76,10 @@ export default function Inventory() {
     quantity_reserved: 0,
   });
 
-  const createMovement = async (payload) => {
-    const matches = await base44.entities.StockItem.filter({ product_name: payload.product_name, warehouse_name: payload.warehouse_name }, '-created_date', 1);
-    const current = matches[0];
-    const quantity = Number(payload.quantity || 0);
-    if (!current && payload.movement_type !== 'in') throw new Error('Add this stock item before recording an outbound or adjustment movement.');
-    const onHand = Number(current?.quantity_on_hand || 0);
-    const nextQuantity = payload.movement_type === 'in' ? onHand + quantity : payload.movement_type === 'out' ? onHand - quantity : quantity;
-    if (nextQuantity < 0) throw new Error(`Only ${formatNumber(onHand)} units are available.`);
-    if (current) await base44.entities.StockItem.update(current.id, { quantity_on_hand: nextQuantity, last_movement_date: payload.movement_date || new Date().toISOString() });
-    else await base44.entities.StockItem.create({ product_name: payload.product_name, warehouse_name: payload.warehouse_name, quantity_on_hand: nextQuantity, quantity_reserved: 0, reorder_level: 0, unit_of_measure: 'kg' });
-    return base44.entities.StockMovement.create({ ...payload, movement_code: `MOV-${Date.now().toString().slice(-6)}`, balance_after: nextQuantity });
+  const createMovement = payload => base44.entities.StockMovement.create({ ...payload, inventory_ledger: true, movement_code: `MOV-${crypto.randomUUID().slice(0,8)}` });
+  const warehouseFields = ['name','warehouse_code','location','region','manager_name','status'].map(name => ({name,label:name.replaceAll('_',' ')}));
+  const stockGuard = async record => {
+    await requireNoLinkedRecords(base44, 'StockMovement', [['stock_item_id',record.id]], 'This item has stock movement history. Keep it and correct its balance instead.');
   };
 
   const filteredStock = stockItems.filter((s) => !search || s.product_name?.toLowerCase().includes(search.toLowerCase()) || s.sku?.toLowerCase().includes(search.toLowerCase()));
@@ -164,7 +159,7 @@ export default function Inventory() {
                     <th className="px-4 py-3 text-right font-semibold text-muted-foreground">On Hand</th>
                     <th className="px-4 py-3 text-right font-semibold text-muted-foreground">Reserved</th>
                     <th className="px-4 py-3 text-right font-semibold text-muted-foreground">Reorder Level</th>
-                    <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Status</th>
+                    <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Status</th><th className="px-4 py-3">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -178,10 +173,10 @@ export default function Inventory() {
                         <td className={`px-4 py-3 text-right font-medium ${isLow ? 'text-amber-600' : ''}`}>{formatNumber(item.quantity_on_hand)}</td>
                         <td className="px-4 py-3 text-right text-muted-foreground">{formatNumber(item.quantity_reserved)}</td>
                         <td className="px-4 py-3 text-right text-muted-foreground">{formatNumber(item.reorder_level)}</td>
-                        <td className="px-4 py-3">{isLow ? <StatusBadge status="overdue" label="Low" /> : <StatusBadge status="active" label="OK" />}</td>
+                        <td className="px-4 py-3">{isLow ? <StatusBadge status="overdue" label="Low" /> : <StatusBadge status="active" label="OK" />}</td><td className="px-4 py-3"><EntityRecordActions entity="StockItem" record={item} fields={stockFields} onChanged={load} deleteGuard={stockGuard} /></td>
                       </tr>
                     );
-                  }) : <tr><td colSpan={7} className="px-4 py-12 text-center text-muted-foreground">No stock items found.</td></tr>}
+                  }) : <tr><td colSpan={8} className="px-4 py-12 text-center text-muted-foreground">No stock items found.</td></tr>}
                 </tbody>
               </table>
             </div>
@@ -198,7 +193,7 @@ export default function Inventory() {
                   <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Product</th>
                   <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Warehouse</th>
                   <th className="px-4 py-3 text-right font-semibold text-muted-foreground">Quantity</th>
-                  <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Date</th>
+                  <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Date</th><th className="px-4 py-3">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -211,9 +206,9 @@ export default function Inventory() {
                     <td className={`px-4 py-3 text-right font-medium ${m.movement_type === 'in' ? 'text-emerald-600' : m.movement_type === 'out' ? 'text-red-600' : ''}`}>
                       {m.movement_type === 'in' ? '+' : m.movement_type === 'out' ? '-' : ''}{formatNumber(m.quantity)}
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">{formatDate(m.created_date)}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{formatDate(m.created_date)}</td><td className="px-4 py-3"><EntityRecordActions entity="StockMovement" record={m} fields={movementFields.filter(field => !["product_name","warehouse_name"].includes(field.name))} onChanged={load} deleteDescription="Deleting this movement reverses its effect on available stock. Linked source records and later stock count adjustments are protected." /></td>
                   </tr>
-                )) : <tr><td colSpan={6} className="px-4 py-12 text-center text-muted-foreground">No movements recorded.</td></tr>}
+                )) : <tr><td colSpan={7} className="px-4 py-12 text-center text-muted-foreground">No movements recorded.</td></tr>}
               </tbody>
             </table>
           </div>
@@ -233,7 +228,7 @@ export default function Inventory() {
                 <div className="mt-3 space-y-1 text-sm text-muted-foreground">
                   <p>📍 {w.location}, {w.region}</p>
                   {w.manager_name && <p>👤 {w.manager_name}</p>}
-                  {w.capacity_kg && <p>📦 {formatNumber(w.capacity_kg)} kg capacity</p>}
+                  {w.capacity_kg && <p>📦 {formatNumber(w.capacity_kg)} kg capacity</p>}<EntityRecordActions entity="Warehouse" record={w} fields={warehouseFields} onChanged={load} />
                 </div>
               </div>
             )) : <div className="col-span-full text-center py-12 text-muted-foreground">No warehouses configured.</div>}

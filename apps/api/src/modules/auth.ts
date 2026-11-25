@@ -3,10 +3,13 @@ import { createRemoteJWKSet, jwtVerify } from 'jose';
 import { z } from 'zod';
 import type { Role } from 'mango-farm-authorization';
 import { closeDatabase, createDatabase } from '../db.js';
-import { requireCsrf, requireRole, type AppVariables } from '../middleware/auth.js';
+import { requireCsrf, requireRole, requirePageAccess, type AppVariables } from '../middleware/auth.js';
 import { checkRateLimit, requestIp } from '../rate-limit.js';
 import { clearSessionCookie, randomToken, sessionCookie, sha256, timingSafeEqual } from '../security.js';
 import { LOCAL_TEST_ACCOUNTS, LOCAL_CUSTOMER_ID_PREFIX, localTestLoginEnabled, isLocalTestAccount } from './local-development.js';
+import { syncStaffDisplayName, readStaffAccounts, staffTotals } from './staff-directory.js';
+import { isWorkspaceStaff } from 'mango-farm-authorization';
+import { generateEmployeeCode } from './staff-identity.js';
 
 function sendVerificationEmail(env: Env, ctx: { waitUntil(p: Promise<unknown>): void }, email: string, token: string): void {
   if (!env.RESEND_API_KEY) return;
@@ -132,10 +135,12 @@ async function deliverStaffInvitation(c: AppContext, email: string, fullName: st
   const recipient = fullName ? ` ${escapeHtml(fullName)}` : '';
   let status: number | undefined;
   try {
+    const idempotencyKey = `staff-invite-${await sha256(token)}`;
+    for (let attempt = 0; attempt < 3; attempt++) {
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       signal: AbortSignal.timeout(8_000),
-      headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json', 'Idempotency-Key': idempotencyKey },
       body: JSON.stringify({
         from: env.EMAIL_FROM,
         to: [email],
@@ -145,6 +150,10 @@ async function deliverStaffInvitation(c: AppContext, email: string, fullName: st
     });
     if (response.ok) return;
     status = response.status;
+    if (status !== 429 || attempt === 2) break;
+    const delay = Math.min(2000, Math.max(500, Number(response.headers.get('Retry-After') || 1) * 1000));
+    await new Promise(resolve => setTimeout(resolve, delay));
+    }
   } catch {
     // Provider timeouts and network failures also roll back the invitation.
   }
@@ -271,6 +280,7 @@ router.patch('/me', requireCsrf(), async (c) => {
       const [locked] = await tx`SELECT id FROM account_verifications WHERE user_id = ${user.id} AND status IN ('pending', 'verified')`;
       if (locked) return false;
       await tx`UPDATE users SET full_name = ${parsed.data.fullName}, updated_at = now() WHERE id = ${user.id}`;
+      await syncStaffDisplayName(tx, user, parsed.data.fullName);
       return true;
     });
     if (!updated) return c.json({ error: { code: 'IDENTITY_LOCKED', message: 'Identity details are locked. Request an administrator review from Account Setup.' } }, 409);
@@ -521,6 +531,24 @@ router.patch('/staff-invitations/:id', requireRole('super_admin', 'hr_officer'),
   }
 });
 
+router.get('/staff-summary', async (c) => {
+  const user = c.get('user');
+  if (!user) return c.json({ error: { code: 'UNAUTHORIZED', message: 'Authentication required' } }, 401);
+  if (!isWorkspaceStaff(user)) return c.json({ error: { code: 'FORBIDDEN', message: 'Staff access required' } }, 403);
+  const sql = createDatabase(c.env);
+  try {
+    const employees = await sql<{ data: Record<string, unknown> }[]>`SELECT data FROM entity_records WHERE entity_name='Employee'
+      AND (${user.role === 'super_admin'} OR organization_id IS NOT DISTINCT FROM ${user.organizationId})`;
+    return c.json({ data: staffTotals(employees, await readStaffAccounts(sql, user)) });
+  } finally { await closeDatabase(sql); }
+});
+
+router.get('/staff-directory', requirePageAccess('hr'), async (c) => {
+  const sql = createDatabase(c.env);
+  try { return c.json({ data: { users: await readStaffAccounts(sql, c.get('user')!) } }); }
+  finally { await closeDatabase(sql); }
+});
+
 router.get('/staff-users', requireRole('super_admin', 'hr_officer'), async (c) => {
   const sql = createDatabase(c.env);
   try {
@@ -620,12 +648,26 @@ router.post('/staff-invitations/accept', async (c) => {
           VALUES (${userId}, ${claims.email}, ${claims.sub}, ${invitation.full_name || claims.name || claims.email.split('@')[0]}, ${invitation.role}, ${sql.json(pageAccess)}, 'active', now(), now())
         `;
       }
-      await transaction`
+      const memberships = await transaction<{ organization_id: string }[]>`SELECT organization_id FROM organization_members WHERE user_id=${invitation.invited_by} ORDER BY created_at LIMIT 2`;
+      const existingMemberships = await transaction<{ organization_id: string }[]>`SELECT organization_id FROM organization_members WHERE user_id=${userId}`;
+      if (memberships.length > 1 || (existingMemberships.length && memberships[0] && !existingMemberships.some(m => m.organization_id === memberships[0].organization_id))) throw new Error('Staff organization could not be matched');
+      const organizationId = existingMemberships[0]?.organization_id ?? memberships[0]?.organization_id ?? null;
+      if (organizationId && !existingMemberships.length) await transaction`INSERT INTO organization_members (organization_id,user_id,role) VALUES (${organizationId},${userId},${invitation.role})`;
+      const updatedEmployees = await transaction`
         UPDATE entity_records
         SET data = data || ${sql.json({ user_id: userId, workspace_role: invitation.role, page_access: pageAccess, invitation_status: 'accepted', account_status: 'active' })}, updated_at = now()
         WHERE entity_name = 'Employee'
           AND lower(data->>'email') = ${claims.email}
+          AND organization_id IS NOT DISTINCT FROM ${organizationId}
+        RETURNING id
       `;
+      if (!updatedEmployees.length) {
+        const joinedAt = new Date().toISOString();
+        const fullName = invitation.full_name || claims.name || claims.email.split('@')[0];
+        const [firstName, ...rest] = fullName.split(/\s+/);
+        await transaction`INSERT INTO entity_records (id,entity_name,organization_id,data,created_by,updated_by)
+          VALUES (${crypto.randomUUID()},'Employee',${organizationId},${transaction.json({ user_id: userId, email: claims.email, full_name: fullName, first_name: firstName, last_name: rest.join(' '), employee_code: generateEmployeeCode(joinedAt), account_joined_at: joinedAt, workspace_role: invitation.role, page_access: pageAccess, invitation_status: 'accepted', account_status: 'active', status: 'active' })},${invitation.invited_by},${userId})`;
+      }
       await transaction`UPDATE staff_invitations SET accepted_at = now() WHERE id = ${invitation.id}`;
       await transaction`DELETE FROM sessions WHERE user_id = ${userId}`;
       await transaction`

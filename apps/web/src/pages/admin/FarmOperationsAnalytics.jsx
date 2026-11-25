@@ -201,7 +201,7 @@ export default function FarmOperationsAnalytics({ data }) {
     return { selectedFarmId: 'all', selectedBlockId: 'all' };
   }, [farmFilter]);
 
-  const farmFilterOptions = useMemo(() => farmScopeOptions(farms, blocks), [farms, blocks]);
+  const farmFilterOptions = useMemo(() => farmScopeOptions(farms, blocks, { includeInactive: true }), [farms, blocks]);
 
   const analytics = useMemo(() => buildFarmOperationsAnalytics(
     { farms, blocks, dailyActivities: activities },
@@ -219,6 +219,10 @@ export default function FarmOperationsAnalytics({ data }) {
     visibleBlocks,
     visibleFarms,
   } = analytics;
+  const inactiveStructures = [
+    ...visibleFarms.filter(row => lower(row.status) === 'inactive').map(row => farmNameById.get(String(row.id)) || row.name),
+    ...visibleBlocks.filter(row => lower(row.status) === 'inactive').map(row => blockLabel(row)),
+  ].filter(Boolean);
 
   const blockSummary = visibleBlocks.map((block) => {
     const farmName = block.farm_name || farmNameById.get(String(block.farm_id)) || 'Unassigned farm';
@@ -324,6 +328,7 @@ export default function FarmOperationsAnalytics({ data }) {
         <MergedKpi first={{ icon: TrendingUp, label: 'Projected Revenue', value: projections ? formatCedis(projectionValue('revenue')) : '—', tone: 'revenue', remaining: projections ? remaining(projectionValue('revenue'), totalRevenue, formatCedis) : '—', onClick: () => openProjection('revenue') }} second={{ icon: Banknote, label: 'Actual Revenue', value: formatCedis(totalRevenue), tone: 'revenue' }} />
         <MergedKpi first={{ icon: Sprout, label: 'Projected Yield', value: projections ? `${wholeNumber(projectionValue('yield'))} Kg` : '—', tone: 'blue', remaining: projections ? remaining(projectionValue('yield'), totalYieldKg, (value) => wholeNumber(value) + ' Kg') : '—', onClick: () => openProjection('yield') }} second={{ icon: Sprout, label: 'Actual Yield', value: `${wholeNumber(Math.max(0, totalYieldKg))} Kg`, tone: 'blue' }} />
       </section>
+      {inactiveStructures.length ? <p className="text-caption text-muted-foreground">Inactive records included in totals: {inactiveStructures.join(', ')}.</p> : null}
       {projectionError ? <p role="alert" className="text-sm text-destructive">{projectionError}</p> : null}
 
       <div className="analytics-overview-grid">

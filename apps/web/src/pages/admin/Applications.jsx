@@ -16,6 +16,7 @@ import { formatDate } from '@/components/shared/format';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { base44 } from '@/api/base44Client';
+import EntityRecordActions from '@/components/admin/EntityRecordActions';
 
 const statusOptions = [
   { value: 'new', label: 'New' },
@@ -24,6 +25,15 @@ const statusOptions = [
   { value: 'interview', label: 'Interview' },
   { value: 'rejected', label: 'Rejected' },
   { value: 'hired', label: 'Hired' },
+];
+
+const applicationFields = [
+  { name: 'candidate_name', label: 'Candidate Name', required: true },
+  { name: 'role_applied_for', label: 'Role Applied For', required: true },
+  { name: 'email', label: 'Email', type: 'email', required: true },
+  { name: 'phone', label: 'Phone' },
+  { name: 'status', label: 'Status', type: 'select', options: statusOptions },
+  { name: 'candidate_summary', label: 'Candidate Summary', type: 'textarea', wide: true },
 ];
 
 const atsLabels = {
@@ -50,7 +60,7 @@ export default function Applications() {
 
   const load = () => {
     setLoading(true);
-    base44.entities.JobApplication.list('-created_date', 200)
+    base44.entities.JobApplication.listAll('-created_date')
       .then((items) => setApplications(items || []))
       .catch(() => setApplications([]))
       .finally(() => setLoading(false));
@@ -172,6 +182,7 @@ export default function Applications() {
                     )}
 
                     <div className="mt-4 flex flex-wrap gap-2">
+                      <EntityRecordActions entity="JobApplication" record={application} fields={applicationFields} onChanged={load} />
                       <Button
                         type="button"
                         variant="outline"

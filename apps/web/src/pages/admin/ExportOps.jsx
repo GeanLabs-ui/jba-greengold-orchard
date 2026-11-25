@@ -8,6 +8,7 @@ import { formatDate } from '@/components/shared/format';
 import { Button } from '@/components/ui/button';
 import DataTable from '@/components/shared/DataTable';
 import AdminCreateDialog from '@/components/admin/AdminCreateDialog';
+import EntityRecordActions from '@/components/admin/EntityRecordActions';
 import { base44, companySettings } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 
@@ -48,7 +49,7 @@ export default function ExportOps() {
 
   const load = () => {
     setLoading(true);
-    base44.entities.ExportShipment.list('-created_date', 50)
+    base44.entities.ExportShipment.listAll('-created_date')
       .then((d) => { setShipments(d || []); setLoading(false); })
       .catch(() => setLoading(false));
   };
@@ -83,7 +84,7 @@ export default function ExportOps() {
       </div>
 
       {loading ? <PageSkeleton contentOnly /> : (
-        <DataTable items={shipments} columns={[
+        <DataTable items={shipments} rowActions={record => <EntityRecordActions entity="ExportShipment" record={record} fields={fields} onChanged={load} />} columns={[
           { key: 'export_code', label: 'Export #' },
           { key: 'customer_name', label: 'Customer' },
           { key: 'destination_country', label: 'Destination' },

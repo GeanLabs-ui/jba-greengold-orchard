@@ -56,11 +56,17 @@ export function blockSelectOptions(blocks = []) {
   });
 }
 
-export function farmScopeOptions(farms = [], blocks = []) {
+export function farmScopeOptions(farms = [], blocks = [], { includeInactive = false } = {}) {
+  const selectable = (rows) => rows.filter(row => !row.archived_at).map(row => includeInactive && text(row.status).toLowerCase() === 'inactive'
+    ? { ...row, status: 'active' } : row);
+  const inactiveLabel = (option, rows) => {
+    const record = rows.find(row => String(row.id) === String(option.value));
+    return includeInactive && text(record?.status).toLowerCase() === 'inactive' ? `${option.label} (Inactive)` : option.label;
+  };
   return [
     { value: 'all', label: 'A&B' },
-    ...farmSelectOptions(farms).map((option) => ({ ...option, value: `farm:${option.value}` })),
-    ...blockSelectOptions(blocks).map((option) => ({ ...option, value: `block:${option.value}` })),
+    ...farmSelectOptions(selectable(farms)).map((option) => ({ ...option, label: inactiveLabel(option, farms), value: `farm:${option.value}` })),
+    ...blockSelectOptions(selectable(blocks)).map((option) => ({ ...option, label: inactiveLabel(option, blocks), value: `block:${option.value}` })),
   ];
 }
 

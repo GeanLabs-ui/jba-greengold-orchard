@@ -1,3 +1,8 @@
+import EntityRecordActions from '@/components/admin/EntityRecordActions';
+import { guardCalendarEventDeletion, isSourceOwnedCalendarEvent } from '@/lib/hr-calendar-record-guards';
+import { useAuth } from '@/lib/AuthContext';
+import { canCorrectEntity } from '@/lib/record-actions';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { scopeLabel, farmScopeOptions, resolveOperationalScope } from '@/lib/farm-scope';
 import { useCallback, useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -56,6 +61,9 @@ export default function ProductionCalendar() {
 
 function FarmCalendar() {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const canManageEvents = canCorrectEntity(user, 'CalendarEvent');
+  const canManageConnections = canCorrectEntity(user, 'CalendarConnection');
   const [searchParams, setSearchParams] = useSearchParams();
   const { key: locationKey } = useLocation();
   const requestedEvent = searchParams.get('event');
@@ -120,12 +128,14 @@ function FarmCalendar() {
   const connected = connections.find((item) => item.status === 'connected') || connections[0];
 
   const startCreate = (day = selectedDate, defaults = {}) => {
+    if (!canManageEvents) return toast({ title: 'You do not have permission to schedule activities.', variant: 'destructive' });
     setEditing(null);
     setForm({ ...blankForm(day), ...defaults });
     setShowEditor(true);
   };
 
   const startEdit = (event) => {
+    if (!canCorrectEntity(user, event.source_entity || 'CalendarEvent') || isSourceOwnedCalendarEvent({ ...event, source_entity: null })) return;
     if (event.source_entity) {
       setSearchParams({ event: event.id });
       setSelectedDate(dateKey(event.start_at));
@@ -194,6 +204,7 @@ function FarmCalendar() {
   };
 
   const quickStatus = async (event, status) => {
+    if (!canCorrectEntity(user, event.source_entity || 'CalendarEvent') || isSourceOwnedCalendarEvent({ ...event, source_entity: null })) return false;
     const progress = status === 'completed' ? 100 : Number(event.progress_percent || 0);
     try {
       if (event.source_entity) {
@@ -203,7 +214,7 @@ function FarmCalendar() {
         });
         await load({ quiet: true });
         toast({ title: `${event.title}: ${STATUS_LABELS[status]}` });
-        return;
+        return true;
       }
       const updated = await base44.entities.CalendarEvent.update(event.id, { status, progress_percent: progress });
       await syncRelatedRecords(updated);
@@ -218,8 +229,10 @@ function FarmCalendar() {
       }
       setEvents((current) => current.map((item) => item.id === updated.id ? updated : item));
       toast({ title: `${updated.title}: ${STATUS_LABELS[status]}` });
+      return true;
     } catch (error) {
       toast({ title: 'Status update failed', description: error.message, variant: 'destructive' });
+      return false;
     }
   };
 
@@ -255,12 +268,31 @@ function FarmCalendar() {
         onSubscription={() => setShowConnections(true)}
       />
 
+      <div className="mt-4 space-y-2">
+        {canManageEvents && events.filter(event => !isSourceOwnedCalendarEvent(event) && !event.outlook_event_id && dateKey(event.start_at) === selectedDate).map(event => <div key={event.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-card p-3"><span className="text-sm">{event.title}</span><div className="flex flex-wrap gap-2"><Button size="sm" variant="outline" onClick={() => startEdit(event)}>Edit</Button>{event.status !== 'cancelled' && <ConfirmCalendarAction label={event.title || event.id} buttonLabel="Cancel activity" description="Cancel this activity while keeping linked tasks, Daily Task Log records and their history." onConfirm={async () => { if (!await quickStatus(event, 'cancelled')) throw new Error('The activity could not be cancelled. Please try again.'); }} />}<EntityRecordActions entity="CalendarEvent" record={event} canEdit={false} deleteGuard={record => guardCalendarEventDeletion(base44, record)} onChanged={() => load({quiet:true})} deleteDescription="Only an event without linked tasks, Daily Task Log records or a harvest period can be deleted. Use Cancel activity to preserve linked history." /></div></div>)}
+        {canManageConnections && connected?.status === 'connected' && <ConfirmCalendarAction label={connected.calendar_name || 'Calendar subscription'} buttonLabel="Disconnect subscription" description="Disable this subscription address. External calendar events and farm activity history remain available." onConfirm={async () => {
+          await base44.entities.CalendarConnection.update(connected.id, { status: 'disconnected', feed_token: '', disconnected_at: new Date().toISOString() });
+          await load({ quiet: true });
+          toast({ title: 'Calendar subscription disconnected' });
+        }} />}
+      </div>
       <AnimatePresence>
         {showEditor && <EventEditor event={editing} form={form} setForm={setForm} farms={farms} blocks={blocks} saving={saving} onClose={() => { setShowEditor(false); setSearchParams(current => { const next = new URLSearchParams(current); next.delete('event'); return next; }); }} onSubmit={submitEvent} />}
-        {showConnections && <ConnectionEditor connection={connected} events={events} saving={saving} onClose={() => setShowConnections(false)} onSave={saveConnection} />}
+        {showConnections && <ConnectionEditor connection={connected} events={events} saving={saving} canSave={canManageConnections} onClose={() => setShowConnections(false)} onSave={saveConnection} />}
       </AnimatePresence>
     </div>
   );
+}
+
+function ConfirmCalendarAction({ label, buttonLabel, description, onConfirm }) {
+  const [open, setOpen] = useState(false);
+  const [confirmation, setConfirmation] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  return <><Button size="sm" variant="outline" onClick={() => { setConfirmation(''); setError(''); setOpen(true); }}>{buttonLabel}</Button><Dialog open={open} onOpenChange={value => { if (!busy) setOpen(value); }}><DialogContent><DialogHeader><DialogTitle>{buttonLabel}?</DialogTitle><DialogDescription>{description}</DialogDescription></DialogHeader><label className="space-y-2 text-sm">Type <strong>{label}</strong> to confirm<input className={inputClass} aria-label={`Confirm ${buttonLabel}`} value={confirmation} disabled={busy} onChange={event => setConfirmation(event.target.value)} autoComplete="off" /></label>{error && <p role="alert" className="text-sm text-red-700">{error}</p>}<div className="flex justify-end gap-2"><Button variant="outline" disabled={busy} onClick={() => setOpen(false)}>Keep record</Button><Button variant="destructive" disabled={busy || confirmation !== label} onClick={async () => {
+    setBusy(true); setError('');
+    try { await onConfirm(); setOpen(false); } catch (failure) { setError(failure.message || 'The change could not be saved.'); } finally { setBusy(false); }
+  }}>{busy ? 'Saving…' : buttonLabel}</Button></div></DialogContent></Dialog></>;
 }
 
 function Field({ label, children, className }) { return <label className={cn('block', className)}><span className="mb-1.5 block text-xs font-semibold text-muted-foreground">{label}</span>{children}</label>; }
@@ -283,7 +315,7 @@ function EventEditor({ event, form, setForm, farms, blocks, saving, onClose, onS
   </Modal>;
 }
 
-function ConnectionEditor({ connection, events, saving, onClose, onSave }) {
+function ConnectionEditor({ connection, events, saving, canSave, onClose, onSave }) {
   const [form, setForm] = useState({ provider: connection?.provider || 'google', account_email: connection?.account_email || '', calendar_name: connection?.calendar_name || 'JBA GreenGold Production' });
   const url = feedUrl(connection);
   return <Modal title="Farm schedule subscription" copy="Publish one live production schedule to Google Calendar, Outlook, or another business calendar." onClose={onClose}>
@@ -294,7 +326,7 @@ function ConnectionEditor({ connection, events, saving, onClose, onSave }) {
       {url && <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3"><p className="text-xs font-bold text-emerald-800">Live subscription address</p><p className="mt-2 break-all text-xs text-emerald-900">{url}</p><p className="mt-2 text-xs text-emerald-800">Add this URL using “From URL” in Google Calendar or “Subscribe from web” in Outlook.</p></div>}
       {import.meta.env.VITE_DEMO_MODE === 'true' && <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">Preview mode saves the connection and supports .ics export. The live subscription URL becomes available when the API is deployed.</div>}
       <div className="flex flex-wrap gap-2"><Button variant="outline" type="button" onClick={() => downloadICalendar(events, form.calendar_name)}><Download className="mr-2 h-4 w-4" />Download current calendar</Button>{events[0] && <><Button variant="outline" asChild><a href={googleCalendarUrl(events[0])} target="_blank" rel="noreferrer">Test Google <ExternalLink className="ml-2 h-4 w-4" /></a></Button><Button variant="outline" asChild><a href={outlookCalendarUrl(events[0])} target="_blank" rel="noreferrer">Test Outlook <ExternalLink className="ml-2 h-4 w-4" /></a></Button></>}</div>
-      <div className="flex justify-end gap-2 border-t border-border pt-4"><Button variant="outline" onClick={onClose}>Close</Button><Button disabled={saving || !form.account_email} onClick={() => onSave(form)}><Settings2 className="mr-2 h-4 w-4" />{connection ? 'Update link' : 'Create link'}</Button></div>
+      <div className="flex justify-end gap-2 border-t border-border pt-4"><Button variant="outline" onClick={onClose}>Close</Button>{canSave && <Button disabled={saving || !form.account_email} onClick={() => onSave(form)}><Settings2 className="mr-2 h-4 w-4" />{connection ? 'Save changes' : 'Create link'}</Button>}</div>
     </div>
   </Modal>;
 }

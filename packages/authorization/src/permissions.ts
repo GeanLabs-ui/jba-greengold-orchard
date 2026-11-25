@@ -26,7 +26,7 @@ export const permissions = {
   'blocks.read': 'Read block details',
   'blocks.create': 'Create a new block',
   'blocks.update': 'Update block details',
-  'blocks.delete': 'Delete an unused block',
+  'blocks.delete': 'Delete a block',
   'blocks.deactivate': 'Deactivate or reactivate a block',
   'blocks.merge': 'Merge blocks within a farm',
 

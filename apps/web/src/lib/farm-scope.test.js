@@ -31,6 +31,19 @@ describe('admin farm scopes', () => {
     for (const name of ['Farm Block A1', 'Farm A1', 'Block A1', 'A1']) expect(blockLabel(name)).toBe('A1');
     expect(blockLabel('Block A1, Block B2')).toBe('A1, B2');
   });
+  it('offers inactive farms and blocks explicitly for reporting without enabling them in entry selectors', () => {
+    const reportFarms = farms.map(row => row.id === 'farm-b' ? { ...row, status: 'inactive' } : row);
+    const reportBlocks = blocks.map(row => row.block_code === 'B3' ? { ...row, status: 'inactive' } : row);
+    const archivedBlock = { id: 'archived-a1', block_code: 'A1', status: 'inactive', archived_at: '2026-01-01' };
+    const reportOptions = farmScopeOptions(reportFarms, [archivedBlock, ...reportBlocks], { includeInactive: true });
+    expect(reportOptions.map(row => row.label)).toEqual(['A&B', 'Farm A', 'Farm B (Inactive)', 'A1', 'A2', 'A3', 'A4', 'A5', 'B1', 'B2', 'B3 (Inactive)', 'B4', 'B5']);
+    expect(reportOptions.find(row => row.label === 'B3 (Inactive)').value).toBe('block:id-B3');
+    expect(reportOptions.find(row => row.label === 'A1').value).toBe('block:id-A1');
+    const entryOptions = farmScopeOptions(reportFarms, reportBlocks);
+    expect(entryOptions.some(row => row.value === 'farm:farm-b')).toBe(false);
+    expect(entryOptions.some(row => row.value === 'block:id-B3')).toBe(false);
+    expect(reportBlocks.find(row => row.block_code === 'B3').status).toBe('inactive');
+  });
   it('includes all five child blocks using IDs and excludes the other farm', () => {
     const rows = blocks.map((block) => ({ block_id: block.id }));
     expect(rows.filter((row) => matchesFarmScope(row, 'A', structure))).toHaveLength(5);

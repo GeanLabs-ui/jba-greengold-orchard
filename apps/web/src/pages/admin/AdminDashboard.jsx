@@ -22,6 +22,7 @@ const colors = ['#f59e0b', '#10b981', '#6960f5', '#38bdf8', '#aab0b7'];
 
 const number = (value) => new Intl.NumberFormat('en-GH', { maximumFractionDigits: 3 }).format(Math.max(0, value));
 const money = (value) => `₵${new Intl.NumberFormat('en-GH', { maximumFractionDigits: 0 }).format(Math.max(0, value))}`;
+const ledgerMoney = (value) => `₵${new Intl.NumberFormat('en-GH', { maximumFractionDigits: 2 }).format(value)}`;
 const compact = (value) => `₵${new Intl.NumberFormat('en-GH', { maximumFractionDigits: 0 }).format(Math.max(0, value))}`;
 const axisMoney = (value) => `₵${new Intl.NumberFormat('en-GH', { notation: 'compact', maximumFractionDigits: 1 }).format(Math.max(0, value))}`;
 const pct = (value, total) => percentage(value, total) === null ? '—' : `${percentage(value, total)}%`;
@@ -30,8 +31,8 @@ const farmPath = '/admin/farm-daily-activities/activities/farms';
 function Panel({ title, icon: Icon, className = '', action, children }) {
   return <section className={`orchard-panel ${className}`}><header className="orchard-panel-heading"><h2><Icon aria-hidden="true" /><span>{title}</span></h2>{action}</header>{children}</section>;
 }
-function Metric({ title, value, icon: Icon, tone = 'green', children }) {
-  return <section className="orchard-metric"><span className={`orchard-metric-icon ${tone}`}><Icon aria-hidden="true" /></span><div><h2>{title}</h2><strong>{value}</strong></div>{children}</section>;
+function Metric({ title, value, icon: Icon, tone = 'green', note, children }) {
+  return <section className="orchard-metric"><span className={`orchard-metric-icon ${tone}`}><Icon aria-hidden="true" /></span><div><h2>{title}</h2><strong>{value}</strong>{note && <small className="orchard-metric-note">{note}</small>}</div>{children}</section>;
 }
 function Donut({ rows, value, label, palette = colors, kicker }) {
   const slices = positivePieSlices(rows);
@@ -60,13 +61,13 @@ export default function AdminDashboard() {
     const request = ++generation.current;
     setLoading(true);
     try {
-      const records = await loadDashboardRecords(base44.entities);
+      const records = await loadDashboardRecords(base44.entities, user);
       if (request !== generation.current) return;
       setData(records);
       setError('');
     } catch (failure) { if (request === generation.current) setError(failure.message || 'Dashboard records could not be loaded.'); }
     finally { if (request === generation.current) setLoading(false); }
-  }, []);
+  }, [user]);
   useEffect(() => {
     load(); let timer;
     const unsubscribe = subscribeToDataChanges(() => { clearTimeout(timer); timer = setTimeout(load, 180); }, Object.values(sources));
@@ -94,21 +95,22 @@ export default function AdminDashboard() {
   const salesPalette = sales.map((row) => row.name === 'Export Sales' ? '#10b981' : row.name === 'Local Sales' ? '#f59e0b' : '#5b98dc');
   const health = [{ label: 'Tree Health', icon: Leaf }, { label: 'Irrigation Coverage', icon: Droplets }, { label: 'Pest & Disease Status', icon: Bug }, { label: 'Harvest Readiness', icon: Sprout }, { label: 'Packhouse Readiness', icon: Warehouse }];
   return <div ref={dashboardRef} className="orchard-dashboard" data-preserve-colors="true">
+    {data?.restrictedSources?.length > 0 && <p role="status" className="orchard-error">This overview includes only the sections your administrator has enabled. Totals for restricted sections are unavailable.</p>}
     {error && <div className="orchard-error" role="alert">{error} {data ? 'Showing the last loaded records.' : 'Use the refresh control in the navigation bar to retry.'}</div>}
     {!data ? <div className="orchard-loading" role="status">{loading ? 'Loading orchard dashboard…' : 'Dashboard data unavailable.'}</div> : <>
       <div className="orchard-metrics">
         <div className="orchard-farm-summary" role="group" aria-label="Farm overview">
-        <Metric title="Total Main Farms" value={model.farms.length} icon={MapPin} />
-        <Metric title="Total Farm Blocks" value={model.blocks.length} icon={MapPin} tone="gold" />
+        <Metric title="Total Main Farms" value={model.farms.length} icon={MapPin} note={model.deactivatedFarms.length ? `Deactivated: ${model.deactivatedFarms.join(', ')}` : null} />
+        <Metric title="Total Farm Blocks" value={model.blocks.length} icon={MapPin} tone="gold" note={model.deactivatedBlocks.length ? `Deactivated: ${model.deactivatedBlocks.join(', ')}` : null} />
         </div>
         <div className="orchard-output-summary">
         <Metric title="Total Production" value={<>{number(model.harvested)} <em>Kg</em></>} icon={PackageOpen} />
         <Metric title="Mango Varieties" value={model.varietyNames.length} icon={Sprout} />
         </div>
         <div className="orchard-finance-summary">
-        <Metric title="Total Revenue" value={money(model.revenue)} icon={Coins} />
-        <Metric title="Total Cost" value={money(model.cost)} icon={ReceiptText} tone="red" />
-        <Metric title={model.profit < 0 ? "Sales Loss" : "Sales Balance"} value={money(Math.abs(model.profit))} icon={BarChart3} />
+        <Metric title="Total Revenue" value={ledgerMoney(model.totalRevenue)} icon={Coins} note="All dates · Sales orders" />
+        <Metric title="Total Cost" value={ledgerMoney(model.totalCost)} icon={ReceiptText} tone="red" note="All dates · Daily Task Log" />
+        <Metric title={model.totalBalance < 0 ? "Sales Loss" : "Sales Balance"} value={ledgerMoney(Math.abs(model.totalBalance))} icon={BarChart3} note="All dates · Revenue − cost" />
         </div>
         <Metric title="Sales Mix" value={<><em>{pct(model.sales[0].value, model.revenue)} Export</em></>} icon={Truck}><div className="orchard-sales-mix" aria-label="Sales mix">{model.revenue > 0 && model.sales.map((row, index) => <span key={row.name} title={`${row.name}: ${pct(row.value, model.revenue)}`} style={{ width: `${row.value / model.revenue * 100}%`, backgroundColor: colors[index] }} />)}</div></Metric>
       </div>
